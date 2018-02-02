@@ -1,0 +1,97 @@
+
+<?php
+/*
+ * Created on 29-Jan-2007
+ *
+ * Inherit from DataImport class
+ * 
+ * Logic:
+ * If unit is unsold then 
+ *    manual update the config.phtml for closing date
+ * else if unit 2nd revised closing date is NOT empty
+ *    assign the new date to 3rd revised closing date 
+ * else if unit 1nd revised closing date is NOT empty
+ *    assign the new date to 2rd revised closing date
+ * else if unit occupancy closing date is NOT empty
+ *    assign the new date to 1st revised closing date
+ * end;
+ */
+ 
+//include_once "main_include.phtml";
+//include_once "framework/DataImport/DataImport.phtml";
+include_once "../../main_include.phtml";
+include_once "DataImport.phtml";
+
+class DataImportUserClosingDate extends DataImport {
+ 
+/**
+  * move the old price into UnitPriceHistory and update new price into Unit
+  */
+function updateRecord($arguments){
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+	$primaryKey = $arguments['primaryKey'];
+
+ 	$numOfCol = sizeof($headerInfoArray);
+ 	$primaryKeyValue = -1;
+ 	
+ 	for ($i =0; $i < $numOfCol; $i++){
+ 	
+		if ($headerInfoArray[$i] == $primaryKey){
+			$primaryKeyValue = $dataArray[$i]; 
+		}
+		else {
+			$closingDate = $dataArray[$i]; 
+		}
+
+	}
+ 	
+ 	$select_sql = "SELECT * FROM $table WHERE $primaryKey = $primaryKeyValue AND DealStatus NOT IN (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")";
+ 	$result = executeSql($select_sql);
+	
+	$num_of_rows = mysql_num_rows($result);
+	
+	// unit is unsold
+	if (!$num_of_rows)
+	{
+		print "Unit $primaryKeyValue is not sold!<br>";
+		return 0;
+	}
+	else
+	{
+	 	$update_sql = "UPDATE $table SET ";
+
+		$row = mysql_fetch_array($result);
+		
+		if ($row["SecondRevisedClosingDate"] != "" && $row["SecondRevisedClosingDate"] != "0000-00-00")
+		{
+			$update_sql .= "ThirdRevisedClosingDate = '";
+			print "Unit $primaryKeyValue: updated 3rd revised closing date.<br>";
+		}
+		else if ($row["FirstRevisedClosingDate"] != "" && $row["FirstRevisedClosingDate"] != "0000-00-00")
+		{
+			$update_sql .= "SecondRevisedClosingDate = '";
+			print "Unit $primaryKeyValue: updated 2nd revised closing date.<br>";
+		}
+		else if ($row["OccupancyDepositDate"] != "" && $row["OccupancyDepositDate"] != "0000-00-00")
+		{
+			$update_sql .= "FirstRevisedClosingDate = '";
+			print "Unit $primaryKeyValue: updated 1st revised closing date.<br>";
+		}
+	}
+
+	$update_sql .= "$closingDate' WHERE $primaryKey=$primaryKeyValue and DealStatus NOT IN (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")";	
+	
+ 	$result_update = executeSql($update_sql);
+ 	
+ 	
+ 	// for now, don't bother to update AdditionalPurchaserInformation
+ 	if ($result_update)
+ 		return 1;
+ 	else
+ 		return 0;
+ 	
+ }  	 
+}
+?>

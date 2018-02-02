@@ -1,0 +1,155 @@
+<?php
+// Action for user_closing
+include_once "main_include.phtml";
+include_once 'AjaxUtil_class.phtml';
+include_once 'closing_commons.phtml';
+
+
+function getInventoryItem(&$res,$userID,$type) {
+	$sql = sprintf("select * from InventoryItem where ItemType='%s' and UserID=%s", $type,$userID);
+	$InventoryItems = AjaxUtil::doSql($sql);
+	
+	if(count($InventoryItems) > 0) {
+		$res[$type."Price"] = $InventoryItems[0]["Price"];
+		$res[$type."Number"] = $InventoryItems[0]["ItemNumber"];
+		$res[$type."Level"] = $InventoryItems[0]["ItemLevel"];
+		$res[$type."CAM"] = $InventoryItems[0]["CAM"];
+		$res[$type."RID"] = $InventoryItems[0]["RID"];
+	}
+}
+
+// retrieve user closing information
+if ($_REQUEST["act"] == "select") {
+  $sql = "select c.*, u.UserID, If(u.OfferPrice=0,u.Price,u.OfferPrice) OfferPrice, u.GSTRebate, u.ASPNetGST, u.FirstName, u.LastName, u.QualifyGSTRebate, u.AgreementDepositDate"
+       . "  from UserClosing c, User u " 
+       . " where c.UnitNumber = u.UnitNumber "
+       . "   and u.DealStatus = 'Firm' "
+       . "   and c.UnitNumber = '" . $_REQUEST["UnitNumber"] . "'";
+
+  $rows = AjaxUtil::doSql($sql);
+	$count = count($uClosings);
+  if(count($rows) <> 1) {
+    AjaxUtil::raiseError("Invalid unit number: " . $_REQUEST["UnitNumber"]);
+  } else {
+	
+		// if purchased after June 30, 2006, use 6%
+		$rows[0]["GSTRate"] = strtotime($rows[0]["AgreementDepositDate"]) > strtotime("2006-06-30") ? 0.06:0.07;
+		$rows[0]["GST"] = $rows[0]["OfferPrice"]*$rows[0]["GSTRate"];
+		$rows[0]["NetGSTPayable"] = $rows[0]["GST"] - $rows[0]["GSTRebate"];
+
+		// CAM, passing CAM as JSON
+//		getInventoryItem($rows[0],$rows[0]["UserID"],"REG_PARKING");
+//		getInventoryItem($rows[0],$rows[0]["UserID"],"COMPACT_PARKING");
+//		getInventoryItem($rows[0],$rows[0]["UserID"],"TANDEM_PARKING");
+//		getInventoryItem($rows[0],$rows[0]["UserID"],"REG_LOCKER");
+//		getInventoryItem($rows[0],$rows[0]["UserID"],"BIKE_RACKER");
+  	$sql = sprintf("select * from InventoryItem where UserID=%s",$rows[0]["UserID"]);
+  	$InventoryItems = AjaxUtil::doSql($sql);
+  	$rows[0]["CAM"] = $InventoryItems;
+
+		// get additional purchaser
+		$sql = "select Person.FirstName, Person.LastName, User.UnitNumber "
+		     . "  from User, AdditionalPurchaser, Person "
+		     . " where User.UserID = AdditionalPurchaser.UserID "
+		     . "   AND AdditionalPurchaser.PersonID = Person.PersonID "
+         . "   and User.DealStatus = 'Firm' "
+		     . "   and User.UnitNumber = '" . $_REQUEST["UnitNumber"] . "'"
+		     . " order by UnitNumber";
+		$additionalPurchaserRows = AjaxUtil::doSql($sql);
+		$additionalPurchaser = "";
+	  foreach ($additionalPurchaserRows as $additionalPurchaserRow) {
+	    $additionalPurchaser = $additionalPurchaser . $additionalPurchaserRow['FirstName'] . " " . $additionalPurchaserRow['LastName'] . "    ";
+	  }
+		$rows[0]['AdditionalPurchaser'] = $additionalPurchaser==""?"N/A":substr($additionalPurchaser,2);
+		
+    echo json_encode($rows[0]); // AjaxUtil::phpObj2JsObj($rows[0]);
+  }
+}
+
+// update user closing information
+elseif ($_REQUEST["act"] == "update") {
+  $sql="update UserClosing set " .
+//      " SixFeeProvTax=" .         ZeroIfBlank($_REQUEST["SixFeeProvTax"]) .
+//      ",SixFeeConnCharge=" .      ZeroIfBlank($_REQUEST["SixFeeConnCharge"]) .
+//      ",SixFeeWaterMeter=" .      ZeroIfBlank($_REQUEST["SixFeeWaterMeter"]) .
+//      ",SixFeeHydroCharge=" .     ZeroIfBlank($_REQUEST["SixFeeHydroCharge"]) .
+//      ",SixFeeDevCharge=" .       ZeroIfBlank($_REQUEST["SixFeeDevCharge"]) .
+//      ",SixFeeTarion=" .          ZeroIfBlank($_REQUEST["SixFeeTarion"]) .
+      " AdmFeeCheqRecovery=" .    ZeroIfBlank($_REQUEST["AdmFeeCheqRecovery"]) .
+      ",AdmFeeCommExpense=" .     ZeroIfBlank($_REQUEST["AdmFeeCommExpense"]) .
+      ",AdmFeeStatutory=" .       ZeroIfBlank($_REQUEST["AdmFeeStatutory"]) .
+      ",AdmFeeLawSociety=" .      ZeroIfBlank($_REQUEST["AdmFeeLawSociety"]) .
+      ",AdmFeeMsf=" .             ZeroIfBlank($_REQUEST["AdmFeeMsf"]) .
+      ",AdmFeeMortageCharge=" .   ZeroIfBlank($_REQUEST["AdmFeeMortageCharge"]) .
+      ",AdmFeeCreditMaint=" .     ZeroIfBlank($_REQUEST["AdmFeeCreditMaint"]) .
+      ",AdmFeeCreditPurchase=" .  ZeroIfBlank($_REQUEST["AdmFeeCreditPurchase"]) .
+      ",AdmFeeOutstanding=" .     ZeroIfBlank($_REQUEST["AdmFeeOutstanding"]) .
+      ",UnitCAM=" .               ZeroIfBlank($_REQUEST["UnitCAM"]) .
+      ",PropertyTaxYear1=" .   ZeroIfBlank($_REQUEST["PropertyTaxYear1"]) .
+      ",PropertyTaxYear2=" .     ZeroIfBlank($_REQUEST["PropertyTaxYear2"]) .
+      ",LandTaxYear1=" .  ZeroIfBlank($_REQUEST["LandTaxYear1"]) .
+      ",LandTaxYear2=" .     ZeroIfBlank($_REQUEST["LandTaxYear2"]) .
+      ",TarionNumber='" . mysql_real_escape_string($_REQUEST["TarionNumber"]) . "'" .
+      ",Notes='" . mysql_real_escape_string($_REQUEST["Notes"]) . "'" .
+      " where UnitNumber='". $_REQUEST["UnitNumber"] . "'";
+  AjaxUtil::doSql($sql);
+  
+  $sql="update User set " .
+      " GSTRebate=" .    ZeroIfBlank($_REQUEST["GSTRebate"]) .
+      ",QualifyGSTRebate=" .  (isset($_REQUEST["QualifyGSTRebate"]) ? 1 : 0)  .
+      ",ASPNetGST=" .       ZeroIfBlank($_REQUEST["ASPNetGST"]) .
+      " where UnitNumber='". $_REQUEST["UnitNumber"] . "'" .
+      "   and DealStatus = 'Firm'";
+  AjaxUtil::doSql($sql);
+      
+//  updateInventoryItem($_REQUEST, "REG_PARKING");
+//  updateInventoryItem($_REQUEST, "COMPACT_PARKING");
+//  updateInventoryItem($_REQUEST, "TANDEM_PARKING");
+//  updateInventoryItem($_REQUEST, "REG_LOCKER");
+//  updateInventoryItem($_REQUEST, "BIKE_RACKER");
+  $CAM = json_decode($_REQUEST["CAM"]); // contains array of Inventory
+
+  // refresh InventoryItem by UserID
+  $sql = "delete from InventoryItem where UserID=".$_REQUEST["UserID"];
+	AjaxUtil::doSql($sql);  
+  
+  foreach ($CAM as $InventoryItem) {
+  		$sql = sprintf("insert into InventoryItem(UserID,ItemType,Price,ItemNumber,ItemLevel,CAM) values(%s,'%s',%s,'%s','%s',%s)",
+    			$InventoryItem->UserID,
+    			$InventoryItem->ItemType,
+    			$InventoryItem->Price,
+    			$InventoryItem->ItemNumber,
+    			$InventoryItem->ItemLevel,
+    			NullIfBlank($InventoryItem->CAM)
+  			);
+
+			AjaxUtil::doSql($sql);
+	}
+	  
+  echo "User Closing Information has been updated Successfully";
+}
+
+// calculate GST Rebate, triggered by Qualifies for GST Rebate checkbox
+elseif ($_REQUEST["act"] == "gst_rebate") {
+	include_once 'GSTRebateAction.phtml';
+	$arguments["offerPrice"] = $_REQUEST["OfferPrice"];
+	$arguments["GSTRate"] = $_REQUEST["GSTRate"];
+	
+	$response["GSTRebate"] = calGSTRebateValue($arguments);
+	$response["NetGSTPayable"] = $_REQUEST["GST"] - $response["GSTRebate"];
+	$response["ASPNetGST"]= $_REQUEST["OfferPrice"] - $response["NetGSTPayable"];
+	$response["GSTRate"] = $_REQUEST["GSTRate"];
+	echo AjaxUtil::phpObj2JsObj($response);
+}
+
+// Recalculate Closing Data for the Unit
+elseif ($_REQUEST["act"] == "recalculate") {
+	echo(genUnitClosingData($_REQUEST["UnitNumber"]));
+
+} else {
+  //print_r($_REQUEST);
+  // Allow other page to reuse function defined in this page
+  AjaxUtil::raiseError("unknown request");
+}
+
+?>

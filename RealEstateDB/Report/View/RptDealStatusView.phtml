@@ -1,0 +1,337 @@
+<?
+include_once "../Controller/RptDealStatusController.phtml";
+
+/**
+ * Viewer of the Deal Status Report 
+ * Return a table of Deal Status
+ */
+
+class RptDealStatusView {
+	
+	var $rptDealStatusController;
+	var $html;
+	var $js;
+	var $dealExpanderNameList;
+	var $tableConfig;
+	
+	var $priTableIndex = 0;
+	var $secTableIndex = 1;
+	
+	function RptDealStatusView(){
+		$this->init();
+	}
+
+	/**
+	 * Initialize the object
+	 */
+	function init(){
+		$this->dealExpanderNameList = array();
+		$this->initTable();
+		$this->rptDealStatusController = new RptDealStatusController();
+		$this->process();
+	} // init
+
+	function initTable(){
+		$this->tableConfig = array();
+		$this->tableConfig[$this->priTableIndex] = array();
+		$this->tableConfig[$this->secTableIndex] = array();
+		
+		$this->tableConfig[$this->priTableIndex]['ColumnSize'] = array(13,150,80,80,100,80,100,150,100);
+		$this->tableConfig[$this->secTableIndex]['TotalColWidth'] = 0 ;
+		for ($i=0; $i <= sizeof($this->tableConfig[$this->priTableIndex]['ColumnSize']); $i++){
+			$this->tableConfig[$this->priTableIndex]['TotalColWidth'] 
+				+= $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i];
+		}
+		$this->tableConfig[$this->priTableIndex]['CellPadding'] = 5;
+		$this->tableConfig[$this->priTableIndex]['CellSpacing'] = 0;
+		$this->tableConfig[$this->priTableIndex]['Border'] 		= 0;
+		$this->tableConfig[$this->priTableIndex]['HeaderCSSClass'] 	= 'head-right';
+		$this->tableConfig[$this->priTableIndex]['TailCSSClass'] 	= 'tail-right';
+		
+		// calculate total width involves with cellpadding=5, cellspacing=0 table setting
+		$this->tableConfig[$this->priTableIndex]['TotalColWidth'] += 
+			$this->tableConfig[$this->priTableIndex]['CellPadding']  * 2 * 
+			sizeof($this->tableConfig[$this->priTableIndex]['ColumnSize']); 
+		$this->tableConfig[$this->priTableIndex]['TotalColWidth'] += 
+			$this->tableConfig[$this->priTableIndex]['Border']  * 2 * 
+			sizeof($this->tableConfig[$this->priTableIndex]['ColumnSize']); 
+			
+			
+		$this->tableConfig[$this->secTableIndex]['ColumnSize'] = array(5,100,100,80,100,100,100,100,150,100);
+//		$this->tableConfig[$this->secTableIndex]['ColumnSize'] = array(5,150,120,80,100,80,100,150,100);
+		
+		$this->tableConfig[$this->secTableIndex]['TotalColWidth'] = 0;
+		for ($i=0; $i <= sizeof($this->tableConfig[$this->secTableIndex]['ColumnSize']); $i++){
+			$this->tableConfig[$this->secTableIndex]['TotalColWidth'] 
+				+= $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i];
+		}
+		$this->tableConfig[$this->secTableIndex]['HeaderCSSClass'] 	= 'subhead-right';		
+		$this->tableConfig[$this->secTableIndex]['CellPadding'] = 5;
+		$this->tableConfig[$this->secTableIndex]['CellSpacing'] = 0;
+		$this->tableConfig[$this->secTableIndex]['Border'] 		= 0;
+		// calculate total width involves with cellpadding=5, cellspacing=0 table setting
+		$this->tableConfig[$this->secTableIndex]['TotalColWidth'] += 
+			$this->tableConfig[$this->secTableIndex]['CellPadding']  * 2 * 
+			sizeof($this->tableConfig[$this->secTableIndex]['ColumnSize']); 
+		$this->tableConfig[$this->secTableIndex]['TotalColWidth'] += 
+			$this->tableConfig[$this->secTableIndex]['Border']  * 2 * 
+			sizeof($this->tableConfig[$this->secTableIndex]['ColumnSize']); 
+			
+		
+	}
+	
+	/**
+	 * Process the view renderation
+	 */
+	function process(){
+		$this->appendOut($this->getStart());
+		$this->appendOut($this->getHeader());
+		while ($dealStatus = $this->rptDealStatusController->getDealStatus()){
+			
+			if ($dealStatus == DEAL_STATUS_AVAILABLE){
+				$subtotalRecord = $this->rptDealStatusController->getSubTotalRecord();			
+				$this->appendOut($this->parseSubTotalRecord($subtotalRecord));	
+				$this->rptDealStatusController->resetSubTotalRecord();
+			}
+			
+			// get associated array for the header row
+			$summaryRecord = $this->rptDealStatusController->getHeaderRecord();
+			$this->appendOut($this->parseHeaderRecord($summaryRecord, $dealStatus));
+			// display summary record
+			$this->appendOut($this->getContentHeader($dealStatus));
+			while ($contentRecord = $this->rptDealStatusController->getNextDetailRecord()){
+				// display content record				
+				$this->appendOut($this->parseContentRecord($contentRecord));
+			}
+			$this->appendOut($this->getContentTailer());
+			$tailRecord = $this->rptDealStatusController->getTailerRecord();
+			$this->appendOut($this->parseTailRecord($tailRecord));
+			$this->rptDealStatusController->getNextDealStatus();
+		}						
+		$this->appendOut($this->parseAllDealStatusTailerRecord($this->rptDealStatusController->getAllDealStatusTailerRecord()));
+		$this->appendOut($this->getExpanderJS());
+		$this->appendOut($this->getFootNote());
+		$this->appendOut($this->getEnd());
+		
+	} // process
+	
+	function appendOut($html){
+		$this->html .= $html;
+	}
+	
+	function getStart(){
+//		$html .= '<TABLE>';
+		return $html;
+	}
+	
+	function getEnd(){
+//		$html .= '</TABLE>';
+		return $html;
+	}
+
+	function getFootNote(){
+		$html = '<SPAN class="blank">Note: <BR>1.Total Unit Sales is Original Unit Sale Price less Cash Incentives<BR>
+				2.Total Offer Price is Offer Price less Parking/Locker
+					</SPAN>';
+		return $html;
+	}
+	
+	function getHeader(){
+		$i = 0;
+		$html .= '<TABLE border=' . $this->tableConfig[$this->priTableIndex]['Border'] . '
+					cellpadding=' . $this->tableConfig[$this->priTableIndex]['CellPadding'] . '
+					cellspacing=' . $this->tableConfig[$this->priTableIndex]['CellSPacing'] . '
+					width=' . $this->tableConfig[$this->priTableIndex]['TotalColWidth'] . '>';				
+		$html .= '	<TR
+						class='	.	$this->tableConfig[$this->priTableIndex]['HeaderCSSClass'] . '>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . getCollapsibleManagerDIVIcon("ContentExpanderManager", "ContentExpanderGroup") . '</TH>';
+		$html .= '		<TH ALIGN="LEFT" WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>Deal Status</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >Total</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >Size</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >Total Unit Sale</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >Avg Sq F</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >Offer Price</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >Avg Sq F</TH>';
+		$html .= '		<TH WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. ' >% by Value</TH>';
+		$html .= '	</TR>';
+		$html .= '</TABLE>';
+		return $html;			
+	}
+	
+	function getContentHeader($dealStatus){
+		$html .= '<DIV ID="' . $dealStatus  . '_DETAILDIV">';
+		$html .= '	<TABLE 
+						border=' . 		$this->tableConfig[$this->secTableIndex]['Border'] . '
+						cellpadding=' . $this->tableConfig[$this->secTableIndex]['CellPadding'] . '
+						cellspacing=' . $this->tableConfig[$this->secTableIndex]['CellSPacing'] . '
+						width=' . 		$this->tableConfig[$this->secTableIndex]['TotalColWidth'] . '>';						
+		$html .= '		<TR
+							class='	.		$this->tableConfig[$this->secTableIndex]['HeaderCSSClass'] . '>';
+		$i 		= 0;
+		$html .= '			<TH CLASS="blank" WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '></TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Unit Number</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Total Unit Sales</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Price</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Cash Incentive</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Total Area</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Net Offer Price</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Offer Price</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Parking Space Charge</TH>';
+		$html .= '			<TH WIDTH=' . $this->tableConfig[$this->secTableIndex]['ColumnSize'][$i++]. '>Locker Charge</TH>';
+		$html .= '		</TR>';	
+
+		return $html;
+	}
+	
+	function getContentTailer()	{
+		$html .= '	</TABLE>';
+		$html .= '	<hr align=left width=' . $this->tableConfig[$this->secTableIndex]['TotalColWidth'] . '>';
+		$html .= '</DIV>';				
+
+		return $html;
+	}
+	
+	/**
+	 * Display header
+	 */
+	function parseHeaderRecord($summaryRecord, $dealStatus){
+//		print_r($summaryRecord);
+		// add DIV name into the list
+		
+		$index = sizeof($this->dealExpanderNameList);
+		$this->dealExpanderNameList[$index] = $dealStatus  . '_DETAILDIVExpander';
+		$i=0;
+		$html .= '<TABLE border=' . $this->tableConfig[$this->priTableIndex]['Border'] . '
+					cellpadding=' . $this->tableConfig[$this->priTableIndex]['CellPadding'] . '
+					cellspacing=' . $this->tableConfig[$this->priTableIndex]['CellSPacing'] . '
+					width=' . $this->tableConfig[$this->priTableIndex]['TotalColWidth'] . '>';		
+		$html .= '	<TR class="blank-right">';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . $this->getContentExpander($dealStatus) . '</TD>';
+		$html .= '		<TD ALIGN="LEFT" WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . $summaryRecord['DealStatus'] . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . $summaryRecord['NumOfRecord'] . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . number_format($summaryRecord['Area'],0) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($summaryRecord['UnitSale'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($summaryRecord['UnitSalePerSF'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($summaryRecord['OfferPrice'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . $summaryRecord['OfferPricePerSF'] . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . number_format($summaryRecord['PercentageByValue'],2) . '%</TD>';
+		$html .= '	</TR>';
+		$html .= '</TABLE>';
+		
+		return $html;		
+	}
+
+	/**
+	 * Display content
+	 */
+	function parseContentRecord($contentRecord){
+		$html .= '	<TR class="blank-right">';
+		$html .= '		<TD></TD>';
+		$html .= '		<TD>' . $contentRecord['UnitNumber'] . '</TD>';
+		$html .= '		<TD>$' . number_format($contentRecord['TotalUnitSale'],2) . '</TD>';
+		$html .= '		<TD>$' . number_format($contentRecord['Price'],2) . '</TD>';
+		$html .= '		<TD>$' . number_format($contentRecord['CashIncentive'],2) . '</TD>';
+		$html .= '		<TD>' . number_format($contentRecord['Area'],0) . '</TD>';
+		$html .= '		<TD>$' . number_format($contentRecord['NetOfferPrice'],2) . '</TD>';
+		$html .= '		<TD>$' . number_format($contentRecord['OfferPrice'],2) . '</TD>';
+		$html .= '		<TD>$' . number_format( $contentRecord['ParkingSpaceCharge'],2) . '</TD>';
+		$html .= '		<TD>$' . number_format($contentRecord['LockerCharge'],2) . '</TD>';
+		$html .= '	</TR>';
+		
+		return $html;		
+	}
+	
+	/**
+	 * Display tail
+	 */
+	function parseTailRecord($tailRecord){
+		return '';
+	}
+	
+	function parseSubTotalRecord($subtotalRecord){
+		$i = 0;
+		$html .= '<TABLE border=' . $this->tableConfig[$this->priTableIndex]['Border'] . '
+					cellpadding=' . $this->tableConfig[$this->priTableIndex]['CellPadding'] . '
+					cellspacing=' . $this->tableConfig[$this->priTableIndex]['CellSPacing'] . '
+					width=' . $this->tableConfig[$this->priTableIndex]['TotalColWidth'] . '>';		
+		$html .= '		<TR
+							class='	.		$this->tableConfig[$this->priTableIndex]['TailCSSClass'] . '>';
+		
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '></TD>';
+		$html .= '		<TD ALIGN="LEFT" WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . $subtotalRecord['DealStatus'] . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . $subtotalRecord['NumOfRecord'] . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . number_format($subtotalRecord['Area'],0) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($subtotalRecord['UnitSale'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($subtotalRecord['UnitSalePerSF'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($subtotalRecord['OfferPrice'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($subtotalRecord['OfferPricePerSF'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . number_format($subtotalRecord['PercentageByValue'],2) . '%</TD>';
+		$html .= '	</TR>';
+		$html .= '</TABLE>';
+		
+		return $html;			
+		
+	}
+	
+	/**
+	 * Display tail for ALL deal status, not indificual deal status
+	 */
+	function parseAllDealStatusTailerRecord($tailRecord){
+		$i = 0;
+		$html .= '<TABLE border=' . $this->tableConfig[$this->priTableIndex]['Border'] . '
+					cellpadding=' . $this->tableConfig[$this->priTableIndex]['CellPadding'] . '
+					cellspacing=' . $this->tableConfig[$this->priTableIndex]['CellSPacing'] . '
+					width=' . $this->tableConfig[$this->priTableIndex]['TotalColWidth'] . '>';		
+		$html .= '		<TR
+							class='	.		$this->tableConfig[$this->priTableIndex]['TailCSSClass'] . '>';
+		
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '></TD>';
+		$html .= '		<TD ALIGN="LEFT" WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>Total</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . $tailRecord['NumOfRecord'] . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . number_format($tailRecord['Area'],0) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($tailRecord['UnitSale'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($tailRecord['UnitSalePerSF'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($tailRecord['OfferPrice'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>$' . number_format($tailRecord['OfferPricePerSF'],2) . '</TD>';
+		$html .= '		<TD WIDTH=' . $this->tableConfig[$this->priTableIndex]['ColumnSize'][$i++]. '>' . number_format($tailRecord['PercentageByValue'],2) . '%</TD>';
+		$html .= '	</TR>';
+		$html .= '</TABLE>';
+		
+		return $html;			
+	}	
+	
+	function getExpanderJS(){
+		$js = "
+		<script language='javascript'>";
+		$js .= defineCollapsibleGroup("ContentExpanderGroup", $this->dealExpanderNameList);
+		// collapse all the expander first
+		$js .= "
+			var expanderManagerOBJ = document.getElementById('ContentExpanderManagerDIVExpander');
+			tool.dom.fireClickEvent(expanderManagerOBJ);";
+
+		$js .= "</script>";
+
+		return $js;
+					
+	}
+	/**
+	 * Get content of the reportet
+	 */
+	function getRptHTML(){
+		return $this->html;
+	}
+
+	/**
+	 * Get javascript of the reportet
+	 */
+	function getRptJS(){
+		return $this->js;
+	}
+	
+	function getContentExpander($dealStatus){
+		$html =	getCollapsibleDIVIcon($dealStatus  . '_DETAIL');
+		return $html;		
+	}
+	
+} // RptDealStatusView
+?> 

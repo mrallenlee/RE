@@ -1,0 +1,36 @@
+<?php
+/*
+ * Created on 9-Oct-2006
+ *
+ * Export unit data
+ */
+ 
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExportMysqlWrapper.phtml";
+
+check_auth(2, "sales");
+ 
+ 
+$sql =  "SELECT Unit.UnitNumber SuiteNumber, 
+				User.Company,
+				Unit.UnitType,
+				Unit.Model, 
+				Unit.UnitTypeDescription, 
+				Unit.Area, 
+				User.DealStatus,
+				Unit.Price,
+				Unit.Price/Unit.Area PricePERSF, 
+				Unit.Status
+				FROM Unit
+				LEFT JOIN User 
+				ON Unit.UserID = User.UserID
+				ORDER BY Unit.UnitNumber";
+ 		
+$result = executeSql($sql);
+
+$exporter = new DataExportMysqlWrapper($result);
+$exporter->exportHeader("Unit.csv");
+$exporter->exportData();
+?>

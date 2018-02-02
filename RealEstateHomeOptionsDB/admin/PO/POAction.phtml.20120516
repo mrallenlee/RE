@@ -1,0 +1,540 @@
+<?php
+/*
+ * Created on 19-Feb-2006
+ *
+ * Actions for handling standard and non-standard POs
+ */
+define ("SUB_FOLDER_INVERT_RELATIVE_PATH", "../.."); 
+include_once "../main_include.phtml";
+ 
+ //---------------------------------------------------------------------
+ // Update functions related to single PO
+ //---------------------------------------------------------------------
+ /**
+  * Update a Standard PO
+  * POType: Standard, NonStandard
+  * ContractorID: contractor1(in lower case)
+  * Cost: Cost of the PO
+  */
+ function updateStandardPO($UnitNumber, $ItemID, $OptionID, $ChoiceID, $ContractorID, $Cost){
+	 $sql = "UPDATE StandardPO " .
+ 			"SET Cost=$Cost " .
+ 			"WHERE UnitNumber='$UnitNumber' " .
+ 			"AND ItemID=$ItemID " .
+ 			"AND OptionID=$OptionID " .
+ 			"AND ChoiceID=$ChoiceID " .
+ 			"AND ContractorID='$ContractorID' ";
+	$result = executeSql($sql);
+ }						
+ 
+ /**
+  * Add a Standard PO
+  * POType: Standard, NonStandard
+  * ContractorID: contractor1(in lower case)
+  * Cost: Cost of the PO
+  */
+ function addStandardPO($UnitNumber, $ItemID, $OptionID, $ChoiceID, $ContractorID, $Cost){
+	$sql = "REPLACE INTO StandardPO " .
+ 			"SET Cost=$Cost, " .
+ 			"UnitNumber='$UnitNumber', " .
+ 			"ItemID=$ItemID, " .
+ 			"OptionID=$OptionID, " .
+ 			"ChoiceID=$ChoiceID, " .
+ 			"ContractorID='$ContractorID'," .
+ 			"CreateDate=NOW() ";
+	$result = executeSql($sql);
+ }						
+ 
+ /**
+  * Delete a Standard PO
+  * POType: Standard, NonStandard
+  * ContractorID: contractor1(in lower case)
+  * Cost: Cost of the PO
+  */
+ function deleteStandardPO($UnitNumber, $ItemID, $OptionID, $ChoiceID, $ContractorID){
+ 	$sql = "DELETE FROM StandardPO " .
+ 			"WHERE UnitNumber='$UnitNumber' " .
+ 			"AND ItemID=$ItemID " .
+ 			"AND OptionID=$OptionID " .
+ 			"AND ChoiceID=$ChoiceID " .
+ 			"AND ContractorID='$ContractorID'";
+ 			
+	$result = executeSql($sql); 			
+ }
+ 
+ //---------------------------------------------------------------------
+ // Update functions related to multiple PO
+ //---------------------------------------------------------------------
+ /**
+  * Check and updte relation between UserSave table 
+  * and StandardPO table. This function should be 
+  * called everytime the user commit the save 
+  */
+ function handlePOIntegrity($unitNumber){
+ 	addStandardPOForUser($unitNumber);
+ 	// only delte PO if the user has already committed 
+ 	// in order to clear out the change user made
+	if (isCommittedBefore($unitNumber)){
+ 		deleteOutdateStandardPO($unitNumber);
+	}
+ }
+ 
+ /**
+  * Add new standard PO from data stored
+  * at UserSave table
+  * NOTE: PO is not generated if the cost is 0
+  */
+ function addStandardPOForUser($unitNumber){
+ 	$numOfContractor = getNumOfContractor();
+
+ 	$sql = "";
+ 	for ($i =0 ; $i < $numOfContractor ; $i++){
+ 		$sql = "INSERT INTO StandardPO 
+			(UnitNumber, ItemID, OptionID, ChoiceID, ContractorID, Cost, CreateDate)			
+			SELECT UnitNumber, ItemID, OptionID, ChoiceID, 'contractor$i', Contractor$i, NOW()
+			FROM UserSave WHERE 
+			UserSave.contractor$i != 0
+			AND UnitNumber='$unitNumber'
+			ON DUPLICATE KEY UPDATE Cost=Contractor$i";
+
+		$result = executeSql($sql);
+ 	}			
+ }
+ 
+ /**
+  * Delete all outdated standard PO for 
+  * a specific user
+  */
+ function deleteOutdateStandardPO($unitNumber){
+	$numOfContractor = getNumOfContractor();
+
+ 	$sql = "";
+ 	for ($i =0 ; $i < $numOfContractor ; $i++){
+ 		$sql = "DELETE FROM StandardPO " .
+ 				" WHERE " .
+ 				" UnitNumber='$unitNumber' " .
+ 				" AND ContractorID=\"contractor$i\"" . 
+ 				" AND (UnitNumber, ItemID, OptionID, ChoiceID, ContractorID) NOT IN " .
+ 				" (SELECT UnitNumber, ItemID, OptionID, ChoiceID, 'contractor$i'".
+ 					" FROM UserSave" .
+ 					" WHERE UnitNumber='$unitNumber'" .
+ 					" AND Contractor$i != 0)"; 	
+
+		$result = executeSql($sql);
+ 	}			
+ }
+ 
+ /**
+  * Get outdated standard PO
+  * Return: an array contains POID
+  */
+ function getOutdatedStandardPO($unitNumber){
+ 	
+	$numOfContractor = getNumOfContractor();
+	$resultSet = array();
+ 	$sql = "";
+ 	for ($i =0 ; $i < $numOfContractor ; $i++){
+	 	$sql = 	"SELECT POID " .
+	 			" FROM StandardPO " .
+	 			" WHERE UnitNumber='$unitNumber'  " .
+	 			" AND ContractorID=\"contractor$i\"" .
+	 			" AND (UnitNumber, ItemID, OptionID, ChoiceID, ContractorID) " .
+	 			" NOT IN  (" .
+	 				" SELECT UnitNumber, ItemID, OptionID, ChoiceID, 'contractor$i' " .
+	 				" FROM UserSave  " .
+	 				" WHERE UnitNumber='$unitNumber' " .
+	 				" AND Contractor$i != 0)";
+	 				
+	 	$result = executeSql($sql);
+	 	while ($row = mysql_fetch_array($result)){
+	 		array_push($resultSet, $row['POID']);
+	 	} 
+ 	}
+ 	return $resultSet;
+ }
+ 
+ /**
+  * Get missing standard PO which should be created according
+  * to the data from UserSave
+  * Return: 2D array 
+  * 	2nd level contains UnitNumber, ItemID, OptionID, ChoiceID, ContractorID, Cost 
+  */
+ function getMissingStandardPO($unitNumber){
+	$numOfContractor = getNumOfContractor();
+	$resultSet = array();
+ 	$sql = "";
+ 	for ($i =0 ; $i < $numOfContractor ; $i++){
+	 	$sql = 	"SELECT UserSave.UnitNumber, ItemID, OptionID, ChoiceID, 'contractor$i' AS ContractorID, Contractor$i AS Cost" .
+	 			" FROM UserSave , UserUpgradeOptionStatus" .
+	 			" WHERE UserSave.contractor$i  != 0 " .
+	 			" AND UserSave.UnitNumber = UserUpgradeOptionStatus.UnitNumber" .
+	 			" AND UserUpgradeOptionStatus.Commit = 1" .
+	 			" AND UserSave.UnitNumber='$unitNumber'  " .
+	 			" AND (UserSave.UnitNumber, ItemID, OptionID, ChoiceID, Contractor$i ) " .
+	 			" NOT IN  " .
+	 				"(SELECT  UnitNumber,ItemID,OptionID,ChoiceID,Cost  " .
+	 				" FROM StandardPO " .
+	 				" WHERE  UnitNumber='$unitNumber' " .
+	 				" AND ContractorID='contractor$i')";
+	 				
+//print "sql=$sql<BR>";	 				
+	 	$result = executeSql($sql);
+	 	while ($row = mysql_fetch_array($result)){
+	 		$optionResult = array();
+	 		$optionResult['UnitNumber'] = $row['UnitNumber'];
+	 		$optionResult['ItemID'] = $row['ItemID'];
+	 		$optionResult['OptionID'] = $row['OptionID'];
+	 		$optionResult['ChoiceID'] = $row['ChoiceID'];
+	 		$optionResult['ContractorID'] = $row['ContractorID'];
+	 		$optionResult['Cost'] = $row['Cost'];
+	 		array_push($resultSet, $optionResult);
+	 	} 
+ 	}
+ 	return $resultSet; 	
+ }
+
+ /**
+  * Print missing standard PO which should be created according
+  * to the data from UserSave
+  */
+function printMissingStandardPO(){
+	$sql = "Select UnitNumber from User";
+	$result = executeSql($sql);
+	
+	print "Find missing standard PO starts...<BR>";
+	$limit = 99999999;
+	for($i=0; $row = mysql_fetch_array($result); $i < $limit){
+		$missingPOArray = getMissingStandardPO($row['UnitNumber']);
+		if (sizeof($missingPOArray) > 0)	{
+			while ($missingOptionArray = array_pop($missingPOArray)){
+				print "Unit=" . $row['UnitNumber'] . "<BR>";
+				print "UnitNumber'=" . $missingOptionArray['UnitNumber'] . " ItemID=" . $missingOptionArray['ItemID'] .
+					" OptionID=" . $missingOptionArray['OptionID'] . " ChoiceID=" . $missingOptionArray['ChoiceID'] .
+					" ContractorID=" . $missingOptionArray['ContractorID'] . " Cost=" . $missingOptionArray['Cost'] .
+					"<BR>";				
+			}	
+		}
+	}		
+	print "Find missing standard PO ended.<BR>";
+}
+ 
+/**
+ * Print outdated standard PO
+ */
+function printOutdatedStandardPO(){
+	$sql = "Select UnitNumber from User";
+	$result = executeSql($sql);
+	
+	print "Find outdatd standard PO starts...<BR>";
+	$limit = 99999999;
+	for($i=0; $row = mysql_fetch_array($result); $i < $limit){
+		$outdatedPOArray = getOutdatedStandardPO($row['UnitNumber']);
+		if (sizeof($outdatedPOArray) > 0)	{
+			while ($POID = array_pop($outdatedPOArray)){
+				print "Unit=" . $row['UnitNumber'] . " ";
+				print "POID=$POID<BR>";				
+			}	
+		}
+	}		
+	print "Find outdated standard PO ended.<BR>";		
+}
+
+ /**
+  * Delete ALL Standard PO for a specific user
+  */
+ function deleteAllStandardPO($unitNumber){
+	$sql = "DELETE FROM StandardPO " .
+			" WHERE " .
+			" UnitNumber='$unitNumber' ";
+
+	$result = executeSql($sql); 				 
+ }
+ 
+ //---------------------------------------------------------------------
+ // Update functions related to POs
+ //---------------------------------------------------------------------
+ /**
+  * Update all PO for already committed User
+  */
+ function updateAllCommittedUser(){
+ 	global $db;
+ 		
+ 	print "in updateAllCommittedUser<BR>";
+ 	$sql =  "SELECT UnitNumber FROM UserUpgradeOptionStatus " .
+ 			" WHERE UserUpgradeOptionStatus.Commit = 1";
+ 	
+	$result = executeSql($sql);
+	
+	print "num rows=" . mysql_num_rows($result);
+	while ($row = mysql_fetch_array($result)){
+		print "running unit number=" . $row['UnitNumber'] . "<BR>\n";
+		flush(); 
+		handlePOIntegrity($row['UnitNumber']);
+	}
+ }
+ 
+ function removePOForUncommittedUser(){
+ 	$sql =  "SELECT Unit.UnitNumber, UserUpgradeOptionStatus.Commit  FROM Unit LEFT JOIN UserUpgradeOptionStatus " .
+ 			" ON UserUpgradeOptionStatus.UnitNumber = Unit.UnitNumber " .
+ 			" WHERE ISNULL(UserUpgradeOptionStatus.Commit)";
+ 	
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	
+	print "num rows=" . mysql_num_rows($result);
+	while ($row = mysql_fetch_array($result)){
+		
+		print "Deleteing ALL standard PO for unit number=" . $row['UnitNumber'] . " Commit=" . $row['Commit'] . "<BR>"; 	
+		deleteAllStandardPO($row['UnitNumber']);
+	} 	 	
+ }
+
+/**
+ * Update cost in Standard PO
+ * $updateSentPO boolean indicates updating Sent PO or not. If false,
+ * this method only updates non-sent PO  
+ */
+function updateStandardPOCost($optionID, $itemID, $contractorID, $unitType, $cost, $updateSentPO){
+	
+	$sql = 	" UPDATE StandardPO, Unit " .
+			" SET Cost=$cost " .
+			" WHERE OptionID=$optionID " .
+			" AND ItemID=$itemID " .
+			" AND ContractorID='$contractorID'" .
+			" AND StandardPO.UnitNumber = Unit.UnitNumber" .
+			" AND Unit.Model = '$unitType'";
+			
+	// if don't update Sent PO
+	if (!$updateSentPO){
+		$sql .= " AND Issued=0";	
+	} 	
+	
+//print "StandardPO SQL=$sql<BR>";	
+	$result = executeSql($sql);
+}
+
+/**
+ * Insert StandardPO if 1)User is committed 2)PO is not created before. 
+ * If StandardPO exists, this function updates the cost of the PO.
+ * If cost is 0, should we delete the PO?
+ */
+function insertUpdateStandardPOCost($optionID, $itemID, $contractorID, $unitType, $cost, $updateSentPO){
+	// update existent PO
+	updateStandardPOCost($optionID, $itemID, $contractorID, $unitType, $cost, $updateSentPO);
+	
+ 	$numOfContractor = getNumOfContractor();
+
+ 	$sql = "";
+ 	// no need to check updateSentPO for new insert StandardPO 
+ 	// because the new po always are not SENT before.
+// 	for ($i =0 ; $i < $numOfContractor ; $i++){
+ 		$sql = "INSERT INTO StandardPO 
+			(UnitNumber, ItemID, OptionID, ChoiceID, ContractorID, Cost, CreateDate)			
+			SELECT UserSave.UnitNumber, ItemID, OptionID, ChoiceID, '$contractorID', $cost, NOW()
+			FROM UserSave, UserUpgradeOptionStatus
+			WHERE UserSave.UnitNumber = UserUpgradeOptionStatus.UnitNumber
+			AND UserUpgradeOptionStatus.Commit = 1
+			AND UserSave." . ucfirst($contractorID) . "!= 0
+		 	AND ItemID=$itemID
+			AND OptionID=$optionID
+			AND (UserSave.UnitNumber, ItemID, OptionID, ChoiceID, '$contractorID') NOT IN
+			(select UnitNumber, ItemID, OptionID, ChoiceID, ContractorID
+			 FROM StandardPO
+			 WHERE ItemID=$itemID
+			 AND OptionID=$optionID
+			 AND ContractorID='$contractorID')";
+//echo "sql=$sql";		
+		$result = executeSql($sql);
+// 	}	
+}
+
+/**
+ * Update Cost in UserSave table
+ * 2 conditions. 
+ * 1. If updateSentPO is true, it'll always update the UserSave table
+ * 2. If don't update sent PO, only update UserSave which has not been issued.
+ * 
+ */
+function updateUserSaveCost($optionID, $itemID, $unitType, &$costArray, $updateSentPO){
+	$actualNumOfContractor = getNumOfContractor();
+	
+	// update all of them		
+	if ($updateSentPO){			
+		$sql = 	" UPDATE UserSave, Unit " .
+				" SET ";
+		
+		for ($i=0; $i < $actualNumOfContractor; $i++){
+			if ($i != 0){
+				$sql .= ",";	
+			}
+			$sql .= " contractor$i = " . $costArray[$i];
+		}		
+		
+		$sql .=	" WHERE OptionID=$optionID " .
+				" AND ItemID=$itemID " .
+				" AND Unit.Model = '$unitType'" .
+				" AND UserSave.UnitNumber = Unit.UnitNumber";
+
+//		print "sql=$sql<BR><BR>";						
+		$result = executeSql($sql);			
+	} else {
+		// Lock UserSave
+		// Go through each StandardPO for each Contractor
+		for ($i=0; $i < $actualNumOfContractor; $i++){
+			$contractorID = "contractor" . $i;
+			$cost = $costArray[$i];
+					
+			$sql = "DROP TABLE UserSaveTmp";
+			$result = executeSql($sql, false);		
+			
+			$sql =  " CREATE TEMPORARY TABLE UserSaveTmp (" .	
+	  				" `UnitNumber` int(11) NOT NULL default '0'," .
+	  				" `OptionID` int(11) NOT NULL default '0'," .
+	  				" `ItemID` int(11) NOT NULL default '0'," .
+	  				" `Issued` int(2) NOT NULL default '0')";
+	  
+			$result = executeSql($sql);
+	  		
+			$sql =	" INSERT INTO UserSaveTmp " .
+					" SELECT UserSave.UnitNumber, UserSave.OptionID, UserSave.ItemID, StandardPO.Issued" .
+					" FROM UserSave LEFT JOIN StandardPO " .
+					" ON UserSave.UnitNumber = StandardPO.UnitNumber" .
+					" AND UserSave.OptionID = StandardPO.OptionID" .
+					" AND UserSave.ItemID = StandardPO.ItemID" .
+					" AND StandardPO.ContractorID = '$contractorID'," .
+					" Unit" .
+					" WHERE " .
+					" Unit.UnitNumber = UserSave.UnitNumber" .
+					" AND Unit.Model = '$unitType'" .
+					" AND UserSave.OptionID = $optionID" .
+					" AND UserSave.ItemID = $itemID";
+					
+			$result = executeSql($sql);
+	
+//			$sql = "SELECT * from UserSaveTmp";
+//			$result = executeSql($sql);
+//			
+//			print "<BR><BR>contractor=$contractorID<BR>";
+//			while ($row = mysql_fetch_array($result)){
+//				print "UnitNumber= " . $row['UnitNumber'] . " OptionID=" . $row['OptionID'] . " ItemID=" . $row['ItemID'] . " Issued=" . $row['Issued'] . "<BR>";	
+//			}		
+			// only update UserSave row where the PO has not been issued
+			$sql = "UPDATE UserSave " .
+					" SET $contractorID=$cost" .
+					" WHERE (UnitNumber, OptionID, ItemID) " .
+					" IN (SELECT UnitNumber, OptionID, ItemID" .
+					" FROM UserSaveTmp" .
+					" WHERE Issued <> 1) ";
+//			print "sql=$sql<BR>";					
+			$result = executeSql($sql);
+		}		
+	}	
+}
+
+/**
+ * Reset all PO's issued information
+ */
+function resetAllIssuedPO(){
+	$sql = "update StandardPO " .
+			" SET Issued=0," .
+			" IssuedDate=0," .
+			" POIssuedID = -1," .
+			" PONumber = ''";
+			
+	$result = executeSql($sql);
+
+	$sql = "update NonStandardPO " .
+			" SET Issued=0," .
+			" IssuedDate=0," .
+			" POIssuedID = -1, ".
+			" PONumber = ''";
+			
+	$result = executeSql($sql);
+
+	$sql = "Delete FROM POIssuedRecord";
+	$result = executeSql($sql);
+	
+	$sql = "ALTER TABLE POIssuedRecord AUTO_INCREMENT =1";
+	$result = executeSql($sql);	
+}
+
+/**
+ * Calculate total cost for a unit
+ */
+function calculatePOCostForUser($unitNumber){
+	$sql = "SELECT Cost FROM StandardPO WHERE UnitNumber='$unitNumber'" .
+			" UNION " .
+			" SELECT Cost FROM NonStandardPO WHERE UnitNumber='$unitNumber' ";
+
+	$sql = "SELECT Cost FROM StandardPO WHERE UnitNumber='$unitNumber'";
+			
+	$result = executeSql($sql);
+	$totalCost= 0; 
+	while ($row = mysql_fetch_array($result)){
+		if ($row['Cost'] > -9000){
+			$totalCost += $row['Cost']; 				
+		}	
+	}
+
+	$sql = "SELECT Cost FROM NonStandardPO WHERE UnitNumber='$unitNumber'";
+			
+	$result = executeSql($sql);
+	while ($row = mysql_fetch_array($result)){
+		if ($row['Cost'] > -9000){
+			$totalCost += $row['Cost']; 				
+		}	
+	}
+
+	return $totalCost;
+}
+
+//---------------------------------------------------------------------
+// Create PO Helper Functions
+//---------------------------------------------------------------------
+/**
+ * Create a new PO issue record, and return the PO issue id
+ */
+function createPOIssuedRecord(){
+	$sql = "INSERT INTO POIssuedRecord SET SendDate=NOW()";
+	executeSql($sql);
+	
+	$sqlSELECT = " SELECT POIssuedID " .
+			" FROM POIssuedRecord " .
+			" ORDER BY POIssuedID DESC" .
+			" LIMIT 1";
+	$result = 	executeSql($sqlSELECT);
+	
+	$row = mysql_fetch_array($result);
+	$invoiceID = $row[0];
+	return $invoiceID;
+}
+/**
+ * Mark given POs to be issued
+ * $mysql_result is the result comes from mysql 
+ * which contains POID, and POType
+ * Return the newly created PO Issued ID 
+ */
+ function issuePO($mysql_result){
+ 	// go through the whole list, and mark each
+ 	// PO to be issued
+ 	$POIssuedID = createPOIssuedRecord();
+ 	while ($row = mysql_fetch_array($mysql_result)){
+ 		$POID = $row['POID'];
+ 		$POType = $row['POType'];
+ 		$unitNumber = $row['UnitNumber'];
+ 		$contractorID = $row['ContractorID'];
+ 		$contractorID = ereg_replace("[Cc]ontractor", "", $contractorID);
+ 		$projectName = get_project_short_name();
+ 		$PONumber = $projectName . "-" . $unitNumber . "-" . $contractorID;
+ 		$sql =  "UPDATE " . $POType . 
+ 				" SET Issued=1," .
+ 				" IssuedDate=NOW()," .
+ 				" PONumber='$PONumber'," .
+ 				" POIssuedID=$POIssuedID" .
+ 				" WHERE POID = $POID";
+		$result = executeSql($sql); 				 			
+ 	}	
+ 	return $POIssuedID;
+ }
+ 
+?>

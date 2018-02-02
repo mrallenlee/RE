@@ -1,0 +1,112 @@
+<?
+include "main_include.phtml";
+// expect
+// table : "City", "Agent"
+// set the security level to be 2 for this page
+check_auth(2);
+
+// set default action
+if (!isSet($action))
+{
+	$action = "edit";
+}
+
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<H3><?= get_project_name($PHP_SELF); ?> -- Manage List</H3>
+
+<?
+
+$sql = "SHOW TABLES";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+?>
+	<H5>Choose the list to modify</H5>
+	<FORM METHOD="POST" ACTION="<?= $PHP_SELF;?>">
+		<SELECT NAME="table" onChange="submit()">
+		<OPTION VALUE="">Choose List</OPTION>
+<?
+while ($row = mysql_fetch_array($result)) 
+{
+	$pos = strpos($row[0], "_list");
+	if ($pos > 0)
+	{
+			echo "<OPTION VALUE=\"" . substr($row[0], 0, $pos)  . "\">" . substr($row[0], 0, $pos) . "</OPTION>\n";
+	}
+}
+?>
+		</SELECT>
+	</FORM>
+<?
+
+if (!isSet($table))
+{
+	die();
+}
+
+$sql = "SELECT " . $table . " FROM " . $table . "_list ORDER BY " . $table;
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+?>
+<BR><BR>
+	<H4><?= $table; ?> Information</H4>
+
+	<FORM NAME="editForm" METHOD="POST" ACTION="./updateGenericTableInfo.phtml">
+		<INPUT TYPE="HIDDEN" NAME="action" 	VALUE="<?= $action; ?>">
+		<INPUT TYPE="HIDDEN" NAME="table" 	VALUE="<?= $table; ?>">
+		<INPUT TYPE="HIDDEN" NAME="forward"	VALUE="<?= $PHP_SELF; ?>?action=<?= $action; ?>&table=<?= $table; ?>">
+		<TABLE>
+			<TR  CLASS="head">
+				<TD WIDTH="400"><?= $table; ?></TD>
+				<TD>Action</TD>
+			</TR>
+<?
+	while ($row = mysql_fetch_array($result)) 
+	{
+			displayMouseOverTR();
+?>
+				<? // becuase PHP doesn't var to have dot inside, so use encode_dot, and decode_dot to encode the dot ?>
+				<TD><? display_text($table,"", FALSE,50,FALSE,"","",FALSE, 50,encode_dot(urlencode($row[$table]))); ?></TD>
+				<TD><A HREF="./updateGenericTableInfo.phtml?action=delete&table=<?= $table; ?>&record=<?= urlencode(encode_dot($row[$table])); ?>&forward=<?
+				echo urlencode($PHP_SELF . "?action=$action&table=$table");				
+				?>">Del</A></TD>
+			</TR>
+<?
+	}
+	
+	if ($action == "display")
+	{
+?>
+			<TR>
+				<TD><BR><INPUT TYPE=BUTTON  CLASS="blank" VALUE="Edit" onClick="javascript:window.location='./genericTableInfo.phtml?action=edit&table=<?= $table; ?>'"></TD>
+			</TR>			
+<?
+	}
+	else
+	{
+?>
+			<TR>
+				<TD><BR><A HREF="javascript:document.forms['editForm'].submit()">Submit</A></TD>
+			</TR>			
+<?
+	}
+?>				
+	</FORM>
+
+			<TR>
+				<TD><BR><BR><H4>Insert new <?= $table; ?></H4></TD>
+			</TR>
+	<FORM NAME="addForm" METHOD="POST" ACTION="./updateGenericTableInfo.phtml">
+		<INPUT TYPE="HIDDEN" NAME="action" VALUE="add">
+		<INPUT TYPE="HIDDEN" NAME="table" VALUE="<?= $table; ?>">
+		<INPUT TYPE="HIDDEN" NAME="forward"	VALUE="<? echo urlencode($PHP_SELF . "?action=$action&table=$table"); ?>">
+			<TR>
+				<TD  CLASS="blank" ALIGN="CENTER"><?= $table; ?> Data</TD>
+			</TR>					
+			<TR CLASS=blank>
+				<TD ALIGN="CENTER"><INPUT TYPE="TEXT" SIZE="50" NAME="Data"></TD>
+				<TD><A href="javascript:document.forms['addForm'].submit()">Add</A></TD>
+			</TR>		
+	</FORM>
+	</TABLE>
+</BODY>
+</HTML>

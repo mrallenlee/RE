@@ -1,0 +1,40 @@
+<?
+
+$not_include_javascript=1;
+include "../admin/main_include.phtml";
+
+// This script creates main page to edit PDI general information and 
+// PDI defect list.
+
+// display header
+header("Content-type: application/csv");
+header("Content-Disposition: attachment; filename=file.csv");
+header("Pragma: no-cache");
+header("Expires: 0");
+
+// edit page for "PDI general information"
+if ($table_name == "Unit")
+{
+
+
+	$sql	= "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, 
+			date_format(PDIDate, '%e %b %Y') As PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
+			date_format(OccupancyDate, '%e %b %Y') As OccupancyDate, OccupancyTime, OccupancyNotified, 
+			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff
+			FROM $table_name
+			LEFT JOIN User
+			ON ($table_name.UserID = User.UserID)
+			ORDER BY UnitNumber";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+
+
+	print "Unit,Purchaser,PDI Date,PDI Time,PDI Notified,Occupancy Date,Occupancy Time,Occupancy Notified,QA Done,PDI Done,PDI Sign Off\n";
+
+	while ($row = mysql_fetch_array($result))
+	{
+                  print $row['UnitNumber'] .",\"". $row['PurchaserName'] ."\",". $row['PDIDate'] .",". $row['PDITime'] .",". $row['PDINotified'] .",". $row['OccupancyDate'] .",". $row['OccupancyTime'] .",". $row['OccupancyNotified'] .",". $row['QADone'] .",". $row['PDIDone'] .",". $row['PDISignOff'] . "\n";
+
+	}
+}
+?>

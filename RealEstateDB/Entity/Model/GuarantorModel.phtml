@@ -1,0 +1,128 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for guarantor
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ include_once "Entity/Model/PersonModel.phtml";
+ 
+ class GuarantorModel extends EntityModel {
+ 	function GuarantorModel() {}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT Guarantor " .
+ 				" SET PersonID=" . $arguments['PersonID'] . 
+ 				" , CreatedDate=NOW()";
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+ 		return mysql_insert_id();
+ 	
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+ 		print "in GuarantorModel updateAll";
+ 	
+ 		$personArguments = $this->retrieveArguments("Person", $arguments); 		
+ 		if (sizeof($personArguments) > 0){	 	
+	 		$personModel = new PersonModel();
+	 		$personID = $personModel->addAll($personArguments);
+ 			$arguments['PersonID'] = $personID;
+ 		} else {
+ 			$arguments['PersonID'] = -1; 			
+ 		}
+ 	 		
+ 		return $this->add($arguments);	
+ 	}
+
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE Guarantor " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE GuarantorID = " . $arguments['GuarantorID'];
+ 		$result = executeSql($sql);
+ 		return $arguments['GuarantorID'];
+ 	}
+	
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){
+// 		print "in GuarantorModel updateAll";
+ 		 		
+ 		$personArguments = $this->retrieveArguments("Person", $arguments);
+ 		$personModel = new PersonModel();
+ 		$personID = $personModel->updateAll($personArguments);
+ 		$result = $this->update($arguments);
+ 		return $result;
+ 	}
+ 	
+	/**
+	 * Delete Record
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		if ($arguments['GuarantorID'] > 0){
+ 			$sql 	= " DELETE FROM Guarantor " .
+ 				  		" WHERE GuarantorID = " . $arguments['GuarantorID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	
+ 	}
+
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+ 	function deleteAll(&$arguments){
+		$result = true;
+		
+ 		$personArguments = $this->retrieveArguments("Person", $arguments); 		
+ 		if (isSet($addressArguments['PersonID'])){
+ 			// deal with address
+ 			$personModel = new PersonModel();
+ 			$result = $result && $personModel->deleteAll($personArguments);
+ 		}
+ 		
+ 		if ($result){
+	 		$result = $this->delete($arguments); 		
+ 		}
+ 		
+ 		return $result; 	 	
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql(&$arguments){
+		// handle check box special case
+		if (isset($arguments['IDProvided'])){
+			$arguments['IDProvided'] = 1;
+		}
+		$sql =  "CompanyName=\"" . $arguments['CompanyName'] . "\"" .
+ 				" , UserID =\"" .  $arguments['UserID'] . "\"". 
+ 				" , IDProvided  =\"" .  $arguments['IDProvided'] . "\"" . 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 						
+		return $sql;  				
+	}
+ 	
+ }
+?>

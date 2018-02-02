@@ -1,0 +1,84 @@
+<?
+
+include "main_include.phtml";
+# action - delete_image/or empty
+
+/* 
+
+$userfile - The temporary filename in which the uploaded file was stored on the server machine. 
+
+$userfile_name - The original name or path of the file on the sender's system. 
+
+$userfile_size - The size of the uploaded file in bytes. 
+
+$userfile_type - The mime type of the file if the browser provided this information. An example would be "image/gif". 
+ 
+*/
+
+function goto_main_page($table_name, $user_message, $UserID, $mode, $SectionID, $SubsectionID, $ItemID, $OptionID, $ChoiceID)
+{
+//	if ($table_name)
+?>
+	<script language="JavaScript">
+		window.location="file_management.phtml?table_name=<?echo $table_name?>&user_message=<?echo urlencode($user_message)?>&<?
+		if ($table_name == "User") 
+			echo "UserID=". $UserID . "&mode=$mode"; 
+		elseif ($table_name == "Options") 
+			echo "SectionID=$SectionID&mode=$mode&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=". $OptionID; 
+		elseif ($table_name == "Choice") 
+			echo "SectionID=$SectionID&mode=$mode&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=". $OptionID ."&ChoiceID=". $ChoiceID;?>";
+	</script>
+
+<?
+}
+
+
+
+if ($action == "delete-image" && $table_name == "Options"){
+
+	
+	// Duplicate code with line 230, 231
+	$fileName = "../images/". $OptionID . "_-9999";
+	if (is_file($fileName)){
+		$result = unlink($fileName);
+	}
+		
+	back();
+}
+		
+
+
+
+
+if (!isset($File) || $File == "none")
+{
+	$user_message=$user_message ."[ <font color=#009900><b>Please choose file for uploading.</b></font> ]";
+	goto_main_page($table_name, $user_message, $UserID, $mode, $OptionID, $ChoiceID);
+}
+
+if ($table_name == "Options" || $table_name == "Choice")
+{
+	$dir = "../images/";
+	
+	if ($table_name == "Options")
+		$filename = $OptionID. "_-9999";
+	elseif ($table_name == "Choice")
+		$filename = $OptionID ."_". $ChoiceID;
+		
+	if (!copy($File, $dir.$filename))
+		$user_message = $user_message ."[ <font color=#009900><b>Unable to copy ". $File_name ." to server.</b></font> ]";
+	else {
+		if ($table_name == "Choice"){
+			// update DB
+			$sql = "UPDATE " . $table_name . 
+					" SET ImageName=\"" . $filename . "\" WHERE " .
+					" ChoiceID=$ChoiceID";
+			$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());	
+		}
+		$user_message = $user_message ."[ <font color=#009900><b>File UPLOADED Successfully.</b></font> ]";
+	}
+}
+
+goto_main_page($table_name, $user_message, $UserID, $mode, $SectionID, $SubsectionID, $ItemID, $OptionID, $ChoiceID);
+
+?>

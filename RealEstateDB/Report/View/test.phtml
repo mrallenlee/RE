@@ -1,0 +1,18 @@
+<?
+include_once "../../config/config.phtml";
+include_once "../../main_include.phtml";
+include_once "RptDealStatusView.phtml";
+
+
+?>
+
+<html>
+	<body>
+<?	
+print_top_frame($PHP_SELF, "../../"); 
+$view = new RptDealStatusView();
+print $view->getRptHTML();
+print $view->getRptJS();
+?>
+	</body>
+</html>

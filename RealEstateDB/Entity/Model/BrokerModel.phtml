@@ -1,0 +1,147 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for additional purchaser
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ include_once "Entity/Model/PersonModel.phtml";
+ include_once "main_include.phtml";
+ 
+ class BrokerModel extends EntityModel {
+ 	function BrokerModel() {}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT Broker " .
+ 				" SET PersonID=" . $arguments['PersonID'] . 
+ 				" , CreatedDate=NOW()";
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+		return mysql_insert_id();; 				
+ 	
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+ 	
+ 		$personArguments = $this->retrieveArguments("Person", $arguments); 		
+ 		if (sizeof($personArguments) > 0){	 	
+	 		$personModel = new PersonModel();
+	 		$personID = $personModel->addAll($personArguments);
+ 			$arguments['PersonID'] = $personID;
+ 		} else {
+ 			$arguments['PersonID'] = -1; 			
+ 		}
+ 	 		
+ 		return $this->add($arguments);
+ 	}
+
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE Broker " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE BrokerID = " . $arguments['BrokerID'];
+ 		$result = executeSql($sql);
+		return $arguments['BrokerID'];
+ 	}
+	
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){	 		
+ 		$personArguments = $this->retrieveArguments("Person", $arguments);
+ 		$personModel = new PersonModel();
+ 		$personModel->handle($personArguments);
+
+ 		$result = $this->update($arguments);
+ 		return $result;
+ 	}
+ 	
+	/**
+	 * Delete Record
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		if ($arguments['BrokerID'] > 0){
+ 			$sql 	= " DELETE FROM Broker " .
+ 				  		" WHERE BrokerID = " . $arguments['BrokerID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	
+ 	}
+
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+ 	function deleteAll(&$arguments){
+		$result = true;
+		
+ 		$personArguments = $this->retrieveArguments("Person", $arguments); 		
+ 		if (isSet($personArguments['PersonID'])){
+ 			// deal with address
+ 			$personModel = new PersonModel();
+ 			$result = $result && $personModel->deleteAll($personArguments);
+ 		}
+ 		
+ 		if ($result){
+	 		$result = $this->delete($arguments); 		
+ 		}
+ 		
+ 		return $result; 	 	
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 
+	function getColumnSql(&$arguments){
+		// handle check box special case
+		$sql =  "BrokerType=\"" . $arguments['BrokerType'] . "\"" .
+ 				" , DefaultTotalCommissionPercentage  =\"" .  $arguments['DefaultTotalCommissionPercentage'] . "\"" . 
+ 				" , Default1stCommissionPercentage  =\"" .  $arguments['Default1stCommissionPercentage'] . "\"" . 
+ 				" , Default2ndCommissionPercentage  =\"" .  $arguments['Default2ndCommissionPercentage'] . "\"" . 
+ 				" , Default3rdCommissionPercentage  =\"" .  $arguments['Default3rdCommissionPercentage'] . "\"" . 
+ 				" , Default4thCommissionPercentage  =\"" .  $arguments['Default4thCommissionPercentage'] . "\"" . 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 						
+		return $sql;  				
+	}*/
+	
+	function getColumnSql(&$arguments){
+		// handle check box special case
+		$sql =  "BrokerType=\"" . $arguments['BrokerType'] . "\"" .
+ 				" , DefaultTotalCommission  =\"" .  $arguments['DefaultTotalCommission'] . "\"" . 
+ 				" , DefaultTotalCommissionType  =\"" .  $arguments['DefaultTotalCommissionType'] . "\"" . 
+ 				" , DefaultCommission1 =\"" .  $arguments['DefaultCommission1'] . "\"" . 
+ 				" , DefaultCommission1Type =\"" .  $arguments['DefaultCommission1Type'] . "\"" . 
+ 				" , DefaultCommission2  =\"" .  $arguments['DefaultCommission2'] . "\"" . 
+ 				" , DefaultCommission2Type =\"" .  $arguments['DefaultCommission2Type'] . "\"" . 
+ 				" , DefaultCommission3  =\"" .  $arguments['DefaultCommission3'] . "\"" . 
+ 				" , DefaultCommission3Type =\"" .  $arguments['DefaultCommission3Type'] . "\"" . 
+ 				" , DefaultCommission4  =\"" .  $arguments['DefaultCommission4'] . "\"" . 
+ 				" , DefaultCommission4Type =\"" .  $arguments['DefaultCommission4Type'] . "\"" . 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 						
+		return $sql;  				
+	}
+	
+	
+ 	
+ }
+?>

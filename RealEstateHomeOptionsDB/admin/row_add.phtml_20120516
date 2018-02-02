@@ -1,0 +1,423 @@
+<?
+include "main_include.phtml";
+
+// This file adds records to the database. It is called when
+// the admin user clicks on the Add button.
+
+
+if (PO_SYSTEM_ENABLED && $POUpdateType != "updateNoPO"){
+	include_once "PO/POAction.phtml";	
+}
+
+
+?>
+<html>
+
+<head>
+<title>Admin</title>
+
+<script language="javascript">
+
+function redirect_url(url)
+{
+	location.href=url;
+}
+
+</script>
+
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+
+<font face="Arial,Verdana,Helvetica" size="3">
+
+
+
+<?
+
+$user_message = "[ <font color=#CC0000><b>Error:</b> ";
+
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+// insert new record (used for table: Section, Subsection, Item, and Options)
+if ($table_name == "Section" || $table_name == "Subsection" || $table_name == "Item" || $table_name == "Options")
+{
+	if ($Name)
+	{
+		// fix bad characters
+		$Name = preg_replace($find, $replace, $Name);
+		
+		if ($Description)
+		{
+			$Description = preg_replace($find, $replace, $Description);
+		}
+		elseif ($Choice)
+		{
+			$Choice = preg_replace($find, $replace, $Choice);
+		}
+	}
+
+	// insert record if the Name exists
+	if ($Name)
+	{
+		$sql 	= "INSERT INTO $table_name (";
+		if ($table_name == "Subsection")	$sql .= "SectionID,";
+		elseif ($table_name == "Item")		$sql .= "SubsectionID,";
+		$sql	.= "Name,";
+		if ($table_name == "Options")		$sql .= "Choice";
+		else					$sql .= "Description";
+		$sql	.= ")	VALUES (";
+		if ($table_name == "Subsection")	$sql .= "$SectionID,";
+		elseif ($table_name == "Item")		$sql .= "$SubsectionID,";
+		$sql	.= "			'$Name',";
+		if ($table_name == "Options")		$sql .= "'$Choice'";
+		else					$sql .= "'$Description'";
+		$sql	.= ")";
+		
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		
+		$user_message = "[ <font color=#009900><b>Record entered successfully.</b></font> ]<br>\n<br>";
+	}
+	
+	else	$user_message .= "<i>Name</i> field was empty. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+}
+
+// insert new record (used for table: Item_Options)
+elseif ($table_name == "Item_Options")
+{
+	// insert record if the ItemID and OptionID exist
+	if ($ItemID && $OptionID)
+	{
+		if (is_array($OptionID)) {
+			foreach ($OptionID as $oneOption) {
+				$sql 	= "INSERT INTO $table_name (
+								ItemID,
+								OptionID
+								)
+						VALUES (
+								$ItemID,
+								$oneOption
+								)";
+				$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		
+				if (mysql_error())	$user_message .= "Record already exists. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+				else			$user_message = "[ <font color=#009900><b>Record entered successfully.</b></font> ]<br>\n<br>";
+			}
+		}
+	}
+	
+	else	$user_message .= "Entry was invalid. Record was NOT entered.</b></font> ]<br>\n<br>";
+}
+
+// insert new record (used for table: Choice)
+elseif ($table_name == "Choice")
+{
+	// insert record if the Name exists
+	if ($Name && $OptionID)
+	{
+		// fix bad characters
+		$Name = preg_replace($find, $replace, $Name);
+		
+		$sql 	= "INSERT INTO $table_name (
+						OptionID,
+						Name
+						)
+				VALUES (
+						$OptionID,
+						'$Name'
+						)";
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+
+		$user_message = "[ <font color=#009900><b>Record entered successfully.</b></font> ]<br>\n<br>";
+	}
+	
+	else
+	{
+		$user_message .= "<i>Name</i> field was empty <font size=1><u>OR</u></font> Entry was invalid. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+	}
+}
+
+// insert new record (used for table: Price)
+elseif ($table_name == "Price")
+{
+	$actualNumOfContractor = getNumOfContractor();
+	// insert record if all required fields are present
+	if ($OptionID && $ItemID)
+	{
+		// check whether to update already sent PO 
+		$updateSentPO = $POUpdateType == "updateSentPO";
+		// go through each unit type
+		for ($i = 0; $i < count($UnitType_array);$i++)
+		{
+			// use convertPriceConstantToNum to convert "INFO", "STANDARD", "ZERO" 
+			// to a constant number to store in database
+			$Price_array[$i] = convertPriceConstantToNum($Price_array[$i]);
+			$average_mark_up_array[$i] 		= intval($average_mark_up_array[$i]);
+			$CreditOfPurchaserMarkUpPercentage	= intval($CreditOfPurchaserMarkUpPercentage);
+			$total_cost_array[$i] 			= intval($total_cost_array[$i]);
+			$credit_of_purchaser_array[$i] 	= intval($credit_of_purchaser_array[$i]);
+			$credit_of_development_array[$i]= intval($credit_of_development_array[$i]);
+//			$NoDisplayIfNoPackage   		= intval($NoDisplayIfNoPackage);
+			if (!isset($NoDisplayIfNoPackage) || $NoDisplayIfNoPackage == ""){
+				$NoDisplayIfNoPackage = 0;
+			}else {
+				$NoDisplayIfNoPackage = 1;
+			}				
+								
+			$sql 	= "REPLACE INTO $table_name (
+							OptionID,
+							ItemID,
+							UnitType,
+							Price," .
+							"PackageID," .
+							"NoDisplayIfNoPackage," . 							
+							"AverageMarkUpPercentage," .
+							"TotalCost," .
+							"CreditOfPurchaser," .
+							"CreditOfPurchaserMarkUpPercentage, " .
+							"CreditOfDevelopment";
+							
+			for ($j=0; $j < $actualNumOfContractor; $j++)
+			{
+				$sql = $sql . ", contractor" . $j . ", Contractor" . $j . "MarkUpPercentage";
+			}
+			$sql = $sql . ") VALUES (
+							$OptionID,
+							$ItemID,
+							'" . urldecode($UnitType_array[$i]) . "',
+							$Price_array[$i]," .
+							$PackageID . "," .
+							$NoDisplayIfNoPackage .	"," . 
+							$average_mark_up_array[$i] .",".
+							$total_cost_array[$i] . "," . 
+							$credit_of_purchaser_array[$i] . "," . 
+							$CreditOfPurchaserMarkUpPercentage  . "," .
+							$credit_of_development_array[$i] ;
+
+
+
+			$costArray = array();
+			for ($j=0; $j < $actualNumOfContractor; $j++)
+			{
+				if (${"contractor_" . $j . "_array"}[$i] == "")
+				{	// set value to be 0 if there is no value
+					$sql = $sql . ", 0" ;
+					$costArray[$j] = 0;
+				}
+				else
+				{
+					$sql = $sql . ", " . convertPriceConstantToNum(${"contractor_" . $j . "_array"}[$i]);
+					$costArray[$j] = convertPriceConstantToNum(${"contractor_" . $j . "_array"}[$i]);
+				}
+				if (${"Contractor" . $j . "MarkUpPercentage"} == ""){
+					// -1 is the default value of ContractorNMarkUpPercentage
+					$sql = $sql . ", -1" ;	
+				} else {
+					$sql = $sql . ", " . ${"Contractor" . $j . "MarkUpPercentage"} ;						
+				}
+			}
+
+			$sql = $sql . ")";
+
+			$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+						
+			// update PO if PO system is enabled
+			if ( PO_SYSTEM_ENABLED && $POUpdateType != "updateNoPO"){
+				// go through all the contractor value. 
+				// update the UserSave table as well
+				updateUserSaveCost($OptionID, $ItemID, urldecode($UnitType_array[$i]), 
+									$costArray, $updateSentPO);
+				
+				
+				// go through each contractor and update cost of PO
+				for ($j=0; $j < $actualNumOfContractor; $j++)
+				{
+					$cost = ${"contractor_" . $j . "_array"}[$i];
+					// only update PO if the value has been changed
+					// comment out in order to make the interface easier to understand
+					// need to check the performance 
+//					if ($cost != ${"contractor_" . $j . "_original_array"}[$i]){
+						// insert and update standard PO						
+						insertUpdateStandardPOCost($OptionID, $ItemID, "contractor$j", urldecode($UnitType_array[$i]), 
+											convertPriceConstantToNum($cost), $updateSentPO);
+//					}
+				}				
+			}
+		}
+
+		$user_message = "[ <font color=#009900><b>Records updated successfully.</b></font> ]<br>\n<br>";
+	}
+	
+	else
+	{
+		$user_message .= "Invalid Item and Option. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+	}
+}
+
+// insert new record (used for table: UnitType)
+elseif ($table_name == "UnitType")
+{
+	// insert record if the Name exists
+	if ($Type)
+	{
+		// fix bad characters
+		$Type = preg_replace($find, $replace, $Type);
+		
+		$sql 	= "REPLACE INTO $table_name (
+						Type
+						)
+				VALUES (
+						'" . urldecode($Type) . "'
+						)";
+		$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		$user_message = "[ <font color=#009900><b>Record entered successfully.</b></font> ]<br>\n<br>";
+	}
+
+	else
+	{
+		$user_message .= "<i>Type</i> field was empty. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+	}
+}
+
+// insert new record (used for table: UserOption)
+elseif ($table_name == "UserOption")
+{
+	// insert record if the Name exists
+	if ($UserOptionDesc)
+	{
+		// fix bad characters
+		$UserOptionDesc = preg_replace($find, $replace, $UserOptionDesc);
+		
+		$UserOptionPrice = intval($UserOptionPrice);
+		
+		$sql 	= "REPLACE INTO $table_name (
+						UserID,
+						Description,
+						Price
+						)
+				VALUES (
+						$UserID,
+						'$UserOptionDesc',
+						$UserOptionPrice
+						)";
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+echo "sql = " . $sql;
+
+		if (mysql_error())	$user_message .= "Record already exists. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+		else			$user_message = "[ <font color=#009900><b>Record entered successfully.</b></font> ]<br>\n<br>";
+	}
+}
+
+// insert new record (used for table: UnitType)
+elseif ($table_name == "User")
+{
+	// fix bad characters
+	$LastName = preg_replace($find, $replace, $LastName);
+	$FirstName = preg_replace($find, $replace, $FirstName);
+	$Login = strtolower($Login);
+	if (!is_numeric($UnitNumber))
+	{
+		$UnitNumber = intval($UnitNumber);
+	}
+	$Address = preg_replace($find, $replace, $Address);
+	$PostalCode = preg_replace($find, $replace, $PostalCode);
+	$City = preg_replace($find, $replace, $City);
+	$Country = preg_replace($find, $replace, $Country);
+	$PhoneNumber = preg_replace($find, $replace, $PhoneNumber);
+	$Email = preg_replace($find, $replace, $Email);
+	$Note = preg_replace($find, $replace, $Note);
+	
+	// insert record if the Name exists
+	if ($Login && $Passwd && $FirstName && $LastName && $Login == preg_replace($find, $replace, $Login) && $Passwd == preg_replace($find, $replace, $Passwd))
+	{
+		$sql 	= "INSERT INTO $table_name (
+							FirstName,
+							LastName,
+							Login,
+							Passwd,
+							UnitNumber,
+							UnitType,
+							Address,
+							PostalCode,
+							City,
+							Country,
+							PhoneNumber,
+							Email,
+							Note
+						)
+				VALUES (
+							'$FirstName',
+							'$LastName',
+							'$Login',
+							'$Passwd',
+							$UnitNumber,
+							'$UnitType',
+							'$Address',
+							'$PostalCode',
+							'$City',
+							'$Country',
+							'$PhoneNumber',
+							'$Email',
+							'$Note'
+						)";
+		$result = mysql_query($sql); // or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+
+		if (mysql_error())	$user_message .= "A record with that <i>Login</i> already exists. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+		else			$user_message = "[ <font color=#009900><b>Record entered successfully.</b></font> ]<br>\n<br>";
+	}
+	
+	else
+	{
+		$user_message .= "Either <i>Last Name</i>, <i>First Name</i>, <i>Login</i>, or <i>Password</i> field was empty or contained an invalid character. <b>Record was NOT entered.</b></font> ]<br>\n<br>";
+	}
+}
+
+// fix the query string that's going to be passed back
+$query_s = $QUERY_STRING;
+if ($table_name == "Section")	$query_s = str_replace("&SectionID=" . $SectionID, "", $query_s);
+elseif ($table_name == "Subsection")	$query_s = str_replace("&SubsectionID=" . $SubsectionID, "", $query_s);
+elseif ($table_name == "Item_Options")	$query_s = str_replace("&OptionID=" . $OptionID, "", $query_s);
+elseif ($table_name == "UserOption")	$query_s = "table_name=User&UserID=$UserID";
+elseif ($table_name == "Price")			$query_s = "table_name=$table_name&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID";
+
+if ($from == "User" || $table_name == "User" || $table_name == "UserSave")
+{
+	$goto = "display_user.phtml";
+	$query_s .= "&user_message=" . urlencode($user_message);
+}
+elseif ($table_name == "UserOption")
+{
+	$goto = "row_edit.phtml";
+}
+else
+{
+	$goto = "display_table.phtml";
+	$query_s .= "&user_message=" . urlencode($user_message);
+}
+
+?>
+
+<script language="javascript">
+
+	redirect_url("<?echo $goto;?>?<?echo $query_s;?>");
+
+</script>
+
+
+
+</font>
+
+</body>
+
+</html>

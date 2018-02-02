@@ -1,0 +1,106 @@
+<?php
+include_once "../main_include.phtml";
+
+// Ajax Utility classes
+Class AjaxUtil {
+  // call sql
+  function doSql($sql) {
+		// Connecting, selecting database
+//		$link = mysql_connect('localhost', 'yml','yml');
+//		mysql_select_db('yml');
+
+		// Performing SQL query
+//		$result = mysql_query($sql)  or die('Query failed: ' . mysql_error());
+		$result = executeSql($sql)  or die('Query failed: ' . mysql_error());
+		
+		if (substr($sql,0,6) != 'select') {
+			//mysql_close($link);
+			return $result;
+		}
+
+		// Printing results
+		$rows = array();
+		while ($line = mysql_fetch_assoc($result)) {
+			$rows[] = $line;
+		}
+
+		// Free resultset
+		mysql_free_result($result);
+
+		// Closing connection
+		//mysql_close($link);
+		
+		return $rows;
+	}
+	
+	function escapeString($string) {
+	    $escape = array(
+	    "\r\n" => '\n',
+	    "\r"    => '\n',
+	    "\n"    => '\n',
+	    '"'    => '\"',
+	    "'"    => "\\'"
+	    );
+	
+	    return str_replace(array_keys($escape), array_values($escape), $string);
+	}	
+	
+	// convert a sql row to javascript associated array object
+	function phpObj2JsObj($row) {
+	  $str = ""; 
+	  
+	  foreach($row as $col => $val) {
+	    if($str == "")
+        $str = $col .":'" . AjaxUtil::escapeString($val) . "'";
+      else
+        $str = $str . "," . $col .":'" . AjaxUtil::escapeString($val) . "'";
+    }
+    
+    return "{" . $str . "}";
+	}
+
+	// convert a sql rowset to javascript array object
+	function phpObjArray2JsObjArray($rows) {
+		$str = "";
+		foreach ($rows as $row) {
+	    if($str == "")
+  			$str = AjaxUtil::phpObj2JsObj($row) ;
+      else
+        $str = $str . "," . AjaxUtil::phpObj2JsObj($row);
+		}
+
+		return "[" . $str . "]";
+	}
+
+	// convert a PHP array to javascript array
+	function phpArray2JsArray($arr) {
+		$str = "";
+		foreach ($arr as $val) {
+	    if($str == "")
+  			$str = "'" .  AjaxUtil::escapeString($val) . "'";
+      else
+        $str = $str . ",'" .  AjaxUtil::escapeString($val) . "'";
+		}
+
+		return "[" . $str . "]";
+	}
+	
+	// create Javascript _REQUEST object
+	function request2JsObj() {
+    echo("<script type='text/javascript'>");
+    echo("var _REQUEST = " . AjaxUtil::phpObj2JsObj($_REQUEST));
+    echo(";</script>");
+	}
+
+  // raise error
+  function raiseError($errorMessage) {
+  	header("HTTP/1.1 400 Bad Request " . $errorMessage);
+  	header("ERROR_CODE: 2000");	
+  	header("ERROR_TEXT: " . $errorMessage);	
+  	exit;
+  }
+  
+}
+
+
+?>

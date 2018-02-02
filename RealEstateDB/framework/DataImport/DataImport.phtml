@@ -1,0 +1,157 @@
+<?php
+
+include_once "config/config.phtml";
+include_once "main_include.phtml";
+
+/*
+
+ * Created on 9-Oct-2006
+
+ *
+
+ * Abstract base class on exporting data
+
+ */
+
+ class DataImport{
+	 function import(){}
+	 
+	 /**
+	  * Export data from sql result var
+	  * Default is CSV file format
+	  * Var: $action, $table, $data
+	  */
+	 function importData($arguments){
+	 	$result = $this->parseData($arguments);
+	 	return $result;
+	 }
+	 
+	 /**
+	  * Parse data.
+	  * Data is expected to be tab seperated
+	  * VAR $action, $table, $data
+	  */
+	 function parseData($arguments){
+	 		$action = $arguments['action'];
+	 		$table = $arguments['table'];
+	 		$data = $arguments['data'];
+	 		$primaryKey = $arguments['primaryKey'];
+	 		
+	
+	 		// init var for extract data from $data query var
+			$offset = 0;
+			$endCharPos = 0;
+			$contLoop = true;
+			for($index = 0;$contLoop; $index++)
+			{
+				
+				// retrieve data from query variale $data
+				$endCharPos = strPos($data, "\n", $offset);
+				if ($endCharPos === false)
+				{
+					break;
+				}
+				
+				// commented for ajax call: no text output
+//				print "Handling record $index<BR>\n";	
+				$tempInfoArray = explode("\t", substr($data, $offset, $endCharPos - $offset));
+				$offset = $endCharPos + 1;
+
+				// the first line is the header that specifies the DB col name
+				if ($index == 0){	
+					$headerInfoArray = $tempInfoArray;
+ 					$numOfCol = sizeof($headerInfoArray);
+					
+					for ($i =0; $i < $numOfCol; $i++){
+						$headerInfoArray[$i] = trim($headerInfoArray[$i]);
+					}
+					continue;
+				}
+					
+				$singleDataArray = array();
+				
+				if ($action == "add"){
+					$result = $this->insertRecord(array("table"=>$table, "headerArray"=>$headerInfoArray, "dataArray"=>$tempInfoArray));
+				} else if ($action == "update"){
+					$result = $this->updateRecord(array("table"=>$table, "primaryKey"=>$primaryKey, "headerArray"=>$headerInfoArray, "dataArray"=>$tempInfoArray));
+				}
+			}
+
+			return $result;
+	 }
+ 	 
+ /**
+  * Import data for landmark.
+  */
+ function insertRecord($arguments){
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+ 	
+ 	$numOfCol = sizeof($headerInfoArray);
+ 	$multiAdditionalPurchaserArray = array();
+ 	
+ 	$sql = "INSERT INTO $table SET ";
+ 	for ($i =0; $i < $numOfCol; $i++){
+ 		if ($i > 0){
+ 			$sql .= ",";	
+ 		}
+ 		$sql .= $headerInfoArray[$i] . "=\"" . trim($dataArray[$i]) . "\""; 		
+ 	}
+	
+ 	$result = executeSql($sql);
+
+ 	if ($result) return 1;
+ 	else return 0;
+ }
+ 
+/**
+  * Import data for landmark.
+  */
+ function updateRecord($arguments){
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+	$primaryKey = $arguments['primaryKey'];
+	
+
+ 	$numOfCol = sizeof($headerInfoArray);
+ 	$multiAdditionalPurchaserArray = array();
+ 	$primaryKeyValue = -1;
+ 	$UserID = -1;
+ 	$addComma = false;
+ 	
+ 	$sql = "UPDATE $table SET ";
+ 	
+ 	for ($i =0; $i < $numOfCol; $i++){
+ 	
+ 			if ($headerInfoArray[$i] == $primaryKey){
+ 				$primaryKeyValue = $dataArray[$i]; 
+ 				continue;
+ 			}
+ 			 
+	 		if ($addComma){
+	 			$sql .= ",";	
+	 		}
+	 		$sql .= $headerInfoArray[$i] . "=\"" . trim($dataArray[$i]) . "\"";
+	 		if (!$addComma){
+	 			$addComma = true;
+	 		}
+ 		}
+ 	
+
+	if ($primaryKeyValue > 0){
+		$sql .= " WHERE $primaryKey=$primaryKeyValue";	
+	}
+	
+ 	$result = executeSql($sql);
+ 	
+ 	// for now, don't bother to update AdditionalPurchaserInformation
+ 	if ($result) return 1;
+ 	else return 0;
+ 	
+ 	
+ }  	 
+ }
+?>
+

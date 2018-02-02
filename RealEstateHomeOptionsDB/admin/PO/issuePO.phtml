@@ -1,0 +1,25 @@
+<?php
+/*
+ * Created on 19-Mar-2006
+ * Issues PO, and let the user download the PO list in specific format
+ * QueryString: Expect the same query string as in POList.phtml
+ */
+define ("SUB_FOLDER_INVERT_RELATIVE_PATH", "../../"); 
+ 
+include_once "../main_include.phtml";
+include_once "POAction.phtml";
+include_once "POListAction.phtml";
+
+
+$sql = getPOSql();
+$result = executeSql($sql);
+$POIssuedID = issuePO($result);
+
+// after issueing PO, redirect the user to generatePOInvoice.phtml
+$redirectURL = "../generatePOInvoice.phtml?POIssuedID=$POIssuedID";
+if ($markRevised == 1){
+	$redirectURL .= "&markRevised=1";	
+} 
+goto_url($redirectURL);
+
+?>

@@ -1,0 +1,64 @@
+<?
+include "main_include.phtml";
+
+// set the security level to be 3 for this page
+check_auth(3);
+
+// find out how many floors in the building
+$sql .= "SELECT max(UnitNumber) max_UnitNumber
+		FROM Unit";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+$row = mysql_fetch_array($result);
+
+$floor_total = $level = substr($row["max_UnitNumber"], 0, strlen($row["max_UnitNumber"]) - 2);
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+  <H3><?= get_project_name($PHP_SELF); ?> -- Define Web-reservable Floor</H3>
+
+  <BODY>
+  <FORM METHOD="POST" ACTION="./updateFloorForWeb.phtml">
+    <TABLE>
+      <TR>
+        <TD CLASS="head">Floor Number</TD>
+        <TD CLASS="head">Web Reservable?</TD>
+      </TR>
+<?
+for ($i=1; $i<=$floor_total; $i++)
+{
+	if ($class == "body" || $class == "")
+	{
+		$class = "blank";
+	}
+	else
+	{
+		$class = "body";
+	}
+	
+	$sql = "SELECT COUNT(*) count FROM FloorForWeb
+		WHERE FloorNumber = $i";
+	$result = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+	$row = mysql_fetch_array($result);
+	
+?>
+      <TR>
+        <TD CLASS="<?= $class; ?>">Floor <?= $i?></TD>
+        <TD CLASS="<?= $class; ?>">
+          <INPUT TYPE="checkbox" NAME="<?= $i; ?>_floor" VALUE="<?= $i; ?>" 
+          <?
+		  	if ($row["count"] > 0) echo " CHECKED ";
+		  ?>>
+		</TD>
+      </TR>
+<?	
+}
+?>
+      <TR>
+        <TD colspan="2" align="center"><BR><INPUT TYPE=SUBMIT  CLASS="blank" VALUE="Submit"></TD>
+      </TR>
+    </TABLE>
+  </FORM>
+  </BODY>
+</HTML>

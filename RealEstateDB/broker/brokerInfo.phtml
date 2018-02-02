@@ -1,0 +1,197 @@
+<?
+/**
+ * Get page to display broker info for display/edit
+ * Query Var: 
+ * 1. action = add/edit
+ * 2. jsAfterDone(Optional) : This is used when loading the page via AJAX 
+ * 3. BrokerID
+ * 4. displayType = stand-alone/floating
+ * 
+ */
+include_once "main_include.phtml";
+include_once "guiUtil_v2.phtml";
+include_once "Entity/View/BrokerView.phtml";
+include_once "framework/sajax/Sajax.php";
+include_once "Entity/Controller/CompanyAction.phtml";
+include_once "brokerInfoAction.phtml";
+
+function getBrokerDetailInfo($arguments){
+	$action = checkValue($arguments['action'], "display");
+	$arguments['mode'] = checkValue($arguments['action'], $arguments['mode']);
+	$brokerID = checkValue($arguments['BrokerID'], -1);
+	$arguments['DisplayType'] = "DETAIL";
+	
+	$brokerView = new BrokerView();
+	if ($action == "add"){		
+		$html = $brokerView->getNewHTMLForm($arguments);
+	} else {
+		$html = $brokerView->getExistingHTMLForm($arguments);
+	}
+	return $html;
+}
+
+function showBrokerPurchaseInfo($brokerID, $orderby)
+{
+	return getBrokerPurchaseInfo(array("BrokerID"=>$brokerID, "orderby"=>$orderby));
+}
+/**
+ * Display a list of broker in combo box. When an item
+ * is selected, the detail information of the item is 
+ * displayed
+ */
+function getBrokerListInfo($arguments){
+	
+}
+
+/**
+ * Get number of purchaser related to this broker
+ */
+function getBrokerPurchaseCount($brokerID){
+	$sql = "SELECT COUNT(UserID) FROM User
+			WHERE BrokerID=" . $brokerID . " OR BrokerID2=" . $brokerID;
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	return $row[0];	
+}
+
+//function setDefaultCommission($brokerID)
+//{
+//	$result = setDefaultCommissionAction($brokerID);
+//}
+
+// should be initialized by caller
+sajax_init();
+//$sajax_debug_mode = 1;
+sajax_export("setDefaultCommission", "showBrokerPurchaseInfo");
+// should be handled by caller
+sajax_handle_client_request();
+
+
+check_auth(2, "sales");
+
+if ($displayType == "stand-alone"){
+	$displayMenu = true;
+	$currentDisplayURL = $_SERVER['PHP_SELF'] . "?BrokerID=$BrokerID&displayType=$displayType&action=display";	
+	$currentEditURL = $_SERVER['PHP_SELF'] . "?BrokerID=$BrokerID&displayType=$displayType&action=edit";	
+} else {
+	$displayMenu = false;	
+}
+?>
+<html>
+<? print_top_frame($PHP_SELF, "../", true, $displayMenu); 
+$numberOfPurchase = getBrokerPurchaseCount($BrokerID);
+?>
+<script type="text/javascript" src="<?= ROOT_URL; ?>framework/dojo/dojo.js"></script>
+<script language="javascript">
+<? sajax_show_javascript(); ?>
+function deleteBroker(){
+	var brokerID = <?= $BrokerID; ?>;
+	var hasDeal = <?= $numberOfPurchase > 0 ? 'true' : 'false'; ?>;
+	
+	if (hasDeal){
+		alert('This broker has at least one deal in the system. Delete of this broker is prohibited.');
+		return;
+	}	
+	
+	window.location = 'updateBrokerInfo.phtml?Broker_BrokerID=<?= $BrokerID; ?>&Broker_Action=delete&Broker_Person_Company_Action=no-update&jsAfterDone=history.go(-2)';	
+}
+
+function displayBrokerUnitInfo(brokerID, userID){
+	window.location = 'brokerUnitInfo.phtml?brokerID=' + brokerID + '&UserID=' + userID;
+}
+
+/**
+* refresh unit info section
+*/
+function refreshPurchaserInfo()
+{
+	x_showBrokerPurchaseInfo("<?= $BrokerID; ?>", "<?= $orderby; ?>", showBrokerPurchaseInfo_CallBack);
+}
+
+function setDefaultCommission(brokerID)
+{
+	var answer = confirm('This action will OVERRIDE existing commissions for this broker\'s cusomers.\n Do you want to proceed?');
+	if (answer)
+	{
+	//	window.location = 'updateBrokerInfo.phtml?Broker_BrokerID=' + brokerID + '&Broker_Action=delete&Broker_Person_Company_Action=no-update&jsAfterDone=history.go(-2)';	
+		x_setDefaultCommission(brokerID, refreshPurchaserInfo);
+		alert("Successfully set commission to default.");
+	}	
+}
+
+</script>
+<h3>Broker Information:</h3>
+<?	if ($displayType == "stand-alone"){ ?>
+		<input type="button" Value="Back to broker list" onClick="window.location='../listBroker.phtml?listall=1&orderby='">
+<?		} ?>
+
+<? 		if ($action != "display"){ ?>
+		<form METHOD=POST ACTION="updateBrokerInfo.phtml">
+<? 		} ?>
+
+		<table cellspacing="5" cellpadding="5">
+			<?=	getBrokerDetailInfo(array("action"=>$action, "BrokerID"=>$BrokerID)); ?>
+		</table>
+<?	if ($displayType == "stand-alone"){ ?>
+		<div id='PurchaserInfoDIV'>
+<script language="javascript" >
+
+function showBrokerPurchaseInfo_CallBack(html){
+	PurchaserInfoDIVObj = document.getElementById("PurchaserInfoDIV");
+	PurchaserInfoDIVObj.innerHTML = html;
+	PurchaserInfoDIVObj.style.visibility="visible";
+	}
+	
+x_showBrokerPurchaseInfo("<?= $BrokerID; ?>", "<?= $orderby; ?>", showBrokerPurchaseInfo_CallBack);
+
+</script>
+			<?//=	getBrokerPurchaseInfo(array("BrokerID"=>$BrokerID, "orderby"=>$orderby)); ?>
+		</div>			
+<?	} ?>		
+	
+		<table cellspacing="5" cellpadding="5">
+		<tr>
+			<td>
+<? 		if ($action != "display"){ ?>
+		<input type="hidden" name="Broker_Action" value="<?
+			if ($action == "add") print "Add";
+			else if ($action == "edit") print "Edit";
+			?>">		
+		<input type="hidden" name="Broker_SubAction" value="All">			
+<?			if ($jsAfterDone != "" || $displayType == "stand-alone")	{ ?>
+		<input type="hidden" name="jsAfterDone" value="<?
+			if ($displayType == "stand-alone"){
+				print "window.location='" . $currentDisplayURL . "'";
+			} else {			
+				print $jsAfterDone; 
+			}
+		?>">				
+<?			} ?>
+				
+		<input type="submit" value="<?
+			if ($action == "add") print "Add";
+			else print "Update";
+			?>">			
+		<input type="button" value="Cancel" onClick="<?
+			if ($displayType == "stand-alone"){
+				print "window.location='" . $currentDisplayURL . "'";
+			} else {		
+		 		print $jsAfterCancel; 
+			}?>">			
+		</td>
+		</tr>
+<?		} else { // if in display mode, display edit button in stand-alone display type
+?>			 
+		<input type="button" value="Edit" onClick="<?
+			if ($displayType == "stand-alone"){
+				print "window.location='" . $currentEditURL . "'";
+			} ?>">									 			
+		<input type="button" value="Delete" onClick="deleteBroker();">
+		<input type="button" value="Apply Default Commission to All Units" onClick="setDefaultCommission(<?= $BrokerID ?>);">
+<?		} ?>
+		</table>
+		
+<? 		if ($action != "display"){ ?>
+		</form>
+<?		} ?>
+</html>

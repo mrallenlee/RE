@@ -1,0 +1,24 @@
+<?
+include "main_include.phtml";
+
+	$sql = "SELECT Unit.* FROM Unit Group by Unit.Model ORDER BY  Area"; 
+
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+print "<unit-type-info-list>\n";	
+	while ($row=mysql_fetch_array($result)){
+		if ($row['UnitType'] == "LPH")
+			$unitType = "SUITE";
+		else
+			$unitType = $row['UnitType'] ;
+		print "\t<unit-type-info>\n";
+		print "\t\t<unit-type>" . $row['UnitTypeDescription'] . "</unit-type>\n";
+		print "\t\t<model>" . $row['Model'] . "</model>\n";
+		print "\t\t<size>" . $row['Area'] . "</size>\n";
+		print "\t\t<bedrooms>" . $row['bedrooms'] . "</bedrooms>\n";
+		print "\t\t<bathrooms>" . $row['bathrooms'] . "</bathrooms>\n";
+		print "\t\t<type>" . $unitType . "</type>\n";
+		print "\t</unit-type-info>\n";
+	}
+print "</unit-type-info-list>\n";	
+?>

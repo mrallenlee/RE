@@ -1,0 +1,350 @@
+<?
+/**
+ * Broker view
+ * Jan 18, 2007
+ */
+include_once "Entity/View/EntityView.phtml";
+include_once "Entity/View/CompanyView.phtml";
+include_once "Entity/Properties/CompanyProperties.phtml";
+include_once "../../guiUtil.phtml";
+include_once "main_include.phtml";
+
+class BrokerView extends EntityView{
+	
+	function BrokerView(){}
+	
+	 /**
+	 * html form for new additional purchaser
+	 * @params index : The Nth Entity in the page
+	 */
+	 function getNewHTMLForm(&$arguments){
+	 	$arguments['mode'] = "add";
+	 	$html = $this->getExistingHTMLForm($arguments);
+	 	return $html;
+	 }
+	 
+	/**
+	 * html form for broker
+	 * arguments can be mysql result row which simply is an associate array
+	 * @params index : The Nth Entity in the page
+	 * @params mode : add, update/edit
+	 * @params DisplayType: CONTACT, DETAIL(Default),  LIST
+	 * @params BrokerID: Mandatory if in update mode.
+	 * @params onChangeJSFunction: Optional for LIST
+	 */
+
+	function getExistingHTMLForm(&$arguments){
+			
+		$index = checkValue($arguments['index'], "");
+		$mode = $arguments['mode'];
+		$brokerID = checkValue($arguments['BrokerID'], -1);
+		$displayType = $arguments['DisplayType']= checkValue($arguments['DisplayType'], "DETAIL");
+
+
+		if (($mode == "display") && $brokerID < 0){
+			return "<tr><td>No broker is selected</td></tr>";
+		}
+
+		
+		if ($displayType == "CONTACT" || $displayType == "DETAIL"){
+			if (($mode == "update" || $mode == "edit") && $brokerID < 0){
+				return "Error: Broker ID is missing.<BR>";
+			}
+			// retrieve broker information
+			if ($mode == "display" || $mode == "update" || $mode == "edit"){
+				$sql = "SELECT * FROM Broker, Person
+						WHERE BrokerID=$brokerID
+						AND Broker.PersonID = Person.PersonID";
+				$result = executeSql($sql);
+				$row = mysql_fetch_array($result);
+			}
+			
+			if ($this->inputPrefix != ""){
+				$prefix = $this->inputPrefix . "_Broker";
+			} else {
+				$prefix = "Broker";
+			}
+			
+			if ($index != ""){
+				$prefix .= "_" . $index;
+			}
+			
+			if ($this->inputSuffix != ""){
+				$suffix = "_" . $this->inputSuffix;
+			} else {
+				$suffix = "";
+			}
+			
+			$action = $mode;
+
+			$personPrefix = $prefix . "_Person";
+			$company = new CompanyView();
+			$company->setInputPrefix($personPrefix);
+
+			$html = "	<input type=\"hidden\" name=\"" . $prefix . "_BrokerID" . $suffix . "\" value=\"" .
+					$row['BrokerID'] ."\">" .
+					"	<input type=\"hidden\" name=\"" . $personPrefix . "_PersonID" . $suffix . "\" value=\"" . 
+					$row['PersonID'] ."\">" .
+					"	<input type=\"hidden\" name=\"" . $personPrefix . "_Action" . $suffix . "\" value=\"" . $mode . "\">" .
+					"	<input type=\"hidden\" name=\"" . $personPrefix . "_SubAction" . $suffix . "\" value=\"All\">" .
+					"	<tr>\n" .
+					"		<td>First Name:</td><td>" . 
+					displayText(array ("value" => $row['FirstName'],
+									"source" => "FirstName", "action" => $mode, 
+									"inputPrefix" => $personPrefix)) . "</td>\n" .
+					"		<td>Last Name:</td><td>"  . 
+					displayText(array ("value" =>  $row['LastName'],
+									"source" => "LastName", "action" => $mode,
+									"inputPrefix" => $personPrefix )) . "</td>\n" .
+					"	</tr>\n" . 
+					"	<tr>\n" .
+					"		<td>Business Phone:</td><td>" . 
+					displayText(array ("value" => $row['BusinessPhone'],
+									"source" => "BusinessPhone", "action" => $mode, 
+									"inputPrefix" => $personPrefix)) . "</td>\n" .
+					"		<td>Cell Phone:</td><td>"  . 
+					displayText(array ("value" =>  $row['CellPhone'],
+									"source" => "CellPhone", "action" => $mode, 
+									"inputPrefix" => $personPrefix )) . "</td>\n" .
+					"	</tr>\n" . 
+					"	<tr>\n" .
+					"		<td>Fax:</td><td>"  . 
+					displayText(array ("value" =>  $row['Fax'],
+									"source" => "Fax", "action" => $mode, 
+									"inputPrefix" => $personPrefix )) . "</td>\n" .
+					"		<td>Email:</td><td>"  . 
+					displayText(array ("value" =>  $row['Email'],
+									"source" => "Email", "action" => $mode, 
+									"inputPrefix" => $personPrefix )) . "</td>\n" .
+					"	</tr>\n" . 
+					"	<tr>\n" .
+					"		<td>Int/Ext Broker:</td><td>" .  
+					displayGenericTableList(
+					array("table"=> "BrokerType", "value"=>$row['BrokerType'],
+									"source"=>"BrokerType", "action"=>$mode, 
+									"inputPrefix"=> $prefix)) . "</td>\n" . 
+					"	</tr>\n";
+					// TODO Should we allow user to modify company?
+					$arguments['CompanyID'] = $row['CompanyID'];
+
+					$arguments['CompanyType'] = COMPANY_TYPE_BROKER;
+					//			if ($row['CompanyID'] > 0){
+					//				$arguments['DisplayType'] = "DETAIL";
+					//			} else {
+					$arguments['DisplayType'] = "LIST";
+					$arguments['onListChangeJS'] = "companyListChange()";
+					//			}
+					if ($action != "display"){
+					
+						$html .= "<script language=\"JavaScript\">
+							companyListHTML = '';
+		
+							function companyListChange(){
+								var companyList = document.getElementById('Broker_Person_Company_CompanyID');
+		//						alert('companyID=' + companyList.value);
+								x_getExistingCompanyHTMLForm(-1, companyList.value, '" . $personPrefix . "' ,'display', 'DETAIL', getExistingCompanyHTMLForm_callback);
+							}
+		
+							function getExistingCompanyHTMLForm_callback(html){
+		//alert('html=' + html);
+								var companyInfoDIVObj = document.getElementById('CompanyInfoDIV');
+								companyInfoDIVObj.style.display='none';
+								companyInfoDIVObj.innerHTML = '<table>' + html + '</table>';
+								companyInfoDIVObj.style.display='';
+							}			
+		
+							function changeCompanyMode(action) {
+								if (action == 'edit'){
+									var companyList = document.getElementById('Broker_Person_Company_CompanyID');							
+									var companyID = companyList.value;
+									var companyListDIVObj = document.getElementById('CompanyListDIV');
+									companyListHTML = companyListDIVObj.innerHTML;
+									companyListDIVObj.innerHTML = '';
+									var companyActionObj = document.getElementById('companyActionButton');
+									// change the propertis of the button
+									companyActionObj.value = \"Revert Company Change\";
+									companyActionObj.onclick = function() {changeCompanyMode('display');};
+									// hide the add company button
+									var companyActionObj = document.getElementById('companyAddActionButton');
+									companyActionObj.style.display = 'none';
+		
+									// AJAX call to retrieve information
+									x_getExistingCompanyHTMLForm(-1, companyID, '" . $personPrefix . "' ,'edit', 'DETAIL', getExistingCompanyHTMLForm_callback);												
+							}
+							if (action == 'add'){
+								var companyListDIVObj = document.getElementById('CompanyListDIV');
+								companyListHTML = companyListDIVObj.innerHTML;
+								companyListDIVObj.innerHTML = '';
+								// change the propertis of the button
+								var companyActionObj = document.getElementById('companyActionButton');
+								companyActionObj.value = \"Revert Company Change\";
+								companyActionObj.onclick = function() {changeCompanyMode('display');};
+								// hide the add company button
+								var companyActionObj = document.getElementById('companyAddActionButton');
+								companyActionObj.style.display = 'none';
+		
+								// AJAX call to retrieve information
+								x_getExistingCompanyHTMLForm(-1, companyID, '" . $personPrefix . "' ,'add', 'DETAIL', getExistingCompanyHTMLForm_callback);												
+							}
+							else if (action == 'display'){
+								var companyListDIVObj = document.getElementById('CompanyListDIV');
+								companyListDIVObj.innerHTML = companyListHTML;
+								companyListDIVObj.style.display='';
+								var companyList = document.getElementById('Broker_Person_Company_CompanyID');							
+								var companyID = companyList.value;
+		
+								// change the propertis of the button
+								var companyActionObj = document.getElementById('companyActionButton');
+								companyActionObj.value = \"Edit Selected Company\";
+								companyActionObj.onclick = function() {changeCompanyMode('edit');};
+		
+								// hide the add company button
+								var companyActionObj = document.getElementById('companyAddActionButton');
+								companyActionObj.style.display = '';
+		
+								// AJAX call to retrieve information
+								x_getExistingCompanyHTMLForm(-1, companyID, '" . $personPrefix . "' ,'display', 'DETAIL', getExistingCompanyHTMLForm_callback);							
+		//							x_getExistingCompanyHTMLForm(-1, " . $arguments['CompanyID'] . ", '" . $personPrefix . "' ,'display', 'DETAIL', getExistingCompanyHTMLForm_callback);							
+							}
+		
+						}
+						</script>";
+					}
+					$html .= "<tr><td colspan=4>\n";
+					if ($action != "display"){
+						$html .= "<input id=\"companyActionButton\" type=\"button\" value=\"Edit Selected Company\" onClick=\"changeCompanyMode('edit')\">\n";
+						$html .= "<input id=\"companyAddActionButton\" type=\"button\" value=\"Add New Company\" onClick=\"changeCompanyMode('add')\">\n";										
+					}		
+					if ($action != "display"){
+						$html .= "<div id=\"CompanyListDIV\"><table>";
+						$arguments['editButtonEnabled'] = FALSE;
+						$html .= $company->getExistingHTMLForm($arguments);
+						$html .= "</table></div>";
+					}
+					$html .= "<div id=\"CompanyInfoDIV\"><table>";
+					$arguments['DisplayType'] = "DETAIL";
+					$arguments['mode'] = "display";
+					$arguments['editButtonEnabled'] = FALSE;
+					$html .= $company->getExistingHTMLForm($arguments);
+					$html .="</table></div>";
+				
+										
+					$html .= "</td></tr>";
+					if ($displayType == "DETAIL"){
+						// add broker commission information
+						$html .= "<tr><td colspan=4><table cellspacing=2 cellpadding=2>";
+						$html .="	<tr>\n" .
+						"		<td>Default Total Commission Rate:</td><td>" . 
+						displayText(array ("value" => $row['DefaultTotalCommission'],
+										"source" => "DefaultTotalCommission", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" .
+						// added commission type combo box here
+						"<td> " . displayCommissionTypeComboBox(array("value" => $row['DefaultTotalCommissionType'], 
+										"source" => "DefaultTotalCommissionType", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" .						
+						"	</tr>\n" . 
+						"	<tr>" .								
+						"		<td>Default 1st Commission Rate:</td><td>" . 
+						displayText(array ("value" => $row['DefaultCommission1'],
+										"source" => "DefaultCommission1", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" .
+					        // added commission type combo box here						
+						"<td> " . displayCommissionTypeComboBox(array("value" => $row['DefaultCommission1Type'], 
+										"source" => "DefaultCommission1Type", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" .						
+						"	</tr>" .	
+						"	<tr>" .	
+						"		<td>Default 2nd Commission Rate:</td><td>" . 														
+						displayText(array ("value" => $row['DefaultCommission2'],
+										"source" => "DefaultCommission2", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" .
+						// added commission type combo box here						
+						"<td> " . displayCommissionTypeComboBox(array("value" => $row['DefaultCommission2Type'], 
+										"source" => "DefaultCommission2Type", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td> " . 
+						"	</tr>" .	
+						"       <tr>" .
+						"		<td>Default 3rd Commission Rate:</td><td>" . 
+						displayText(array ("value" => $row['DefaultCommission3'],
+										"source" => "DefaultCommission3", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" .
+						// added commission type combo box here						
+						"<td> " . displayCommissionTypeComboBox(array("value" => $row['DefaultCommission3Type'], 
+										"source" => "DefaultCommission3Type", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td> " .
+						"	</tr>\n" .														
+						"	<tr>" .	
+						"		<td>Default 4th Commission Rate:</td><td>" . 						
+						displayText(array ("value" => $row['DefaultCommission4'],
+										"source" => "DefaultCommission4", "action" => $mode, 
+										"inputPrefix" => $prefix)) . "</td>\n" . 
+						// added commission type combo box here												
+						"<td> " . displayCommissionTypeComboBox(array("value" => $row['DefaultCommission4Type'], 
+										"source" => "DefaultCommission4Type", "action" => $mode, 
+										"inputPrefix" => $prefix)) .
+						"</td> " . "</tr>";
+						$html .= "</table></td></tr>";
+						
+					}
+					// if in detail commission mode, display commission detail for this agent
+		} // $displayType == "CONTACT" || $displayType == "DETAIL"
+		else { // $displayType == "LIST"
+			// display a lists of all broker in a combo box
+			// assign a DIV to display broker information
+			// LIST mode
+			$html = $this->getList($arguments);
+		}
+		return $html;
+	}
+	
+	
+	/**
+	 * Get a list of company
+	 */
+	function getList(&$arguments){
+		
+		$index = checkValue($arguments['index'], "");
+		
+		if ($this->inputPrefix != ""){
+			$prefix = $this->inputPrefix . "_Broker";
+		} else {
+			$prefix = "Broker";
+		}
+		
+		if ($index != ""){
+			$prefix .= "_" . $index;
+		}
+			
+			
+		$html = "<tr>\n" .
+				"	<td>Broker:</td><td>" . 
+				displayTableList(array(
+				"col" => "NameCol", 
+				"valueCol" => "BrokerID",
+				"sql" => "SELECT CONCAT(CONCAT(FirstName,' '), LastName) AS NameCol, BrokerID
+							FROM Person,Broker
+							WHERE Broker.PersonID = Person.PersonID",
+				"table"=> "Broker", 
+				"value"=>$arguments['BrokerID'],	
+				"inputName"=>"BrokerID", 
+				"action"=>$arguments['mode'], 
+				"inputPrefix"=> $prefix,
+				"onChangeJSFunction"=>$arguments['onChangeJSFunction'],
+				"orderByClause"=> "FirstName, LastName")) . "</td>\n" .
+			"</tr>\n";
+			return $html;
+	} // getList
+} // BrokerView Class
+
+if ($isDebug == 1){
+	?>
+<html>
+<table>
+	<? $brokerView = new BrokerView();
+	$arguments = array("mode"=>"edit", "BrokerID"=>1);
+	//print $brokerView->getNewHTMLForm();
+	print $brokerView->getExistingHTMLForm($arguments);
+	?>
+</table>
+</html>
+<?} ?>

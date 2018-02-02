@@ -1,0 +1,78 @@
+<?
+/*
+ * Created on 5-Nov-2007
+ *
+ * Export GST rebate data
+ */
+ 
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExport.phtml";
+
+check_auth(2, "sales");
+
+$sql = "select UserClosingInterimStatement.UnitNumber UnitNumber, 
+               max(UserClosingInterimStatement.CreatedDate), 
+               date_format(UserClosingInterimStatement.OccupancyDate, '%M %e, %Y') OccupancyDate, 
+               ProRatedOccupancyFee, 
+               OccupancyFee, 
+               User.UserID UserID
+          from UserClosingInterimStatement 
+          left join User
+            ON UserClosingInterimStatement.UnitNumber = User.UnitNumber
+           AND User.DealStatus <> 'Rescinded'
+         group by UserClosingInterimStatement.UnitNumber 
+         ORDER BY " . getOrderClause(array("columnName"=>"UserClosingInterimStatement.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+
+$result = executeSql($sql);
+
+$start_date = strtotime(CLOSING_CASH_FORCAST_START_MTH);
+$end_date = strtotime(CLOSING_CASH_FORCAST_END_MTH);
+
+$filename = "CashForcast.csv";
+$exporter = new DataExport;
+$exporter->exportHeader($filename);
+
+// Print header
+print "Suite Number,";
+
+for ($curr_date = $start_date; $curr_date <= $end_date; $curr_date=strtotime("+1 months", $curr_date))
+	print date("M Y", $curr_date) . ",";
+
+print "\n";
+
+// Print data body
+while ($row = mysql_fetch_array($result))
+{
+	print $row['UnitNumber'] . ",";
+
+  for ($curr_date = $start_date, $i=1; $curr_date <= $end_date; $curr_date=strtotime("+1 months", $curr_date), $i++)
+  {
+  	if (date("Ym", $curr_date) == date("Ym", $currUser_OccupancyDate))
+   	{
+	  	${"total$i"} += $row['ProRatedOccupancyFee'];
+			print $row['ProRatedOccupancyFee'] . ",";
+   	}
+   	else if (date("Ym", $curr_date) > date("Ym", $currUser_OccupancyDate))
+   	{
+	  	${"total$i"} += $row['OccupancyFee'];
+			print $row['OccupancyFee'] . ","; 
+   	}
+   	else
+   	{
+				print ",";
+   	}
+   }
+   
+   print "\n";
+}
+
+print "Total,";
+
+for ($curr_date = $start_date, $i=1; $curr_date <= $end_date; $curr_date=strtotime("+1 months", $curr_date), $i++)
+{
+			print ${"total$i"} . ",";
+}
+print "\n";
+?>

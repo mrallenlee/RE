@@ -1,0 +1,30 @@
+<?php
+/*
+ * Created on 12-Jan-2007
+ *
+ * Sice Release transactions record is not supposed to be added dynamically, so
+ * this class is not available for AJAX. Only cheque has AJAX call.
+ */
+ 
+include_once "config/config.phtml";
+include_once "guiUtil.phtml";
+require "Entity/Controller/ReleaseChequeAction.phtml";
+require "Entity/View/ReleaseTransactionsRecordView.phtml";
+
+function getNewReleaseTransactionsRecordHTMLForm($index){
+	$ReleaseTransactionsRecord = new ReleaseTransactionsRecordView();
+	return $ReleaseTransactionsRecord->getNewHTMLForm($index);
+}
+
+function getExistingReleaseTransactionsRecordHTMLForm($index, $DBResultRow, $mode = "display"){
+	$ReleaseTransactionsRecord = new ReleaseTransactionsRecordView();
+	return $ReleaseTransactionsRecord->getExistingHTMLForm($index, $DBResultRow, $mode);
+}
+?><?
+//<html>
+//<script language="javascript">
+//<? sajax_show_javascript(); 
+//</script>
+// getExistingReleaseTransactionsRecordHTMLForm(2, array("TransactionsRecordID" => 1), "edit"); 
+//</html>
+?>

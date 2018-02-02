@@ -1,0 +1,52 @@
+<?
+include "main_include.phtml";
+
+// This script is to add row into Disable_Section_By_Unittype
+
+?>
+<html>
+
+<head><title>Admin</title></head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+<font face="Arial,Verdana,Helvetica" size="3">
+
+<?
+$sql_droptbl = "DELETE FROM Disable_Section_By_Unittype";
+$result = mysql_query($sql_droptbl,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_droptbl . $PHP_SELF);
+
+$sql_unittype = "SELECT Type 
+		FROM UnitType 
+		ORDER BY type";
+$result_unittype = mysql_query($sql_unittype,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_unittype . $PHP_SELF);
+
+while ($row_unittype = mysql_fetch_array($result_unittype))
+{
+	$sql_section = "SELECT SectionID, Name
+			FROM Section
+			ORDER BY Name";
+	$result_section = mysql_query($sql_section,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_section . $PHP_SELF);
+
+	while ($row_section = mysql_fetch_array($result_section))
+	{
+		$var_name = "disable_" . urlencode($row_unittype['Type']) . "_" . $row_section['SectionID'];
+
+		if ($_POST["$var_name"])
+		{
+			$sql_insert = "INSERT INTO Disable_Section_By_Unittype (UnitType, SectionID)
+					VALUES ('" . $row_unittype['Type'] . "', " . $row_section['SectionID'] . ")";
+			$result = mysql_query($sql_insert,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_insert . $PHP_SELF);
+
+		}
+	}
+
+}
+
+?>
+<script language="javascript">
+	history.go(-1);
+</script>
+
+</font>
+</body>
+</html>

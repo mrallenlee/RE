@@ -1,0 +1,62 @@
+<?php
+// Action for proj_closing
+include_once 'AjaxUtil_class.phtml';
+include_once 'closing_commons.phtml';
+
+// retrieve project closing information
+if ($_REQUEST["act"] == "select") {
+  $rows = AjaxUtil::doSql("select * from ProjectClosing");
+
+  if(count($rows) <> 1) {
+    AjaxUtil::raiseError("database error with ProjectClosing");
+  } else {
+    echo AjaxUtil::phpObj2JsObj($rows[0]);
+  }
+
+// update project closing information
+} elseif ($_REQUEST["act"] == "update") {
+  $sql="update ProjectClosing set " .
+      "TaxRateYear1=" . $_REQUEST["TaxRateYear1"] .
+      ",TaxRateYear2=" .          ZeroIfBlank($_REQUEST["TaxRateYear2"]) .
+      ",LandTaxYear1=" .          ZeroIfBlank($_REQUEST["LandTaxYear1"]) .
+      ",LandTaxYear2=" .          ZeroIfBlank($_REQUEST["LandTaxYear2"]) .
+      ",EstimatedRealtyTax=" .    ZeroIfBlank($_REQUEST["EstimatedRealtyTax"]) .
+      ",LawSocietyLevy=" .        ZeroIfBlank($_REQUEST["LawSocietyLevy"]) .
+      ",DischargeFee=" .          ZeroIfBlank($_REQUEST["DischargeFee"]) .
+      ",SixFeeProvTax=" .         ZeroIfBlank($_REQUEST["SixFeeProvTax"]) .
+      ",SixFeeProvTaxFlg=" .      ZeroIfBlank($_REQUEST["SixFeeProvTaxFlg"]) .
+      ",SixFeeConnCharge=" .      ZeroIfBlank($_REQUEST["SixFeeConnCharge"]) .
+      ",SixFeeConnChargeFlg=" .   ZeroIfBlank($_REQUEST["SixFeeConnChargeFlg"]) .
+      ",SixFeeWaterMeter=" .      ZeroIfBlank($_REQUEST["SixFeeWaterMeter"]) .
+      ",SixFeeWaterMeterFlg=" .   ZeroIfBlank($_REQUEST["SixFeeWaterMeterFlg"]) .
+      ",SixFeeHydroCharge=" .     ZeroIfBlank($_REQUEST["SixFeeHydroCharge"]) .
+      ",SixFeeHydroChargeFlg=" .  ZeroIfBlank($_REQUEST["SixFeeHydroChargeFlg"]) .
+      ",SixFeeDevCharge=" .       ZeroIfBlank($_REQUEST["SixFeeDevCharge"]) .
+      ",SixFeeDevChargeFlg=" .    ZeroIfBlank($_REQUEST["SixFeeDevChargeFlg"]) .
+      ",SixFeeTarion=" .          ZeroIfBlank($_REQUEST["SixFeeTarion"]) .
+      ",SixFeeTarionFlg=" .       ZeroIfBlank($_REQUEST["SixFeeTarionFlg"]) .
+      ",NumOfUnit=" .             ZeroIfBlank($_REQUEST["NumOfUnit"]) .
+      ",NumOfCombinedUnit=" .     ZeroIfBlank($_REQUEST["NumOfCombinedUnit"]) .
+      ",TotalArea=" .             ZeroIfBlank($_REQUEST["TotalArea"]) .
+      ",CamFeeRatePerSf=" .       ZeroIfBlank($_REQUEST["CamFeeRatePerSf"]) .
+      ",CamFeeParkingStall=" .    ZeroIfBlank($_REQUEST["CamFeeParkingStall"]) .
+      ",CamFeeTandemParking=" .   ZeroIfBlank($_REQUEST["CamFeeTandemParking"]) .
+      ",CamFeeParkingStorage=" .  ZeroIfBlank($_REQUEST["CamFeeParkingStorage"]) .
+      ",CamFeeLocker=" .          ZeroIfBlank($_REQUEST["CamFeeLocker"]) .
+      ",CamFeeBikeRack=" .        ZeroIfBlank($_REQUEST["CamFeeBikeRack"]) .
+      ",CamFeeMthTaxRecovery=" .  ZeroIfBlank($_REQUEST["CamFeeMthTaxRecovery"]);
+//  print_r($_REQUEST);
+//  echo($sql);
+  AjaxUtil::doSql($sql);
+  echo "Project Closing Information has been updated Successfully";
+
+// generate user project closing information
+} elseif ($_REQUEST["act"] == "calculate") {
+  echo(genUnitClosingData("ALL"));
+    
+} else {
+  //print_r($_REQUEST);
+  AjaxUtil::raiseError("unknown request");
+}
+
+?>

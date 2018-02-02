@@ -1,0 +1,52 @@
+<?php
+/*
+ * Created on 27-Dec-2006
+ *
+ * The calling script should initialize sajax. This script only export the necessary function to ajax
+ * Action script for addtional purchaser
+ */
+ 
+include_once "config/config.phtml";
+include_once "framework/sajax/Sajax.php";
+include_once "guiUtil.phtml";
+require_once "Entity/View/CompanyView.phtml";
+
+
+function getNewCompanyHTMLForm($index){
+	$companyView = new CompanyView();
+	$arguments = array();
+	$arguments['index'] = $index;
+	$arguments['DisplayType']= "DETAIL";
+	return $companyView->getNewHTMLForm($index);
+}
+
+function getExistingCompanyHTMLForm($index, $companyID, $prefix, $mode = "display", $displayType = "LIST"){
+	$companyView = new CompanyView();	
+	$companyView->setInputPrefix($prefix);
+	$arguments	= array();
+	
+	$arguments['index'] = $index;	
+	$arguments['mode'] = $mode;
+	
+	$arguments['CompanyID']	= checkValue($companyID, -1);
+	$arguments['DisplayType']= $displayType;
+	
+	return $companyView->getExistingHTMLForm($arguments);
+}
+
+
+// should be initialized by caller
+//sajax_init();
+//$sajax_debug_mode = 1;
+sajax_export("getNewCompanyHTMLForm", "getExistingCompanyHTMLForm");
+// should be handled by caller
+//sajax_handle_client_request();
+//
+//<html>
+//<body>
+//<form>
+//<?= getNewCompanyHTMLForm(1);
+//</form>
+//</body>
+//</html>
+?>

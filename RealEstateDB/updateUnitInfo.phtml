@@ -1,0 +1,193 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2);
+
+// expect
+// $action : delete, or nothing
+
+if ($action == "delete")
+{
+	$sql = "DELETE FROM Unit WHERE UnitNumber=\"$UnitNumber\"";
+	// process DB operation
+	$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);										
+
+}
+else
+{
+	$infoArray = array();
+
+	if ($source == "query")
+	{
+		
+		// init var for extract data from $multiUnitInfo query var
+		$offset = 0;
+		$endCharPos = 0;
+		$contLoop = true;
+		while($contLoop)
+		{
+			// retrieve data from query variale $multiUnitInfo
+			$endCharPos = strPos($multiUnitInfo, "\n", $offset);
+			if ($endCharPos === false)
+			{
+				break;
+			}
+	
+			$tempInfoArray = explode("\t", substr($multiUnitInfo, $offset, $endCharPos - $offset));
+			$offset = $endCharPos + 1;
+			$unitInfoArray = array();
+			$i =0;
+			$unitInfoArray['UnitNumber'] = $tempInfoArray[$i++];
+			$unitInfoArray['UnitType']	 = $tempInfoArray[$i++];
+			$unitInfoArray['Model'] = $tempInfoArray[$i++];
+			$unitInfoArray['UnitTypeDescription'] = $tempInfoArray[$i++];
+			$unitInfoArray['Area'] = $tempInfoArray[$i++];
+			$unitInfoArray['bedrooms'] = $tempInfoArray[$i++];
+			$unitInfoArray['bathrooms'] = $tempInfoArray[$i++];
+			$unitInfoArray['maintenance'] = $tempInfoArray[$i++];
+			$unitInfoArray['Price'] = $tempInfoArray[$i++];
+			$unitInfoArray['UserID'] = 0;
+	
+			// add the last unitInfoArray into infoArray
+			array_push($infoArray, $unitInfoArray); 											
+		}
+	}
+	else
+	{
+		$values=$HTTP_POST_VARS;
+				
+		// init var
+		$currentUnitNumber = -1;
+		
+		//loop that adds the field names and values
+		foreach($values as $key=>$val)
+		{
+		//	echo "$key = $val<BR>";
+		
+			$pair_info = explode("_", $key);
+			$unitNumber = $pair_info[0];
+			if ($unitNumber != $currentUnitNumber)
+			{
+				array_push($infoArray, $unitInfoArray);
+				$unitInfoArray = array();
+				$currentUnitNumber = $unitNumber;
+			}
+			
+			$unitInfoArray[$pair_info[1]] = $val;
+			$unitInfoArray[$pair_info[1]] . "<BR> unitInfoArray[UnitType]=" . $unitInfoArray[UnitType];
+			
+		}
+		
+		// add the last unitInfoArray into infoArray
+		array_push($infoArray, $unitInfoArray); 
+	}	
+	
+	foreach ($infoArray as $unitInfoArray)
+	{
+		if (!$unitInfoArray) // if infoArray is null, continue
+		{
+			continue;
+		}
+
+		$sql 	= "SELECT UnitNumber FROM Unit WHERE UnitNumber	= \"" . $unitInfoArray['UnitNumber'] . "\"";
+		$result = mysql_query($sql) or log_err_die("Update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		
+		if ($unitInfoArray['Area'] == "")
+		{
+			$unitInfoArray['Area'] = 0;		
+		}
+		if ($unitInfoArray['Price'] == "")
+		{
+			$unitInfoArray['Price'] = 0;
+		}
+		if ($unitInfoArray['bedrooms'] == "")
+		{
+			$unitInfoArray['bedrooms'] = 0;
+		}
+		if ($unitInfoArray['bathrooms'] == "")
+		{
+			$unitInfoArray['bathrooms'] = 0;
+		}
+		if ($unitInfoArray['maintenance'] == "")
+		{
+			$unitInfoArray['maintenance'] = 0;
+		}
+		if (isset($unitInfoArray['Status']))
+		{
+			$unitInfoArray['Status'] = $unitInfoArray['Status'];
+		}
+		else
+		{
+			$unitInfoArray['Status'] = "";
+		}
+		
+		if (mysql_num_rows($result) > 0)
+		{
+			$sql	= "UPDATE  Unit SET
+						UnitNumber			= \"" . $unitInfoArray['UnitNumber'] . "\",
+						UnitType 			= \"" . $unitInfoArray['UnitType'] . "\",";
+	 		if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)){ 
+				$sql .= "						Model					= \"" . $unitInfoArray['Model'] . "\",";
+			}
+			$sql .= "	UnitTypeDescription = \"" . $unitInfoArray['UnitTypeDescription'] . "\",
+						Area				= " . $unitInfoArray['Area'] . ",
+						bedrooms			= " . $unitInfoArray['bedrooms'] . ",
+						bathrooms			= \"" . $unitInfoArray['bathrooms'] . "\",
+						maintenance			= " . $unitInfoArray['maintenance'] . ",
+						Price				= " . $unitInfoArray['Price'] . ",
+						Status				= \"" . $unitInfoArray['Status'] . "\"
+						WHERE UnitNumber	=\"" . $unitInfoArray['UnitNumber'] . "\"";
+		}
+		else
+		{
+			$sql	= "INSERT INTO Unit SET
+						UnitNumber			= \"" . $unitInfoArray['UnitNumber'] . "\",
+						UnitType 			= \"" . $unitInfoArray['UnitType'] . "\"," ; 
+						if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)){ 
+							$sql .= "						Model					= \"" . $unitInfoArray['Model'] . "\",";
+						}
+						$sql .= " UnitTypeDescription = \"" . $unitInfoArray['UnitTypeDescription'] . "\",
+						Area				= " . $unitInfoArray['Area'] . ",
+						bedrooms			= " . $unitInfoArray['bedrooms'] . ",
+						bathrooms			= \"" . $unitInfoArray['bathrooms'] . "\",
+						maintenance			= " . $unitInfoArray['maintenance'] . ",
+						Price				= " . $unitInfoArray['Price'] . ",
+						Status				= \"" . $unitInfoArray['Status'] . "\",
+						UserID				= \"" . $unitInfoArray['UserID'] . "\"";
+		}
+		
+		// process DB operation
+		$result = mysql_query($sql) or log_err_die("Update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+//		if (!mysql_query($sql))
+//		{ // if UnitNumber record doesn't exist, add it to the db
+//			// process DB operation
+//			$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);										
+//		}
+	}
+}
+if (isSet($forward))
+{
+	if (isSet($back))
+	{
+		$back--;
+		$forward . "&back=" . $back;
+	}
+	goto_url($forward);
+	die();
+}
+
+?>
+<script language="JavaScript">
+<!--
+	window.location="./unitInfo.phtml?action=edit";
+//-->
+</script>
+
+<!--<script language="JavaScript">
+<!--
+	history.back(<?= $back; ?>);
+//-->
+</script>
+//-->
+

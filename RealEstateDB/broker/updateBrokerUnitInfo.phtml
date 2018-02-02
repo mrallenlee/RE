@@ -1,0 +1,79 @@
+<?
+include_once "Entity/Model/BrokerModel.phtml";
+include_once "broker/brokerCommissionAction.phtml";
+/**
+ * Update user broker information sent from broker info
+ */
+ 
+function updateUserBroker(){	
+	//Update commissions and commission types in UserBroker Table
+	$brokerID= $_REQUEST['BrokerID'];  
+	$userID = $_REQUEST['UserID'];  	
+
+	$updateSql = "UPDATE UserBroker SET ";
+	for ($i = 1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+		if ($i > 1){
+			$updateSql .= ", ";
+		}
+		$updateSql .= "Commission" . $i . "=" . "'" . $_REQUEST["Commission$i"] . "'";
+		$updateSql .= ", Commission" . $i . "Type=" . "'" . $_REQUEST["Commission$i" . Type] . "'";
+		
+	}
+	$updateSql .= " WHERE BrokerID=" . $brokerID . " AND UserID=" . $userID;	
+	$updateResult = executeSql($updateSql);	
+//	print "updateSQL=$updateSql<BR>";
+	//Re-calculate commission amounts
+  	calculateBrokerCommission($userID);
+    // handle user broker	
+    //------------------------------------------------------------------------------------
+    // TransactionsRecord
+	//------------------------------------------------------------------------------------						
+	// go through request var, and pick up related information
+	// for deposit transaction
+	$multiTransactionsArray = array();
+	
+	foreach ($_REQUEST as $key => $value){
+		// debuging purpose
+//			print ("key=[$key] value=[$value]<BR>");
+	
+		if (preg_match("/TransactionsRecord_/", $key)){
+			$data = explode('_', $key, 3);
+			$index = $data[1];
+			$varName = $data[2];
+//			print "key=$key index=$index varName=$varName value=$value<BR>";
+			if (!isSet($multiTransactionsArray[$index])){
+				// init the array if has not been defined
+				$transactionsArray = array();
+				$multiTransactionsArray[$index] = $transactionsArray ; 
+				$multiTransactionsArray[$index]['SubAction'] = "All";
+				$multiTransactionsArray[$index]['index'] = $index;
+			}
+			$multiTransactionsArray[$index][$varName] = $value;
+		}	
+	}
+	// handle each TransactionsRecord
+	include_once "Entity/Model/TransactionsRecordModel.phtml";
+	$transactionsRecordModel = new TransactionsRecordModel();
+	foreach ($multiTransactionsArray as $index=>$transactionsArray){
+		$transactionsRecordModel->handle($transactionsArray);
+	}										
+} // updateUserBroker
+
+function quit($brokerID){
+//	echo "inside quit js=" . $_REQUEST['jsAfterDone'];
+	if ($_REQUEST['jsAfterDone'] != ""){
+		
+?>
+	<script language="javascript">
+	<? if ($brokerID != "") { ?>
+		var brokerID = <?= $brokerID; ?>;
+	<? } ?>		
+		
+<?= stripslashes($_REQUEST['jsAfterDone']); ?>;
+	</script> 			
+<?		
+	}	
+}
+$brokerID = updateUserBroker();
+quit($brokerID);
+?>

@@ -1,0 +1,336 @@
+<?
+/**
+ * Get page to display broker unit info for display/edit
+ * Query Var: 
+ * 1. action = add/edit
+ * 2. UserID
+ * 3. BrokerID
+ * 
+ */
+require_once "main_include.phtml";
+require_once "guiUtil_v2.phtml";
+require_once "framework/sajax/Sajax.php";
+require_once "Entity/View/BrokerView.phtml";
+require_once "Entity/Controller/TransactionsRecordAction.phtml";
+include_once "util.phtml";
+
+sajax_init();
+
+// set default value for action variable
+if (!isSet($action) || $action == ""){
+	$action = "display";
+}
+
+
+//
+function displayTotalCommission($arguments) {
+       
+       for ($i = 1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+		
+		//var_dump($arguments["Commission$i"]);
+		//var_dump($arguments["Commission$i" . Type]);
+		
+		if ( $arguments["Commission$i" . Type] == BROKER_COMMISSION_TYPE_PERCENTAGE) {
+       	      		$totalComm += $arguments["Commission$i"];
+                }
+                else 
+                {
+       	                $totalFlatRate += $arguments["Commission$i"];
+                }
+       }         
+       
+       //echo ("totalFlatRate = " . $totalFlatRate);            
+       //echo ("totalComm = " . $totalComm);            
+       
+       if(!isset($totalFlatRate)){
+       	     echo ($totalComm . "%");
+       } elseif (!isset($totalComm)) {
+       	     echo ("$" . $totalFlatRate) ;
+       } else {
+       	     echo ($totalComm . "% + $" . $totalFlatRate);
+       }
+}
+
+/**
+ * Get display html for unit commission
+ * parameter: args contains following information
+ * UserID, 
+ */
+function getUnitCommissionDetail($args){
+	
+	$colWidthArray = array(5,100,80,80,80,80,150);
+	$totalColWidth = 0;
+	for ($i=0; $i <= sizeof($colWidthArray); $i++){
+		$totalColWidth += $colWidthArray[$i];
+	}
+	
+	// calculate total width involves with cellpadding=5, cellspacing=0 table setting
+	$totalColWidth += 5 * 2 * sizeof($colWidthArray); 
+	
+	$colIndex = 0;
+	?>
+<table cellpadding=5 cellspacing=0>
+	<tr class="head-right">
+		<th width=<?= $colWidthArray[$colIndex++]; ?>> <IMG src="../images/collapse-icon.jpg"
+			onClick="
+					for (var i=1; true; i++){
+						var domCollapsibleDIVIcon = document.getElementById('Commission' + i + 'DIVExpander');
+						if (!domCollapsibleDIVIcon) break;
+						if ( domCollapsibleDIVIcon.src == this.src) {
+							tool.dom.fireClickEvent(domCollapsibleDIVIcon);
+						}
+					}
+
+					var is_expander = this.src.indexOf('collapse') != -1;
+					if (is_expander) {
+						this.src='../images/expand-icon.jpg';
+					} else {
+						this.src='../images/collapse-icon.jpg';
+					}
+				  return false;">
+		</th>
+		<th width=<?= $colWidthArray[$colIndex++]; ?>>Commission</th>
+		<th width=<?= $colWidthArray[$colIndex++]; ?>>Net</th>
+		<th width=<?= $colWidthArray[$colIndex++]; ?>>Tax</th>
+		<th width=<?= $colWidthArray[$colIndex++]; ?>>Gross</th>
+		<th width=<?= $colWidthArray[$colIndex++]; ?>>Payment</th>
+		<th width=<?= $colWidthArray[$colIndex++]; ?>>Oustanding Payment</th>
+	</tr>
+</table>
+	<?
+	for ($i=1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+		$outstandingPayment = $args['Commission' . $i . 'Total'] - $args['Commission' . $i . 'Paid'];
+		$colIndex = 0;
+		?>
+<table cellpadding=5 cellspacing=0>
+	<tr>
+		<td width=<?= $colWidthArray[$colIndex++]; ?>><? createCollapsibleDIVIcon("", "Commission$i");?></td>
+		<td align=center width=<?= $colWidthArray[$colIndex++]; ?>><?= $i; ?></td>
+		<td align=right width=<?= $colWidthArray[$colIndex++]; ?>>
+			<?= numberFormat(array("value"=>$args['Commission' . $i . 'Amount'],
+									"decimals"=>2, "isDollarValue"=>TRUE, 
+									"defaultValue"=>0)); ?>
+		</td>
+		<td align=right width=<?= $colWidthArray[$colIndex++]; ?>>
+			<?= numberFormat(array("value"=>$args['Commission' . $i . 'Tax'],
+									"decimals"=>2, "isDollarValue"=>TRUE, 
+									"defaultValue"=>0)); ?>
+		</td>
+		<td align=right width=<?= $colWidthArray[$colIndex++]; ?>>
+			<?= numberFormat(array("value"=>$args['Commission' . $i . 'Total'],
+									"decimals"=>2, "isDollarValue"=>TRUE, 
+									"defaultValue"=>0)); ?>
+		</td>
+		<td align=right width=<?= $colWidthArray[$colIndex++]; ?>>
+			<?= numberFormat(array("value"=>$args['Commission' . $i . 'Paid'],
+									"decimals"=>2, "isDollarValue"=>TRUE, 
+									"defaultValue"=>0)); ?>
+		</td>
+		<td align=right width=<?= $colWidthArray[$colIndex++]; ?>>
+			<?= numberFormat(array("value"=>$outstandingPayment,"decimals"=>2, 
+									"isDollarValue"=>TRUE, 
+									"defaultValue"=>0)); ?>
+		</td>
+	</tr>
+</table>
+		<?
+		//	print_r($args);
+		createCollapsibleDIV("Commission$i");
+		print getExistingTransactionsRecordHTMLForm($i,
+		array ("TransactionsRecordID"=>$args['Commission' . $i . 'TransactionID']), $args['action']);
+		?>
+	<hr align=left width=<?= $totalColWidth; ?>>
+</DIV>
+<?
+	}
+
+} //getUnitCommissionDetail
+
+if (isSet($brokerID) && $brokerID != ""){
+	$BrokerID = $brokerID;
+}
+//$sajax_debug_mode = 1;
+sajax_handle_client_request();
+
+$sql = "SELECT
+		User.FirstName AS PurchaserFirstName, 
+		User.LastName AS PurchaserLastName, Broker.*, 
+		Person.FirstName AS BrokerFirstName, 
+		Person.LastName AS BrokerLastName,
+		User.OfferPrice, User.Price, User.AdjustedSalesPrice, 
+		User.ASPNetGST, GSTRebate,
+		UserBroker.*, 
+		IFNULL(
+			(SELECT SUM(IF(ChequeType='CREDIT', -1 * ChequeAmount, ChequeAmount)) 
+			FROM Cheque 
+			WHERE TransactionsRecordID=Commission1TransactionID AND ChequeStatus='Deposited'),
+		0) 
+		AS Commission1Paid,
+		IFNULL((SELECT SUM(IF(ChequeType='CREDIT', -1 * ChequeAmount, ChequeAmount)) 
+				FROM Cheque 
+				WHERE TransactionsRecordID=Commission2TransactionID AND ChequeStatus='Deposited'),
+		0) 
+		AS Commission2Paid,
+		IFNULL((SELECT SUM(IF(ChequeType='CREDIT', -1 * ChequeAmount, ChequeAmount))
+				FROM Cheque 
+				WHERE TransactionsRecordID=Commission3TransactionID AND ChequeStatus='Deposited'),
+		0)
+		AS Commission3Paid,
+		IFNULL((SELECT SUM(IF(ChequeType='CREDIT', -1 * ChequeAmount, ChequeAmount)) 
+				FROM Cheque 
+				WHERE TransactionsRecordID=Commission4TransactionID AND ChequeStatus='Deposited'),
+		0)
+		AS Commission4Paid
+
+	
+		FROM User, UserBroker, Broker, Person
+		WHERE User.UserID = UserBroker.UserID
+			AND (UserBroker.BrokerID = User.BrokerID OR 
+				UserBroker.BrokerID = User.BrokerID2)
+			AND Broker.BrokerID = UserBroker.BrokerID
+			AND Person.PersonID = Broker.PersonID
+			AND User.UserID=$UserID
+			AND Broker.BrokerID=$BrokerID";
+//echo "sql=$sql<BR>";
+$result = executeSql($sql);
+
+if (mysql_num_rows($result) != 1){
+	handleError("There are " . mysql_num_rows($result) . " records for this unit information.",
+	GENERAL_ERROR, false);
+	die();
+}
+$data_row = mysql_fetch_array($result);
+
+
+if ($data_row['OfferPrice'] > 0){
+	$price = $data_row['OfferPrice'];
+} else {
+	$price = $data_row['Price'];
+}
+
+$incentive_sql = "SELECT SUM(Note) FROM UserPackage WHERE UserID=$UserID";
+$incentive_result = executeSql($incentive_sql);
+$incentive_deduction = mysql_result($incentive_result, 0);
+
+//$asp = $data_row['OfferPrice'] - $incentive_deduction;
+$data_row['action'] = $action;
+?>
+<html>
+<? print_top_frame($PHP_SELF, "../", true, true);
+
+?>
+<script type="text/javascript" src="
+<?= ROOT_URL; ?>framework/dojo/dojo.js">
+</script>
+<script type="text/javascript">
+//	dojo.require("dojo.event.*");
+        
+	// load the parser
+	dojo.require("dojo.xml.Parse");
+	dojo.require("dojo.widget.Parse");
+	parser = new dojo.xml.Parse();    
+</script>
+
+<script language="javascript" src="
+<?= ROOT_URL; ?>Entity/Controller/ChequeAction.js" type="text/javascript">
+</script>
+<script language="javascript">
+<? sajax_show_javascript(); ?>
+</script>
+
+<h3>Broker Unit Information</h3>
+
+<input type="button" Value="Back to broker page"
+	onClick="window.location= 'brokerInfo.phtml?BrokerID=<?= $BrokerID; ?>&action=display&displayType=stand-alone'"></input>
+
+<form method="post" action="updateBrokerUnitInfo.phtml"><input
+	type="hidden" name="BrokerID" value="<?= $BrokerID; ?>"> <input type="hidden"
+	name="UserID" value="<?= $UserID; ?>"> <input type="hidden" name="jsAfterDone"
+	value="window.location='<?= $PHP_SELF . "?action=display&BrokerID=$BrokerID&UserID=$UserID"; ?>'">
+
+<table cellspacing=5>
+	<tr>
+		<td>Broker:</td>
+		<td><?= $data_row['BrokerFirstName'] . " " . $data_row['BrokerLastName']; ?></td>
+	</tr>
+	<tr>
+		<td>Suite:</td>
+		<td><?= $data_row['UnitNumber']; ?></td>
+	</tr>
+	<tr>
+		<td>Purchaser:</td>
+		<td><?= $data_row['PurchaserFirstName'] . " " . $data_row['PurchaserLastName'] ; ?></td>
+	</tr>
+	<tr>
+		<td>Offer Price:</td>
+		<td align="right">$<?= number_format($price, 2); ?></td>
+	</tr>
+	<tr>
+		<td>Other Deductions:</td>
+		<td align="right">$<?= number_format($incentive_deduction, 2); ?></td>
+	</tr>
+	<tr>
+		<td>Adjusted Sales Price(A.S.P.):</td>
+		<td align="right">$<?= number_format($data_row['AdjustedSalesPrice'], 2); ?></td>
+	</tr>
+	<?	// there is no gst rebate for commercial condo
+if (GST_REBATE_ENABLED){ ?>
+	<tr>
+		<td>GST Rebate:</td>
+		<td align="right">$<?= number_format($data_row['GSTRebate'], 2); ?></td>
+	</tr>
+	<tr>
+		<td>A.S.P. Net of GST:</td>
+		<td align="right">$<?= number_format($data_row['ASPNetGST'], 2); ?></td>
+	</tr> 
+<? } 	
+        //Added May 30, 2007
+        //Display all 4 commissions and its type
+        //
+        for ($i = 1; $i < (BROKER_COMMISSION_NUMBER + 1); $i++){
+        	$data_row['index'] = $i;
+			print displayCommissionInputField($data_row); 
+	} ?>		
+	<tr>
+		<td> Total Commission: </td>
+		<td align="right"> <? displayTotalCommission($data_row); ?> </td>	
+	</tr>	
+	
+</table>
+<div id="CommissionDetailDIV" name="CommissionDetailDIV">
+<?= getUnitCommissionDetail($data_row); ?>
+</div>
+<BR>
+<BR>
+<?
+createCollapsibleDIVIcon("Deposit Information", "PurchaseDetailDIV");
+createCollapsibleDIV("PurchaseDetailDIV"); 
+?>
+	<TABLE>
+<? 
+include_once "listChequeAction.phtml";
+
+$purchaseSql = getChequeListSql();
+$purchaseSql .= " AND UserID=$UserID ";
+
+$purchaseResult = executeSql($purchaseSql);
+print getChequeListTable($purchaseResult);
+?>
+	</TABLE>
+</div>
+<BR>
+<table>
+<?	if ($action=="display"){ ?>
+	<tr>
+.		<td><input type='button' value="Edit" onClick="window.location='<?= $PHP_SELF . "?action=edit&BrokerID=$BrokerID&UserID=$UserID"; ?>'"></td>
+	</tr>
+	<?	} else { ?>
+	<tr>
+		<td><input type='submit' value="Submit"></td>
+		<td><input type='button' value="Cancel" onClick="window.location='<?= $PHP_SELF . "?action=display&BrokerID=$BrokerID&UserID=$UserID"; ?>'"></td>
+	</tr>
+	<? } ?>
+</table>
+</form>
+
+</html>

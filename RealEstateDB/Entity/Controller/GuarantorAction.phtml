@@ -1,0 +1,46 @@
+<?php
+/*
+ * Created on 27-Dec-2006
+ *
+ * The calling script should initialize sajax. This script only export the necessary function to ajax
+ * Action script for guarantor
+ */
+ 
+include_once "config/config.phtml";
+include_once "framework/sajax/Sajax.php";
+include_once "guiUtil.phtml";
+include_once "Entity/Controller/AddressAction.phtml";
+require_once "Entity/View/GuarantorView.phtml";
+
+
+function getNewGuarantorHTMLForm($index){
+	$Guarantor = new GuarantorView();
+	return $Guarantor->getNewHTMLForm($index);
+}
+
+function getExistingGuarantorHTMLForm($index, $DBResultRow, $mode = "display"){
+	$Guarantor = new GuarantorView();
+	return $Guarantor->getExistingHTMLForm($index, $DBResultRow, $mode);
+}
+
+
+// should be initialized by caller
+//sajax_init();
+//$sajax_debug_mode = 1;
+sajax_export("getNewGuarantorHTMLForm");
+// should be handled by caller
+//sajax_handle_client_request();
+
+if ($isDebug == 1){
+	include_once "main_include.phtml";
+	?>
+	<html>
+	<body>
+	<form>
+	<?= getNewGuarantorHTMLForm(1); ?>
+	</form>
+	</body>
+	</html>
+<?
+}
+?>

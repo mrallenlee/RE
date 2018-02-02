@@ -1,0 +1,148 @@
+<?php
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/URL/LinkHandler.phtml";
+
+/*
+ * Created on 15-Jan-2006
+ * Update PO 
+ * POST VAR:
+ * action : add, edit, delete
+ * editType : issued (only update Issued flag and IssuedDate)
+ * poType: standard, nonStandard, mix
+ * UnitNumber : unit to be updated
+ * 
+ * For editType == issued
+ * checkbox_new_standardPO_ItemID_OptionID and checkbox_original_standardPO_ItemID_OptionID   
+ * checkbox_new_nonStandardPO_POID and checkbox_original_nonStandardPO_POID
+ * The idea of having original and new is because checkbox doesn't send value if it is disable.
+ * So in order to know when to update the disable checkbox, the system checks the original value,
+ * and compare the new value.   
+ */
+
+define(INPUT_TYPE, 				0);
+define(ORIGINAL_OR_NEW_TYPE, 	1);
+define(PO_TYPE, 				2);
+// standard po
+define(ITEM_ID,				 	3);
+define(OPTION_ID, 				4);
+// for non standard po
+define(PO_ID,				 	3);
+
+
+// init variable
+if (!isset($issued) || $issued == "") {
+	$issued = 0;
+}
+
+if (!isset($UnitNumber) || $UnitNumber == ""){
+	die("UnitNumber is not set");
+}
+
+// only updates issued flag
+if ($poType == "mix" && $editType == "issued"){
+	$values=$HTTP_POST_VARS;
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+//		print ("key=$key val=$val<BR>");
+		$keyArray = explode ( "_", $key);
+//print ("keyArray 0=" . $keyArray[0] . " 1=" . $keyArray[1] . " 2=" . $keyArray[2] . " 3=" . $keyArray[3] . " 4=" . $keyArray[4] . " val=$val<BR>" );		
+		// only handle original, use the name from original to find the new value
+		if ($keyArray[ORIGINAL_OR_NEW_TYPE] == "original"){ 
+			 if ($keyArray[PO_TYPE] == "standardPO"){
+			 	$newKeyName = str_replace("original", "new", $key);
+			 	
+			 	$newValue = ($$newKeyName != "") ? 1 : 0;
+			
+			 	if ($newValue != $val){
+			 		$updateStandardPOIssueSql = " UPDATE StandardPO Set Issued=$newValue";
+			 		// only update IssuedDate when Issued is checked
+			 		if ($newValue){
+			 			$updateStandardPOIssueSql .= " , IssuedDate=CURRENT_DATE() "; 
+			 		}	
+			 		$updateStandardPOIssueSql .= " WHERE UnitNumber='$UnitNumber'" .
+			 									"  AND OptionID= " . $keyArray[OPTION_ID] .
+			 									"  AND ItemID=" . $keyArray[ITEM_ID] ;
+			 								
+					$updateStandardPOIssueResult = mysql_query($updateStandardPOIssueSql,$db) 
+													or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:" . 
+																$updateStandardPOIssueSql . $PHP_SELF);			 		
+			 	}
+			 } else if ($keyArray[PO_TYPE] == "nonStandardPO"){
+			 	$newKeyName = str_replace("original", "new", $key);
+			 	
+			 	$newValue = ($$newKeyName != "") ? 1 : 0;
+			
+			 	if ($newValue != $val){
+			 		$updateNonStandardPOIssueSql = " UPDATE NonStandardPO Set Issued=$newValue";
+			 		// only update IssuedDate when Issued is checked
+			 		if ($newValue){
+			 			$updateNonStandardPOIssueSql .= " , IssuedDate=CURRENT_DATE() "; 
+			 		}	
+			 		$updateNonStandardPOIssueSql .= " WHERE POID=" . $keyArray[PO_ID]; 
+					$updateStandardPOIssueResult = mysql_query($updateNonStandardPOIssueSql,$db) 
+													or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:" . 
+																$updateNonStandardPOIssueSql . $PHP_SELF);
+			 	}		 				 
+			 } else {
+			 	print("Unknown PO Type " . $valueArray[1]);	
+			 } 		
+		}
+	}	
+} // if ($poType == "mix" && $editType == "issued"){
+else if ($poType == "nonStandard"){
+	if ($action == "add" || $action == "edit"){
+		
+		if ($cost == ""){
+			$cost = 0;	
+		} else { // convert constant to numberic value
+			$cost = convertPriceConstantToNum($cost);	
+		}		
+		
+		$nonStandardUpdatesql = $action == "add" ? " INSERT " : " UPDATE ";
+		$nonStandardUpdatesql .= " NonStandardPO " . 
+								" SET SectionID=$sectionID, " .
+								" SubsectionID=$subsectionID, " .
+								" ContractorID=\"$ContractorID\", " .
+								" Description=\"" . encode_special_db_char($description) . "\", " .
+								" Cost=$cost, " . 
+								" UnitNumber=$UnitNumber, " .
+								" Issued=$issued ";
+		// 								
+		if ($issued){
+			$nonStandardUpdatesql .= " IssuedDate=CURRENT_DATE()";
+		}								
+										
+		if ($action == "edit"){
+			$nonStandardUpdatesql .= " WHERE POID=$POID ";			
+		}								
+		
+//print $nonStandardUpdatesql;								
+		$result = mysql_query($nonStandardUpdatesql, $db) or
+					die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$nonStandardUpdatesql.$PHP_SELF);
+						
+								
+		 
+					 
+	} else if ($action == "delete"){
+		$nonStandardUpdatesql = "DELETE FROM NonStandardPO WHERE POID=$POID";
+		$result = mysql_query($nonStandardUpdatesql, $db) or
+					die("Delete failed:\n".mysql_error()."\nFull SQL:\n".$nonStandardUpdatesql.$PHP_SELF);
+	} else {
+		die("Unknown action . $action");	
+	}
+	
+}
+
+$linkHandler = new LinkHandler($PHP_SELF, $_POST, $_GET);
+$js = $linkHandler->getJavascriptAction();
+if (strlen($js) > 0){
+?>
+	<script>
+		<?= $js; ?>
+	</script>
+<?	
+} else {
+	back();
+}	
+?>

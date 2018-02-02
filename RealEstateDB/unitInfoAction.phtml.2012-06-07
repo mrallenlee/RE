@@ -1,0 +1,245 @@
+<?php
+/*
+ * Created on 18-Feb-2006
+ *
+ * List all unit information
+ *
+ * Query Var: $sortOrder - column to sort. Default value is unit number
+ */
+
+$not_include_javascript = 1;
+include_once "main_include.phtml";
+
+/**
+ * Generate the list of unit information
+ * return a String contains the table
+ * Note: ob_start is used to capture std output and 
+ * return std to a string
+ */ 
+function generateUnitInfo($whereClause, $sortOrder)
+{
+	global $PHP_SELF;
+
+	ob_start();
+	createCollapsibleDIV("UnitInfoDIV");
+
+	//if ($_REQUEST["hideColumns"] == 1)
+	//{
+	?>
+<TD><INPUT TYPE="BUTTON" VALUE="Show / Hide Columns"
+	onClick="tool.table.format(document.getElementById('unitInfoList'))"></TD>
+	<?
+	//}
+	?>
+<TABLE id="unitInfoList" Cellspacing=5>
+
+	<?php
+	// 2.1 display reminder notes for purchaser
+	$sql = "SELECT Unit.*,
+				User.FirstName, User.LastName
+				FROM Unit 
+				LEFT JOIN User 
+				ON Unit.UserID = User.UserID";
+
+	if ($whereClause != ""){
+		$sql .= " WHERE " . stripslashes($whereClause);
+	}
+
+	if ($sortOrder == "UnitNumber"){
+		$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+	} else if ($sortOrder == "UnitType"){
+		$sql .= " ORDER BY Unit.UnitType";
+	} else if ($sortOrder == "UnitTypeDescription"){
+		$sql .= " ORDER BY Unit.UnitTypeDescription";
+	} else if ($sortOrder == "Model"){
+		$sql .= " ORDER BY Unit.Model";
+	} else if ($sortOrder == "UnitTypeDescription"){
+		$sql .= " ORDER BY Unit.UnitTypeDescription";
+	} else if ($sortOrder == "Area"){
+		$sql .= " ORDER BY Unit.Area";
+	} else if ($sortOrder == "bedrooms"){
+		$sql .= " ORDER BY Unit.bedrooms";
+	} else if ($sortOrder == "bathrooms"){
+		$sql .= " ORDER BY Unit.bathrooms";
+	} else if ($sortOrder == "maintenance"){
+		$sql .= " ORDER BY Unit.maintenance";
+	} else if ($sortOrder == "Price"){
+		$sql .= " ORDER BY Unit.Price";
+	} else if ($sortOrder == "Status"){
+		$sql .= " ORDER BY Unit.Status";
+	} else if ($sortOrder == "CustomerName"){
+		$sql .= " ORDER BY User.FirstName, User.LastName";
+	} else {
+		$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));				
+	}
+
+	$sql .= ", " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+//	echo "sql=$sql";
+	
+	$result = executeSql($sql);
+
+	// prepare unit status data
+	$UnitStatus_sql = "SELECT * FROM UnitStatus";
+	$UnitStatus_result = executeSql($UnitStatus_sql);
+	$num_of_rows = 0;
+
+	while ($row = mysql_fetch_array($result)) {
+		$userListingLink = "userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];
+
+		if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+		{
+			?>
+	<TR CLASS="head">
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>');">Unit
+		Number</a></TD>
+		<TD>Action</TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','UnitType');">Unit
+		Type</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','Model');">Model</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','UnitTypeDescription');">Unit
+		Type Description</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','Area');">Area (sq.
+		ft.)</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','bedrooms');">Bedrooms</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','bathrooms');">Bathrooms</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','maintenance');">Maintenance</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','Price');">Price</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','Status');">Status</a></TD>
+		<TD><a href="javascript:sortUnitInfo('<?= $whereClause; ?>','CustomerName');">Customer
+		Name</a></TD>
+
+	</TR>
+
+<?
+	}
+	
+	displayMouseOverTR();
+
+?>
+
+	<TD ondblClick='hideColumn("unitInfoList", "UnitNumber");' id="<?= $row['UnitNumber'] ?>_UnitNumber"><?= $row["UnitNumber"]?></TD>
+	<TD><INPUT TYPE="BUTTON" VALUE="Edit" onClick="showEditDialog('<?= $row['UnitNumber']; ?>');"></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_UnitType"><?= $row["UnitType"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_Model"><?= $row["Model"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_UnitTypeDescription"><?= $row["UnitTypeDescription"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_Area"><?= $row["Area"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_bedrooms"><?= $row["bedrooms"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_bathrooms"><?= $row["bathrooms"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_maintenance"><?= $row["maintenance"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_Price"><?= $row["Price"]?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_Status"><?= $row["Status"] ?></TD>
+	<TD id="<?= $row['UnitNumber'] ?>_CustomerName"><A HREF="<?= $userListingLink; ?>"><?= $row["FirstName"] . " " . $row["LastName"] ?></A></TD>
+<? if (get_access_security_level() >= ADMIN){ ?>
+	<TD><INPUT TYPE="BUTTON" VALUE="Delete" onClick=deleteUnit(<?= $row['UnitNumber']; ?>)
+	></TD>
+<? } ?>
+	</TR>  
+<?
+}
+?>
+	<TR>
+		<TD>&nbsp;</TD>
+	</TR>
+</TABLE>
+</DIV>
+<?
+$output = ob_get_contents();
+ob_end_clean();
+return $output;
+}
+
+
+/**
+ * Delete a given unit from database. Return true if no sql error
+ */
+function delete($UnitNumber)
+{
+	global $db;
+	global $_SERVER;
+
+	// delete the note
+	ob_start();
+	$sql = "DELETE FROM Unit WHERE UnitNumber=$UnitNumber";
+	$result = executeSql($sql);
+
+	ob_end_clean();
+	return 1;
+}
+
+/**
+ * Add or update information of a given unit into database. 
+ * action = "add" or "edit"
+ * Return true if no sql error
+ */
+function update($action,
+$UnitNumber,
+$UnitType,
+$Model,
+$UnitTypeDescription,
+$Area,
+$bedrooms,
+$bathrooms,
+$maintenance,
+$Price,
+$Status)
+{
+	global $db;
+	global $_SERVER;
+
+	ob_start();
+
+	$Area = empty($Area) ? 0 : $Area;
+	$bedrooms = empty($bedrooms) ? 0 : $bedrooms;
+	$Price = empty($Price) ? 0 : $Price;
+	$maintenance = empty($maintenance) ? 0 : $maintenance;
+
+	if ($action == "add")
+	{
+		$sql = "INSERT INTO Unit (UnitNumber,
+									UnitType,
+									Model,
+									UnitTypeDescription,
+									Area,
+									bedrooms,
+									bathrooms,
+									maintenance,
+									Price,
+									Status,
+									UserID)
+						VALUES ('" . $UnitNumber ."',
+									'" . $UnitType ."',
+									'" . $Model ."',
+									'" . $UnitTypeDescription ."',
+									" . $Area .",
+									" . $bedrooms .",
+									'" . $bathrooms ."',
+									" . $maintenance .",
+									" . $Price .",
+									'" . $Status ."',
+									0)";
+	}
+	else if ($action == "edit")
+	{
+		$sql = "UPDATE Unit
+							SET UnitType = '". $UnitType ."',
+									Model = '". $Model ."',
+									UnitTypeDescription = '". $UnitTypeDescription ."',
+									Area = ". $Area .",
+									bedrooms = ". $bedrooms .",
+									bathrooms = '". $bathrooms ."',
+									maintenance = ". $maintenance .",
+									Price = ". $Price .",
+									Status = '". $Status ."'
+					WHERE UnitNumber = ". $UnitNumber;
+	}
+
+	$result = executeSql($sql, false);
+
+	ob_end_clean();
+	if ($result){
+		return 1;
+	} else {
+		return 0;
+	}
+}
+?>

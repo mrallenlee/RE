@@ -1,0 +1,196 @@
+<?
+include_once "../main_include.phtml"; 
+
+
+function padSpace($input, $length, $spaceAlign = "left"){
+	$inputLength = strlen($input);
+	if ($inputLength >= $length){
+		return $input;
+	}
+	$diff = $length - $inputLength;
+	$result = "";
+	if ($spaceAlign == "left"){
+		for ($i=0; $i < $diff; $i++){
+			$result .= " ";
+		}
+		$result .= $input;
+		return $result;
+	} 
+}
+
+/*
+	$this->cost 		= "cost=" . $PODataRow['Cost'];
+		$this->unitNumber 	= "unitNumber=" . $PODataRow['UnitNumber'];
+		$this->issuedDate 	= "issuedDate=" . $PODataRow['IssuedDate'];
+		$this->contractorName 	= "contractorName=" . $PODataRow['ContractorName'];
+		$this->contractorContactName 	= "contractorContactName=" . $PODataRow['ContractorPerson'];
+		$this->contractorPhone	= "contractorPhone=" . $PODataRow['ContractorPhone'];
+		$this->contractorAddress 	= "contractorAddress=" . $PODataRow['ContractorAddress'];
+		$this->contractorCity		= "contractorCity=" . $PODataRow['ContractorCity'];
+		$this->contractorCountry 	= "contractorCountry=" . $PODataRow['ContractorCountry'];
+		$this->contractorPostalCode 	= "contractorPostalCode=" . $PODataRow['ContractorPostalCode'];
+	*/
+/**
+ * Multi-Arg function
+ * $pdfMaker: must be the first argument.
+ * Args: $cost, $gst, $unitNumber, $issuedDate, $PONumber,
+ * contractorName, contractorContactName, contractorPhone, contractorAddress,
+ * contractorCity, contractorCountry, contractorPostalCode
+ */
+function printPDFInvoice($pdfMaker, &$descriptionArray){
+	$costLength = 25;
+	$unitNumber = "";
+	$cost = 0.00;
+	$issuedDate = "";
+	$PONumber = "";
+	$contractorName = "";
+	$contractorContactName = "";
+	$contractorPhone = "";
+	$contractorAddress = "";
+	$contractorCity = "";
+	$contractorCountry = "";
+	$contractorPostalCode = "";
+	$markRevised = 0;
+	
+	
+	// start with 3rd argument because first one is pdfMaker obj
+	for ($i=2; $i < func_num_args(); $i++){
+		$argument = func_get_arg($i);
+		list($key, $value) = explode("=", $argument);
+		${$key} = $value;
+	}
+	
+	$gst = $cost * getGSTRate();	
+	
+	$revisedText = "REVISED";
+	$date = date("M d, Y");
+	$total = $cost + $gst;
+	$companyAddress = "	LJM Developments
+	1860 Appleby Line, Unit 28
+	Burlington, Ontario
+	L7L 0B7"; 
+	$invoiceIDText = "PO #: $PONumber";
+	$issuedDateText = "Issued Date: $issuedDate";
+	
+	
+	$title .= PROJECT_NAME . " PURCHASE ORDER FOR UNIT $unitNumber";
+	$titleContinue .= PROJECT_NAME . "PURCHASE ORDER FOR UNIT $unitNumber Continued";
+	$to = "TO: " . $contractorName . " - ATTENTION OF $contractorContactName";
+	$toAddress = "$contractorAddress\n$contractorCity,\n$contractorPostalCode\nTEL:$contractorPhone";
+	
+	$executeDescription = "PLEASE EXECUTE THE FOLLOWING WORKS IN ACCORDANCE WITH THE TERMS AND CONDITIONS OF THE CONTRACT BETWEEN OURSELVES.
+	PLEASE NOTE THAT YOUR INVOICES MUST CLEARLY IDENTIFY THIS PURCHASE ORDER NUMBER";
+	
+	$descriptionTitle = "DESCRIPTION:";
+	
+	$costTitle = "COSTING:";
+	
+	$notesOnCostTitle = "NOTES OF COSTING";
+	$notesOnCost = "If you disagree with the COSTING of this P.O., please contact LJM Developments\nWITHIN 7 DAYS to clarify the pricing.\nIf we do not hear from you within 7 days, we assume you agree with the above figures.";
+	
+	$authorizationTitle = "AUTHORISATION:";
+	$marleneInfo = "\nLJM Developments\n$date";
+
+	$pdfMaker->newPage();
+	$pdfMaker->setColor("000000", "fill");
+
+	$pdfMaker->addImage("PO/images/project-logo-small.jpg", "jpeg", "center", 0.5, true);
+
+	$pdfMaker->insertTable("cellPadding=0");	
+	$pdfMaker->setTableColWidth(0, 180);	
+	$pdfMaker->setTableColWidth(1, 344);	
+	$pdfMaker->insertRow();
+	$pdfMaker->insertCell("text=$companyAddress","fontName=Helvetica", "fontSize=9", "align=left");
+	$dateText = $invoiceIDText . "\n" . $issuedDateText;
+	$pdfMaker->insertCell("text=$dateText","fontName=Helvetica", "fontSize=9", "align=right");
+	$pdfMaker->endRow();			
+	$pdfMaker->endTable();
+
+	//$pdfMaker->printText("text=\n\n");
+	$pdfMaker->setFontSize(14);
+	$pdfMaker->printText("text=$title","align=center");
+	$pdfMaker->setFontSize(8);
+	$pdfMaker->printText("text=\n");
+	
+	
+	$pdfMaker->setFontSize(8);
+	$pdfMaker->printText("text=$to","align=left","fontSize=10","backgroundColor=000000","fontColor=FFFFFF");
+	$pdfMaker->printText("text=\n");
+
+	$pdfMaker->insertTable("cellPadding=0");	
+	$pdfMaker->setTableColWidth(0, 201);	
+	$pdfMaker->setTableColWidth(1, 344);	
+	$pdfMaker->insertRow();
+	$pdfMaker->insertCell("text=$toAddress","align=left");
+	if ($markRevised){
+		$pdfMaker->insertCell("text=$revisedText","cellPadding=7","align=left", "fontName=Helvetica-Bold","fontColor=FF0000", "fontSize=24");
+	}
+	$pdfMaker->endRow();			
+	$pdfMaker->endTable();
+	
+	$pdfMaker->printText("text=\n");
+	$pdfMaker->printText("text=$executeDescription","align=center", "fontName=Helvetica", "fontSize=7", "borderColor=000000");
+	$pdfMaker->printText("text=\n");
+	
+	$pdfMaker->printText("text=$descriptionTitle","align=left","fontSize=10","backgroundColor=000000","fontColor=FFFFFF");
+	$pdfMaker->printText("text=\n");
+	
+	$pdfMaker->insertTable("cellPadding=5","borderColor=000000");
+	$pdfMaker->setTableColWidth(0, 145);	
+	$pdfMaker->setTableColWidth(1, 309);	
+	$pdfMaker->setTableColWidth(2, 70);	
+	$numOfDescription = count($descriptionArray);
+	for ($i=0; $i < $numOfDescription; $i++){
+		$description = $descriptionArray[$i];
+		$pdfMaker->insertRow();
+		$pdfMaker->insertCell("text=" . html_entity_decode($description['description']),"fontName=Helvetica", "fontSize=10", "align=left");
+		$pdfMaker->insertCell("text=" . html_entity_decode($description['subDescription']),"fontName=Helvetica", "fontSize=10", "align=left");
+		$pdfMaker->insertCell("text=$" . number_format($description['cost'], 2),"fontName=Helvetica", "fontSize=10", "align=right");
+		$pdfMaker->endRow();			
+	}
+	$pdfMaker->endTable();
+	
+	$pdfMaker->printText("text=\n");
+	
+	
+	$cost = "COST (NET OF TAX) FOR P.O. $PONumber FOR SUITE $unitNumber" . padSpace("$" . number_format($cost,2), $costLength);
+	$gst = "H.S.T." . padSpace("$" . number_format($gst,2), $costLength);
+	$total = "GROSS PRICE AUTHORISED INCLUDING H.S.T." . padSpace("$" . number_format($total,2), $costLength);
+	
+	
+	
+	$pdfMaker->printText("text=$costTitle","align=left","fontSize=10","backgroundColor=000000","fontColor=FFFFFF");
+	$pdfMaker->printText("text=\n");
+	$pdfMaker->printText("text=$cost", "fontSize=10", "align=right");
+	$pdfMaker->printText("text= ",  "fontSize=5", "align=right");
+	$pdfMaker->printText("text=$gst",  "fontSize=10", "align=right");
+	$pdfMaker->printText("text=_________________________",  "fontSize=5", "align=right");
+	$pdfMaker->printText("text=$total", "fontSize=10", "align=right");
+	$pdfMaker->printText("text=_________________________",  "fontSize=5", "align=right");
+	$pdfMaker->printText("text=\n");
+	
+	
+//	$pdfMaker->printText("text=$notesOnCostTitle","align=left");
+//	$pdfMaker->printText("text=\n\n","align=left");
+//	$pdfMaker->printText("text=$notesOnCost","align=center","borderColor=000000",  "fontName=Helvetica", "fontSize=10");
+//	$pdfMaker->printText("text=\n\n");
+	
+	
+	$pdfMaker->printText("text=$authorizationTitle","align=left","fontSize=10","backgroundColor=000000","fontColor=FFFFFF");
+	$pdfMaker->printText("text=\n");	
+//	$pdfMaker->printText("text=$marleneInfo", "fontSize=10", "align=left");
+	
+	//$pdfMaker->addImage("PO/images/company-logo-small.jpg", "jpeg", "right", 0.5, true);	
+	
+	$pdfMaker->insertTable("cellPadding=0");	
+	$pdfMaker->setTableColWidth(0, 180);	
+	$pdfMaker->setTableColWidth(1, 344);	
+	$pdfMaker->insertRow();
+	$pdfMaker->insertCell("text=$marleneInfo","fontName=Helvetica", "fontSize=10", "align=left");
+	$pdfMaker->endRow();			
+	$pdfMaker->endTable();
+	
+	
+	$pdfMaker->endPage();
+}
+?>

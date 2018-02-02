@@ -1,0 +1,257 @@
+<?
+include_once "main_include.phtml";
+
+// set the security level to be 2 for this page
+check_auth(HOMEOPTIONS);
+
+// expect
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
+
+<script language="JavaScript">
+<!--
+function listAll(){
+
+	window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>'; 
+}
+
+function listOrderBy(orderBy){
+	window.location='<?= $_SERVER['PHPSELF']; ?>?<?= $search_criterion; ?><?
+		if ($listall == 1){
+			print "&listall=1";	
+		}
+	?>&orderby=' + orderBy; 
+}
+//-->
+</script>
+
+	<H3><?= get_project_name($PHP_SELF); ?></H3>
+
+	<H4>Search Unit</H4>
+
+	<FORM NAME="search_unit" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+
+		<TABLE>
+
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+
+		<TR CLASS="blank">
+
+			<TD>Unit Number  : </TD>
+
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>			
+
+		</TR>
+
+		<TR CLASS="blank">
+
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+
+		</TR>
+
+		<TR>
+
+			<TD COLSPAN="5" ALIGN="LEFT" CLASS="blank">
+
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listAll();">
+
+			</TD>
+
+		</TR>
+
+		</TABLE>
+
+	</FORM>
+
+<?
+
+// init var
+$searchFor = "";
+
+$sql .= "SELECT Unit.UnitNumber, Unit.Model, UserUpgradeOptionStatus.Commit " .
+		" FROM Unit LEFT JOIN UserUpgradeOptionStatus " .
+		" ON UserUpgradeOptionStatus.UnitNumber = Unit.UnitNumber" .
+		" WHERE Unit.UserID = 0";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$HTTP_GET_VARS;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				if ($search_field == "UnitNumber")
+				{
+//					$sql_cond .= " AND Unit." . $search_field . " LIKE '" . $val . "'";
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"Unit.UnitNumber", "csvValue"=>$val)) . ") ";			
+				}
+				else
+				{
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+				}
+
+				$sql .= $sql_cond;
+				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+	{
+		die();
+	}
+}
+else
+{
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+?>
+
+
+
+	<H4>List Units</H4>
+
+	<TABLE BORDER=0>
+
+<?
+		if ($searchFor != "")
+		{
+?>
+
+		<TR CLASS="blank">
+			<TD COLSPAN="10">Search for <?= $searchFor; ?><BR><BR></TD>
+		</TR>
+
+<?
+		}
+?>
+
+		<TR CLASS="head">
+			<TD><A HREF ="javascript:listOrderBy('Commit');">Locked?</A></TD>
+			<TD><A HREF ="javascript:listOrderBy('<?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) ?>');">Unit Number</A></TD>			
+			<TD><A HREF ="javascript:listOrderBy('<?= getOrderClause(array("columnName"=>"Unit.Model", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) ?>');">Unit Type</A></TD>
+			<TD COLSPAN=4>Actions</TD>
+		</TR>
+
+		<form name="update_unit" action="update_purchaser.phtml" method="post">
+
+<?
+
+		while ($row = mysql_fetch_array($result))
+
+		{				
+			if ($row['Commit'])
+			{
+				$Commit = "Yes";
+			}
+			else
+			{
+				$Commit = "No";
+			}
+
+			displayMouseOverTR();
+?>
+
+				<TD><CENTER><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_Commit"
+<?
+				if ($row['Commit'] == 1) 
+				{
+?>
+					 CHECKED
+<?
+				} else {
+?>					DISABLED 										
+<?				}
+				
+?>
+				></CENTER></TD>
+
+				<TD><?= $row['UnitNumber']; ?></TD>
+				<TD><?= $row['Model']; ?></TD>
+
+				<TD><INPUT TYPE="BUTTON" value="Report"
+				onClick="window.location='unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=0&mode=display'" ></TD>
+				<TD><INPUT TYPE="BUTTON" value="Report W/ Price"
+				onClick="window.location='unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=1&mode=edit'" ></TD>
+				<TD><INPUT TYPE="BUTTON" value="Select Upgrades"
+				onClick="window.location='loadUnitSession.phtml?UnitNumber=<?= $row['UnitNumber']; ?>'" ></TD>
+
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UnitNumber']?>_UnitNumber" VALUE="<?= $row['UnitNumber']?>"></TD>
+
+			</TR>
+
+<?
+			}
+?>		
+
+			<tr><td colspan="10"><a href="javascript:document.forms['update_unit'].submit()"><b>Update</b></a>
+
+			</td></tr>
+
+	</FORM>
+
+	</TABLE>
+
+<?
+
+	if (isSet($err))
+
+	{
+
+?>
+
+<script language="JavaScript">
+
+<!--
+
+	alert('<?= $err; ?>');
+
+//-->
+
+</SCRIPT>
+
+<?	
+
+	}
+
+?>
+
+</BODY>
+
+</HTML>

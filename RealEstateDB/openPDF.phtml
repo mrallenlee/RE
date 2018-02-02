@@ -1,0 +1,30 @@
+<?
+// expect $url : url of pdf file
+// post vars to insert into the pdf file
+
+//Uses values from a post ignores fields that dont matchthe pdf
+
+$values=$HTTP_POST_VARS;
+//print "values=$values<BR>";
+$fdfdata = "%FDF-1.2\n%¡¦¡§&&Mac178;\n";
+$fdfdata .= "1 0 obj \n<< /FDF ";
+$fdfdata .= "<< /Fields [\n"; 
+
+//loop that adds the field names and values
+foreach($values as $key=>$val)
+{
+	$fdfdata.="<< /V ($val)/T ($key) >> ";
+}
+
+	
+$fdfdata .= "]\n";
+$fdfdata .= "/F ($url) >>";
+$fdfdata .= ">>\nendobj\ntrailer\n<<\n/Root 1 0 R\n>>\n";
+$fdfdata .= "%%EOF";
+
+
+/*** Now we display the FDF data which causes Acrobat to start  ***/
+
+header ("Content-Type: application/vnd.fdf");
+print $fdfdata;
+?>

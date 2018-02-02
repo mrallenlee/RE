@@ -1,0 +1,79 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for additional purchaser
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ 
+ class ChequeModel extends EntityModel {
+ 	function ChequeModel() {}
+ 	 	
+	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT Cheque " .
+ 				" SET CreatedDate=NOW() ";
+		 
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+ 		
+ 		$id = mysql_insert_id();
+ 		return $id;
+
+ 	
+ 	}
+
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE Cheque " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE ChequeID = " . $arguments['ChequeID'];
+ 				
+ 		$result = executeSql($sql);
+		return $arguments['ChequeID'];
+ 	}
+
+	/**
+	 * Delete Address
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		
+ 		if ($arguments['ChequeID'] > 0){
+ 			$sql 	= " DELETE FROM Cheque " .
+ 				  		" WHERE ChequeID = " . $arguments['ChequeID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql($arguments){
+		$sql =  "TransactionsRecordID =\"" . $arguments['TransactionsRecordID'] . "\"" .
+ 				" , ChequeNumber =\"" .  $arguments['ChequeNumber'] . "\"" .
+ 				" , ChequeType =\"" .  $arguments['ChequeType'] . "\"" .
+ 				" , FinancialInstitue  =\"" .  $arguments['FinancialInstitue'] . "\"" .
+ 				" , ChequeDate =\"" .  $arguments['ChequeDate'] . "\"" .
+ 				" , ChequeAmount =\"" .  $arguments['ChequeAmount'] . "\"" .
+ 				" , ChequeStatus =\"" .  $arguments['ChequeStatus'] . "\"" .
+ 				" , ChequeFrom =\"" .  $arguments['ChequeFrom'] . "\"" .
+ 				" , ChequeTo =\"" .  $arguments['ChequeTo'] . "\"" .
+ 				" , ChequeNote  =\"" .  $arguments['ChequeNote'] . "\"" . 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 				
+		return $sql;  				
+	} 	
+ }
+?>

@@ -1,0 +1,101 @@
+<?php
+
+include_once "EntityView.phtml";
+include_once "guiUtil.phtml";
+include_once "Entity/View/EntityView.phtml";
+include_once "guiUtil.phtml";
+include_once "Entity/View/TransactionsRecordView.phtml";
+include_once "Entity/View/ChequeView.phtml";
+
+/*
+ * Created on 27-Dec-2006
+ *
+ */
+class TransactionsRecordView extends EntityView{
+	
+	function TransactionsRecordView(){}
+
+	/**
+	 * html form for new additional purchaser
+	 * This function is not for AJAX call because of the DBResultRow param
+	 * This html form contains information for Person
+	 */
+	function getExistingHTMLForm($index, $DBResultRow, $mode = "display"){
+	
+		if ($this->inputPrefix != ""){
+			$prefix = $this->inputPrefix . "_";	
+		} else {
+			$prefix = "";	
+		}
+		
+		if ($this->inputSuffix != ""){
+			$suffix = "_" . $this->inputSuffix;	
+		} else {
+			$suffix = "";	
+		}
+		
+		$action = $mode;
+		$row = $DBResultRow;
+		$transactionsRecordID = $row['TransactionsRecordID'];
+		$inputNamePrefix = $prefix . "TransactionsRecord_" . $index ;
+		$html = "	<input type=\"hidden\" name=\"" . $inputNamePrefix . "_TransactionsRecordID" . $suffix . "\" value=\"" . 
+						$row['TransactionsRecordID'] ."\">" .
+				"	<input type=\"hidden\" name=\"" . $inputNamePrefix . "_Action" . $suffix . "\" value=\"" . 
+						$mode . "\">" .
+				"	<input type=\"hidden\" name=\"" . $inputNamePrefix . "_SubAction" . $suffix . "\" value=\"All\">" .						
+				"	<DIV id='TransactionsRecord_" . $index . "_Wrapper_DIV'><DIV id='TransactionsRecord_" . $index . "DIV'>";
+
+		$chequePrefix = $inputNamePrefix;
+		$nextChequeNum = 1;
+		
+		if ($transactionsRecordID > 0){
+			$chequeSql = "SELECT * FROM Cheque WHERE TransactionsRecordID = $transactionsRecordID";
+			$chequeResult = executeSql($chequeSql);
+			$chequeView = new ChequeView();
+			while ($chequeRow = mysql_fetch_array($chequeResult)){
+				$chequeView->setInputPrefix($chequePrefix);
+				$chequeRow['Index'] = $nextChequeNum;
+				$chequeRow['Mode'] = $mode;
+				$chequeContent = $chequeView->getExistingHTMLForm($chequeRow);
+				$chequeDIV = "<DIV id=\"" . $chequePrefix . "_Cheque_" . $nextChequeNum . "DIV\">";
+				$chequeDIV .= "<table CELLPADDING=2 CELLSPACING=4><TR><TD>Cheque $nextChequeNum</TD></TR>" . $chequeContent . "</table>";
+				$chequeDIV .= "</DIV>";
+				$html .= $chequeDIV; 			  			 			
+				$nextChequeNum++;				
+			}
+		}								
+
+		// create empty cheque div first
+		for ($i = $nextChequeNum; $i <= 10; $i++){
+			$html .= "<DIV id=\"" . $chequePrefix . "_Cheque_" . $i . "DIV\"></DIV>";
+		
+		}
+		$html .= "	</DIV>";
+		if ($mode != "display") {
+			$html .= "		<input type=\"button\" Value=\"Add Cheque\" onClick=\"getNewChequeHTMLForm('" . $inputNamePrefix. "')\">\n";
+		}
+		$html .= "</DIV>";
+		$html .= "<script language=\"JavaScript\">
+				nextChequeNumArray['$inputNamePrefix'] = $nextChequeNum;
+				</script>";
+				
+		return $html;
+		
+	}
+} // TransactionsRecordView 
+
+if ($isDebug == 1){
+	include_once "main_include.phtml";
+	include_once "Entity/Controller/ChequeAction.phtml";
+	?>
+	<html>
+	<table>
+	<?
+	$obj = new TransactionsRecordView();
+	print $obj->getNewHTMLForm(1);
+	?>
+	</table>
+	</html>
+<?
+}
+?>

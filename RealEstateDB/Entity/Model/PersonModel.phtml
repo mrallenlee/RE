@@ -1,0 +1,218 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for Person
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ include_once "Entity/Model/AddressModel.phtml";
+ include_once "Entity/Model/CompanyModel.phtml";
+ 
+ class PersonModel extends EntityModel {
+ 	function PersonModel() {}
+ 	
+	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT Person " .
+ 				" SET CreatedDate=NOW() ";
+ 				
+		if ($arguments['AddressID'] > 0){ 				
+ 			$sql .= " , AddressID=" . $arguments['AddressID'];
+		}
+
+		if ($arguments['Company_CompanyID'] > 0){ 				
+ 			$sql .= " , CompanyID=" . $arguments['Company_CompanyID'];
+		}
+		 
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+ 		
+ 		$id = mysql_insert_id();
+ 		return $id; 	
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+ 		// TODO ALLEN need to revisit the code to handle the FORCE situation. 
+ 		$addressArguments = $this->retrieveArguments("Address", $arguments);
+ 		if (sizeof($addressArguments) > 0 || $addressArguments['AddAddress'] == "FORCE"){	 	
+	 		$addressModel = new AddressModel();
+	 		$addressID = $addressModel->handle($addressArguments); 		
+ 			$arguments['AddressID'] = $addressID;
+ 		} else {
+ 			$arguments['AddressID'] = -1; 			
+ 		}
+ 		
+ 		// don't do anything when action is no-update
+ 		$companyArguments = $this->retrieveArguments("Company", $arguments); 		
+ 		if (sizeof($companyArguments) > 1 && 
+ 				strcasecmp($companyArguments['Action'],"no-update") != 0
+ 				 && strcasecmp($companyArguments['Action'],"display") != 0){
+ 			//print "create new CompanyModel<BR>";
+ 			$companyModel = new CompanyModel();
+	 		$companyID = $companyModel->handle($companyArguments); 		
+ 			$arguments['Company_CompanyID'] = $companyID;
+ 		} else {
+ 			$arguments['Company_CompanyID'] = checkValue($companyArguments['CompanyID'],-1); 			
+ 		}
+ 		return $this->add($arguments);	
+ 	}
+
+	/**
+	 * Update ONLY the current table, but not related tables
+	 */
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE Person " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		
+		if ($arguments['AddressID'] > 0){ 				
+ 			$sql .= " , AddressID=" . $arguments['AddressID'];
+		}
+
+		if ($arguments['Company_CompanyID'] > 0){ 				
+ 			$sql .= " , CompanyID=" . $arguments['Company_CompanyID'];
+		}
+		  		
+ 		$sql .= " WHERE PersonID = " . $arguments['PersonID'];
+//print "<BR>PersonSQL=$sql<BR>" 				;
+ 		$result = executeSql($sql);
+ 		return $arguments['PersonID'];
+ 	}
+ 	
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){ 		
+ 		$companyArguments = $this->retrieveArguments("Company", $arguments);
+//print "companyArguments=";
+//print_r($companyArguments );
+//print "<BR>"; 		
+ 		// 
+	 	// deal with company
+	 	// only perform action if Action is not no-update
+	 	if (strcasecmp($companyArguments['Action'],"no-update") != 0 
+	 			 && strcasecmp($companyArguments['Action'],"display") != 0 && 
+	 			sizeof($companyArguments) > 2){
+			$companyModel = new CompanyModel();
+			if ($companyArguments['Action'] == ""){
+				$companyArguments['Action'] = "update";
+				$companyArguments['SubAction'] = "All"; 				
+			}
+			$companyID = $companyModel->handle($companyArguments);
+			if ($companyID > 0){
+				$arguments['Company_CompanyID'] = $companyID;				
+			}
+	 	}
+	 	
+		if ($arguments['AddressID'] && !isSet($arguments['Address_AddressID'])){
+			$arguments['Address_AddressID'] = $arguments['AddressID'];			
+		}
+ 		$addressArguments = $this->retrieveArguments("Address", $arguments);
+//print "In Person Model<BR>";
+//print_r ($arguments);	 	
+//print "Going to check Address<BR>"; 		 		
+//print_r ($addressArguments); 		
+		// TODO There's a confusion of using Address_AddressID or AddressID. So 
+		// if Address_AddressID is null, and AddressID is not null, 
+		// assign AddressID to Address_AddressID.
+ 		if (isSet($addressArguments['AddressID']) && $addressArguments['AddressID'] > 0){
+ 			
+//print "In If statement<BR>";
+//print_r ($addressArguments); 		
+ 			// deal with address
+ 			$addressModel = new AddressModel();
+ 			$result = $addressModel->handle($addressArguments);
+ 		}
+ 		
+//print "PersonModel::updateAll arguments[companyID]=" . $arguments['Company_CompanyID'] . " <BR>"			;
+ 		$result = $this->update($arguments); 		
+ 		return $result;
+ 	}
+
+	/**
+	 * Delete Person
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		
+ 		if ($arguments['PersonID'] > 0){
+ 			$sql 	= " DELETE FROM Person " .
+ 				  		" WHERE PersonID = " . $arguments['PersonID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	} 	
+ 	
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+ 	function deleteAll(&$arguments){
+		$result = true;
+	 			 
+ 		$companyArguments = $this->retrieveArguments("Company", $arguments); 		
+ 		if (isSet($arguments['CompanyID']) && $arguments['CompanyID'] > 0 
+ 			&& strcasecmp($companyArguments['Action'],"no-update") != 0 ){
+ 			// deal with company	
+ 			$companyModel = new CompanyModel();
+ 			$result = $result && $companyModel->deleteAll($companyArguments);
+ 		}
+
+		
+ 		$addressArguments = $this->retrieveArguments("Address", $arguments); 		
+ 		if (isSet($addressArguments['AddressID']) && $arguments['AddressID'] > 0
+ 			&& strcasecmp($addressArguments['Action'],"no-update") != 0 ){
+ 			// deal with address
+ 			$addressModel = new AddressModel();
+ 			$result = $result && $addressModel->deleteAll($addressArguments);
+ 		}
+ 		
+ 		if ($result){
+	 		$result = $this->delete($arguments); 		
+ 		}
+ 		
+ 		return $result;
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql(&$arguments){
+		$sql =  "   Salutation=\"" .  $arguments['Salutation'] . "\"" .
+				" , FirstName=\"" .  $arguments['FirstName'] . "\"" .
+ 				" , LastName=\"" .  $arguments['LastName'] . "\"" .
+ 				" , Gender =\"" .  $arguments['Gender'] . "\"" .
+ 				" , DateOfBirth =\"" .  $arguments['DateOfBirth'] . "\"" .
+ 				" , BusinessPhone =\"" .  $arguments['BusinessPhone'] . "\"" .
+ 				" , HomePhone =\"" .  $arguments['HomePhone'] . "\"" .
+ 				" , CellPhone =\"" .  $arguments['CellPhone'] . "\"" .
+ 				" , Fax =\"" .  $arguments['Fax'] . "\"" .
+ 				" , Email =\"" .  $arguments['Email'] . "\"" .
+ 				" , DriverLicenseNumber =\"" .  $arguments['DriverLicenseNumber'] . "\"" .
+ 				" , SIN =\"" .  $arguments['SIN'] . "\"" .
+ 				" , HealthCardNumber =\"" .  $arguments['HealthCardNumber'] . "\"" .
+ 				" , PassportNumber =\"" .  $arguments['PassportNumber'] . "\"" .
+ 				" , OtherID  =\"" .  $arguments['OtherID'] . "\"". 
+ 				" , Citizenship =\"" .  $arguments['Citizenship'] . "\"". 
+ 				" , Language  =\"" .  $arguments['Language'] . "\"" .
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 				 				
+		return $sql;  				
+	} 	
+ }
+?>

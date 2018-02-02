@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body leftmargin=0 rightmargin=0 topmargin=0 bottommargin=0 marginwidth=2 marginheight=2>
+<table border="0" cellspacing="1" cellpadding="1" >
+  <tr bgcolor="#FFFFFF" valign=top> 
+	<?
+	//
+	// Find any images associated with this optionID.
+	// This is based on the province and property_id, e.g.
+	//      images/British_Columbia/245_02.jpg 
+	// 245 is the property_id and 02 identifies the 2nd photo.
+	//
+	$no_photos = TRUE;
+
+		
+	$optionID = $OptionID;
+
+	for ($i = 0; $i <= 10000; $i++)
+	{
+		$filename = "images/" . $optionID . "_" . $i;
+
+		if (file_exists($filename))
+		{
+			echo "<td valign=top><a href=\"#\" onMouseOver=\"parent.photo_main.document.main_photo.src='$filename'\"><img src=\"$filename\" border=0 width=50 height=50></a></td>\n";
+		}
+	}
+
+	?>
+  </tr>
+</table>
+</body>
+</html>

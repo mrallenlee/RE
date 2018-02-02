@@ -1,0 +1,367 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+
+//$sql = "SELECT UserID, UnitNumber, FirstName, LastName, Day30DepositChequeAmount, Day30DepositReceivedDate, Day90DepositChequeAmount, Day90DepositReceivedDate, Day150DepositChequeAmount, Day150DepositReceivedDate FROM User";
+//$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF,"./"); ?>
+		<TITLE>Deposit List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+		<FORM NAME="form_search" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+			<TABLE>
+			<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+			<TR CLASS="blank">
+				<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+				<TD>First Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+				<TD>Last Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+			</TR>
+			<TR CLASS="blank">
+				<TD>Company: </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+				<TD>Display Report: </TD>
+				<TD>
+					<SELECT NAME="displayRpt">
+						<OPTION VALUE="collected" <? if ($displayRpt == "collected") echo "selected"?>>Deposit Collected</OPTION>
+						<OPTION VALUE="contracted" <? if ($displayRpt == "contracted") echo "selected"?>>Contracted Amount Info</OPTION>
+				</SELECT>
+				</TD>
+			</TR>
+			<TR CLASS="blank">
+				<TD COLSPAN=6 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+			</TR>
+			<TR>
+				<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+					<INPUT TYPE="SUBMIT" VALUE="Search">
+					<INPUT TYPE="BUTTON" VALUE="List Selected Report" onClick='window.location="<?= $PHP_SELF; ?>?listall=1&displayRpt="+document.form_search.displayRpt.value+"&orderby=<?= $orderby; ?>"'>
+					<INPUT TYPE="BUTTON" VALUE="Generate Deposit Report" onClick="window.location='./dumpReport.phtml?rpttype=deposit'">
+				</TD>
+			</TR>
+				
+			</TABLE>
+		</FORM>
+	</DIV>
+	</DIV>
+
+<?
+// init var
+$searchFor = "";
+
+$sql = "SELECT 	UserID, 
+				UnitNumber, 
+				Company,
+				FirstName, 
+				LastName, 
+				Price,
+				AgreementDepositDate,
+				AgreementDepositAmount,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = AgreementDepositTransactionsRecordID 
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) AgreementDepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = AgreementDepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) AgreementDepositReceivedDate, 
+				Day30DepositAmount,
+				Day30DepositDate,
+				(select sum(ChequeAmount) from Cheque
+					WHERE TransactionsRecordID = Day30DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day30DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day30DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day30DepositReceivedDate, 
+				Day90DepositAmount,
+				Day90DepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = Day90DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day90DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day90DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day90DepositReceivedDate, 
+				Day150DepositAmount,
+				Day150DepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = Day150DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day150DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day150DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day150DepositReceivedDate,
+				Day210DepositAmount,
+				Day210DepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = Day210DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day210DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day210DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day210DepositReceivedDate,
+				OccupancyDepositAmount,
+				OccupancyDepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = OccupancyDepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) OccupancyDepositChequeAmount,
+				OccupancyDepositReceivedDate,
+				VTB
+				FROM User 
+				WHERE 1=1 
+				AND DealStatus != 'Rescinded'";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$_GET;
+	$search_criterion = "&displayRpt=". $displayRpt;
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;		
+				$search_field = substr($key, $pos + 1);
+				if ($search_field == "UnitNumber"){
+					$sql .= " AND (" . expandSearchCriteria(array("columnName"=>$search_field, "csvValue"=>$val)) . ") ";				
+					$search_criterion .= "&" . $key . "=" . $val;					
+				} else {
+					$sql .= " AND " . substr($key, $pos + 1) . " LIKE \"" . $val . "\"";
+					$search_criterion .= "&" . $key . "=" . $val;
+				}
+			}
+		}
+	}
+	
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+	{
+		die();
+	}
+}
+else
+{
+	$search_criterion .= "&listall=1&displayRpt=". $displayRpt;
+}
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY cast(UnitNumber as signed)";
+}
+//print $sql;
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+if ($displayRpt == "collected")
+{
+?>
+		<H4>Deposit Collected</H4>
+
+		<TABLE>
+<?
+	$totalPrice =0;
+	$totalDay30DepositChequeAmount = 0;
+	$totalDay90DepositChequeAmount = 0;
+	$totalDay150DepositChequeAmount = 0;
+	$totalOccupancyDepositChequeAmount = 0;
+	$totalVTB = 0;
+	$num_of_rows = 0;
+	
+	// must set action to be display in order to use display_dollar_value function
+	$action = "display";
+	while($row = mysql_fetch_array($result))
+	{			
+		if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+		{
+?>
+			<TR CLASS="head">
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=cast(UnitNumber as signed)">Suite Number</a></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Company,cast(UnitNumber as signed)">Company</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=FirstName,LastName">Purchaser</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Price,cast(UnitNumber as signed)">Price</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=AgreementDepositChequeAmount,UnitNumber">Deposit #1</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=AgreementDepositReceivedDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day30DepositChequeAmount,UnitNumber">Deposit #2</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day30DepositReceivedDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day90DepositChequeAmount,UnitNumber">Deposit #3</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day90DepositReceivedDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day150DepositChequeAmount,UnitNumber">Deposit #4</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day150DepositReceivedDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day210DepositChequeAmount,UnitNumber">Deposit #5</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day210DepositChequeAmount,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=OccupancyDepositChequeAmount,UnitNumber">Occupancy</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=OccupancyDepositReceivedDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=VTB,UnitNumber">VTB</A></TD>
+			</TR>
+
+<?
+		}
+			$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];
+			displayMouseOverTR("blank", "body");
+			$totalPrice += $row['Price'];
+			$totalAgreementDepositChequeAmount += $row['AgreementDepositChequeAmount'];
+			$totalDay30DepositChequeAmount += $row['Day30DepositChequeAmount'];
+			$totalDay90DepositChequeAmount += $row['Day90DepositChequeAmount'];
+			$totalDay150DepositChequeAmount += $row['Day150DepositChequeAmount'];
+			$totalDay210DepositChequeAmount += $row['Day210DepositChequeAmount'];
+			$totalOccupancyDepositChequeAmount += $row['OccupancyDepositChequeAmount'];
+			$totalVTB += $row['VTB'];
+		
+?>
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['Company'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['FirstName'] . " " . $row['LastName'];?></A></TD>
+				<TD><? display_dollar_value("Price");?></TD>
+				<TD><? display_dollar_value("AgreementDepositChequeAmount");?></TD>
+				<TD><?= convert_date($row['AgreementDepositReceivedDate']);?></TD>
+				<TD><? display_dollar_value("Day30DepositChequeAmount");?></TD>
+				<TD><?= convert_date($row['Day30DepositReceivedDate']);?></TD>
+				<TD><?= display_dollar_value("Day90DepositChequeAmount");?></TD>
+				<TD><?= convert_date($row['Day90DepositReceivedDate']);?></TD>
+				<TD><?= display_dollar_value("Day150DepositChequeAmount");?></TD>
+				<TD><?= convert_date($row['Day150DepositReceivedDate']);?></TD>
+				<TD><?= display_dollar_value("Day210DepositChequeAmount");?></TD>
+				<TD><?= convert_date($row['Day210DepositReceivedDate']);?></TD>
+				<TD><?= display_dollar_value("OccupancyDepositChequeAmount");?></TD>
+				<TD><?= convert_date($row['OccupancyDepositReceivedDate']);?></TD>
+				<TD><?= display_dollar_value("VTB");?></TD>
+			</TR>
+<?
+	}
+?>
+
+			<tr class="tail">
+				<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+				<td colspan=2>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalPrice, "isDollarValue"=>TRUE)); ?></td>
+				<td><?= numberFormat(array("value"=>$totalAgreementDepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay30DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay90DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay150DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay210DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalOccupancyDepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalVTB, "isDollarValue"=>TRUE)); ?></td>
+			</tr>
+		</TABLE>
+<?
+} // end of diplaying "deposit collected" report
+
+if ($displayRpt == "contracted")
+{
+	
+	if (mysql_num_rows($result) > 0)
+	{
+		mysql_data_seek($result, 0);
+	}
+?>
+		<H4>Contracted Amount Info</H4>
+		<TABLE>
+<?
+
+	$totalPrice =0;
+	$totalAgreementDepositChequeAmount = 0;
+	$totalDay30DepositChequeAmount = 0;
+	$totalDay90DepositChequeAmount = 0;
+	$totalDay150DepositChequeAmount = 0;
+	$totalDay210DepositChequeAmount = 0;
+	$totalOccupancyDepositChequeAmount = 0;
+	$totalVTB = 0;
+	$num_of_rows = 0;
+
+	// must set action to be display in order to use display_dollar_value function
+	$action = "display";
+	while($row = mysql_fetch_array($result))
+	{
+		if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+		{
+?>
+			<TR CLASS="head">
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=cast(UnitNumber as signed)">Suite Number</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Company,UnitNumber">Company</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=FirstName,LastName">Purchaser</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Price,UnitNumber">Price</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=AgreementDepositAmount,UnitNumber">Deposit #1</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=AgreementDepositDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day30DepositAmount,UnitNumber">Deposit #2</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day30DepositDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day90DepositAmount,UnitNumber">Deposit #3</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day90DepositDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day150DepositAmount,UnitNumber">Deposit #4</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day150DepositDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day210DepositAmount,UnitNumber">Deposit #5</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Day210DepositDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=OccupancyDepositAmount,UnitNumber">Occupancy</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=OccupancyDepositDate,UnitNumber">Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=VTB,UnitNumber">VTB</A></TD>
+			</TR>
+<?
+		}
+			$totalPrice += $row['Price'];
+			$totalAgreementDepositChequeAmount += $row['AgreementDepositAmount'];
+			$totalDay30DepositChequeAmount += $row['Day30DepositAmount'];
+			$totalDay90DepositChequeAmount += $row['Day90DepositAmount'];
+			$totalDay150DepositChequeAmount += $row['Day150DepositAmount'];
+			$totalDay210DepositChequeAmount += $row['Day210DepositAmount'];
+			$totalOccupancyDepositChequeAmount += $row['OccupancyDepositAmount'];
+			$totalVTB += $row['VTB'];
+			
+			$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];
+			displayMouseOverTR("blank", "body");
+		
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['Company'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['FirstName'] . " " . $row['LastName'];?></A></TD>
+				<TD><? display_dollar_value("Price");?></TD>
+				<TD><? display_dollar_value("AgreementDepositAmount");?></TD>
+				<TD><?= convert_date($row['AgreementDepositDate']);?></TD>
+				<TD><? display_dollar_value("Day30DepositAmount");?></TD>
+				<TD><?= convert_date($row['Day30DepositDate']);?></TD>
+				<TD><?= display_dollar_value("Day90DepositAmount");?></TD>
+				<TD><?= convert_date($row['Day90DepositDate']);?></TD>
+				<TD><?= display_dollar_value("Day150DepositAmount");?></TD>
+				<TD><?= convert_date($row['Day150DepositDate']);?></TD>
+				<TD><?= display_dollar_value("Day210DepositAmount");?></TD>
+				<TD><?= convert_date($row['Day210DepositDate']);?></TD>
+				<TD><?= display_dollar_value("OccupancyDepositAmount");?></TD>
+				<TD><?= convert_date($row['OccupancyDepositDate']);?></TD>
+				<TD><?= display_dollar_value("VTB");?></TD>
+			</TR>
+<?
+	}
+?>
+			<tr class="tail">
+				<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+				<td colspan=2>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalPrice, "isDollarValue"=>TRUE)); ?></td>
+				<td><?= numberFormat(array("value"=>$totalAgreementDepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay30DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay90DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay150DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalDay210DepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalOccupancyDepositChequeAmount, "isDollarValue"=>TRUE)); ?></td>
+				<td>&nbsp;</td>
+				<td><?= numberFormat(array("value"=>$totalVTB, "isDollarValue"=>TRUE)); ?></td>
+			</tr>
+		</TABLE>		
+<?
+} // end of diplaying "contracted amount info" report
+
+?>
+	</BODY>
+</HTML>

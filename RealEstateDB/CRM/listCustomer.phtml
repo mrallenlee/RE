@@ -1,0 +1,393 @@
+<?
+/*
+ * Created on 19-Oct-2005
+ *
+ * List customers
+ */
+ 
+include "config.phtml";
+include CRM_INVERT_RELATIVE_PATH . "main_include.phtml";
+include CRM_INVERT_RELATIVE_PATH . "multiPageNavigation.phtml";
+
+# require: $currSalesRepID
+// currently listCustomer is displayed in one place, and it's inside an iframe
+$insideIFRAME = 1;
+
+print_top_frame($PHP_SELF, CRM_INVERT_RELATIVE_PATH, true, false);
+
+// Purchaser SQL
+ if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$_GET;
+	$search_criterion = "?currSalesRepID=$currSalesRepID"; 
+	$sqlWhere = " (SalesRepID=$currSalesRepID OR SalesRepID1=$currSalesRepID)";
+	$hasSearchValue = false;
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+				$search_field = substr($key, $pos + 1);
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+				if ($search_field == "FirstName" || $search_field == "LastName")
+					$sql_cond = " AND (" . $search_field . " LIKE '" . $val . "' OR AdditionalPurchaser1" . 
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser2" . 
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser3" . 
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser4" . 
+					$search_field . " LIKE '" . $val . "')";
+				else if ($search_field == "RegistrationDateFrom")
+					$sql_cond .= " AND RegistrationDate >= '" . $val . "'";
+				else if ($search_field == "RegistrationDateTo")
+					$sql_cond .= " AND RegistrationDate <= '" . $val . "'";
+				else if ($search_field == "CustomerType"){
+					if ($val != "user" && $val != "all"){
+						$sql_cond .= " AND UserID = -9999 ";
+					}
+				}
+				else
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+				$sqlWhere .= $sql_cond;			
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+}	
+// prepare data for creating list of Priority & Rank
+$sql_Priority = "SELECT Priority from Priority_list";
+$result_Priority = mysql_query($sql_Priority) or log_err_die(mysql_error(), $PHP_SELF);
+
+$sql_Rank = "SELECT Rank from Rank_list ORDER by Rank ASC";
+$result_Rank = mysql_query($sql_Rank) or log_err_die(mysql_error(), $PHP_SELF);
+
+// 3.1 display purchasers belonging to the current sales rep
+$unionSql = " (SELECT FirstName, LastName, " .
+			"DealStatus, UserID, UnitNumber, " .
+			"'user          ' AS CustomerType, PhoneNumber, Rank,  " .
+			"IsImportant, Priority
+	FROM User 
+	WHERE " . $sqlWhere . ")";
+	
+// for visitor
+$sqlWhere = " (SalesRepID=$currSalesRepID OR SalesRepID1=$currSalesRepID)";
+$sql_cond = "";
+ if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$HTTP_GET_VARS;
+	$hasSearchValue = false;	
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+				$search_field = substr($key, $pos + 1);
+				if ($search_field == "RegistrationDateFrom")
+					$sql_cond .= " AND RegistrationDate >= '" . $val . "'";
+				else if ($search_field == "RegistrationDateTo")
+					$sql_cond .= " AND RegistrationDate <= '" . $val . "'";
+				else if ($search_field == "CustomerType"){
+					if ($val != "visitor"  && $val != "all"){
+						$sql_cond .= " AND VisitorID = -9999 ";
+					}
+				}
+				else if ($search_field == "UnitNumber"){
+					// since Visitor table doesn't have UnitNumber, 
+					// so add search criteria that will not return any result 
+					$sql_cond .= " AND VisitorID=-1 ";					
+				} else
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";					
+					$sqlWhere .= $sql_cond;			
+			}
+		}
+	}
+}	
+		$sql = " (SELECT FirstName, LastName, " .
+				"'' AS DealStatus, VisitorID AS UserID, " . DO_NOT_DISPLAY_UNIT_NUMBER . " AS UnitNumber, " .
+				"'visitor' AS CustomerType, PhoneNumber, Rank,  " .
+				"IsImportant, Priority
+			FROM Visitor 
+			WHERE $sqlWhere)";
+//			ORDER BY Priority, Rank";
+
+$unionSql .= " UNION " . $sql;
+
+
+// set ORDER of results
+if ($orderby == "customerType"){	
+	$orderSql =	"ORDER BY CustomerType, FirstName, LastName, IsImportant desc, Priority desc, Rank desc";
+}
+else if ($orderby == "firstName"){	
+	$orderSql =	"ORDER BY FirstName, LastName, IsImportant desc, Priority desc, Rank desc";
+}
+else if ($orderby == "lastName"){	
+	$orderSql =	"ORDER BY LastName, FirstName, IsImportant desc, Priority desc, Rank desc";
+}
+else if ($orderby == "unitNumber"){	
+	$orderSql =	"ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)). ", FirstName, LastName, IsImportant desc, Priority desc, Rank desc";
+}
+else if ($orderby == "DealStatus"){	
+	$orderSql =	"ORDER BY DealStatus, FirstName, LastName, IsImportant desc, Priority desc, Rank desc";
+}
+else if ($orderby == "phone"){	
+	$orderSql =	"ORDER BY PhoneNumber, FirstName, LastName, IsImportant desc, Priority desc, Rank desc";
+}
+else if ($orderby == "priority"){	
+	$orderSql =	"ORDER BY Priority desc, FirstName, LastName, IsImportant desc, Rank desc";
+}
+else if ($orderby == "rank"){	
+	$orderSql =	"ORDER BY Rank desc, Priority desc, FirstName, LastName, IsImportant desc ";
+}
+else if ($orderby == "important"){	
+	$orderSql =	"ORDER BY IsImportant desc, Priority desc, Rank desc, FirstName, LastName";
+}
+
+$search_criterion .= "&orderby=" . $orderby;
+ 
+$unionSql .= $orderSql;			
+	
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 75;
+}		
+//echo "unionSql=$unionSql<BR>";
+
+$multiPageNavigation = new MultiPageNavigation($unionSql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+//echo "pageSql=$pageSql<BR>";  	
+$result = mysql_query($pageSql) or log_err_die(mysql_error() . "<BR>SQL=$pageSql", $PHP_SELF);	
+ ?>
+ <TABLE WIDTH="100%">
+  <TR>
+    <TD colspan=100 align="center" ><?= $multiPageNavigation->getPrevButton($PHP_SELF . $search_criterion);?>
+    <?= $multiPageNavigation->getAllPageButtons($PHP_SELF . $search_criterion);?>
+    <?= $multiPageNavigation->getNextButton($PHP_SELF . $search_criterion);?></TD>
+  </TR>
+</TABLE>  
+ 	<TABLE>
+	<COL WIDTH=50><COL WIDTH=200><COL WIDTH=50><COL WIDTH=50><COL WIDTH=100><COL WIDTH=80><COL WIDTH=80><COL WIDTH=50><COL WIDTH=50>
+	  <TR CLASS="head">
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=customerType">Customer Type</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=firstName">First Name</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=lastName">Last Name</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=unitNumber">Suite Number</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=dealStatus">Deal Status</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=phone">Phone</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=priority">Priority</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=rank">Rank</A></TD>
+	    <TD><A HREF="<?= $_SERVER['PHP_SELF'] . $search_criterion;?>&orderby=important">Important?</A></TD>
+	    <TD>Action</TD>
+	  </TR>
+	
+	  <FORM NAME="myCustomers" METHOD="POST" ACTION="./updateCustomerRank.phtml">
+	  <INPUT TYPE="HIDDEN" NAME="currSalesRepID" VALUE="<?= $currSalesRepID ?>">
+	  <INPUT TYPE="HIDDEN" NAME="firstName" VALUE="<?= $firstName ?>">
+	  <INPUT TYPE="HIDDEN" NAME="forward" VALUE="<?= $_SERVER['PHP_SELF'] . "?currSalesRepID=$currSalesRepID&$search_criterion&orderby=$orderby"; ?>">
+	  
+	<?
+		while ($row = mysql_fetch_array($result)) {
+			displayMouseOverTR();
+	?>
+	    <TD><?= get_customer_type($row["CustomerType"]); ?></TD>
+	    <?	    
+	    	$inputPrefix = $row['UserID'];
+	    	$userType = $row["CustomerType"]=="user" ? "user" : "visitor";
+	    	$notePage = "./listNote.phtml?SalesRepID=$currSalesRepID&CustomerType=";
+	    	$customerPage = "javascript:window.parent.location='" . CRM_INVERT_RELATIVE_PATH . "userListing.phtml?action=display&mode=";
+	    	if ($row['CustomerType']=="user"){
+	    		$notePage .= "$userType&CustomerID=" .  $row['UserID'];
+	    		$customerPage .= "purchaser&UserID=" .  $row['UserID'];
+	    	} else {
+	    		$notePage .= "$userType&CustomerID=" .  $row['UserID'];
+	    		$customerPage .= "$userType&VisitorID=" .  $row['UserID'];	    		
+	    	} 
+	    	$customerPage .= "'";
+	    ?>
+	    <TD><A HREF="<?= $customerPage ?>"><?= $row["FirstName"] ?></A></TD>
+	    <TD><A HREF="<?= $customerPage ?>"><?= $row["LastName"] ?></A></TD>
+	    <TD><A HREF="<?= $customerPage ?>"><?
+	     if ($row["UnitNumber"]==DO_NOT_DISPLAY_UNIT_NUMBER) {
+	    	print "";
+	     } else {
+	     	print $row["UnitNumber"];
+	     }	    	
+	    ?></A></TD>
+	    <TD><A HREF="<?= $customerPage ?>"><?= $row["DealStatus"]?></A></TD>
+	    <TD><A HREF="<?= $customerPage ?>"><?= $row["PhoneNumber"]?></A></TD>
+	    <TD><? create_edittable_list($result_Priority, "Priority", $row["Priority"], $inputPrefix); ?></TD>
+	    <TD><? create_edittable_list($result_Rank, "Rank", $row["Rank"], $inputPrefix); ?></TD>
+	    <TD><INPUT TYPE="CHECKBOX" NAME="<?= $inputPrefix ?>_IsImportant" VALUE="1"
+	    <?if ($row["IsImportant"] == 1) print " CHECKED"; ?>></TD>
+	    <? if ($insideIFRAME) { ?>
+		<TD><INPUT TYPE="BUTTON" VALUE="Add Note" onClick="window.parent.displayNoteAddDIV(<?= $currSalesRepID; ?>, '<?= get_user_name(); ?>', '<?= $row["CustomerType"]; ?>', <?= $row['UserID']; ?>); return false;"></TD>
+		<? } else { ?> 
+		<TD><INPUT TYPE="BUTTON" VALUE="Add Note" onClick="window.open('<?= $notePage; ?>'); return false;"></TD>
+		<? } ?>		
+		<TD><INPUT TYPE="HIDDEN" NAME="<?= $inputPrefix ?>_CustomerType" VALUE="<?= $userType ?>">
+		<INPUT TYPE="HIDDEN" NAME="<?= $inputPrefix ?>_CustomerID" VALUE="<?= $row['UserID'] ?>">
+		</TD>
+	  </TR>
+	
+	<?
+	
+	
+		}
+/*	
+		// 3.2 display visitors belonging to the current sales rep
+
+$sqlWhere = " (SalesRepID=$currSalesRepID OR SalesRepID1=$currSalesRepID)";
+$sql_cond = "";
+ if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$HTTP_GET_VARS;
+	$hasSearchValue = false;	
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+				$search_field = substr($key, $pos + 1);
+				if ($search_field == "RegistrationDateFrom")
+					$sql_cond .= " AND RegistrationDate >= '" . $val . "'";
+				else if ($search_field == "RegistrationDateTo")
+					$sql_cond .= " AND RegistrationDate <= '" . $val . "'";
+				else
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+				$sqlWhere .= $sql_cond;			
+			}
+		}
+	}
+}	
+		
+		$sql = "SELECT *
+			FROM Visitor 
+			WHERE $sqlWhere
+			ORDER BY Priority, Rank";
+	print "visitor sql=$sql";
+//		$result = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+*/	
+		while ($row = mysql_fetch_array($result)) {
+			if ($class == "body" || $class == "") {
+				$class = "blank";
+			} else {
+				$class = "body";
+			}
+	?>
+	  <TR CLASS="<?= $class; ?>">
+	    <TD>Visitor</TD>
+	    <TD><A HREF="<?= CRM_INVERT_RELATIVE_PATH ?>userListing.phtml?action=display&mode=visitor&VisitorID=<?= $row['VisitorID'] ?>"><?= $row["FirstName"] . " " . $row["LastName"] ?></A></TD>
+	    <TD></TD>
+	    <TD></TD>
+	    <TD><A HREF="<?= CRM_INVERT_RELATIVE_PATH ?>userListing.phtml?action=display&mode=visitor&VisitorID=<?= $row['VisitorID'] ?>"><?= $row["PhoneNumber"]?></A></TD>
+	    <TD><? create_edittable_list($result_Priority, "Priority", $row["Priority"], $row["VisitorID"]); ?></TD>
+	    <TD><? create_edittable_list($result_Rank, "Rank", $row["Rank"], $row["VisitorID"]); ?></TD>
+	    <TD></TD>
+		<TD><A HREF="#" onClick="window.open('./listNote.phtml?CustomerType=Visitor&CustomerID=<?= $row['VisitorID']?>&SalesRepID=<?= $currSalesRepID ?>'); return false;">Add A Note</A></TD>
+		<TD><INPUT TYPE="HIDDEN" NAME="<?= $row["VisitorID"] ?>_CustomerType" VALUE="Visitor"></TD>
+		<TD><INPUT TYPE="HIDDEN" NAME="<?= $row["VisitorID"] ?>_CustomerID" VALUE="<?= $row['VisitorID'] ?>"></TD>
+	  </TR>
+	
+	<?
+	
+	
+		}
+	?>
+	</TABLE>
+
+<TABLE WIDTH="100%">
+  <TR>
+    <TD><INPUT TYPE="SUBMIT" VALUE="SUBMIT"></TD>
+    <TD colspan=100 align="center"><?= $multiPageNavigation->getPrevButton($PHP_SELF . $search_criterion);?>
+    <?= $multiPageNavigation->getAllPageButtons($PHP_SELF . $search_criterion);?>
+    <?= $multiPageNavigation->getNextButton($PHP_SELF . $search_criterion);?></TD>
+  </TR>
+</TABLE>  
+<TABLE>
+  </FORM>
+<?
+
+
+	// 4. list of "other customers"
+?>
+<?
+
+
+	/*
+	 <TR>
+	   <TD COLSPAN="10"><BR><BR><H4>Purchasers of Other Sales Reps</H4></TD>
+	 </TR>
+	<!--</TABLE>
+	<!--  
+	<TABLE>
+	<COL WIDTH=50><COL WIDTH=200><COL WIDTH=50><COL WIDTH=50><COL WIDTH=50>-->
+	 <TR CLASS="head">
+	   <TD>Customer Type</TD>
+	   <TD>Customer Name</TD>
+	   <TD>Suite Number</TD>
+	   <TD>Deal Status</TD>
+	   <TD>Sales Rep</TD>
+	 </TR>
+	</TABLE>
+	
+	<DIV STYLE="overflow: auto; width: 800px; height: 550; 
+	           border-left: 1px gray solid; border-bottom: 1px gray solid; 
+	           padding:0px; margin: 0px">
+	<TABLE>
+	<COL WIDTH=50><COL WIDTH=200><COL WIDTH=50><COL WIDTH=50><COL WIDTH=50>
+	*/
+?>
+
+<?
+
+
+	/*
+	// Disable this section due to too much data in one page
+	// 4.1 display purchasers belonging to other sales rep
+	$sql = "SELECT User.*, SalesRep.*
+		FROM User, SalesRep
+		WHERE User.SalesRepID<>$currSalesRepID
+		AND (User.SalesRepID = SalesRep.SalesRepID
+		OR User.SalesRepID = SalesRep.SalesRepID)
+		ORDER BY SalesRep.SalesRepID";
+		
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	while ($row = mysql_fetch_array($result)) 
+	{		
+			if ($class == "body" || $class == "")
+			{
+				$class = "blank";
+			}
+			else
+			{
+				$class = "body";
+			}
+	*/
+?>
+<!--  <TR CLASS="<?= $class; ?>">
+    <TD>Purchaser</TD>
+    <TD><A HREF="<?= CRM_INVERT_RELATIVE_PATH ?>userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID'] ?>"><?= $row["FirstName"] . " " . $row["LastName"] ?></A></TD>
+    <TD><A HREF="<?= CRM_INVERT_RELATIVE_PATH ?>userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID'] ?>"><?= $row["UnitNumber"]?></A></TD>
+    <TD><A HREF="<?= CRM_INVERT_RELATIVE_PATH ?>userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID'] ?>"><?= $row["DealStatus"]?></A></TD>
+    <TD><?= $row["SalesRepFirstName"] . " " . $row["SalesRepLastName"] ?></TD>
+  </TR>
+//-->
+<?
+
+
+	//}
+?>
+</TABLE>
+</HTML>
+

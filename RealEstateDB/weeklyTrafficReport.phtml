@@ -1,0 +1,179 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+// expect 
+// date 
+?>
+	<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+		<H3><?= get_project_name($PHP_SELF); ?> -- Weekly Traffic Report</H3>
+
+<?
+if (!isSet($date) || $date == "")
+{
+	$date = date("Y\-m\-d");
+}
+//if (isSet($date))
+//{
+	$date = convert_date($date, "YYYY-MM-DD");
+	// init var
+	$newRegistration = 0;
+	$totalRegistration = 0;
+
+	$sql = "SELECT Source FROM Source_list";
+	$sourceResult = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$sourceArray = array();
+	$sourceDescriptionArray = array();
+	while($row = mysql_fetch_array($sourceResult))
+	{
+		array_push($sourceArray,$row['Source']);
+		array_push($sourceDescriptionArray,$row['SourceDescription']);
+	}
+	
+	// get total to date for each source
+	$sourceTotalCountArray = array();
+	
+	$sql = "SELECT Count(*) AS Count, 
+				Visitor.Source 
+				FROM Visitor 
+				WHERE RegistrationDate<=\"$date\"
+				GROUP BY Visitor.Source";
+	$countResult = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	while($countRow = mysql_fetch_array($countResult))
+	{
+
+		$sourceTotalCountArray[$countRow['Source']] = $countRow['Count'];
+		$totalRegistration += $countRow['Count'];
+	}
+	foreach ($sourceArray As $source)
+	{
+		$sourceTotalCountArray[$source] = $sourceTotalCountArray[$source] != "" ? $sourceTotalCountArray[$source] : 0;
+	}
+	
+	
+	$startTimeStamp = strtotime ($date);
+	$dateArray = array();
+	// loop for seven days before the given date
+	for ($i = 6; $i >= 0; $i--)
+	{
+		$timeStamp = strtotime("-" . $i . " day", $startTimeStamp);
+		$dateForSQL = date("Y\-m\-d", $timeStamp);
+		array_push($dateArray, $dateForSQL);
+	}
+	
+	// get count for each source for each day
+	$weekInfoArray = array();
+	foreach ($dateArray As $dateForSQL)
+	{
+		$sql = "SELECT Count(*) AS Count, Visitor.Source FROM Visitor WHERE RegistrationDate=\"$dateForSQL\" GROUP BY Visitor.Source";
+		$countResult = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$dayInfoArray = array();
+		$dayInfoArray['date'] = $dateForSQL;
+		while($countRow = mysql_fetch_array($countResult))
+		{
+//			if ($countRow['Source'] == "")
+//			{
+//				$countRow['Source'] = "Undefined";
+//			}
+			$dayInfoArray[$countRow['Source']] = $countRow['Count'];
+		}
+		array_push($weekInfoArray, $dayInfoArray);
+	}
+	
+	// create weeklyTrafficArray which is a 2-D array contains count. e.g. weeklyTrafficArray[source][date]
+	$weeklyTrafficArray = array();
+	foreach ($weekInfoArray As $dayInfoArray)
+	{
+		foreach ($sourceArray As $source)
+		{
+			$weeklyTrafficArray[$source][$dayInfoArray['date']] =  $dayInfoArray[$source] != "" ? $dayInfoArray[$source] : 0;
+//			echo "\$weeklyTrafficArray[" . $source . "][" . $dayInfoArray['date'] . "]=" . $weeklyTrafficArray[$source][$dayInfoArray['date']] . "<BR>";
+		}
+	}
+	
+	
+	?>
+			<TABLE BORDER=1>
+	<?
+		$num_of_rows = 0;
+		foreach ($sourceArray As $source)
+		{
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+	?>
+				<TR>
+					<TD CLASS="head" ALIGN=CENTER></TD>
+	<?
+				foreach ($dateArray As $dateForSQL)
+				{
+	?>
+					<TD CLASS="head" ALIGN=CENTER><?= convert_date($dateForSQL); ?></TD>
+	<?
+				}
+	?>
+					<TD CLASS="head" ALIGN=CENTER>Total for week</TD>
+					<TD CLASS="head" ALIGN=CENTER>Total to date</TD>
+				</TR>
+<?
+	}
+
+			if ($class == "body" || $class == "")
+			{
+				$class = "blank";
+			}
+			else
+			{
+				$class = "body";
+			}
+	?>
+			<TR CLASS="<?= $class; ?>" onmouseover="this.className='<?= $class; ?>-highlight'" onmouseout="this.className='<?= $class; ?>'">
+					<TD ALIGN=CENTER ><?= $source; ?></TD>
+	<?
+			$weekTotal = 0;
+			foreach ($dateArray As $dateForSQL)
+			{
+				$weekTotal += $weeklyTrafficArray[$source][$dateForSQL];
+	?>
+					<TD ALIGN=CENTER ><?= $weeklyTrafficArray[$source][$dateForSQL]; ?></TD>
+	<?
+			}
+	?>
+					<TD ALIGN=CENTER><?= $weekTotal; ?></TD>
+					<TD ALIGN=CENTER><?= $sourceTotalCountArray[$source]; ?></TD>
+	
+				</TR>
+	<?
+			$newRegistration += $weekTotal;
+		}
+	?>
+			</TABLE>
+			<TABLE>
+				<TR><TD></TD></TR>
+				<TR>
+					<TD CLASS="blank" COLSPAN=9>Total registrations to date:</TD>
+					<TD CLASS="blank"><?= $totalRegistration;?></TD>
+				</TR>
+				<TR>
+					<TD CLASS="blank" COLSPAN=9>Total new registrations this week:</TD>
+					<TD CLASS="blank"><?= $newRegistration;?></TD>
+				</TR>
+			</TABLE>
+<?
+//}
+?>
+
+		<TABLE>
+			<TR><TD><BR><BR></TD></TR>
+			<FORM ACTION="./weeklyTrafficReport.phtml">
+			<TR>
+				<TD CLASS="blank">Enter date :</TD>
+				<TD CLASS="blank"><INPUT	TYPE=TEXT NAME=date></TD>
+				<TD><INPUT CLASS="blank" TYPE=SUBMIT VALUE="Submit"></TD>
+			</TR>
+			</FORM>
+			<TR><TD>(format:</TD><TD>mm/dd/yyyy)</TD></TR>
+		</TABLE>
+	</BODY>
+</HTML>

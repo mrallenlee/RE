@@ -1,0 +1,92 @@
+<?
+include "main_include.phtml";
+// set the security level to be 3 for this page
+check_auth(2);
+
+// userid 0 is used for project level, since AUTO_INCREMENT "UserID" field in "User" table increments from 1
+$sql .= "SELECT FileID, FileDesc, FileName from UserFile WHERE UserID = 0";
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY FileDesc";
+}
+
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+<H3><?= get_project_name($PHP_SELF); ?> -- Project Document Management</H3>
+
+<FORM METHOD="POST" ACTION="./updateProjectDoc.phtml?action=edit">
+<TABLE>
+	<TR CLASS="head">
+		<TD colspan=3><A HREF ="<?= $PHP_SELF;?>?orderby=FileDesc">Document Description</A></TD>
+		<TD colspan=2><A HREF ="<?= $PHP_SELF;?>?orderby=FileName">Document Name</A></TD>
+		<TD>Action</TD>
+	</TR>
+<?
+	
+while ($row = mysql_fetch_array($result))
+{
+	$netPrice = 0;	
+	if ($class == "body" || $class == "")
+	{
+		$class = "blank";
+	}
+	else
+	{
+		$class = "body";
+	}
+//echo "url = {" . "./updateProjectDoc.phtml?action=delete&FileID=".$row['FileID'].";" ."}";
+?>
+	<TR CLASS=<?= $class; ?>>
+		<TD colspan=3><INPUT TYPE="text" NAME="FileDesc[]" VALUE="<?= $row['FileDesc'] ?>" SIZE="50" MAXLENGTH="50"></TD>
+		<!--<TD colspan=3><? display_text("FileDesc","", FALSE,50,FALSE,"","",FALSE, 50, $row['FileDesc']); ?></TD>-->
+		<TD colspan=2><?= $row['FileName']; ?></TD>
+		<TD CLASS="<?= $class; ?> ALIGN="CENTER"><INPUT TYPE=BUTTON CLASS="blank" VALUE="Delete" onClick="confirm_delete('./updateProjectDoc.phtml?action=delete&FileID=<?= $row['FileID']; ?>&FileName=<?= $row['FileName'] ?>')"></TD>
+		<TD><NOBR>&nbsp|&nbsp<A HREF="./projectDoc/<?= $row['FileName'] ?>" TARGET="_blank">Download</A></NOBR></TD>
+		<TD><INPUT TYPE = "HIDDEN" NAME="FileID[]" value="<?= $row['FileID'] ?>"></TD>
+	<TR>
+<?
+}
+?>
+	<TR>
+		<TD CLASS="blank" ><BR><INPUT CLASS="blank" TYPE=SUBMIT VALUE="Submit"></TD>
+	</TR>			
+
+</TABLE>
+</FORM>
+
+<TR>
+	<TD CLASS="blank" COLSPAN=1><BR><BR><H4>Upload New Document</H4></TD>
+</TR>
+
+<FORM ENCTYPE="MULTIPART/FORM-DATA" METHOD="POST" ACTION="./updateProjectDoc.phtml?action=upload">
+<INPUT TYPE="hidden" name="MAX_FILE_SIZE" VALUE="52428800">
+<TABLE>
+	<TR CLASS="head">
+		<TD>Document Description</A></TD>
+		<TD>Document Name</A></TD>
+	</TR>
+	<TR>
+		<TD><INPUT TYPE="text" NAME="FileDescForUpload" SIZE="50" MAXLENGTH="50"></td>
+		<TD><INPUT TYPE="file" NAME="FileForUpload"></td>
+		<TD><INPUT TYPE=SUBMIT VALUE="Upload"></TD>
+	</TR>
+</FORM>
+
+</TABLE>
+
+<?
+if ($user_message)
+?>
+	<BR><B>&nbsp;<?= $user_message ?></B></FONT>
+
+</BODY>
+</HTML>

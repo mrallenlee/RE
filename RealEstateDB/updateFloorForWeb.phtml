@@ -1,0 +1,19 @@
+<?
+include "main_include.phtml";
+
+// delete all data in table "FakeUnit"
+$sql_delete .= "DELETE FROM FloorForWeb";
+$result_delete = mysql_query($sql_delete) or log_err_die(mysql_error(),$PHP_SELF);
+
+while (list($key, $value) = each ($_POST))
+{
+	$sql_insert = "INSERT INTO FloorForWeb(FloorNumber) values($value)";
+	$result_insert = mysql_query($sql_insert) or log_err_die(mysql_error(),$PHP_SELF);
+}
+
+?>
+<script language="JavaScript">
+<!--
+	history.go(-1);
+//-->
+</script>

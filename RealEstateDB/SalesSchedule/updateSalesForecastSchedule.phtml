@@ -1,0 +1,100 @@
+<?
+include "main_include.phtml";
+// expecting 
+// $action : add, edit
+// set the security level to be 2 for this page
+//	$sql = "update SalesSchedule set TargetUnitSalesNum='" . $value;
+//	$sql .= "' WHERE MONTH(Date)='" . $month . "' and YEAR(DATE)='" . $year . "'";
+//      executeSql($sql);
+//check_auth(2);
+$action = $_GET['action'];
+$addNumMonths = $_GET['addnumMonths'];
+//$action = "edit";
+//echo $action;
+
+function checkTargetUnitSalesNumExistInDatabase ($month, $year) {
+	$sql = "SELECT TargetUnitSalesNum 
+		FROM SalesSchedule 
+		WHERE YEAR(date)='" . $year . "' and MONTH(date)='" . $month . "';";
+	$result = executeSql($sql);
+	$targ = array();
+	$row = mysql_fetch_array($result);
+	return $row[0];	
+}
+
+
+if ($action == "delete")
+{
+	$sql = "DELETE FROM Package WHERE PackageID=" . $PackageID;
+	$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+}
+else
+{
+	if ($action == "add")
+	{
+		$sql = "INSERT SalesSchedule Package SET ";
+		$sql .= " PackageName=\"" . $PackageName . "\", SalesIncentiveCategory=\"" . $SalesIncentiveCategory . "\"";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+	}
+	
+	else if ($action == "edit")
+	{
+		//CHECK IF YOU NEED TO UPDATE OR INSERT
+		//UPDATE IF DATA ALREADY EXIST
+		//INSERT IF DATA DOESN NOT EXIST
+		
+		/*		
+		
+		
+		//var_dump($values);
+		
+		//loop that adds the field names and values
+		foreach($values as $key=>$val)
+		{
+			list($name, $year, $month) = explode("_", $key);			
+			$sql = $pre_sql . "TargetUnitSalesNum='" . $val . "' WHERE MONTH(Date) = '" . $month . "' and YEAR(DATE)='" . $year . "';";						
+			echo $sql;			
+			$result = mysql_query($sql);			
+		}*/
+		$values=$_POST;
+		$pre_sql = "UPDATE SalesSchedule SET ";
+		foreach($values as $key=>$val)
+		{
+			list($name, $year, $month) = explode("_", $key);	
+			
+			if (checkTargetUnitSalesNumExistInDatabase($month, $year) == null){
+				if (strlen($month)==1){
+					$month = "0" . $month;	
+				}
+				//INSERT
+				$sql = "INSERT SalesSchedule SET Date = '" . $year . "-" . $month . "-01', TargetUnitSalesNum='" . $val . "';";
+				$result = executeSql($sql);
+			} else {
+				$sql = $pre_sql . "TargetUnitSalesNum='" . $val . "' WHERE MONTH(Date) = '" . $month . "' and YEAR(DATE)='" . $year . "';";						
+				//echo $sql;		
+				$result = executeSql($sql);	
+			}
+			//$result = mysql_query($sql);			
+		}
+		
+	}
+}
+
+if (isSet($forward))
+{
+	if (isSet($back))
+	{
+		$back--;
+		$forward . "&back=" . $back;
+	}
+	goto_url($forward);
+	die();
+}
+
+?>
+<script language="JavaScript">
+<!--
+	window.location = "./SalesForecastSchedule.phtml?action=display&addNumMonths=<?=$addNumMonths;?>";
+	//history.back(<?= $back; ?>);
+-->
+</script>

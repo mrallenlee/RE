@@ -1,0 +1,388 @@
+<?
+include "main_include.phtml";
+include "multiPageNavigation.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+/**
+ * Takes unlimited number of arguments
+ * Arguments: inputName, displayName, value, source=_REQUEST, or DB
+ */
+function displayCheckBoxLocal($arguments){
+	$inputName 		= $arguments['inputName'];
+	$displayName	= $arguments['displayName'];
+	$value 			= $arguments['value'];
+	$source 		= $arguments['source'];
+	
+	$code = "<input type=checkbox name=\"$inputName\"";
+	if ($source == "_REQUEST"){	
+		if ($_REQUEST[$inputName] == $value){
+			$code .=" CHECKED ";	
+		}
+	}
+	$code .= " value=\"$value\">$displayName";
+	
+	return $code;
+}			
+
+function generateFeeCells($start_date, $end_date, $OccupancyDate, $ProRatedFee, $Fee, $total)
+{
+  for ($curr_date = $start_date, $i=0; $curr_date <= $end_date; $curr_date=strtotime("+1 months", $curr_date), $i++)
+  {
+  	if (date("Ym", $curr_date) == date("Ym", $OccupancyDate))
+   	{
+	  	$total[$i] += $ProRatedFee;
+?>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$ProRatedFee, "isDollarValue"=>TRUE)); ?></A></TD>
+<?
+   	}
+   	else if (date("Ym", $curr_date) > date("Ym", $OccupancyDate))
+   	{
+	  	$total[$i] += $Fee;
+?>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$Fee, "isDollarValue"=>TRUE)); ?></A></TD>
+<?
+   	}
+   	else
+   	{
+?>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>0, "isDollarValue"=>TRUE)); ?></A></TD>
+<?
+   	}
+   }
+   return $total;
+}
+?>
+
+<script type="text/javascript" src="framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+	dojo.require("dojo.widget.DatePicker");
+  dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+
+<?
+// expect
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+// MultiPageNavigationResultsPerPage : for multi page navigation
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+// init var
+$searchFor = "";
+
+$sql = "select UserClosingInterimStatement.UnitNumber UnitNumber, 
+               max(UserClosingInterimStatement.CreatedDate), 
+               date_format(UserClosingInterimStatement.OccupancyDate, '%M %e, %Y') OccupancyDate, 
+               ProRatedOccupancyFee, 
+               OccupancyFee, 
+               RealtyTaxes, 
+               InterestOnBalance,
+               User.UserID UserID,
+               User.GSTRebate GSTRebate
+          from UserClosingInterimStatement 
+          left join User
+            ON UserClosingInterimStatement.UnitNumber = User.UnitNumber
+           AND User.DealStatus <> 'Rescinded'
+         WHERE 1=1";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	if ($_REQUEST["GST"] > 0 || $_REQUEST["Tax"] > 0 || $_REQUEST["Interest"] > 0)
+		$hasSearchValue = true;
+		
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+
+		{
+
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+
+				if ($search_field == "FirstName" || $search_field == "LastName")
+
+					$sql_cond = " AND (" . $search_field . " LIKE '" . $val . "' OR AdditionalPurchaser1" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser2" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser3" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser4" . 
+
+					$search_field . " LIKE '" . $val . "')";
+
+				else if ($search_field == "UnitNumber")
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"UserClosingInterimStatement.UnitNumber", "csvValue"=>$val)) . ") ";
+				else if ($search_field == "OccupancyDateFrom")
+					$sql_cond .= " AND OccupancyDate >= '". $val . "'";
+				else if ($search_field == "OccupancyDateTo")
+					$sql_cond .= " AND OccupancyDate <= '". $val . "'";
+				
+				else
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+
+				$sql .= $sql_cond;
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+}
+else
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+}
+
+$sql .= " group by UserClosingInterimStatement.UnitNumber ";
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"UserClosingInterimStatement.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+//print "<br><br>".$sql;
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+
+$result = mysql_query($pageSql) or log_err_die(mysql_error() . "<BR>SQL=$pageSql", $PHP_SELF);	
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+<? createCalendarPopupDiv(); ?>
+
+<script language="JavaScript">
+<!--
+function dump_data()
+{
+	window.location='dumpCSVCashForcast.phtml?sql_cond=<?= urlencode($sql_cond); ?>';
+}
+
+function listall(){
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+//-->
+</script>
+
+	<TITLE>Cash Forcast Report</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_gst_rebate" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+		<TABLE>
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+
+		<TR CLASS="blank">
+			<TD>First Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+			<TD>Last Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Occupancy Date From :<BR>(YYYY-MM-DD) </TD>
+			<TD><? display_date("OccupancyDateFrom", "search", "", false, $search_OccupancyDateFrom, "document.search_gst_rebate.search_OccupancyDateTo.value=document.search_gst_rebate.search_OccupancyDateFrom.value"); ?>
+				</TD>
+			<TD>Occupancy Date To :<BR>(YYYY-MM-DD) </TD>
+			<TD><? display_date("OccupancyDateTo", "search", "", false, $search_OccupancyDateTo); ?></TD>
+		</TR>
+			<td colspan=100>
+		<TR CLASS="blank">
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+			<TD colspan="2">
+			<?= displayCheckBoxLocal(array(inputName=>"GST", displayName=>"GST", value=>1, source=>"_REQUEST")); ?>
+			<?= displayCheckBoxLocal(array(inputName=>"Interest", displayName=>"Interest", value=>1, source=>"_REQUEST")); ?>
+			<?= displayCheckBoxLocal(array(inputName=>"Tax", displayName=>"Tax", value=>1, source=>"_REQUEST")); ?>
+			</TD>
+		</TR>
+		<TR CLASS="blank">
+			<td>Results per Page : </td>
+			<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+		</TR>
+		<TR CLASS="blank">
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+		</TR>
+		<TR>
+			<TD COLSPAN="5" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listall()">
+        <INPUT TYPE="BUTTON" VALUE="View in Excel Spreadhsheet" onClick="dump_data()">
+			</TD>
+		</TR>
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+	
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+
+	{
+		die("");
+	}
+?>	
+
+<H4>Cash Forcast Report</H4>
+<center>
+<TABLE >
+  <TR>
+  <? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&orderby=" . $orderby; ?>
+    <TD align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?></td>
+    <td  align="center" ><?= $multiPageNavigation->getAllPageButtons($linkCreterion);?></td>
+    <td  align="center" valign="center" ><?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  </TR>
+</TABLE>  
+</center>
+	<TABLE BORDER=0>
+
+<?
+$start_date = strtotime(CLOSING_CASH_FORCAST_START_MTH);
+$end_date = strtotime(CLOSING_CASH_FORCAST_END_MTH);
+
+$num_of_additional_rows = 0;
+$num_of_additional_rows = $_REQUEST["GST"] > 0 ? $num_of_additional_rows+1 : $num_of_additional_rows;
+$num_of_additional_rows = $_REQUEST["Interest"] > 0 ? $num_of_additional_rows+1 : $num_of_additional_rows;
+$num_of_additional_rows = $_REQUEST["Tax"] > 0 ? $num_of_additional_rows+1 : $num_of_additional_rows;
+//print "num_of_additional_rows : ". $num_of_additional_rows;
+
+while ($row = mysql_fetch_array($result))
+{
+	$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
+
+	if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+	{
+?>
+		<TR CLASS="head">
+			<TD>Suite Number</TD>
+<?
+    // create the column for amount type if gst/interest/tax is requested
+    if ($num_of_additional_rows > 0)
+    {
+?>
+			<TD>Cash Type</TD>
+<?
+		} // end if
+		
+    for ($curr_date = $start_date; $curr_date <= $end_date; $curr_date=strtotime("+1 months", $curr_date))
+    {
+?>
+			<TD><? print date("M Y", $curr_date); ?></TD>
+<?
+    }
+?>
+	</TR>
+<?
+	}
+
+	$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];
+	$currUser_OccupancyDate = strtotime($row['OccupancyDate']);
+
+	displayMouseOverTR("blank", "body");
+
+?>
+				
+				<TD rowspan="<?= $num_of_additional_rows + 1; ?>"><A HREF="<?= $url; ?>"><?= $row['UnitNumber']; ?></A></TD>
+<?
+  if ($num_of_additional_rows > 0)
+  {
+?>
+				<TD>Occupancy Fee</TD>
+<?
+	}
+
+	$total = generateFeeCells($start_date, $end_date, $currUser_OccupancyDate, $row['ProRatedOccupancyFee'], $row['OccupancyFee'], $total);
+?>
+	</TR>
+<?
+	if ($_REQUEST["GST"] > 0)
+	{
+		displayMouseOverTR("blank", "body");
+?>
+				<TD>GST</TD>
+<?
+		$total = generateFeeCells($start_date, $end_date, $currUser_OccupancyDate, getProRatedFee($row['GSTRebate'], $row['OccupancyDate']), $row['GSTRebate'], $total);
+?>
+				</TR>
+<?
+	}
+
+	if ($_REQUEST["Tax"] > 0)
+	{
+		displayMouseOverTR("blank", "body");
+?>
+				<TD>Tax</TD>
+<?
+		$total = generateFeeCells($start_date, $end_date, $currUser_OccupancyDate, getProRatedFee($row['RealtyTaxes'], $row['OccupancyDate']), $row['RealtyTaxes'], $total);
+?>
+				</TR>
+<?
+	}
+
+	if ($_REQUEST["Interest"] > 0)
+	{
+		displayMouseOverTR("blank", "body");
+?>
+				<TD>Interest</TD>
+<?
+		$total = generateFeeCells($start_date, $end_date, $currUser_OccupancyDate, getProRatedFee($row['InterestOnBalance'], $row['OccupancyDate']), $row['InterestOnBalance'], $total);
+?>
+				</TR>
+<?
+	}
+}
+?>
+
+		<tr class=tail>
+			<td align=left>Total:</td>
+<?
+    if ($num_of_additional_rows > 0)
+    {
+?>
+			<TD></TD>
+<?
+		} // end if
+
+    for ($curr_date = $start_date, $i=0; $curr_date <= $end_date; $curr_date=strtotime("+1 months", $curr_date), $i++)
+    {
+?>
+			<TD><?= numberFormat(array("value"=>$total[$i], "isDollarValue"=>TRUE)); ?></TD>
+<?
+    }
+?>
+	</TR>
+	</TABLE>
+
+
+</BODY>
+</HTML>

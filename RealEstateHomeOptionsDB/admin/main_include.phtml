@@ -1,0 +1,294 @@
+<?
+/*
+ * Created on 25-Oct-2005
+ *
+ * Includes main_include.phtml at the upper level
+ */
+define ("SUB_FOLDER_INVERT_RELATIVE_PATH", ".."); 
+define ("LOCAL_CONFIG_FOLDER", "../homeOptionsConfig");
+include_once SUB_FOLDER_INVERT_RELATIVE_PATH . "/main_include.phtml"; 
+
+
+/**
+ * Calculate ACTUAL number of contractor
+ */
+function getNumOfContractor(){
+	global $db;
+	
+	$contractor_sql = "SELECT ContractorName 
+						FROM Contractor	";
+	
+	$contractor_result = mysql_query($contractor_sql, $db); //or die("Error : $sql<br>" . mysql_error());
+	// get actual number of contractor
+	$i = 0;
+	while ($contractor_row = mysql_fetch_array($contractor_result)) {
+		if ($contractor_row['ContractorName'] == ""){
+			break;
+		}
+		$i++;
+	}	
+	return $i;
+}
+
+
+/**
+ * Get contractor result
+ */
+function &getContractorResult($orderBy = "ContractorName", $order = "ASC"){
+	$contractor_sql = "SELECT ContractorID, ContractorName, MarkUpPercentage 
+						FROM Contractor
+						ORDER BY $orderBy $order";
+	
+	$contractor_result = executeSql($contractor_sql);
+	return $contractor_result;
+}
+
+// print Standard PO Issue checkbox
+// There is a specific format so that updatePO can pick up the original
+// check box value and comapre the new value. SQL will only be executed
+// if the value is changed 
+// $arguments is an associate array. 
+// Possible value itemID, optionID, issued, disabled(optional)
+function printStandardPOIssueCheckBox($arguments){
+	$itemID = $arguments['itemID'];
+	$optionID = $arguments['optionID'];
+	$issued = $arguments['issued'];
+	$disabled = $arguments['disabled'];
+	$mode	= $arguments['mode'] != "" ? $arguments['mode'] : "edit";	
+	
+	if ($mode == "edit"){
+?>	
+	<INPUT type="hidden" name="checkbox_original_<?= "standardPO"?>_<?= $itemID; ?>_<?= $optionID ;?>"
+	value="<?= $issued; ?>"> 
+	<INPUT type="checkbox" name="checkbox_new_<?= "standardPO"?>_<?= $itemID; ?>_<?= $optionID;?>" <?
+		if ($issued > 0 ){
+			print " CHECKED ";
+		}
+?>>
+<?
+	} else {
+		if ($issued > 0){
+			print "Yes";
+		} else {
+			print " No";	
+		}
+				
+	}
+}
+
+// print Non Standard PO Issue checkbox
+// There is a specific format so that updatePO can pick up the original
+// check box value and comapre the new value. SQL will only be executed
+// if the value is changed 
+// $arguments is an associate array. 
+// Possible value POID, issued, disabled(optional)
+function printNonStandardPOIssueCheckBox($arguments){
+	$POID = $arguments['POID'];
+	$issued = $arguments['issued'];
+	$disabled = $arguments['disabled'];
+?>				
+
+	<INPUT type="hidden" name="checkbox_original_<?= "nonStandardPO"?>_<?= $POID; ?>"
+	value="<?= $issued; ?>"> 
+	<INPUT type="checkbox" name="checkbox_new_<?= "nonStandardPO"?>_<?= $POID; ?>" <?
+		if ($issued > 0 ){
+			print " CHECKED ";
+		}			
+		if ($disabled){
+			print " DISABLED ";	
+		}	
+					
+?>>
+<?
+}
+
+// print  PO Invoiced checkbox
+// There is a specific format so that updatePO can pick up the original
+// check box value and comapre the new value. SQL will only be executed
+// if the value is changed 
+// $arguments is an associate array. 
+// Possible value POType, itemID, optionID, invoiced, disabled(optional)
+// POType = standardPO/nonStandardPO
+function printPOInvoicedCheckBox($arguments){
+	$itemID = $arguments['itemID'];
+	$optionID = $arguments['optionID'];
+	$invoiced = $arguments['Invoiced'];
+	$disabled = $arguments['disabled'];
+	$POType		= strcasecmp($arguments['POType'], "nonstandardpo") ? "nonStandardPO" : "standardPO";
+	$mode	= $arguments['mode'] != "" ? $arguments['mode'] : "edit";	
+	
+	if ($mode == "edit"){
+?>	
+	<INPUT type="hidden" name="checkbox_original_<?= $POType; ?>_<?= $itemID; ?>_<?= $optionID ;?>"
+	value="<?= $invoiced; ?>"> 
+	<INPUT type="checkbox" name="checkbox_new_<?= $POType; ?>_<?= $itemID; ?>_<?= $optionID;?>" <?
+		if ($invoiced > 0 ){
+			print " CHECKED ";
+		}
+?>>
+<?
+	} else {
+		if ($invoiced > 0){
+			print "Yes";
+		} else {
+			print " No";	
+		}
+				
+	}
+} // printPOInvoicedCheckBox
+
+
+// print  selection checkbox so that specific action can be applied
+// to the selection
+// $arguments is an associate array. 
+// Possible value POType, POID, invoiced, disabled(optional)
+// POType = standardPO/nonStandardPO
+function printSelectionCheckBox($arguments){
+	$POID = $arguments['POID'];
+	$invoiced = $arguments['invoiced'];
+	$disabled = $arguments['disabled'];
+	$POType		= strcasecmp($arguments['POType'], "nonstandardpo") == 0 ? "NonStandardPO" : "StandardPO";
+	$mode	= $arguments['mode'] != "" ? $arguments['mode'] : "edit";	
+	
+	if ($mode == "edit"){
+		echo "<input type=\"checkbox\" id=\"selected_" . $POType . "_" . $POID . "\" name=\"selected_" . $POType . "_" . $POID ."\">"; 
+	}
+} // printSelectionCheckBox
+
+/**
+ * Print section headrs in upgrade and options setup pages
+ */
+function printSectionHeaders($SectionID, $SubsectionID, $ItemID, $OptionID, $ChoiceID, $Mode){
+	global $db;
+	// add extra lines
+	?> <BR>  
+<?
+	if ($Mode == "OptionList"){
+		// if no section id, the page is in option list
+		echo "<img src=\"../spacer.gif\" width=\"45\" height=\"1\" border=\"0\">&#149;" .
+				"<a href=\"display_table.phtml?table_name=Options&mode=$Mode\">Options List</a><br>\n";
+		echo "<br>\n";		
+	} else {
+		echo "<img src=\"../spacer.gif\" width=\"0\" height=\"1\" border=\"0\">&#149;<a href=\"display_table.phtml?mode=$Mode\"> All Sections</a><br>\n";
+		echo "<br>\n";
+		
+	}
+	
+	// if $SectionID exists then print the name
+	if ($SectionID) {
+//		echo "<img src=\"../spacer.gif\" width=\"0\" height=\"1\" border=\"0\">&#149;<a href=\"display_table.phtml\"> All Sections</a><br>\n";
+//		echo "<br>\n";
+	
+		$sql_Section = "SELECT SectionID, Name
+								FROM Section
+								WHERE SectionID = $SectionID
+								ORDER BY Name";
+		$result_Section = mysql_query($sql_Section, $db);
+	
+		$row = mysql_fetch_array($result_Section);
+		$SectionName = $row['Name'];
+	
+		if (!$SectionName) {
+			die("This Section does not exist");
+		}
+	
+		echo "<img src=\"../spacer.gif\" width=\"15\" height=\"1\" border=\"0\">&#149; Section: <a href=\"display_table.phtml?table_name=Subsection&mode=$Mode&SectionID=$SectionID\">$SectionName</a><br>\n";
+		echo "<br>\n";
+	} 
+	// if $SubsectionID exists then print the name
+	if ($SubsectionID) {
+		$sql_Subsection = "SELECT SubsectionID, Name
+									FROM Subsection
+									WHERE SubsectionID = $SubsectionID
+									ORDER BY Name";
+		$result_Subsection = mysql_query($sql_Subsection, $db);
+
+		$row = mysql_fetch_array($result_Subsection);
+		$SubsectionName = $row['Name'];
+	
+		if (!$SubsectionName) {
+			die("This Subsection does not exist");
+		}
+
+		echo "<img src=\"../spacer.gif\" width=\"30\" height=\"1\" border=\"0\">&#149; Subsection: <a href=\"display_table.phtml?table_name=Item&mode=$Mode&SectionID=$SectionID&SubsectionID=$SubsectionID\">$SubsectionName</a><br>\n";
+		echo "<br>\n";
+	}
+	// if $ItemID exists then print the name
+	if ($ItemID) {
+		$sql_Item = "SELECT ItemID, Name
+									FROM Item
+									WHERE ItemID = $ItemID
+									ORDER BY Name";
+		$result_Item = mysql_query($sql_Item, $db);
+
+		$row = mysql_fetch_array($result_Item);
+		$ItemName = $row['Name'];
+
+		echo "<img src=\"../spacer.gif\" width=\"45\" height=\"1\" border=\"0\">&#149; Item: <a href=\"display_table.phtml?table_name=Item_Options&mode=$Mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID\">$ItemName</a><br>\n";
+		echo "<br>\n";
+	}
+	// if $OptionID exists then print the name
+	if ($OptionID) {
+		$sql_Option = "SELECT OptionID, Name, Choice
+									FROM Options
+									WHERE OptionID = $OptionID
+									ORDER BY Name";
+		$result_Option = mysql_query($sql_Option, $db);
+
+		$row = mysql_fetch_array($result_Option);
+		$OptionName = $row['Name'];
+
+		echo "<img src=\"../spacer.gif\" width=\"60\" height=\"1\" border=\"0\">&#149; Option: ";
+		// only set hyperlink if Section id presents
+		if ($SectionID > 0){
+			echo "<a href=\"display_table.phtml?table_name=Item_Options&mode=$Mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID\">";
+		}
+		echo $OptionName;
+		
+		if ($SectionID > 0){
+			echo "</a> ";
+		}
+		
+		$printComma = false;
+		$printBracket = false;
+		
+		if ($row['Choice'])
+		{
+			echo " (";			
+			$printBracket = true;
+			echo "<a href=\"display_table.phtml?table_name=Choice&mode=$Mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID\">Choices</a> ";
+			$printComma = true;
+		}
+		// only display price is ItemID exists
+		if ($ItemID > 0){
+			if (!$printBracket){
+				echo " (";
+				$printBracket = true;				
+			}
+			if ($printComma)
+			{
+				echo " , ";
+			}
+			echo "<a href=\"display_table.phtml?table_name=Price&mode=$Mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID\">Prices</a>";
+		}
+		
+		if ($printBracket){
+			echo ")";	
+		}
+		
+		echo "<br><br>\n";
+	}
+
+	if ($ChoiceID)
+	{
+		$sql	= "SELECT Name
+					FROM Choice
+					WHERE ChoiceID = $ChoiceID and OptionID = $OptionID";
+		$result = mysql_query($sql,$db);
+		
+		$row = mysql_fetch_array($result);
+		
+		echo "<nobr><img src=\"../login/spacer.gif\" width=\"75\" height=\"1\" border=\"0\">&#149; Choice: ". $row["Name"] ."</nobr><br>\n";
+		echo "<br>\n";
+	} // end if (for choice)
+}	

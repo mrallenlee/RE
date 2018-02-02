@@ -1,0 +1,125 @@
+<?
+// This file is used to synchronize residential and commercial version.
+// In residential version, it returns null;
+// In commercial version, it returns some basic unit information of given purchaser.
+
+include_once "main_include.phtml";
+
+// return purchaser unit basic information in html table format.
+// called by userListing.phtml
+function getPurchaserUnitInfo($UserID)
+{
+	
+	$sql_unit = "SELECT Unit.*, User.Price As SoldPrice FROM Unit,User WHERE Unit.UserID = User.UserID AND User.UserID=" . $UserID;
+	$result_unit = executeSql($sql_unit);
+	if (mysql_num_rows($result_unit) > 0)
+	{
+		$row_unit = mysql_fetch_array($result_unit);
+		
+?>	
+	<TR>
+		<TD>Condo Number :</TD>
+		<TD><?= $row_unit['CondoNumber'] ?></TD>
+		<TD>Level:</TD>
+		<TD><?= $row_unit['Level'] ?></TD>
+		<TD>Unit Type :</TD>
+		<TD><?= $row_unit['UnitType'] ?></TD>
+	</TR>
+	<TR>
+<?		if (defined("USER_LISTING_DISPLAY_UNIT_DETAIL") && 
+			USER_LISTING_DISPLAY_UNIT_DETAIL == 1){	
+?>	
+		<TD>Zone:</TD>
+		<TD><?= $row_unit['Zone'] ?></TD>
+		<TD>Color Zone :</TD>
+		<TD><?= $row_unit["ColorZone"] ?></TD>
+		<TD>Category:</TD>
+		<TD><?= $row_unit['Category'] ?></TD>
+	</TR>
+<?		} ?>
+<?		if (defined("USER_LISTING_DISPLAY_UNIT_DETAIL") && 
+			USER_LISTING_DISPLAY_UNIT_DETAIL == 1){	
+?>				
+	<TR>
+		<TD>Price :</TD>
+		<TD><?= numberFormat(array("value"=>$row_unit["Price"], "isDollarValue"=>TRUE, "defaultValue"=>" n/a")); ?></TD>	
+		<TD>Price Note:</TD>
+		<TD colspan=3><?= $row_unit['PriceNote'] ?></TD>
+<?		} ?>		
+	</TR>
+<?		if (defined("USER_LISTING_DISPLAY_UNIT_DETAIL") && 
+			USER_LISTING_DISPLAY_UNIT_DETAIL == 1){	
+?>		
+	<TR>
+		<TD>Price Date :</TD>
+		<TD><?= $row_unit['PriceDate'] ?></TD>
+	</TR>
+<?		} ?>	
+<?		if (defined("USER_LISTING_DISPLAY_UNIT_ORIGINAL_MEASUREMENT") && 
+			USER_LISTING_DISPLAY_UNIT_ORIGINAL_MEASUREMENT == 1){	
+?>	
+	<tr class="subhead-left-med">
+		<td colspan=10>Original Measurements</td>
+	</tr>	
+	<TR>
+		<TD>Width :</TD>
+		<TD><?= $row_unit['Width'] ?></TD>
+		<TD>Length :</TD>
+		<TD><?= $row_unit['Length'] ?></TD>
+		<TD>Frontage:</TD>
+		<TD><?= $row_unit['Frontage'] ?></TD>
+	</TR>
+	<TR>
+		<TD>Gross Area :</TD>
+		<TD><?= $row_unit['Area'] ?></TD>
+		<TD>Gross Area Price Per S.F.:</TD>
+		<TD><?= numberFormat(array("value"=>$row_unit["SoldPrice"] / $row_unit['Area'], "isDollarValue"=>TRUE, "defaultValue"=>" n/a")); ?></TD>
+	</TR>
+	<TR>
+		<TD>Net Area:</TD>
+		<TD><?= $row_unit['NetArea'] ?></TD>
+		<TD>Net Area Price Per S.F.:</TD>
+		<TD><?= numberFormat(array("value"=>$row_unit["SoldPrice"] / $row_unit['NetArea'], "isDollarValue"=>TRUE, "defaultValue"=>" n/a")); ?></TD>
+	</TR>
+	<TR>
+		<TD>Sold Price :</TD>
+		<TD><?= numberFormat(array("value"=>$row_unit['SoldPrice'], "isDollarValue"=>TRUE, "defaultValue"=>" n/a")); ?></TD>
+		<TD>Maintenance:</TD>
+		<TD><?= $row_unit['maintenance'] ?></TD>
+	</TR>
+<?		}
+		if (defined("USER_LISTING_DISPLAY_UNIT_FINAL_MEASUREMENT") && 
+			USER_LISTING_DISPLAY_UNIT_FINAL_MEASUREMENT == 1){	
+?>	
+	<tr class="subhead-left-med">
+		<td colspan=10>Final Measurements</td>
+	</tr>	
+	<TR>
+		<TD>Final Width :</TD>
+		<TD><?= $row_unit['FinalWidth'] ?></TD>
+		<TD>Final Length:</TD>
+		<TD><?= $row_unit['FinalLength'] ?></TD>
+		<TD>Final Frontage :</TD>
+		<TD><?= $row_unit['FinalFrontage'] ?></TD>
+	</TR>
+	<TR>
+		<TD>Final Gross Area:</TD>
+		<TD><?= $row_unit['FinalArea'] ?></TD>
+		<TD>Final Net Area :</TD>
+		<TD><?= $row_unit['FinalNetArea'] ?></TD>
+	</TR>
+	<TR>
+		<TD>Final Sold Price:</TD>
+		<TD><?= numberFormat(array("value"=>$row_unit['FinalSoldPrice'], "isDollarValue"=>TRUE, "defaultValue"=>" n/a")); ?></TD>
+	</TR>
+<?
+		}
+	}
+	else
+	{
+		echo "";
+	}
+
+}
+
+?>

@@ -1,0 +1,19 @@
+<html>
+
+<head>
+
+<title>Selection Window</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+</head>
+
+<frameset rows="301,1*" cols="*" frameborder="NO" border="0" framespacing="0" onBlur="self.focus()"> 
+  <frame src="photo_main.phtml?img=<?= $_REQUEST['img'] ?>&OptionID=<?= $_REQUEST['OptionID'] ?>&ItemID=<?= $_REQUEST['ItemID'] ?>" scrolling="NO" frameborder="NO" name="photo_main">
+  <frame src="photo_nav.phtml?img=<?= $_REQUEST['img'] ?>&OptionID=<?= $_REQUEST['OptionID'] ?>&ItemID=<?= $_REQUEST['ItemID'] ?>" frameborder="NO" name="photo_nav">
+</frameset>
+<noframes>
+<body bgcolor="#FFFFFF">
+</body>
+</noframes>
+
+</html>

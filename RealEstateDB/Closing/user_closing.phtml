@@ -1,0 +1,193 @@
+<?
+include "../config/config.phtml";
+include "../main_include.phtml";
+?>
+<html>
+<? 
+print_top_frame($PHP_SELF, "../", true, false); 
+?>
+
+<script type="text/javascript" src="../framework/dojo/dojo.js"></script>
+<script type="text/javascript" src="user_closing.js"></script>
+<script type="text/javascript" src="json2.js"></script>
+<?php
+include 'AjaxUtil_class.phtml';
+AjaxUtil::request2JsObj();
+?>
+
+<style type="text/css">
+  fieldset {
+            padding: 5px 5px 5px 5px;
+           }
+  fieldset legend {
+          color:#000000;
+          font-family:tahoma;
+          font-size:10pt;
+          font-weight:bold;
+         }
+  input {
+          width: 80px;
+        }
+  .addButton {
+               width:40px;
+               font-weight:bold;
+               font-size:12px;           
+             }
+  .delButton {
+               width:40px;
+               font-weight:bold;
+               font-size:12px;           
+               color:#FF0000;
+             }
+</style>
+
+<body>
+<h3 align="center">Unit Specific Closing Information<br>
+  Unit: <span class="big-head" id="UnitNumber">####</span> Purchaser: <span class="big-head" id="Purchaser">xxxxxxx</span><br>
+  	<!-- <span class="largetitle">Additional Purchaser: </span><span class="largetitle" id="AdditionalPurchaser">xxxxxxx</span> -->
+</h3>
+<form name="user_closing_form" method="post" action="user_closing_act.phtml">
+<input type="hidden" name="GSTRate" value="">
+<input type="hidden" name="UserID" value="">	
+
+<fieldset><legend>Price information</legend>
+<table>
+  <tr>
+    <td width='100px'>Sale Price</td>
+    <td width='100px'><input type="text" name="OfferPrice" readonly></td>
+    <td width='20px'>&nbsp;</td>
+    <td width='100px'>Net Sale Price</td>
+    <td width='100px'><input type="text" name="ASPNetGST" readonly></td>
+    <td width='20px'>&nbsp;</td>
+    <td colspan=2><input name="QualifyGSTRebate" type="checkbox">Qualifies for GST Rebate </td>
+  </tr>
+  <tr>
+    <td>GST </td>
+    <td><input type="text" name="GST" readonly></td>
+    <td>&nbsp;</td>
+    <td>GST Rebate</td>
+    <td><input type="text" name="GSTRebate" readonly></td>
+    <td>&nbsp;</td>
+    <td width='100px'>Net GST Payable</td>
+    <td width='100px'><input type="text" name="NetGSTPayable" readonly></td>
+  </tr>
+  <tr>
+    <td valign="top">Tarion Number</td>
+    <td valign="top"><input type="text" name="TarionNumber"></td>
+    <td>&nbsp;</td>
+    <td valign="top">Deduction Notes</td>
+    <td colspan="4"><textarea style="width:100%" name="Notes"></textarea></td>
+  </tr>
+</table>
+</fieldset>
+
+<fieldset><legend>Tax information</legend>
+<table>
+  <tr>
+    <td width='140px'>1st Year Property Tax</td>
+    <td width='100px'><input type="text" name="PropertyTaxYear1"></td>
+    <td width='20px'>&nbsp;</td>
+    <td width='140px'>2nd Year Property Tax</td>
+    <td width='100px'><input type="text" name="PropertyTaxYear2"></td>
+  </tr>
+  <tr>
+    <td>1st Year Land Tax</td>
+    <td><input type="text" name="LandTaxYear1"></td>
+    <td>&nbsp;</td>
+    <td>2nd Year Land Tax</td>
+    <td><input type="text" name="LandTaxYear2"></td>
+  </tr>
+</table>
+</fieldset>
+
+<fieldset><legend>Clause SIX Fees</legend>
+<table>
+  <tr>
+    <td width="190px">Provincial sales tax on chattels </td>
+    <td width="90px"><input type="text" name="SixFeeProvTax" readonly></td>
+    <td width="220px">Water and Sewer Connection Charges</td>
+    <td width="90px"><input type="text" name="SixFeeConnCharge" readonly></td>
+    <td width="80px">Water Meter</td>
+    <td width="90px"><input type="text" name="SixFeeWaterMeter" readonly></td>
+  </tr>
+  <tr>
+    <td>Development Charge</td>
+    <td><input type="text" name="SixFeeDevCharge" readonly></td>
+    <td>Hydro meter and installation Charges </td>
+    <td><input type="text" name="SixFeeHydroCharge" readonly></td>
+    <td>Tarion</td>
+    <td><input type="text" name="SixFeeTarion" readonly></td>
+  </tr>
+</table>
+</fieldset>
+
+<fieldset><legend>Admin Fees</legend>
+<table>
+  <tr>
+    <td width="190px">Cheque Recovery Costs </td>
+    <td width="90px"><input type="text" name="AdmFeeCheqRecovery"></td>
+    <td width="220px">Estimated Total Common Expenses</td>
+    <td width="90px"><input type="text" name="AdmFeeCommExpense"></td>
+    <td width="80px">NSF Fees</td>
+    <td width="90px"><input type="text" name="AdmFeeMsf"></td>
+  </tr>
+  <tr>
+    <td>Mortage Discharge Fee </td>
+    <td><input type="text" name="AdmFeeMortageCharge"></td>
+    <td>Statutory Interest(From Lawyer) </td>
+    <td><input type="text" name="AdmFeeStatutory"></td>
+  </tr>
+  <tr>
+    <td>Outstanding Options Charges </td>
+    <td><input type="text" name="AdmFeeOutstanding"></td>
+    <td>Credit One Year Maintenance Fees </td>
+    <td><input type="text" name="AdmFeeCreditMaint"></td>
+  </tr>
+  <tr>
+    <td>Law Society Charges </td>
+    <td><input type="text" name="AdmFeeLawSociety"></td>
+    <td>Credit Purchase Price on Closing </td>
+    <td><input type="text" name="AdmFeeCreditPurchase"></td>
+  </tr>
+</table>
+</fieldset>
+
+<fieldset><legend>CAM</legend>
+<table cellspacing="0" cellpadding="0" id="CAMtable">
+  <tr style='border-bottom: medium solid #ff0000;'>
+    <td width="150px" style='border-bottom: 1px solid black; padding: 0 0 5px 0'>CAM Type</td>
+    <td width="100px" style='border-bottom: 1px solid black; padding: 0 0 5px 0'>Price</td>
+    <td width="100px" style='border-bottom: 1px solid black; padding: 0 0 5px 0'>Number</td>
+    <td width="100px" style='border-bottom: 1px solid black; padding: 0 0 5px 0'>Level</td>
+    <td width="100px" style='border-bottom: 1px solid black; padding: 0 0 5px 0'>CAM</td>
+    <td width="50px">
+      <input class="addButton" id="btnAddCAM" value="&#160 + &#160" title="Add new inventory item" type="button">
+    </td>
+	</tr>
+  <tr style="height: 22px">
+    <td>Unit CAM</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td><input type="text" name="UnitCAM"></td>
+  </tr>
+	<tr onmouseover="this.className='blank-highlight';" onmouseout="this.className='blank'">
+    <td><select style="width:140px"><option value="-1">Choose one</option><option value="BIKE_RAC KER">BIKE_RAC KER</option><option value="COMPACT_PARKING">COMPACT_PARKING</option><option value="REG_LOCKER">REG_LOCKER</option><option value="REG_PARKING">REG_PARKING</option><option value="TANDEM_PARKING">TANDEM_PARKING</option></select></td> 
+    <td><input type="text"></td> 
+    <td><input type="text"></td> 
+    <td><input type="text"></td> 
+    <td><input type="text"></td> 
+    <td> 
+      <input class="delButton" value="x" title="Delete this inventory item" type="button" onClick="btnDelCAM_Click(this);">
+    </td> 	
+  </tr>
+</table>
+</fieldset>
+<p>
+  <input type="submit" id="btnUpdate" value="Update" onClick="return false;"> &nbsp;&nbsp;
+  <input type="button" id="btnClose" value="Close" onClick="window.close();"> &nbsp;&nbsp;
+  <input style="width:200px;" type="button" id="btnRecal" value="Recalculate Closing Data for the Unit" onClick="return false;"> &nbsp;&nbsp;
+</p>
+</form>
+</body>
+</html>

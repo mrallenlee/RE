@@ -1,0 +1,38 @@
+<?php
+/*
+ * Created on 06-Feb-2007
+ *
+ * Export sales status data
+ */
+ 
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExportMysqlWrapper.phtml";
+
+check_auth(2, "sales");
+ 
+	$sql = "SELECT 
+					User.UnitNumber UnitNumber,
+					User.Company,
+					concat(FirstName, ' ', LastName) PurchaserName,
+					Incentive,
+					IncentivePrice,
+					CASE 
+					WHEN IncentiveSent > 0 THEN 'Yes'
+					ELSE 'No' end IncentiveSent,
+					concat(RefereeFirstName, ' ', RefereeLastName) Referee,
+					FromProject RefereeFrom,
+					RefereeUnitNumber RefereeUnit
+					FROM Referee, User
+					WHERE Referee.UserID = User.UserID
+					AND (Referee.RefereeFirstName <> ''
+					 OR Referee.RefereeLastName <> '')
+					AND User.DealStatus <> 'Rescinded'";
+ 		
+$result = executeSql($sql);
+
+$exporter = new DataExportMysqlWrapper($result);
+$exporter->exportHeader("ReferralList.csv");
+$exporter->exportData();
+?>

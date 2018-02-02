@@ -1,0 +1,323 @@
+<?
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/URL/LinkGenerator.phtml";
+
+// require UserID & UnitType
+// ShowPrice 1/0
+// $mode: display, edit
+
+//if (isSet($UserID) && $UserID > 0)
+//{
+//	// get user info
+//	$sql = "SELECT FirstName, LastName, User.UnitNumber AS UnitNumber, Unit.UnitType AS UnitType
+//		FROM User
+//		LEFT JOIN Unit
+//		ON Unit.UserID=User.UserID
+//		WHERE User.UserID=$UserID";
+//	
+//	$user_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+//	$user_row = mysql_fetch_array($user_result);
+//	$UserNumber = $user_row['UserNumber'];
+//}
+
+ 
+if (isSet($UnitNumber) && $UnitNumber > 0)
+{
+	// get user info
+	$sql = "SELECT FirstName, LastName, User.UserID AS UserID, Unit.UnitType AS UnitType, Unit.Model
+		FROM Unit
+		LEFT JOIN User
+		ON User.UnitNumber=Unit.UnitNumber
+		AND User.DealStatus != 'Rescinded'
+		WHERE Unit.UnitNumber='$UnitNumber'";
+
+	$user_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:" . $sql . $PHP_SELF);
+	$user_row = mysql_fetch_array($user_result);
+	$UserID = $user_row['UserID'];
+}
+
+$UnitType = $user_row['Model'];
+
+// get info for option chosen
+//$sql = "SELECT Price.*, Item.Name As ItemName, Item.ItemID As ItemID, 
+//		Section.Name As SectionName, Subsection.Name As SubsectionName,
+//		Options.Name As OptionName, Choice.Name As ChoiceName,
+//		UserSave.*, DATE_FORMAT(UserSave.IssuedDate, '%b %d, %y' ) AS IssuedDate
+//		FROM UserSave, Price, Item, Subsection, Section, Options
+//		LEFT JOIN Choice
+//		ON UserSave.ChoiceID = Choice.ChoiceID
+//		AND UserSave.OptionID = Choice.OptionID
+//		WHERE UserSave.UserID = $UserID
+//		AND Price.UnitType = '$UnitType'
+//		AND UserSave.ItemID = Price.ItemID
+//		AND UserSave.OptionID = Price.OptionID
+//		AND UserSave.ItemID = Item.ItemID
+//		AND Item.SubsectionID = Subsection.SubsectionID
+//		AND Subsection.SectionID = Section.SectionID
+//		AND UserSave.OptionID = Options.OptionID
+//		ORDER BY Section.SectionID, Subsection.SubsectionID, Item.ItemID";
+		
+		
+// use StandardPO table instead of UserSave table
+$sql			= " SELECT StandardPO.POID, StandardPO.UnitNumber, StandardPO.ItemID," .
+					" StandardPO.OptionID, StandardPO.ChoiceID, StandardPO.ContractorID," .
+					" Section.SectionID As SectionID, Subsection.SubsectionID, " .
+					" '' AS Description, " .
+					" StandardPO.Cost, StandardPO.Issued, StandardPO.IssuedDate, " .
+					" Section.Name As SectionName, Subsection.Name As SubsectionName, " .
+					" Options.Name As OptionName, Choice.Name As ChoiceName, " .
+					" Item.Name As ItemName, Contractor.ContractorName," .
+					" 'StandardPO' AS POType" .
+					" FROM Contractor, Price, Item, Subsection, Section, Options, StandardPO " .
+					" LEFT JOIN Choice
+					ON StandardPO.ChoiceID = Choice.ChoiceID
+					AND StandardPO.OptionID = Choice.OptionID
+					WHERE StandardPO.ContractorID = Contractor.ContractorID
+					AND StandardPO.UnitNumber = '$UnitNumber' 
+					AND StandardPO.ItemID = Price.ItemID
+					AND StandardPO.OptionID = Price.OptionID
+					AND StandardPO.ItemID = Item.ItemID
+					AND Item.SubsectionID = Subsection.SubsectionID
+					AND Subsection.SectionID = Section.SectionID
+					AND StandardPO.OptionID = Options.OptionID ";
+ 	 
+$nonStandardSql = 	" SELECT NonStandardPO.POID, NonStandardPO.UnitNumber, -1 AS ItemID," .
+					" -1 AS OptionID, -1 AS ChoiceID, NonStandardPO.ContractorID, " .
+					" NonStandardPO.SectionID, NonStandardPO.SubsectionID," .
+					" NonStandardPO.Description," .
+					" NonStandardPO.Cost, NonStandardPO.Issued, NonStandardPO.IssuedDate," .
+					" Section.Name AS SectionName, Subsection.Name AS SubsectionName, " .
+					" '' AS OptionName, '' AS ChoiceName, " .
+					" '' AS ItemName, Contractor.ContractorName, " .
+					" 'NonStandardPO' AS POType" .
+					" FROM NonStandardPO, Contractor, Section, Subsection" .
+					" WHERE NonStandardPO.SectionID = Section.SectionID " .
+					" AND NonStandardPO.UnitNumber = '$UnitNumber' " .
+					" AND NonStandardPO.ContractorID = Contractor.ContractorID " .
+					" AND NonStandardPO.SubsectionID = Subsection.SubsectionID ";
+		
+	
+$unionSQL = "(" . $sql . " ) UNION (" . $nonStandardSql .
+			" ) ORDER BY ContractorID, SectionID, SubsectionID, ItemID";		 		
+
+$price_result = mysql_query($unionSQL,$db) or 
+					 die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $unionSQL . $PHP_SELF);
+
+
+// get contractor info
+$sql = "SELECT ContractorName, ContractorID
+		FROM Contractor";
+
+$contractor_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $sql . $PHP_SELF);
+
+// generate non standard po edit button
+function printNonStandardPOEditButton($POID){
+?> <INPUT TYPE="BUTTON" VALUE="EDIT" ONCLICK="displayNonStandardPODIV('edit', <?= $POID; ?>)"><?	
+}
+
+function printNonStandardPODeleteButton($POID){
+?> <INPUT TYPE="BUTTON" VALUE="Delete" ONCLICK="deleteNonStandardPO(<?= $POID; ?>)"><?	
+}
+
+function printNonStandardPOAddButton($POID){
+?> <INPUT TYPE="BUTTON" VALUE="Add Non-Standard PO" ONCLICK="displayNonStandardPODIV('add', 0)"><?	
+}
+
+?>
+<html>
+<TITLE>Unit Summary</TITLE>
+<? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/"); 
+// ALLEN 20150506 Produ issue, to remove the \' arouind unitNumber
+#$nonStandardDIVLinkGenerator = new LinkGenerator($PHP_SELF, "nonStandardPO.phtml?UnitNumber=\'$UnitNumber\'", "", "window.parent.editNonStandardPODone()");
+$nonStandardDIVLinkGenerator = new LinkGenerator($PHP_SELF, "nonStandardPO.phtml?UnitNumber=$UnitNumber", "", "window.parent.editNonStandardPODone()");
+?>
+	<script type="text/javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH; ?>/javascript/dynamicWindow.js"></script>  
+	<script  type="text/javascript" >
+		// reload current page when add/edit non standard PO is done
+		function editNonStandardPODone(){
+//			alert("calling editNonStandardPODone");
+			window.location.reload();	
+		}
+		
+		// display non standard PO page DIV
+  		function displayNonStandardPODIV(action, POID){
+			newHTML = '<DIV class="popupDiv">';
+			newHTML = newHTML + getCloseButton(1);
+			newHTML = newHTML + '<IFRAME FRAMEBORDER=0 SRC="<?= $nonStandardDIVLinkGenerator->getDestinationLink(); ?>&action=' + action;
+			if (action == 'edit'){
+				newHTML = newHTML + '&POID=' + POID;
+			}
+			newHTML = newHTML + '" WIDTH=640 HEIGHT=370></IFRAME>'; 
+			newHTML = newHTML + '</div>';
+//			alert('newHTML=' + newHTML);
+			getFloatingDivNoStyle(1).innerHTML = newHTML;
+		
+			getFloatingDiv(1).position="absolute";
+			getFloatingDiv(1).width="660px";	
+			getFloatingDiv(1).height="380px";
+			// put it at the center of browser	
+			centerDIV(getFloatingDivNoStyle(1));
+			// display it
+			getFloatingDiv(1).visibility="visible";	
+		}
+		
+		// delete non standard PO Page
+		function deleteNonStandardPO(POID){
+			var result = confirm('Are you sure you want to delete this Non-Standard PO?');
+			if (result){
+				window.location = 'updatePO.phtml?action=delete&poType=nonStandard&UnitNumber=<?= $UnitNumber;?>&POID=' + POID; 
+			}	
+		}
+
+		// edit individual cost		
+		function editIndividualCost(){
+			window.location="editUnitUpgradeCost.phtml?UnitNumber=<?= $UnitNumber; ?>"; 	
+		}		
+	</script>
+	
+<table width=100%>	
+	<tr><td class="html-space"><br></td></tr>
+	<tr>
+		<td align="left" class="smalltitle">Name : <?= $user_row['FirstName'] . " " . $user_row['LastName'];?></td>
+		<td align="center" class="smalltitle">Unit Number : <?= $UnitNumber;?></td>
+		<td align="right" class="smalltitle">Unit Type : <?= $UnitType;?></td>
+	</tr>
+</table>
+
+<?
+if (mysql_num_rows($price_result) <= 0)
+{
+	die("<br><font face=\"Arial,Verdana,Helvetica\" size=\"3\" color=\"green\"><b>User has not chosen any options yet.</b></font>");
+}
+?>
+<table>
+<form id="updatePOForm" method="post" action="updatePO.phtml">
+<input type="hidden" name="action" value="edit"/>
+<input type="hidden" name="poType" value="mix"/>
+<input type="hidden" name="editType" value="issued"/>
+<input type="hidden" name="UserID" value="<?= $UserID; ?>"/>
+<input type="hidden" name="UnitNumber" value="<?= $UnitNumber; ?>"/>
+  
+<?
+$total_cost = 0;
+$prev_contractor = "JUNK_DATA";
+$prev_PO_type = "JUNK_DATA";
+while ($price_row = mysql_fetch_array($price_result)){
+	if ($price_row['ContractorName'] != $prev_contractor){
+		$prev_contractor = $price_row['ContractorName'];
+		// reset po type every time a new contractor is displayed 
+		$prev_PO_type = "JUNK_DATA";
+?>		
+		<tr class="html-space"><td><br><br></td></tr>
+		<tr class="print-tr"><td class="print-td" colspan=100><hr class="print-hr"></td></tr> 	
+			<tr>
+				<td colspan=100 class="tail-left-med">Trade : <?= $price_row['ContractorName'] ;?></td>
+			</tr>
+<?	}
+	if ($price_row['POType'] != $prev_PO_type){
+		$prev_PO_type = $price_row['POType']; 
+		if ($price_row['POType'] == "StandardPO"){
+?>				<tr class="head">
+<?			if ($mode != "display"){ ?>				
+					<td>Issued</td>
+					<td>Issued Date</td>
+<?			} ?>					
+					<td>Section</td>
+					<td>Subsection</td>
+					<td>Option</td>
+					<td>Choice</td>
+					<? if ($ShowPrice){ ?>
+					<td>Cost</td>
+					<? } ?>
+				</tr>
+<?
+		} else {
+			if ($mode != "display"){ 				
+?>				<tr class="head">
+					<td>Issued</td>
+					<td>Issued Date</td>
+<?					} ?>
+					<td>Section</td>
+					<td>Subsection</td>
+					<td colspan=2>Description</td>
+<? 					if ($ShowPrice){ ?>			
+					<td>Cost</td>
+<? 					} ?>
+<?					if ($mode != "display"){ ?>									
+					<td>Action</td>
+<?					} ?>					
+				</tr>
+<?		}				
+	}	
+	displayMouseOverTR();
+	// a standarized way to display PO Issue checkbox
+			
+?>
+			
+<?	
+	if ($price_row['POType'] == "StandardPO"){
+		if ($mode != "display"){ 				
+?>				<td><? printStandardPOIssueCheckBox(array("itemID"=>$price_row['ItemID'], "optionID"=>$price_row['OptionID'], "issued"=>$price_row['Issued'])); ?></td>
+				<td><?= $price_row['IssuedDate'];?></td>
+<?		} ?>
+				<td><?= $price_row['SectionName'];?></td>
+				<td><?= $price_row['SubsectionName'];?></td>
+				<td><?= $price_row['OptionName'];?></td>
+				<td><?= $price_row['ChoiceName'];?></td>
+				<? if ($ShowPrice){
+					$total_cost += convertPriceConstantToValidNumber($price_row['Cost']); ?>					 
+				<td><?= convertPriceConstantToString($price_row['Cost']); ?></td>
+				<? } ?>
+				
+			</tr>
+<?
+	} else {	
+			if ($mode != "display"){ ?>				
+				<td><? printNonStandardPOIssueCheckBox(array("POID" =>$price_row['POID'], "issued"=>$price_row['Issued'])); ?></td>				
+				<td><?= $price_row['IssuedDate'];?></td>
+<?			} ?>
+				<td><?= $price_row['SectionName'];?></td>
+				<td><?= $price_row['SubsectionName'];?></td>
+				<td colspan=2><?= $price_row['Description'];?></td>
+<? 				if ($ShowPrice){ 		
+					$total_cost += convertPriceConstantToValidNumber($price_row['Cost']); ?>
+				<td><?= convertPriceConstantToString($price_row['Cost']);?></td>
+<? 				} ?>
+<?				if ($mode != "display"){ ?>								
+				<td><? printNonStandardPOEditButton($price_row['POID']); ?><? printNonStandardPODeleteButton($price_row['POID']); ?></td>
+<?				} ?>				
+			</tr>
+<?
+	}
+}	
+	
+if ($ShowPrice){ 		
+
+?>
+	<tr>
+		<td colspan=100><BR><BR><hr></td>
+	</tr>
+
+	<tr>
+		<td colspan=5></td>
+		<td><b>Total</b></td>
+		<td><?= $total_cost; ?></td>
+	</tr>
+	<tr>
+		<td colspan=100><hr></td>
+	</tr>
+
+<?	
+} 
+?>
+	<tr><td><br><br></td></tr>
+<?	
+if ($mode != "display"){ ?>				
+	<TR class="button"><td colspan=100>
+	<INPUT type="submit" Value="Update">
+	&nbsp;&nbsp;<INPUT type="button" Value="Edit Individual Cost for Standard PO" onClick="editIndividualCost();">
+	&nbsp;&nbsp;<? printNonStandardPOAddButton(); ?> </td></tr>
+<?	} ?>
+</form>
+</table>
+</html>

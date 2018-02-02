@@ -1,0 +1,34 @@
+<?
+include "main_include.phtml";
+
+// expect UnitNumber
+?>
+<script language="JavaScript">
+<!--
+
+<?
+if (!isSet($UnitNumber))
+{
+?>
+	error("No UnitNumber is defined for checkUnitAvailable.phtml");
+<?
+	die();
+}
+
+$sql = "SELECT UserID FROM Unit WHERE UnitNumber=" . $UnitNumber;
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+$row = mysql_fetch_array($result);
+
+if ($row['UserID'] > 0)
+{ // Unit already bought by other client
+	error("The unit <?= $UnitNumber; ?> is not available");
+}
+else
+{ // unit is available
+?>
+	window.parent.frames['content'].submit_form();
+<?	
+}
+?>
+//-->	
+</SCRIPT>

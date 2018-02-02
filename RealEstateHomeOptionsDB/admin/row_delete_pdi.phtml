@@ -1,0 +1,57 @@
+<?
+include "main_include.phtml";
+
+// This file deletes records from the database. It is called when
+// the admin user clicks on the Delete button.
+
+
+
+
+?>
+<html>
+
+<head>
+  <title>Admin</title>
+
+<script language="javascript">
+
+function redirect_url(url)
+{
+	location.href=url;
+}
+
+</script>
+
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+  <font face="Arial,Verdana,Helvetica" size="3">
+
+<?
+
+$user_message = "[ <font color=#009900><b>Record DELETED successfully.</b></font> ]";
+
+// delete record (used for table: Section, Subsection, Item, and Options)
+if ($table_name == "PDIDefect")
+{
+	$sql 	= "DELETE FROM $table_name 
+			WHERE PDIDefectID = $PDIDefectID";
+
+	$result = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+
+	$goto = "display_pdi.phtml";
+	$query_s .= "table_name=$table_name&unit=$unit&user_message=" . urlencode($user_message);
+}
+
+?>
+
+<script language="javascript">
+
+	redirect_url("<?echo $goto;?>?<?echo $query_s;?>");
+
+</script>
+
+  </font>
+
+</body>
+</html>

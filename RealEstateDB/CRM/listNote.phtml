@@ -1,0 +1,138 @@
+<?
+include "config.phtml";
+include CRM_INVERT_RELATIVE_PATH . "main_include.phtml";
+
+// called by "SalesRepDetail.phtml" to add, update, list note for a given customer
+# Require CustomerType, CustomerID, SalesRepID
+
+
+$sql = "SELECT FirstName, LastName FROM " . get_internal_customer_type_table($CustomerType) .
+	" WHERE " . ($CustomerType=="user" ? "UserID" : "VisitorID") . "=" . $CustomerID;
+
+$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+$row = mysql_fetch_array($result);
+?>
+
+<HTML>
+<TITLE>Note for <?= $row["FirstName"] . " " . $row["LastName"] ?></TITLE>
+
+<? print_top_frame($PHP_SELF, CRM_INVERT_RELATIVE_PATH); ?>
+<script language="javascript" src="<?= CRM_INVERT_RELATIVE_PATH; ?>/javascript/dynamicWindow.js" type="text/javascript"></script>
+<script language="JavaScript">
+// dispaly edit note div layer 
+function displayNoteAddDIV(salesRepID, writtenBy, customerType, customerID){
+	newHTML = '<DIV class="popupDiv">';
+	newHTML = newHTML + getCloseButton(1);
+	newHTML = newHTML + '<IFRAME FRAMEBORDER=0 SRC="editNote.phtml?action=add&salesRepID=' + salesRepID + '&writtenBy='+ writtenBy + '&customerType=' + customerType + '&customerID=' + customerID + '" WIDTH=640 HEIGHT=370></IFRAME>'; 
+	newHTML = newHTML + '</div>';
+//	alert('newHTML=' + newHTML);
+	getFloatingDivNoStyle(1).innerHTML = newHTML;
+
+	getFloatingDiv(1).position="absolute";
+	getFloatingDiv(1).width="660px";	
+	getFloatingDiv(1).height="380px";
+	// put it at the center of browser	
+	centerDIV(getFloatingDivNoStyle(1));
+	// display it
+	getFloatingDiv(1).visibility="visible";	
+}
+
+/**
+* This function is used to close the DIV layer after adding note,
+* and refresh current page to display modified note
+*/
+function addNoteDone(){
+	hideFloatingDiv(1);
+	window.location.reload();
+}
+</script>
+
+<script type="text/javascript" src="<?= CRM_INVERT_RELATIVE_PATH ?>/framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+  dojo.require("dojo.widget.DatePicker");
+  dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+
+<? createCalendarPopupDiv(); ?>
+
+	<H3><?= get_project_name($PHP_SELF); ?> -- Note for <?= $row["FirstName"] . " " . $row["LastName"] ?></H3>
+<TABLE>
+	<TR>
+		<TD><A HREF="../userListing.phtml?action=display&mode=<?= get_page_mode($CustomerType); ?><?  
+		if  ($CustomerType=="user"){
+			print "&UserID=$CustomerID";
+		} else {
+			print "&VisitorID=$CustomerID";			
+		} ?>">Go To Customer Info</A></TD>
+		<TD COLSPAN="10" ALIGN="RIGHT"><INPUT TYPE="BUTTON" VALUE="Add" onClick="displayNoteAddDIV(<?= $SalesRepID . ", '" . get_user_name() ."', '" . $CustomerType . "'," . $CustomerID; ?>)"></TD>
+	</TR>
+  <TR CLASS="head">
+    <TD>Create Date<BR>YYYY-MM-DD</TD>
+    <TD>Due Date<BR>YYYY-MM-DD</TD>
+    <TD>Contact Via</TD>
+    <TD>Remind Me</TD>
+    <TD>Note</TD>
+    <TD>Action</TD>
+  </TR>
+
+  <FORM NAME="allNote" METHOD="POST" ACTION="./updateNote.phtml?action=editGroup" onsubmit="set_date_values();">
+  <INPUT TYPE="HIDDEN" NAME="SalesRepID" VALUE="<?= $SalesRepID ?>">
+  <INPUT TYPE="HIDDEN" NAME="WrittenBy" VALUE="<?= $WrittenBy ?>">
+  <INPUT TYPE="HIDDEN" NAME="CustomerType" VALUE="<?= $CustomerType ?>">
+  <INPUT TYPE="HIDDEN" NAME="CustomerID" VALUE="<?= $CustomerID ?>">
+<?
+// prepare data for creating list of ContactVia
+$sql_ContactVia = "SELECT ContactVia from ContactVia_list";
+$result_ContactVia = mysql_query($sql_ContactVia) or log_err_die(mysql_error(),$PHP_SELF);
+
+// 2.1 display reminder notes for purchaser
+$sql = "SELECT * FROM Note WHERE CustomerID=$CustomerID ORDER BY DueDate";
+$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);
+
+if (mysql_num_rows($result) > 0)
+{
+	$javascript_func_str = "";
+	
+	while ($row = mysql_fetch_array($result)) 
+	{		
+		displayMouseOverTR();
+?>
+    <TD><?= $row["CreateDate"]?></TD>
+    <TD><? display_date("DueDate", "", $row['NoteID'], false, ""); ?></TD>
+    <TD><? create_edittable_list($result_ContactVia, "ContactVia", $row["ContactVia"], "", $row["NoteID"]); ?></TD>
+    <TD><INPUT TYPE="CHECKBOX" NAME="RemindMe_<?= $row['NoteID'] ?>" VALUE="1"
+    <?if ($row["RemindMe"] == 1) print "CHECKED"; ?>></TD>
+    <TD><TEXTAREA WRAP="VIRTUAL" NAME="Note_<?= $row['NoteID'] ?>" cols="100" rows="10"><?= $row['Note']; ?></TEXTAREA></TD>
+    <TD><INPUT TYPE="BUTTON" VALUE="Delete" onClick="window.location='./updateNote.phtml?action=delete&NoteID=<?= $row['NoteID']?>&forward=listNote&CustomerType=<?= $CustomerType ?>&CustomerID=<?= $CustomerID ?>&SalesRepID=<?= $SalesRepID ?>';"></TD>
+	<TD><INPUT TYPE="HIDDEN" NAME="NoteID_<?= $row["NoteID"] ?>" VALUE="<?= $row['NoteID'] ?>"></TD>
+  </TR>
+  <INPUT TYPE="HIDDEN" NAME="DueDate_<?= $row['NoteID'] ?>">
+  
+<?
+		$javascript_func_str .= "document.allNote.DueDate_". $row['NoteID'] .".value = dojo.widget.byId('DueDate_". $row['NoteID'] ."').getValue();\n";
+	}
+?>
+  <TR>
+    <TD COLSPAN="2"><INPUT TYPE="BUTTON" VALUE="Add" onClick="displayNoteAddDIV(<?= $SalesRepID . ", '". get_user_name() . "', '". $CustomerType . "'," . $CustomerID; ?>)">
+    <INPUT TYPE="SUBMIT" VALUE="Update"></TD>
+  </TR>
+
+<?
+}
+?>
+
+  </FORM>  
+</TABLE>
+
+<script type="text/javascript">
+function set_date_values()
+{
+	
+<?= $javascript_func_str ?>
+
+	return true;
+}
+</script>
+
+</BODY>
+</HTML>

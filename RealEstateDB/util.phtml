@@ -1,0 +1,31 @@
+<?
+/**
+ * Common utilities indenpendent of the project
+ */
+
+/**
+ * Check the value is defined or not. If not, return default value 
+ */
+//function checkValue($value, $defaultValue = ""){
+//	return true;
+//	if (!isSet($value) || $value == ""){
+//		return $defaultValue;	
+//	} else {
+//		return $value;
+//	}		
+//	
+//}
+
+/**
+ * Construct an array from a csv string
+ */
+function convertCSVToArray($csvString){
+	$csvArray = explode(',', $csvString);
+	$length = count($csvArray);
+	for ($i=0; $i < $length; $i++){
+		$csvArray[$i] = trim($csvArray[$i], ' \'\"');
+	}
+	
+	return $csvArray;
+}
+?>

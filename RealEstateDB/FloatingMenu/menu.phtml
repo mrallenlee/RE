@@ -1,0 +1,175 @@
+<?
+$not_include_javascript = 1;
+include "../main_include.phtml";
+include "./config.js";
+
+//print "relativePath=$relativePath";
+?>
+
+//var ADMINISTRATION_MENU_WIDTH = 162;
+var ADMINISTRATION_MENU_WIDTH = 118;
+var MENU_ITEM_HEIGHT = -21;
+
+stm_bm(["ivvnair",430,"","blank.gif",1,"stgcl()","stgct()",1,0,162,0,333,1,1,1,"","",67108897],this);
+
+stm_bp("p0",[0,4,0,0,3,4,0,0,100,"progid:DXImageTransform.Microsoft.Pixelate(MaxSquare=15,enabled=0,Duration=0.58)",-2,"",-2,52,0,0,"#000000",MENU_BORDER,"",3,0,0,"#000000"]);
+
+		// home
+		stm_ai("p0i0",[0,"     Home       ","","",-1,-1,0,"","_self","","","","",0,0,0,"","",0,0,0,1,1,BACKGROUND,0,MENUITEM_LEVEL_1,0,"#000000","#000000",3,3,1,1,BACKGROUND,HIGHLIGHT_MENU_BORDER,NORMAL_TEXT,HIGHLIGHT_TEXT,NORMAL_TEXT_FONT,HIGHLIGHT_TEXT_FONT,0,0]);
+		stm_bpx("p1","p0",[VERTICAL, 4 ,0]);
+				stm_aix("p1i0","p0i0",[0,"Appleby","","",-1,-1,0,"https://yasur.pair.com/lmark/ljm/appleby/RealEstateDB/index.phtml","_self","","","","",0,0,0,"","",0,0,0,0,1,BACKGROUND,0,MENUITEM_LEVEL_2,0,"","",3,3,0,0,BACKGROUND,"#000000",NORMAL_TEXT,HIGHLIGHT_TEXT,NORMAL_TEXT_FONT,HIGHLIGHT_TEXT_FONT]);
+                                stm_aix("p1i1","p0i0",[0,"Waterview","","",-1,-1,0,"https://yasur.pair.com/lmark/ljm/waterview/RealEstateDB/index.phtml","_self","","","","",0,0,0,"","",0,0,0,0,1,BACKGROUND,0,MENUITEM_LEVEL_2,0,"","",3,3,0,0,BACKGROUND,"#000000",NORMAL_TEXT,HIGHLIGHT_TEXT,NORMAL_TEXT_FONT,HIGHLIGHT_TEXT_FONT]);
+		stm_ep();
+		
+<? if (get_access_security_level() > SALES) { ?>		
+		
+		// Administration
+		stm_aix("p0i1","p0i0",[0,"     Administration        "]);
+		//,"","",-1,-1,0,"","_self","","","","",0,0,0,"","",0,0,0,0]);
+		stm_bpx("Administration","p1",[VERTICAL,4,0,0,2,3,0,7]);
+	
+				//submenu
+				
+				stm_aix("Administrationi0","p1i0",[0,"        Sales Status        ","","",-1,-1,0,"","_self","","","","",5,5,5,"<?= $relativePath; ?>FloatingMenu/arrow_r.gif","<?= $relativePath; ?>FloatingMenu/arrow_w.gif",7,7,0,1]);
+				stm_bpx("SalesStatus","Administration",[VERTICAL, 4,ADMINISTRATION_MENU_WIDTH,MENU_ITEM_HEIGHT, 2, 3, 0, 0]);
+						stm_aix("SalesStatusi0","Administrationi0",[0,"N/A","","",-1,-1,0,"","_self","","","","",0,0,0,"","",0,0,0,0,1,BACKGROUND,0,MENUITEM_LEVEL_3,0,"","",3,3,0,0,BACKGROUND,"#000000",NORMAL_TEXT,HIGHLIGHT_TEXT,NORMAL_TEXT_FONT,HIGHLIGHT_TEXT_FONT]);
+<? if (SALES_DB_ENABLED) { ?>
+						stm_aix("SalesStatusi1","SalesStatusi0",[0,"Rescission List","","",-1,-1,0,"<?= $relativePath; ?>rescissionList.phtml"]);
+						stm_aix("SalesStatusi2","SalesStatusi0",[0,"Overdue List","","",-1,-1,0,"<?= $relativePath; ?>overdueList.phtml"]);
+						stm_aix("SalesStatusi3","SalesStatusi0",[0,"Broker List","","",-1,-1,0,"<?= $relativePath; ?>listBroker.phtml"]);
+						stm_aix("SalesStatusi4","SalesStatusi0",[0,"Referral List","","",-1,-1,0,"<?= $relativePath; ?>listReferral.phtml"]);
+						stm_aix("SalesStatusi5","SalesStatusi0",[0,"Cheque List","","",-1,-1,0,"<?= $relativePath; ?>listCheque.phtml"]);
+						stm_aix("SalesStatusi6","SalesStatusi0",[0,"NSF Cheque List","","",-1,-1,0,"<?= $relativePath; ?>nfsCheque.phtml"]);
+						stm_aix("SalesStatusi7","SalesStatusi0",[0,"GST Rebate Report","","",-1,-1,0,"<?= $relativePath; ?>listGSTRebate.phtml"]);
+						stm_aix("SalesStatusi8","SalesStatusi0",[0,"Sales Status","","",-1,-1,0,"<?= $relativePath; ?>salesStatus_DSD.phtml"]);
+<? } ?>
+				stm_ep();
+
+				
+<? if (get_access_security_level() > SALES){		?>						
+				//submenu
+				stm_aix("Administrationi5","p1i0",[0,"   Data Management   ","","",-1,-1,0,"","_self","","","","",5,5,5,"<?= $relativePath; ?>FloatingMenu/arrow_r.gif","<?= $relativePath; ?>FloatingMenu/arrow_w.gif",7,7,0,1]);
+				stm_bpx("DataManagement","Administration",[VERTICAL, 4,ADMINISTRATION_MENU_WIDTH,MENU_ITEM_HEIGHT, 2,3,0,0]);
+						stm_aix("DataManagementi0","Administrationi0",[0,"Manage List","","",-1,-1,0,"<?= $relativePath; ?>genericTableInfo.phtml","_self","","","","",0,0,0,"","",0,0,0,0,1,BACKGROUND,0,MENUITEM_LEVEL_3,0,"","",3,3,0,0,BACKGROUND,"#000000",NORMAL_TEXT,HIGHLIGHT_TEXT,NORMAL_TEXT_FONT,HIGHLIGHT_TEXT_FONT]);
+						stm_aix("DataManagementi1","SalesStatusi0",[0,"Edit Sales Incentives","","",-1,-1,0,"<?= $relativePath; ?>packageInfo.phtml?action=display"]);
+						stm_aix("DataManagementi2","SalesStatusi0",[0,"Sales Representative List","","",-1,-1,0,"<?= $relativePath; ?>salesRep.phtml"]);
+				stm_ep();
+
+<? if (get_access_security_level() == SUPERADMIN && USER_MANAGEMENT_ENABLED){		?>									
+
+				//submenu
+				stm_aix("Administrationi7","p1i0",[0,"   User Management   ","","",-1,-1,0,"","_self","","","","",5,5,5,"<?= $relativePath; ?>FloatingMenu/arrow_r.gif","<?= $relativePath; ?>FloatingMenu/arrow_w.gif",7,7,0,1]);
+				stm_bpx("UserManagement","Administration",[VERTICAL, 4,ADMINISTRATION_MENU_WIDTH,MENU_ITEM_HEIGHT, 2,3,0,0]);
+						stm_aix("UserManagement0","Administrationi0",[0,"User Management","","",-1,-1,0,"<?= $relativePath; ?>user_admin/user_admin.phtml","_self","","","","",0,0,0,"","",0,0,0,0,1,BACKGROUND,0,MENUITEM_LEVEL_3,0,"","",3,3,0,0,BACKGROUND,"#000000",NORMAL_TEXT,HIGHLIGHT_TEXT,NORMAL_TEXT_FONT,HIGHLIGHT_TEXT_FONT]);
+				stm_ep();
+<? } ?>
+				//submenu
+				stm_aix("Administrationi6","p1i0",[0,"Unit Data","","",-1,-1,0,"","_self","","","","",5,5,5,"<?= $relativePath; ?>FloatingMenu/arrow_r.gif","<?= $relativePath; ?>FloatingMenu/arrow_w.gif",7,7,0,1]);
+				stm_bpx("UnitData","Administration",[VERTICAL, 4,ADMINISTRATION_MENU_WIDTH,MENU_ITEM_HEIGHT, 2,3,0,0]);
+<? if (get_access_security_level() > ADMIN){		?>									
+						stm_aix("UnitDatai0","SalesStatusi0",[0,"Edit Unit Data","","",-1,-1,0,"<?= $relativePath; ?>unitInfo.phtml"]);
+						stm_aix("UnitDatai1","SalesStatusi0",[0,"Unit List","","",-1,-1,0,"<?= $relativePath; ?>unitList.phtml"]);
+<? } ?>						
+						stm_aix("UnitDatai2","SalesStatusi0",[0,"Unit Price History","","",-1,-1,0,"<?= $relativePath; ?>listUnitPriceHistory.phtml"]);
+						stm_aix("UnitDatai3","SalesStatusi0",[0,"User Management","","",-1,-1,0,"<?= $relativePath; ?>user_admin/user_admin.phtml"]);
+						stm_aix("UnitDatai4","SalesStatusi0",[0,"Create Fake-Sold Unit","","",-1,-1,0,"<?= $relativePath; ?>fakeUnit.phtml"]);
+				stm_ep();
+<?	} ?>			
+
+<? // take away analysis portion
+if (SALES_DB_ENABLED) { ?>
+				//submenu
+				stm_aix("Administrationi6","p1i0",[0,"Analysis","","",-1,-1,0,"","_self","","","","",5,5,5,"<?= $relativePath; ?>FloatingMenu/arrow_r.gif","<?= $relativePath; ?>FloatingMenu/arrow_w.gif",7,7,0,1]);
+				stm_bpx("AdminAnalysis","Administration",[VERTICAL, 4,ADMINISTRATION_MENU_WIDTH,MENU_ITEM_HEIGHT, 2,3,0,0]);
+						stm_aix("AdminAnalysisi0","SalesStatusi0",[0,"Weekly Traffic Report","","",-1,-1,0,"<?= $relativePath; ?>weeklyTrafficReport.phtml"]);
+						stm_aix("AdminAnalysisi1","SalesStatusi0",[0,"Visitor/Purchaser Report","","",-1,-1,0,"<?= $relativePath; ?>visitorReport.phtml"]);
+<? if (get_access_security_level() >= MANAGEMENT){		?>									
+						stm_aix("AdminAnalysisi1","SalesStatusi0",[0,"Sales Schedule","","",-1,-1,0,"<?= $relativePath; ?>SalesSchedule/salesForecastSchedule.phtml"]);
+<?			} ?>						
+				stm_ep();
+						
+<? 		} ?>
+		stm_ep();
+<?	} ?>
+
+		// customer
+		stm_aix("p0i2","p0i0",[0,"     Customer        "]);
+		stm_bpx("Customer","p1",[VERTICAL, 4 ,0]);
+		stm_aix("Customeri0","p1i0",[0,"Purchaser List","","",-1,-1,0,"<?= $relativePath; ?>list.phtml?mode=purchaser"]);
+<? if (SALES_DB_ENABLED) { ?>
+		stm_aix("Customeri3","Customeri0",[0,"Visitor List","","",-1,-1,0,"<?= $relativePath; ?>list.phtml?mode=visitor"]);
+
+<? } ?>
+
+<?
+if (get_access_security_level() > HELPDESK) {
+	if (get_access_security_level() >= SALES && SALES_DB_ENABLED) {	?>				
+					stm_aix("Customeri2","Customeri0",[0,"Add a Visitor","","",-1,-1,0,"<?= $relativePath; ?>userListing.phtml?mode=visitor&action=add"]);
+<?	}
+	if (get_access_security_level() > SALES) { ?>	
+					stm_aix("Customeri1","Customeri0",[0,"Add a Purchaser","","",-1,-1,0,"<?= $relativePath; ?>listUnit.phtml?mode=available"]);
+<?	} ?>
+<?	} ?>
+		stm_ep();
+
+<? if (CRM_ENABLED && (get_access_security_level() >= SALES) && (get_access_security_level() != HOMEOPTIONS)) {		?>		
+
+		// sales
+		stm_aix("p0i3", "p0i0", [0,"     Sales       "]);
+		stm_bpx("Sales","p1",[VERTICAL, 4 ,0]);
+				stm_aix("Salesi0","p1i0",[0,"My Customer","","",-1,-1,0,"<?= $relativePath; ?>CRM/salesRepDetail.phtml"]);
+		stm_ep();
+<?	} ?>
+
+<? //if (HOME_OPTIONS_ENABLED && (get_access_security_level() >= HOMEOPTIONS) && (get_access_security_level() != SALES)) {		?>		
+<? if (HOME_OPTIONS_ENABLED) {		?>		
+
+		// home options
+		stm_aix("p0i4", "p0i0", [0,"     Home Options       "]);
+		stm_bpx("HomeOptions","p1",[VERTICAL, 4 ,0]);
+				stm_aix("HomeOptionsi0","p1i0",[0,"Purchaser List","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/homeOptionsUserList.phtml?mode=purchaser"]);
+				stm_aix("HomeOptionsi1","p1i0",[0,"Vacant Unit List","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/homeOptionsVacantUnitList.phtml"]);
+				stm_aix("HomeOptionsi1","HomeOptionsi0",[0,"Options and Upgrades","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_table.phtml"]);
+				stm_aix("HomeOptionsi2","HomeOptionsi0",[0,"Options List","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_table.phtml?table_name=Options&mode=OptionList"]);
+				stm_aix("HomeOptionsi4","HomeOptionsi0",[0,"Contractor List","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_contractor.phtml"]);
+				stm_aix("HomeOptionsi8","HomeOptionsi0",[0,"Contractor Mark-up Setup","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/contractor_setup.phtml"]);
+				stm_aix("HomeOptionsi5","HomeOptionsi0",[0,"Profit Analysis","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/contractor_pay.phtml"]);
+//				stm_aix("HomeOptionsi7","HomeOptionsi0",[0,"Contractor Payment Report","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/dumpContractorCSV.phtml"]);				
+				stm_aix("HomeOptionsi3","HomeOptionsi0",[0,"Unit Types","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_table.phtml?table_name=UnitType"]);
+				stm_aix("HomeOptionsi6","HomeOptionsi0",[0,"Disable Unit Section","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/disable_section.phtml"]);				
+				stm_aix("HomeOptionsi9","HomeOptionsi0",[0,"PO List","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/POList.phtml?showDefaultCol=1"]);
+		stm_ep();
+<?	} ?>
+<? if (CLOSING_ENABLED && (get_access_security_level() >= ADMIN)) {		?>		
+
+		// Closing options
+		stm_aix("p0i5", "p0i0", [0,"       Closing          "]);
+		stm_bpx("Closing","p1",[VERTICAL, 4 ,0]);
+				stm_aix("Closingi0","p1i0",[0,"Purchaser List","","",-1,-1,0,"<?= $relativePath; ?>Closing/list.phtml?mode=purchaser"]);
+				stm_aix("Closingi1","Closingi0",[0,"Project Closing","","",-1,-1,0,"<?= $relativePath; ?>Closing/proj_closing.phtml"]);
+				stm_aix("Closingi2","Closingi0",[0,"Statement","","",-1,-1,0,"<?= $relativePath; ?>Closing/statement.phtml"]);
+				stm_aix("Closingi3","Closingi0",[0,"Interest Rate","","",-1,-1,0,"<?= $relativePath; ?>Closing/interest.phtml"]);
+				stm_aix("Closingi4","Closingi0",[0,"GST Rebate Report","","",-1,-1,0,"<?= $relativePath; ?>listGSTRebate.phtml"]);
+				stm_aix("Closingi5","Closingi0",[0,"Cash Forcast Report","","",-1,-1,0,"<?= $relativePath; ?>listCashForcast.phtml"]);
+		stm_ep();
+<?	} ?>
+
+<? if (PDI_ENABLED && (get_access_security_level() >= ADMIN)) {           ?>
+
+                // Closing options
+                stm_aix("p0i6", "p0i0", [0,"     PDI Tracking      "]);
+                stm_bpx("PDI","p1",[VERTICAL, 4 ,0]);
+                                stm_aix("PDI0","p1i0",[0,"PDI General Information","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_pdi.phtml?table_name=Unit"]);
+                                stm_aix("PDI1","PDI0",[0,"PDI Progress Report","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/report_pdi_progress.phtml?table_name=Unit"]);
+                                stm_aix("PDI2","PDI0",[0,"PDI Progress Detail Report","","",-1,-1,0,"<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/report_pdi_details.phtml"]);
+                stm_ep();
+<?    } ?>
+<? if (USER_MANAGEMENT_ENABLED){ ?>
+		stm_aix("p0i99", "p0i0", [0,"Logout"]);
+		stm_bpx("Logout","p1",[VERTICAL, 4 ,0]);
+				stm_aix("Logouti0","p1i0",[0,"Logout","","",-1,-1,0,"<?= $relativePath; ?>logout.phtml"]);
+		stm_ep();
+<?	} ?>		
+
+stm_ep();
+stm_em();

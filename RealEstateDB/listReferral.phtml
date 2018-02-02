@@ -1,0 +1,160 @@
+<?
+include "main_include.phtml";
+
+// set the security level to be 3 for this page
+check_auth(2, "sales");
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+  <TITLE>Referral List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+		<FORM METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+			<TABLE>
+			<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+			<TR CLASS="blank">
+				<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+				<TD>First Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+				<TD>Last Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+			</TR>
+			<TR CLASS="blank">
+				<TD>Company: </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+			</TR>
+			<TR CLASS="blank">
+				<TD COLSPAN=6 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+			</TR>
+			<TR>
+				<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+					<INPUT TYPE="SUBMIT" VALUE="Search">
+					<INPUT TYPE="BUTTON" VALUE="List All" onClick="window.location='<?= $PHP_SELF; ?>?listall=1&mode=<?= $mode;?>&orderby=<?= $orderby; ?>'">
+
+					<INPUT TYPE="BUTTON" VALUE="Dump Data" onClick="window.location='./dumpCSVreferral.phtml'">
+				</TD>
+			</TR>
+				
+			</TABLE>
+		</FORM>
+	</DIV>
+	</DIV>
+
+<?
+// init var
+$searchFor = "";
+
+$sql .= "SELECT Referee.*, User.FirstName, User.LastName, User.UnitNumber, User.Company
+		FROM Referee, User
+		WHERE Referee.UserID = User.UserID
+		AND (Referee.RefereeFirstName <> ''
+		 OR Referee.RefereeLastName <> '')
+		AND User.DealStatus <> 'Rescinded'";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$_GET;
+	$search_criterion = "";
+	$hasSearchValue = false;
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;		
+				if ($key == "search_UnitNumber")
+				{
+					$sql .= " AND (" . expandSearchCriteria(array("columnName"=>'UnitNumber', "csvValue"=>$val)) . ") ";				
+					$search_criterion .= "&" . $key . "=" . $val;					
+				}
+				else {
+					$sql .= " AND " . substr($key, $pos + 1) . " LIKE \"" . $val . "\"";
+					$search_criterion .= "&" . $key . "=" . $val;
+				}
+			}
+		}
+	}
+
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+	{
+		die();
+	}
+}
+else
+{
+	$search_criterion .= "&listall=1";
+}
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+?>
+
+	<H4>List Referrals</H4>
+  <BODY>
+    <TABLE>
+<?
+$num_of_rows = 0;
+
+while ($row = mysql_fetch_array($result))
+{
+	if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+	{
+?>
+      <TR>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Suite Number</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Company,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Company</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Purchaser Name</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Incentive,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Incentive</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=IncentivePrice,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Incentive Price</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=IncentiveSent,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Incentive Sent</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=RefereeFirstName,RefereeLastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Referee</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=FromProject,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Referee From</A></TD>
+        <TD CLASS="head"><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"RefereeUnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Referee Unit</A></TD>
+      </TR>
+<?
+	}
+	
+	$referralURL = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row[UserID];
+	displayMouseOverTR("blank", "body");
+
+?>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["UnitNumber"]?></A></TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["Company"]?></A></TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["FirstName"] . " " . $row["LastName"]?></A></TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["Incentive"]?></A></TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["IncentivePrice"]?></A></TD>
+        <TD>
+          <?
+		  	if ($row["IncentiveSent"] > 0) echo "Yes";
+		  	else echo "No";
+		  ?>
+		</TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["RefereeFirstName"] . " " . $row["RefereeLastName"]?></A></TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["FromProject"]?></A></TD>
+        <TD><A HREF="<?= $referralURL; ?>"><?= $row["RefereeUnitNumber"]?></A></TD>
+      </TR>
+<?	
+}
+?>
+    </TABLE>
+  </BODY>
+</HTML>

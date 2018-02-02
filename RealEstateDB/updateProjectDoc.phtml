@@ -1,0 +1,81 @@
+<?
+
+include "../login/main_include.phtml";
+
+function goto_main_page() {
+?>
+	<script language="javascript">
+		window.location="./projectDoc.phtml";
+	</script>
+
+<?
+}
+
+if ($action == "edit")
+{
+	$sqlPrefix = "UPDATE UserFile SET ";
+		
+	//loop to read FileDesc & FileID from array and update database
+	$i = 0;
+	while (!is_null($FileID[$i]))
+	{
+		$sql = $sqlPrefix . " FileDesc='" . $FileDesc[$i] . "' WHERE UserID = 0 and FileID=" . $FileID[$i];
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		
+		$i++;
+	}
+}
+
+if ($action == "delete")
+{
+	// allow delete data from database if file doesn't exist
+	unlink("./projectDoc/" . $FileName);
+//	{
+		$sql = "DELETE FROM UserFile WHERE UserID = 0 and FileID = ". $FileID;
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+//	}
+//	else
+//		$user_message = $user_message ."[ <font color=#009900><b>Unable to delete ". $File_name .".</b></font> ]";
+}
+
+if ($action == "upload")
+{
+	$dir_upload = "./projectDoc/";
+
+	if (!isset($FileForUpload) || $FileForUpload == "none")
+	{
+		$user_message=$user_message ."[ <font color=#009900><b>Please choose file for uploading.</b></font> ]";
+		goto_main_page();
+	}
+
+	if (!is_dir($dir_upload))
+	{
+		$user_message=$user_message ."[ <font color=#009900><b>Directory for holding uploaded file ". $dir_upload ." doesn't exist.</b></font> ]";
+		goto_main_page();
+	}
+
+	if (copy($FileForUpload, $dir_upload.$FileForUpload_name))
+	{
+		$sql = "SELECT max(FileID) AS max_FileID from UserFile where UserID = 0";
+		$result = mysql_query($sql) or die("Error : " . mysql_error() . " <BR>" . $sql);
+		
+		$row = mysql_fetch_array($result);
+		$next_FileID = $row['max_FileID'] + 1;
+		
+		$sql	= "INSERT INTO UserFile (UserID, FileID, FileDesc, FileName)
+			values (0,". $next_FileID . ",\"". $FileDescForUpload ."\",\"". $FileForUpload_name ."\")";
+		
+		$result = mysql_query($sql,$db) or die("Error : " . mysql_error() . " <BR>" . $sql);
+	}
+	else
+	{
+		$user_message = $user_message ."[ <font color=#009900><b>Unable to copy ". $File_name ." to server.</b></font> ]";
+	}
+}
+
+//phpinfo();
+
+goto_main_page();
+
+?>
+

@@ -1,0 +1,223 @@
+<?
+include "main_include.phtml";
+
+// This file updates records in the database. It is called when
+// the admin clicks on the Update button in the edit form.
+
+
+$valid = 0;
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+// Store data to the database
+if ($table_name == "Options")
+{
+	// fix bad characters
+	$Name = preg_replace($find, $replace, $Name);
+	$Choice = preg_replace($find, $replace, $Choice);
+	
+	if ($Name)
+	{
+		$valid = 1;
+	}
+	
+	$sql = "UPDATE $table_name SET Name='$Name', Choice='$Choice' WHERE OptionID=$OptionID";
+}
+elseif ($table_name == "Choice")
+{
+	// fix bad characters
+	$Name = preg_replace($find, $replace, $Name);
+	
+	if ($Name)
+	{
+		$valid = 1;
+	}
+	
+	$sql = "UPDATE $table_name SET Name='$Name' WHERE ChoiceID=$ChoiceID";
+}
+elseif ($table_name == "UserFile")
+{
+	$sql	= "SELECT FileDesc, FileName
+		FROM UserFile
+		WHERE UserID = $UserID and FileID = $FileID";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	$row = mysql_fetch_array($result);
+
+	// Concact original file name = userid/filename_original
+	$FileName_original = $UserID . "/". $row['FileName'];
+	
+	// fix bad characters
+	$FileDesc = preg_replace($find, $replace, $FileDesc);
+	$FileName = preg_replace($find, $replace, $FileName);
+
+	if ($FileName)
+	{
+		$valid = 1;
+	}
+	
+	if (!rename($FileName_original, $UserID . "/" . $FileName))
+	{
+		$user_message = "Unable to rename file name from ". $FileName_original . " to ". $FileName;
+		$sql = "UPDATE $table_name SET FileDesc = '$FileDesc' WHERE UserID = $UserID and FileID = $FileID";
+	}
+	else
+	{
+		$sql = "UPDATE $table_name SET FileDesc = '$FileDesc', FileName = '$FileName' WHERE UserID = $UserID and FileID = $FileID";
+	}
+}
+elseif ($table_name == "User")
+{
+	
+	// fix bad characters
+	$LastName = preg_replace($find, $replace, $LastName);
+	$FirstName = preg_replace($find, $replace, $FirstName);
+	if (!is_numeric($UnitNumber))
+	{
+		$UnitNumber = intval($UnitNumber);
+	}
+	if (!isSet($Commit))
+	{
+		$Commit = 0;
+	}
+	else
+	{
+		$Commit = 1;
+	}
+	$Address = preg_replace($find, $replace, $Address);
+	$PostalCode = preg_replace($find, $replace, $PostalCode);
+	$City = preg_replace($find, $replace, $City);
+	$Country = preg_replace($find, $replace, $Country);
+	$PhoneNumber = preg_replace($find, $replace, $PhoneNumber);
+	$Email = preg_replace($find, $replace, $Email);
+	$Note = preg_replace($find, $replace, $Note);
+
+	
+	if ($Login && $Passwd && $FirstName && $LastName && $Login == preg_replace($find, $replace, $Login) && $Passwd == preg_replace($find, $replace, $Passwd))
+	{
+		$valid = 1;
+	}
+	
+	$sql = "UPDATE $table_name SET FirstName='$FirstName', 
+			LastName='$LastName',
+			Login='$Login',
+			Passwd='$Passwd',
+			Address='$Address',
+			PostalCode='$PostalCode',
+			City='$City',
+			Country='$Country',
+			PhoneNumber='$PhoneNumber',
+			Email='$Email',
+			UnitNumber='$UnitNumber',
+			UnitType='$UnitType',
+			Note='$Note'
+			WHERE UserID=$UserID";
+	
+	$sql_update_unit = "UPDATE Unit SET UserID = $UserID WHERE UnitNumber = '$UnitNumber'";
+	
+	include_once(SUB_FOLDER_INVERT_RELATIVE_PATH . "/upgradeOptionAction.phtml");
+	updateUserUpgradeOptionStatus($UserID, $Commit);
+}
+else
+{
+	// fix bad characters
+	$Name = preg_replace($find, $replace, $Name);
+	$Description = preg_replace($find, $replace, $Description);
+	
+	$sql = "UPDATE $table_name SET Name='$Name', Description='$Description' WHERE ";
+
+	if ($Name)
+	{
+		$valid = 1;
+	}
+
+	if ($table_name=="Item")
+	{
+		$sql .= " ItemID=$ItemID";
+	}
+	elseif ($table_name=="Subsection")
+	{
+		$sql .= " SubsectionID=$SubsectionID";
+	}
+	elseif ($table_name=="Section")
+	{
+		$sql .= " SectionID=$SectionID";
+	}
+}
+
+if ($valid)
+{
+	$result = mysql_query($sql,$db); //or die("Error : $sql<br>" . mysql_error());
+	
+	if ($table_name == "User")
+	{
+		$result = mysql_query($sql_update_unit,$db); //or die("Error : $sql<br>" . mysql_error());
+	}
+}
+
+// fix the query string that's going to be passed back
+$query_s = $QUERY_STRING;
+if ($table_name == "Section")	$query_s = str_replace("&SectionID=" . $SectionID, "", $query_s);
+elseif ($table_name == "Subsection")	$query_s = str_replace("&SubsectionID=" . $SubsectionID, "", $query_s);
+elseif ($table_name == "Item_Options")	$query_s = str_replace("&OptionID=" . $OptionID, "", $query_s);
+elseif ($table_name == "UserOption")	$query_s = "table_name=User&UserID=$UserID";
+elseif ($table_name == "UserFile")	$query_s = "table_name=User&UserID=$UserID";
+elseif ($table_name == "Choice")	$query_s = "table_name=$table_name&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID";
+$query_s .= "&mode=$mode";
+
+if ($from == "User" || $table_name == "User" || $table_name == "UserSave")
+{
+	$goto = "display_user.phtml";
+	$query_s = "";
+}
+elseif ($table_name == "UserOption")
+{
+	$goto = "row_edit.phtml";
+}
+elseif ($table_name == "UserFile")
+{
+	$goto = "file_management.phtml";
+}
+else
+{
+	$goto = "display_table.phtml";
+}
+
+?>
+<script language="javascript">
+
+<?
+if (mysql_error() && $table_name="User")
+{
+echo mysql_error();
+?>
+	
+	alert('Login already in use. Please choose another.');
+	//history.go(-1);
+<?
+}
+elseif (!$valid)
+{
+?>
+	alert('One or more of the data fields were invalid.');
+	history.go(-1);
+<?
+}
+else
+{
+?>
+	location.href = "<?echo $goto;?>?<?echo $query_s;?>";
+<?
+}
+?>
+</script>

@@ -1,0 +1,52 @@
+<?php
+/*
+ * Created on 13-Feb-2006
+ *
+ * To change the template for this generated file go to
+ * Window - Preferences - PHPeclipse - PHP - Code Templates
+ */
+
+class URLEncoding{
+/**
+ * Encode whole url by this method. Using built-in urleoncde
+ * introduces bug if data contains space.
+ */
+function encodeURL($url){
+	return $this->encode_special_url_char(urlencode($url));
+}
+
+function decodeURL($url){
+	return $this->decode_dot(urldecode($url));
+}
+
+
+//------------------------------------------------------------------
+// DO NOT USE FOLLOWING FUNCTION. USE encodeURL and decodeURL instead
+//------------------------------------------------------------------ 
+function encode_dot($string)
+{
+	$result = str_replace(".", "PHPDOT", $string);
+	$result = str_replace("+", "PHPPLUS", $result);
+	$result = str_replace(" ", "PHPSPACE", $result);
+	return $result;
+}
+
+function decode_dot($string)
+{
+	$result = str_replace("PHPDOT", ".", $string);
+	$result = str_replace("PHPPLUS", "+", $result);
+	$result = str_replace("PHPSPACE", " ", $result);
+	return $result;
+}
+
+function encode_special_url_char($url){
+	return $this->encode_dot($url);	
+}
+
+function decode_special_url_char($url){
+	return $this->decode_dot($url);	
+}
+
+
+}
+?>

@@ -1,0 +1,173 @@
+<?
+include "main_include.phtml";
+
+// require UserID & UnitType
+
+if (!isSet($ContractorID))
+{
+	die("Error : Require Contractor ID");
+}
+
+// Commented by Cindy - Jul 18, 2003: Get contractor price from UserSave instead of Price (to freeze contractor price)
+//$price_contract = "Price.$ContractorID";
+//
+//$sql = "SELECT User.UnitNumber AS UnitNumber, Unit.UnitType As UnitType, Section.SectionID As SectionID,
+//		Section.Name As SectionName, Subsection.Name As SubsectionName,
+//		Item.Name As ItemName, Options.Name As OptionName, Choice.Name As ChoiceName, 
+//		$price_contract As ContractorPrice 
+//		FROM UserSave, User, Price ,Section, Subsection, Item, Options
+//		LEFT JOIN Choice
+//		ON UserSave.ChoiceID = Choice.ChoiceID
+//		AND UserSave.OptionID = Choice.OptionID
+//		LEFT JOIN Unit
+//		ON Unit.UserID=User.UserID
+//		WHERE UserSave.ItemID = Price.ItemID
+//		AND UserSave.OptionID = Price.OptionID
+//		AND UserSave.UserID = User.UserID
+//		AND Price.UnitType = Unit.UnitType
+//		AND $price_contract <> 0
+//		AND Section.SectionID = Subsection.SectionID
+//		AND Subsection.SubsectionID = Item.SubsectionID
+//		AND UserSave.ItemID = Item.ItemID 
+//		AND UserSave.OptionID = Options.OptionID
+//		AND User.Commit = 1
+//		AND User.ContractorReport = 1
+//		AND User.DealStatus <> 'Rescinded'
+//		ORDER BY UnitNumber, Section.SectionID, Subsection.SubsectionID, Item.ItemID";
+
+$price_contract = "UserSave.$ContractorID";
+
+$sql = "SELECT User.UnitNumber AS UnitNumber, Unit.UnitType As UnitType, Section.SectionID As SectionID,
+		Section.Name As SectionName, Subsection.Name As SubsectionName,
+		Item.Name As ItemName, Options.Name As OptionName, Choice.Name As ChoiceName, 
+		$price_contract As ContractorPrice 
+		FROM UserSave, User, UserUpgradeOptionStatus, Section, Subsection, Item, Options
+		LEFT JOIN Choice
+		ON UserSave.ChoiceID = Choice.ChoiceID
+		AND UserSave.OptionID = Choice.OptionID
+		LEFT JOIN Unit
+		ON Unit.UserID=User.UserID
+		WHERE UserSave.UserID = User.UserID
+		AND UserUpgradeOptionStatus.UserID = User.UserID
+		AND UserUpgradeOptionStatus.Commit = 1
+		AND User.ContractorReport = 1
+		AND User.DealStatus <> 'Rescinded'
+		AND $price_contract <> 0
+		AND Section.SectionID = Subsection.SectionID
+		AND Subsection.SubsectionID = Item.SubsectionID
+		AND UserSave.ItemID = Item.ItemID 
+		AND UserSave.OptionID = Options.OptionID
+		ORDER BY UnitNumber, Section.SectionID, Subsection.SubsectionID, Item.ItemID";
+
+$result = mysql_query($sql,$db) or die("SQL ERROR :\n" . mysql_error() . "<BR>Full SQL:<BR>" . $sql . "<BR>" . $PHP_SELF);
+
+$contractor_sql = "SELECT Contractor.ContractorName FROM Contractor WHERE ContractorID='$ContractorID'";
+$contractor_result = mysql_query($contractor_sql,$db) or die("SQL ERROR :\n" . mysql_error() . "<BR>Full SQL:<BR>" . $sql . "<BR>" . $PHP_SELF);
+$contractor_row = mysql_fetch_array($contractor_result);
+?>
+<html>
+<center>
+<h1>Citygate</h1>
+<h3>Contractor : <?= $contractor_row['ContractorName'];?></h3>
+<table>
+	<tr>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Unit Number</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Unit Type</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Section</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Subsection</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Option</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Choice</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Price</B></font></td>
+	</tr>
+
+<?
+	$prev_unit_number = "JUNK";
+	$prev_section = "JUNK";
+	$prev_subsection = "JUNK";	
+	$sum = 0;
+	$total = 0;
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($prev_unit_number != $row['UnitNumber'] && $prev_unit_number != "JUNK")
+		{
+?>
+	<tr>
+		<td colspan="4"></td>
+		<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Subtotal</B></td>
+		<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><?echo "$" . number_format($sum); ?></td>
+	</tr>
+	<tr><td colspan="6"><br><hr size="7" noshade></td></tr>
+<?
+			$sum = 0;
+?>
+	<tr>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Unit Number</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Unit Type</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Section</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Subsection</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Option</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Choice</B></font></td>
+	<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Price</B></font></td>
+	</tr>
+<?
+		}
+		
+		// If this section for this unit type has been disabled, don't show this record in the report
+		if (section_disabled($row['UnitType'], $row['SectionID']))
+			continue;
+
+		$prev_unit_number = $row['UnitNumber'];
+?>
+	<tr>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['UnitNumber']; ?></font></td>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['UnitType']; ?></font></td>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['SectionName']; ?></font></td>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['SubsectionName']; ?></font></td>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['OptionName'];?></font></td>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['ChoiceName'];?></font></td>
+	<td><font face="Arial,Verdana,Helvetica" size="2"><?
+		if ($row['ContractorPrice'] == -9)
+		{
+			echo "For Info Only";
+		}
+		else if ($row['ContractorPrice'] == -99)
+		{
+			echo "$0";
+		}
+		else
+		{
+			$sum += $row['ContractorPrice'];
+			$total += $row['ContractorPrice'];
+			echo "$" . number_format($row['ContractorPrice']);
+		}
+?>
+	</font></td>
+	</tr>
+<?
+	}
+?>
+	<tr>
+		<td colspan="4"></td>
+		<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><B>Subtotal</B></td>
+		<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2"><?echo "$" . number_format($sum); ?></td>
+	</tr>
+
+	<tr><td><br></td></tr>
+	<tr><td colspan="6"><hr size=7" noshade></td></tr>
+	
+	<tr>
+		<td colspan="4"></td>
+		<td colspan="2">
+			<table width="100%" border="0">
+				<tr>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2" color="#0"><B>Total</B></td>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2" color="#0"><B><?= "$ " . number_format($total);?></B></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+<!--<a href="display_user.phtml"><font face="Arial,Verdana,Helvetica" size="2">Users</font></a><br>-->
+<a href="display_contractor.phtml"><font face="Arial,Verdana,Helvetica" size="2">Contractors</font></a><br>
+<a href="contractor_pay.phtml"><font face="Arial,Verdana,Helvetica" size="2">Contractor Payment Totals</font></a></b>
+</html>

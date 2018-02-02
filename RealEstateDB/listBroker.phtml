@@ -1,0 +1,337 @@
+<?
+include "main_include.phtml";
+include "Entity/View/CompanyView.phtml";
+// set the security level to be 2 for this page
+
+check_auth(2, "sales");
+
+// default don't show all brokers. Only display broker attaches with at deal
+if (!isSet($search_ShowAllBroker)){
+	$search_ShowAllBroker = 0;		
+}
+
+// expect input: 
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+	<TITLE>Broker List</TITLE>
+
+	<BODY>
+	
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_broker" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+
+		<TABLE>
+
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+
+		<TR CLASS="blank">
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+			<TD>Broker First Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="<?= encode_dot("search_Person.FirstName"); ?>" VALUE="<?= ${encode_dot("search_Person.FirstName")} ?>"></TD>
+			<TD>Broker Last Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="<?= encode_dot("search_Person.LastName"); ?>" VALUE="<?= ${encode_dot("search_Person.LastName")} ?>"></TD>
+		</TR>
+
+		<TR CLASS="blank">
+			<TD> Phone  : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Phone" VALUE="<?= $search_Phone; ?>" onChange="this.value=tool.string.ReformatPhoneNumber(this.value);"></TD>
+			<TD>Broker Email : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="<?= encode_dot("search_Person.Email"); ?>" VALUE="<?= ${encode_dot("search_Person.Email")}; ?>"></TD>
+			<TD>INT/EXT Broker : </TD>
+			<TD><? display_generic_table_list("BrokerType", "BrokerType", "", "search", ""); ?></TD>
+		</TR>
+
+		<TR CLASS="blank">
+			<TD>Broker Company : </TD>
+			<TD colspan=3><?
+				$companyView = new CompanyView(); 
+				print $companyView->displayCompanyList(array(
+						"col" => "CompanyName", 
+						"valueCol" => "CompanyID",
+						"table"=> "Company", 
+						"value"=>$search_CompanyID,
+						"inputName"=>"CompanyID", 
+						"action"=>"edit",
+						"inputPrefix"=> "search")); ?></TD>				
+			<TD><INPUT TYPE="CHECKBOX" NAME="search_ShowAllBroker" VALUE=1 <?if  ($search_ShowAllBroker == 1) print " CHECKED "; ?>>List All Broker</TD>
+		</TR>
+
+		<TR CLASS="blank">
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+		</TR>
+
+		<TR>
+			<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>'">
+				<INPUT TYPE="BUTTON" VALUE="Dump Data" onClick="dump_data()">
+				<INPUT TYPE="HIDDEN" NAME="dumpdata" VALUE="0">
+			</TD>
+		</TR>
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+
+<script language="JavaScript">
+	document.search_broker.search_BrokerType.value = "<?= $search_BrokerType; ?>";
+</script>
+<?
+
+// init var
+
+$searchFor = "";
+
+if (BROKER_MODULE_ENABLED){
+	
+
+	$sql_cols = "SELECT Broker.BrokerID, UnitNumber, Price, DealStatus, 
+				Person.FirstName, Person.LastName, 
+				CONCAT(Person.FirstName, CONCAT(' ', Person.LastName)) AS AgentName 
+				,CompanyName, BranchName, Address.Unit Unit,Address.Street Street
+				,Address.City City,Address.Province Province
+				,Address.Country Country,Address.PostalCode PostalCode, 
+				Person.BusinessPhone, Person.CellPhone, Person.Fax, Person.Email
+				FROM  Broker , Person 
+				LEFT JOIN Company
+					ON Person.CompanyID = Company.CompanyID
+				LEFT JOIN Address
+					ON Company.AddressID = Address.AddressID
+				LEFT JOIN User
+					ON (User.BrokerID = Broker.BrokerID
+				   OR User.BrokerID2 = Broker.BrokerID)";
+	
+	$sql_cond = " WHERE Broker.PersonID = Person.PersonID";
+	
+	if (!$search_ShowAllBroker){
+		$sql_cond .= " AND User.UserID IS NOT NULL ";		
+	}
+		
+}
+else {
+	// creates selected columns and conditions, leave out table
+	// because both User & Visitor tables are selected with the same information
+	$sql_cols = "SELECT distinct BrokerAgentName, BrokerCompany, BrokerAddress, BrokerCity, BrokerPostalCode, BrokerPhoneNumber,BrokerFaxNumber, BrokerEmail";
+	
+	$sql_cond .= " WHERE BrokerAgentName <> '' ";
+}
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+
+	{
+		$pos = strpos($key, "_");
+
+		$key = decode_dot($key);
+		if ($pos > 0)
+
+		{
+
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				if ($search_field == "Phone"){
+					$hasSearchValue = true;
+					$val = convertPhoneNumberFormat($val);
+					$sql_cond .= " AND (Person.BusinessPhone LIKE '" . $val . "' " .
+								 " OR Person.CellPhone LIKE '" . $val . "' " .
+								 " OR Person.Fax LIKE '" . $val . "' " .
+								 " OR Person.HomePhone LIKE '" . $val . "') ";							 
+				} else if ($key == "search_UnitNumber") {				
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>'UnitNumber', "csvValue"=>$val)) . ") ";				
+				} else if ($search_field == "CompanyID"){
+					$hasSearchValue = true;
+					$sql_cond .= " AND Company.CompanyID = '" . $val . "' " ;										
+				} else if ($search_field == "ShowAllBroker"){
+					// do nothing
+				}
+				else {					
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";					
+				}
+				$search_criterion .= "&" . encode_dot($key) . "=" . encode_dot($val);
+			}	
+		}
+
+	}
+
+//	if ($dumpdata == 1)
+//	{
+//		$dumpCSVLocation = "./dumpCSVBroker.phtml?sql_cond=" . $sql_cond;
+//
+//		goto_url($dumpCSVLocation);
+//	}
+
+	// store the sql_cond now, and use it later
+	$dump_sql_cond = $sql_cond;
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+	{
+?>		
+		<script language="JavaScript">
+		<!--
+		function dump_data()
+		{
+			document.search_broker.dumpdata.value = 1;
+			document.search_broker.submit();
+			window.location='dumpCSVBroker.phtml';	
+		}
+		//-->
+		</script>
+<?		
+		die();
+	}
+}
+else
+{
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql_cond .= " ORDER BY $orderby";
+}
+else
+{
+	$sql_cond .= " ORDER BY AgentName, " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+?>
+
+	<H4>List Brokers</H4>
+
+	<TABLE>
+<?
+		if ($searchFor != "")
+		{
+?>
+
+		<TR CLASS="blank">
+			<TD COLSPAN="10">Search for <?= $searchFor; ?><BR><BR></TD>
+		</TR>
+<?
+		}
+		// display Users table
+		$sql = $sql_cols . $sql_cond;
+//		print "sql=$sql<BR>";
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		
+		$num_of_rows = 0;
+		while ($row = mysql_fetch_array($result))
+		{		
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=FirstName,LastName, <?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Broker Name</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=CompanyName,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Company</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Unit,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Unit</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Street,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Street</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=City,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">City</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Province,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Province</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Country,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Country</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=PostalCode,FirstName,LastName,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Postal Code</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>,FirstName,LastName">Suite</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=DealStatus,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>,FirstName,LastName">Deal Status</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Price,FirstName,LastName">Price,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?></A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=BusinessPhone,FirstName,LastName">Phone Number,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?></A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=CellPhone,FirstName,LastName">Phone Number,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?></A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Fax,FirstName,LastName">Fax Number,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?></A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Email,FirstName,LastName">Email,<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?></A></TD>
+		</TR>
+<?
+			}
+			
+			displayMouseOverTR("blank", "body", "loadURL('" . $row['BrokerID'] . "')");
+			
+?>				
+				<TD><?= $row['AgentName']; ?></TD>
+				<TD><?= $row['CompanyName']; ?></TD>
+				<TD><?= $row['Unit']; ?></TD>
+				<TD><?= $row['Street']; ?></TD>
+				<TD><?= $row['City']; ?></TD>
+				<TD><?= $row['Province']; ?></TD>
+				<TD><?= $row['Country']; ?></TD>
+				<TD><?= $row['PostalCode']; ?></TD>
+				<TD><?= $row['UnitNumber']; ?></TD>
+				<TD><?= $row['DealStatus']; ?></TD>
+				<TD><?= $row['Price']; ?></TD>
+				<TD><?= $row['BusinessPhone']; ?></TD>
+				<TD><?= $row['CellPhone']; ?></TD>
+				<TD><?= $row['Fax']; ?></TD>
+				<TD><?= $row['Email']; ?></TD>
+			</TR>
+<?
+		}
+/*		
+		// display Visitor table
+		$sql = $sql_cols . " FROM Visitor " . $sql_cond;
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		
+		while ($row = mysql_fetch_array($result))
+		{		
+			if ($class == "body" || $class == "")
+			{
+				$class = "blank";
+			}
+			else
+			{
+				$class = "body";
+			}
+?>				
+			<TR CLASS="<?= $class; ?>">
+				<TD><?= $row['BrokerAgentName']; ?></TD>
+				<TD><?= $row['BrokerCompany']; ?></TD>
+				<TD><?= $row['BrokerAddress']; ?></TD>
+				<TD><?= $row['BrokerCity,']; ?></TD>
+				<TD><?= $row['BrokerPostalCode']; ?></TD>
+				<TD><?= $row['BrokerPhoneNumber']; ?></TD>
+				<TD><?= $row['BrokerFaxNumber']; ?></TD>
+				<TD><?= $row['BrokerEmail']; ?></TD>
+				<TD></TD>
+			</TR>
+<?
+		}
+*/
+?>
+	</TABLE>
+
+
+<script language="JavaScript">
+<!--
+function dump_data()
+{
+	document.search_broker.dumpdata.value = 1;
+	document.search_broker.submit();
+	window.location='dumpCSVBroker.phtml?sql_cond=<?= urlencode($dump_sql_cond); ?>';	
+}
+
+function loadURL(brokerID){
+	var url = 'broker/brokerInfo.phtml?BrokerID=' + brokerID + '&action=display&displayType=stand-alone';
+	window.location = url;
+}
+//-->
+</script>
+
+</BODY>
+</HTML>
+

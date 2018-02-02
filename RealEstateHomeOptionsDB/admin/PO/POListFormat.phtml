@@ -1,0 +1,36 @@
+<?php
+
+include_once "../main_include.phtml";
+/*
+ * Base class of PO list format
+ */
+ 
+ class POListFormat{
+ 	
+ 	var $sql;
+ 	var $sqlResult;
+ 	
+ 	/*
+	 * $sql: contains all the PO information,
+	 * includes UnitNumber, PO Number, Description, Price, etc...
+	 */
+ 	function POListFormat($sql){
+ 		$this->sql = $sql;
+ 	}
+ 	
+ 	
+ 	/**
+ 	 * Retrieve result from database
+ 	 */
+ 	function retrieveResult(){
+		$this->sqlResult = executeSql($this->sql);
+ 	} 
+ 	
+ 	/**
+	 * Print PO in div
+	 */		
+	function printPO(){
+		// subclass must implement this function 
+	}
+ }
+?>

@@ -1,0 +1,145 @@
+<?php
+
+$not_include_javascript = 1;
+
+include "main_include.phtml";
+
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+if ($action == "get") {
+	// display existing records in edittable fields
+	$sql	= "SELECT PDIDefectID, DefectDesc, PDIDefect.SectionID SectionID, Section.name room, 
+				PDIDefect.ContractorID ContractorID, Contractor.ContractorName trader, 
+				QADefect, QAFixed, QAFixedDate, PDIDefect, PDIFixed, PDIFixedDate, PDISignoff,
+				day30Defect, day30Fixed, day30FixedDate, day30Signoff, 
+				month11Defect, month11Fixed, month11FixedDate, month11Signoff, TradeContacted
+			FROM PDIDefect
+			LEFT JOIN Section
+			ON (PDIDefect.SectionID = Section.SectionID)
+			LEFT JOIN Contractor
+			ON (PDIDefect.ContractorID = Contractor.ContractorID)
+			where PDIDefect.UnitNumber = $unit
+			ORDER BY PDIDefectID";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	$rtn_rows = array();
+	while ($row = mysql_fetch_array($result)) {
+		array_push($rtn_rows, $row);
+	}
+	
+	echo json_encode($rtn_rows);
+} elseif ($action == "getPDIType") {
+	// display existing records in edittable fields
+	$sql	= "SELECT * FROM PDIType where PDICatID=$PDICatID ORDER BY Name";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	$rtn_rows = array();
+//a	array_push($rtn_rows, "PDICatID=$PDICatID");
+
+	
+	while ($row = mysql_fetch_array($result)) {
+		array_push($rtn_rows, $row);
+	}
+	
+	echo json_encode($rtn_rows);
+} elseif ($action == "update") {
+	// delete existing records for the unit
+	$sql = "DELETE FROM PDIDefect WHERE UnitNumber = $unit";
+
+	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+
+	// handle "DefectDesc", replace special chars with chars can be saved in db
+	for($i = 0; $i < 100; $i++)
+	{
+		$DefectDesc_name = "DefectDesc_" . $i;
+		
+		if (trim($$DefectDesc_name) <> "")
+		{
+			$SectionID_name = "SectionID_" . $i;
+			$ContractorID_name = "ContractorID_" . $i;
+			$QADefect_name = "QADefect_" . $i;
+			$QAFixed_name = "QAFixed_" . $i;
+			$QAFixedDate_name = "QAFixedDate_" . $i;
+			$PDIDefect_name = "PDIDefect_" . $i;
+			$PDIFixed_name = "PDIFixed_" . $i;
+			$PDIFixedDate_name = "PDIFixedDate_" . $i;
+			$PDISignoff_name = "PDISignoff_" . $i;
+			$day30Defect_name = "day30Defect_" . $i;
+			$day30Fixed_name = "day30Fixed_" . $i;
+			$day30FixedDate_name = "day30FixedDate_" . $i;
+			$day30Signoff_name = "day30Signoff_" . $i;
+			$month11Defect_name = "month11Defect_" . $i;
+			$month11Fixed_name = "month11Fixed_" . $i;
+			$month11FixedDate_name = "month11FixedDate_" . $i;
+			$month11Signoff_name = "month11Signoff_" . $i;
+
+			$DefectDesc = preg_replace($find, $replace, $$DefectDesc_name);
+			
+			if ($$QADefect_name)	$QADefect = 1;
+			else $QADefect = 0;
+		
+			if ($$QAFixed_name)	$QAFixed = 1;
+			else $QAFixed = 0;
+
+			if ($$PDIDefect_name)	$PDIDefect = 1;
+			else $PDIDefect = 0;
+		
+			if ($$PDIFixed_name)	$PDIFixed = 1;
+			else $PDIFixed = 0;
+		
+			if ($$PDISignoff_name)	$PDISignoff = 1;
+			else $PDISignoff = 0;
+		
+			if ($$day30Defect_name)	$day30Defect = 1;
+			else $day30Defect = 0;
+		
+			if ($$day30Fixed_name)	$day30Fixed = 1;
+			else $day30Fixed = 0;
+
+			if ($$day30Signoff_name)	$day30Signoff = 1;
+			else $day30Signoff = 0;
+		
+			if ($$month11Defect_name)	$month11Defect = 1;
+			else $month11Defect = 0;
+		
+			if ($$month11Fixed_name)	$month11Fixed = 1;
+			else $month11Fixed = 0;
+
+			if ($$month11Signoff_name)	$month11Signoff = 1;
+			else $month11Signoff = 0;
+
+			if ($$TradeContacted_name) $TradeContacted = 1;
+			else $TradeContacted = 0;
+
+			$sql = "INSERT INTO PDIDefect (UnitNumber, DefectDesc, SectionID, ContractorID, 
+					QADefect, QAFixed, QAFixedDate, PDIDefect, PDIFixed, PDIFixedDate, PDISignoff,
+					day30Defect, day30Fixed, day30FixedDate, day30Signoff, 
+					month11Defect, month11Fixed, month11FixedDate, month11Signoff, TradeContacted)
+					VALUES ('$unit', '$DefectDesc', '" . $$SectionID_name . "', '" . $$ContractorID_name . "', 
+					$QADefect, $QAFixed, '" . $$QAFixedDate_name ."', $PDIDefect, $PDIFixed, '" . $$PDIFixedDate_name ."', $PDISignoff,
+					$day30Defect, $day30Fixed, '" . $$day30FixedDate_name ."', $day30Signoff, 
+					$month11Defect, $month11Fixed, '" . $$month11FixedDate_name ."', $month11Signoff, $TradeContacted)";
+
+			$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+		}
+	}
+} elseif ($action = "delete") {
+	$sql = "DELETE FROM PDIDefect 
+			WHERE PDIDefectID = $PDIDefectID";
+
+	$result = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+}
+?>

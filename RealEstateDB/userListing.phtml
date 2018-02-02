@@ -1,0 +1,2569 @@
+<?
+include_once "main_include.phtml";
+include_once "purchaserUnitInfoAction.phtml";
+//include_once WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/sajax/Sajax.php";
+include_once "framework/sajax/Sajax.php";
+include_once "Entity/Controller/AdditionalPurchaserAction.phtml";
+include_once "Entity/Controller/GuarantorAction.phtml";
+include_once "Entity/Controller/DepositTransactionsRecordAction.phtml";
+include_once "Entity/View/DepositTransactionsRecordView.phtml";
+include_once "Entity/View/BrokerView.phtml";
+include_once "Entity/Controller/BrokerAction.phtml";
+include_once "Entity/Controller/InventoryItemAction.phtml";
+include_once "Entity/View/InventoryItemView.phtml";
+
+$tableCellPadding = 1;
+
+if (CLOSING_ENABLED && $mode=="purchaser"){
+	require_once "Entity/Controller/ReleaseTransactionsRecordAction.phtml";
+	require_once "Entity/View/ReleaseTransactionsRecordView.phtml";
+}
+//$sajax_debug_mode = 1;
+sajax_init();
+
+/**
+ * Get sales rep note content
+ */
+function getSalesRepNotesContent ($mode, $customerID){
+	
+	// capture all stdout and redirects them to a string to return
+	ob_start();
+	?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+
+	<TR>
+		<TD ALIGN="CENTER">Note</TD>
+		<TD ALIGN="CENTER">Written By</TD>
+		<TD ALIGN="CENTER">Written On</TD>
+		<TD ALIGN="CENTER">Contact Via</TD>
+		<TD ALIGN="CENTER">Due Date (<?= PROJECT_DATE_FORMAT; ?>)</TD>
+	</TR>
+	<?
+
+	$sql_note = "SELECT Note.*
+					FROM Note
+					WHERE lower(CustomerType) = '".get_internal_customer_type($mode)."'
+					AND CustomerID = $customerID
+					ORDER BY NoteID";
+	$result_note = executeSql($sql_note);
+
+	while ($row_note = mysql_fetch_array($result_note)) {
+		?>
+	<TR>
+		<TD ALIGN="CENTER"><?= $row_note["Note"] ?></TD>
+		<TD ALIGN="CENTER"><?= $row_note["WrittenBy"]; ?></TD>
+		<TD ALIGN="CENTER"><?= $row_note["CreateDate"] ?></TD>
+		<TD ALIGN="CENTER"><?= $row_note["ContactVia"] ?></TD>
+		<TD ALIGN="CENTER"><?= $row_note["DueDate"] ?></TD>
+	</TR>
+	<?
+
+	}
+	?>
+</TABLE>
+	<?
+	$output = ob_get_contents();
+	ob_end_clean();
+	return $output;
+}
+
+sajax_export("getSalesRepNotesContent");
+sajax_handle_client_request();
+
+
+// NON-AJAX method starts
+
+
+
+// expecting
+// $action : add, dispay, edit, verify
+// $VisitorID : require except in $action==add
+// $mode : visitor, purchaser
+
+function upload_file() {
+	?>
+<script language="JavaScript">
+    if (document.forms[0].File.value == "none")
+    {
+       alert ('Please select the file for uploading.');
+       return false;
+    }
+</script>
+	<?
+
+}
+
+// default to use tab
+if (!isSet($showTab)){
+	$showTab = 1;
+}
+
+if ($mode == "purchaser") {
+	// set the security level to be 2 for this page
+	check_auth(2, "sales");
+} else {
+	// set the security level to be 1 for this page
+	check_auth(1, "sales");
+}
+
+if ($action != add) {
+	if (!isSet ($VisitorID) && !isSet ($UserID)) {
+		die("Error: No VisitorID or UserID defined");
+	}
+
+	if ($mode == "visitor") {
+		$sql = "	SELECT *
+							FROM Visitor
+							WHERE VisitorID=$VisitorID";
+	} else
+	if ($mode == "purchaser") {
+		$sql = "	SELECT *, User.Price As Price, User.UnitNumber As UnitNumber, User.Status As Status
+								FROM User LEFT JOIN Unit
+								ON Unit.UserID=User.UserID
+								WHERE User.UserID=$UserID";
+	}
+	$result = mysql_query($sql) or log_err_die(mysql_error()."SQL=$sql", $PHP_SELF);
+	$row = mysql_fetch_array($result);
+
+	$salesRepID = $row['SalesRepID'];
+	$salesRepID1 = $row['SalesRepID1'];
+	$dealStatus = $row['DealStatus'];
+}
+?>
+
+<html>
+<? print_top_frame($PHP_SELF, "./"); ?>
+<? createCalendarPopupDiv(); ?>
+
+<? if ($isDebug) { ?>
+<div id=dojoDebugOutput dojoType="ContentPane" ></div>
+<script type="text/javascript">
+	var djConfig = {
+		isDebug: false,
+		debugContainerId : "dojoDebugOutput",
+	};
+</script>
+<?	} ?>
+
+<script type="text/javascript" src="framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+  dojo.require("dojo.widget.DatePicker");
+  dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+
+<? if ($showTab) { ?>
+<script type="text/javascript">
+	dojo.require("dojo.widget.TabContainer");
+	dojo.require("dojo.widget.LinkPane");
+	dojo.require("dojo.widget.ContentPane");
+	dojo.require("dojo.widget.LayoutContainer");
+  dojo.require("dojo.event.*");
+        
+	// load the parser
+	dojo.require("dojo.xml.Parse");
+	dojo.require("dojo.widget.Parse");
+	parser = new dojo.xml.Parse();    
+</script>
+<? } ?>
+
+<script language="javascript">
+<? sajax_show_javascript(); ?>
+</script>
+
+<script language="javascript" src="<?= ROOT_URL; ?>Entity/Controller/DepositChequeAction.js" type="text/javascript"></script>
+<script language="javascript" src="<?= ROOT_URL; ?>Entity/Controller/ReleaseChequeAction.js" type="text/javascript"></script>
+<script language="javascript" src="<?= ROOT_URL; ?>Entity/Controller/InventoryItemAction.js" type="text/javascript"></script>
+
+<script language="javascript" src="javascript/dynamicWindow.js"
+	type="text/javascript"></script>
+<script language="JavaScript">
+<!--
+
+
+<?
+
+if (isSet ($UserID)) {
+?>
+	var UserID = <?= $UserID; ?>;
+	var action = "<?= $action; ?>";
+<?
+
+}
+if ($mode == "purchaser" && $action == "add") {
+?>	
+	var action = "<?= $action; ?>";
+<?
+
+}
+?>
+
+	function check_unit_availability_and_submit()
+	{
+	
+	}
+
+	function submit_form()
+	{
+		document.forms[0].submit();	
+	}
+
+	function validate()
+	{
+		MM_validateForm('RegistrationDate','','R');
+	} // validate
+
+	function submit_page()
+	{
+		if (action == "edit")
+		{
+			validate();
+			document.forms[0].action += "&forward=./legalContract.phtml?UserID=" + UserID + "&back=-1";
+		}
+	
+	}
+	
+	// for WebReserved customer, offically purchaser the unit
+	function submit_and_purchase(){
+		document.forms[0].action += "&subAction=purchaseReservedUnit";
+		submit_form();
+	
+	}
+	
+	function submit_and_show_deal_sheet()
+	{
+		// open a new win for the deal sheet
+		document.forms[0].target = "dummy";
+
+		if (action == "edit" || action == "add")
+		{
+			// this dummy win updates the data, then display the PDF file
+			validate();
+			forwardObj	= MM_findObj('forward');
+			originalForward = forwardObj.value ;
+			if (action == "edit"){
+				forwardObj.value = "./legalContract.phtml?UserID=" + UserID + "&back=-1";
+			}
+			else if (action == "add"){
+				forwardObj.value = "./legalContract.phtml?back=-1";
+			}
+	//			document.forms[0].action += "&forward=./legalContract.phtml?UserID=" + UserID + "&back=-1";
+		}
+		else if (action == "display")
+		{
+			document.forms[0].action = "./legalContract.phtml?UserID=" + UserID + "&back=-1";
+			url = "./legalContract.phtml?UserID=" + UserID + "&back=-1&PDFName=AgreementForm.pdf";
+			var name ='PDF_DUMMY';
+			//winRef = window.open(url, name, 'toolbar=0,location=0,menubar=0,resizable=1,left=2000,top=0,width=1,height=1');
+			winRef = window.open(url, name, 'toolbar=0,location=0,menubar=0,resizable=1');
+			
+			// wait for 2 second to make sure the update process is done
+			//setTimeout('winRef.close()', 15000);
+//			winRef.close();
+			return;
+					
+		}
+		
+		submit_form();
+		if (action == "edit")
+		{
+			// wait for 2 second to make sure the update process is done
+			setTimeout("loadPage('<?= $PHP_SELF . "?action=display&mode=purchaser&UserID=$UserID"; ?>')", 2000)
+		}		
+	} // submit_and_show_deal_sheet
+
+
+	// Show acknowledgement if applicable
+	// only displays in display mode
+	function show_acknowledgement_pdf() {
+			document.forms[0].action = "./legalContract.phtml?UserID=" + UserID + "&back=-1";
+			url = "./legalContract.phtml?UserID=" + UserID + "&back=-1&PDFName=Acknowledgement.pdf";
+			var name ='PDF_DUMMY';
+			winRef = window.open(url, name, 'toolbar=0,location=0,menubar=0,resizable=1,left=2000,top=0,width=1,height=1');
+			
+			// wait for 2 second to make sure the update process is done
+			setTimeout('winRef.close()', 15000);
+//			winRef.close();
+			return;
+						
+	}
+	
+	
+	// this function is used by timeout to display
+	//	purchaser page in display mode
+	function loadPage(url){
+		window.location = url
+	}
+	
+	function submit_and_show_agreement_control()
+	{
+		// use dummy frame to load the page
+		document.forms[0].target = "dummy";
+
+		if (action == "edit")
+		{
+			validate();
+			
+			forwardObj	= MM_findObj('forward');
+			originalForward = forwardObj.value ;
+			forwardObj.value = "./agreementControl.phtml?UserID=" + UserID + "&back=-1";
+//			document.forms[0].action += "&forward=./agreementControl.phtml?UserID=" + UserID + "&back=-1";
+			submit_form();
+		}
+		else if (action == "display")
+		{
+//			document.forms[0].action = "./agreementControl.phtml?UserID=" + UserID + "&back=-1";
+			url = "./agreementControl.phtml?UserID=" + UserID + "&back=-1";
+			window.open(url, name, 'toolbar=0,location=0,menubar=0,resizable=1,scrollbars=1');
+			return;
+		}
+		if (action == "edit")
+		{
+			// wait for 2 second to make sure the update process is done
+			setTimeout("loadPage('<?= $PHP_SELF . "?action=display&mode=purchaser&UserID=$UserID"; ?>')", 2000)
+		}
+	} // submit_and_show_agreement_control
+
+	function unitNumberChange()
+	{
+		unitNumberObj 	= MM_findObj('UnitNumber');
+		unitTypeObj 	= MM_findObj('UnitType');
+		levelObj 		= MM_findObj('Level');
+		
+		var unitNo 		= unitNumberObj.value;				
+		var unitType	= unitNo.substring(unitNo.length-2);
+		
+ 		if (unitNo.length > 4 || unitNo.length < 3)
+ 		{
+ 			alert("Suite Number is invalide");
+ 			return;
+ 		}
+		unitTypeObj.value 	= unitType;
+		level				= unitNo.substring(0,unitNo.length-2);
+		if (level > 13)
+		{
+			level -= 1;
+		}
+		levelObj.value		= level;
+	} // unitNumberChange
+	
+	// get year in YYYY-MM-DD format
+	function getYear(date)
+	{
+		return date.substring(0, date.indexOf('-'));
+	} // getYear
+
+	// get month in YYYY-MM-DD format
+	function getMonth(date)
+	{
+		posOfSeparator = date.indexOf('-');
+		return date.substring(posOfSeparator + 1, date.indexOf('-', posOfSeparator+1)) ;	
+	} // getMonth
+
+	// get date in YYYY-MM-DD format
+	function getDate(date)
+	{
+		return date.substring(date.lastIndexOf('-')+ 1);
+	} // getDate
+	
+	// month array
+	var monthArray = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+
+	function dateToString(date)
+	{
+		var year 	= date.getYear();
+		var month 	= date.getMonth();
+		var date	= date.getDate();
+
+		return (monthArray[month] + " " + date + "," + year);
+	} // dateToString
+
+	milliSecPerDay			= 1000 * 60 * 60 * 24;
+
+	function agreementDepositDateChange()
+	{
+		agreementDepositDateObj	= 	MM_findObj('AgreementDepositDate');		
+		rescissionDateObj		= 	MM_findObj('RescissionDate');
+		day30DepositdateObj		= 	MM_findObj('Day30DepositDate');
+		day90DepositdateObj		= 	MM_findObj('Day90DepositDate');
+		day150DepositdateObj	= 	MM_findObj('Day150DepositDate');
+		occupancyDepositDateObj =	MM_findObj('OccupancyDepositDate');
+		
+		agreementDate 			= agreementDepositDateObj.value;
+
+
+		day = new Date(agreementDate);
+
+		newDate = new Date();
+		newDate.setTime(day.getTime() + 10 * milliSecPerDay);	
+		rescissionDateObj.value	= dateToString(newDate);
+		
+		<?
+
+if (is_citygate_1($PHP_SELF)) {
+?>
+			newDate.setTime(day.getTime() + 30 * milliSecPerDay);
+			day30DepositdateObj.value	= dateToString(newDate);
+		
+			newDate.setTime(day.getTime() + 120 * milliSecPerDay);
+			day90DepositdateObj.value	= dateToString(newDate);
+		
+			newDate.setTime(day.getTime() + 180 * milliSecPerDay);
+			day150DepositdateObj.value	= dateToString(newDate);
+		<?
+
+}
+elseif (is_citygate_2($PHP_SELF)) {
+?>
+			newDate.setTime(day.getTime() + 30 * milliSecPerDay);
+			day30DepositdateObj.value	= dateToString(newDate);
+		
+			//newDate.setTime(day.getTime() + 150 * milliSecPerDay);
+			//day90DepositdateObj.value	= dateToString(newDate);
+			day90DepositdateObj.value	= "Apr 1, 2004";
+		
+			//newDate.setTime(day.getTime() + 150 * milliSecPerDay);
+			//day150DepositdateObj.value	= dateToString(newDate);
+			day150DepositdateObj.value	= "Jul 2, 2004";
+		<?
+
+}
+?>
+	} // agreementDepositDateChange
+
+	function calculateUnitAllowance()
+	{
+		var totalUnitAllowance = 0;
+<?
+
+$sql = "SELECT * FROM Package ORDER BY PackageID";
+$packageResult = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+while ($packageRow = mysql_fetch_array($packageResult)) {
+?>			
+			packageCheckBoxObj = MM_findObj('package_<?= $packageRow['PackageID']; ?>');
+			if (packageCheckBoxObj.checked){
+				packageValueObj = MM_findObj('package_<?= $packageRow['PackageID']; ?>_Note');
+				totalUnitAllowance += Number(packageValueObj.value);
+			}
+<?
+
+}
+?>		
+
+		totalObj = MM_findObj('UnitAllowance');
+		totalObj.value = totalUnitAllowance;
+	} // calculateUnitAllowance
+	
+	function agentChange()
+	{
+		agentObj 		= MM_findObj('AgreementControlSignedBy');
+		agentListBoxObj	= MM_findObj('listbox_AgreementControlSignedBy');
+		agentObj.value = agentListBoxObj.value;
+	} // agentChange
+	
+	function cityChange()
+	{
+		cityObj 		= MM_findObj('City');
+		cityListBoxObj	= MM_findObj('listbox_City');
+		cityObj.value = cityListBoxObj.value;
+	} // agentChange
+	
+	function calculateAge(dateOfBirthInputName, ageInputName)
+	{
+		ageObj = MM_findObj(ageInputName);
+
+		birthday = dojo.widget.byId(dateOfBirthInputName).getDate();
+		
+		today = new Date();
+		age = (today.getTime() - birthday.getTime())  / (milliSecPerDay * 365);
+		ageObj.value	= Math.floor(age);
+	} // calculateAge
+	
+	function priceChange()
+	{
+		priceObj					= 	MM_findObj('OfferPrice');
+		agreementDepositAmountObj	= 	MM_findObj('AgreementDepositAmount');
+		day30DepositAmountObj 		=	MM_findObj('Day30DepositAmount');
+		day90DepositAmountObj 		=	MM_findObj('Day90DepositAmount');
+		day150DepositAmountObj 		=	MM_findObj('Day150DepositAmount');
+		day210DepositAmountObj 		=	MM_findObj('Day210DepositAmount');
+		occupancyDepositAmountObj	= 	MM_findObj('OccupancyDepositAmount');
+
+		fivePercentOfPrice 				= priceObj.value * 0.05;
+		price 						= priceObj.value;
+<?
+
+if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF)) {
+?>
+			agreementDepositAmountObj.value	= 1000;
+			day30DepositAmountObj.value		= fivePercentOfPrice - 1000;
+			day90DepositAmountObj.value		= fivePercentOfPrice;
+			day150DepositAmountObj.value	= fivePercentOfPrice;
+			occupancyDepositAmountObj.value	= fivePercentOfPrice * 2;
+			
+<?
+
+} else {
+			if (DEFAULT_AGREEMENT_DEPOSIT > 0){
+?>				agreementDepositAmountObj.value	= <?= DEFAULT_AGREEMENT_DEPOSIT; ?>;
+				day30DepositAmountObj.value		= price * <?= DEFAULT_DEPOSIT_2_PERCENTAGE; ?> - <?= DEFAULT_AGREEMENT_DEPOSIT; ?>;
+<?			} else if (DEFAULT_AGREEMENT_DEPOSIT_PERCENTAGE > 0){ 			
+?>				agreementDepositAmountObj.value	= price * <?= DEFAULT_AGREEMENT_DEPOSIT_PERCENTAGE; ?>;
+				day30DepositAmountObj.value		= price * <?= DEFAULT_DEPOSIT_2_PERCENTAGE; ?>;			
+<?			}
+?>			day90DepositAmountObj.value		= price * <?= DEFAULT_DEPOSIT_3_PERCENTAGE; ?>;
+			day150DepositAmountObj.value	= price * <?= DEFAULT_DEPOSIT_4_PERCENTAGE; ?>;
+			day210DepositAmountObj.value	= price * <?= DEFAULT_DEPOSIT_5_PERCENTAGE; ?>;
+			occupancyDepositAmountObj.value	= price * <?= DEFAULT_OCCUPANCY_DEPOSIT_PERCENTAGE; ?> ;
+
+<?
+
+}
+?>		
+	} // priceChange
+
+	function calculateVTB()
+	{
+		priceObj					= MM_findObj('OfferPrice');
+		agreementDepositAmountObj	= MM_findObj('AgreementDepositAmount');
+		day30DepositAmountObj		= MM_findObj('Day30DepositAmount');
+		day90DepositAmountObj		= MM_findObj('Day90DepositAmount');
+		day150DepositAmountObj		= MM_findObj('Day150DepositAmount');
+		occupancyDepositAmountObj	= MM_findObj('OccupancyDepositAmount');
+		VTBObj						= MM_findObj('VTB');
+
+		VTBObj.value = priceObj.value - agreementDepositAmountObj.value - 
+			day30DepositAmountObj.value - day90DepositAmountObj.value - 
+			day150DepositAmountObj.value - occupancyDepositAmountObj.value;
+	} // calculateVTB
+
+	function calculateOfferPrice()
+	{
+		priceObj					= MM_findObj('Price');
+		chargeObj					= MM_findObj('Charge');
+
+		offerPriceObj				= MM_findObj('OfferPrice');
+		
+		offerPrice					= parseInt(priceObj.value) + 
+			parseInt(chargeObj.value=='' ? 0:chargeObj.value);
+			
+		offerPriceObj.value = offerPrice;
+		
+		priceChange();
+		calculateVTB();
+	} // calculateOfferPrice
+//-->
+</script>
+
+<centre>
+<H3><?= get_project_name($PHP_SELF); ?> - <?
+
+if ($mode == "purchaser") {
+	echo "Suite Number " . $row['UnitNumber'] . " Purchaser Information";
+} else {
+	echo "Visitor Listing";
+}
+
+
+// set up field if needed.
+// and convert date format
+// if action is add, set the AgreementDepositDate to be today, and calculate other date such as 30 day deposit date
+
+if ($action == "add") {
+	if ($mode == "purchaser") {
+		$row['AgreementDepositDate'] = date("M d, Y");
+		$currentTimeStamp = strtotime(date("M d, Y"));
+		$timeStamp = strtotime("+14 day", $currentTimeStamp);
+		$row['RescissionDate'] = date("M d,Y", $timeStamp);
+
+		$currentTimeStamp = strtotime(date("M d,Y "));
+
+		if (is_citygate_1($PHP_SELF)) {
+			$timeStamp = strtotime("+30 day", $currentTimeStamp);
+			$row['Day30DepositDate'] = date("M d,Y", $timeStamp);
+
+			$timeStamp = strtotime("+120 day", $currentTimeStamp);
+			$row['Day90DepositDate'] = date("M d,Y", $timeStamp);
+
+			$timeStamp = strtotime("+180 day", $currentTimeStamp);
+			$row['Day150DepositDate'] = date("M d,Y", $timeStamp);
+		}
+		elseif (is_citygate_2($PHP_SELF)) {
+			$timeStamp = strtotime("+30 day", $currentTimeStamp);
+			$row['Day30DepositDate'] = date("M d,Y", $timeStamp);
+
+			$timeStamp = strtotime("+90 day", $currentTimeStamp);
+			$row['Day90DepositDate'] = date("M d,Y", $timeStamp);
+			//$row['Day90DepositDate']= "Jun 30, 2004";
+
+			$timeStamp = strtotime("+180 day", $currentTimeStamp);
+			$row['Day150DepositDate'] = date("M d,Y", $timeStamp);
+			//$row['Day150DepositDate']= "Aug 30, 2004";
+		}
+	}
+	if (defined('DEFAULT_CITY')) { // use default
+		$row['City'] = DEFAULT_CITY;
+	} else {
+		$row['City'] = "Mississauga";
+	}
+	$row['Province'] = "Ontario";
+	$row['Country'] = "Canada";
+} else // convert date format
+{
+	if ($mode == "purchaser") {
+		$row['AgreementDepositDate'] = convert_date($row['AgreementDepositDate'], PROJECT_DATE_FORMAT);
+		$row['DateOfBirth'] = convert_date($row['DateOfBirth'], PROJECT_DATE_FORMAT);
+		$row['RescissionDate'] = convert_date($row['RescissionDate'], PROJECT_DATE_FORMAT);
+		$row['Day30DepositDate'] = convert_date($row['Day30DepositDate'], PROJECT_DATE_FORMAT);
+		$row['Day30DepositReceivedDate'] = convert_date($row['Day30DepositReceivedDate'], PROJECT_DATE_FORMAT);
+		$row['Day90DepositDate'] = convert_date($row['Day90DepositDate'], PROJECT_DATE_FORMAT);
+		$row['Day90DepositReceivedDate'] = convert_date($row['Day90DepositReceivedDate'], PROJECT_DATE_FORMAT);
+		$row['Day150DepositDate'] = convert_date($row['Day150DepositDate'], PROJECT_DATE_FORMAT);
+		$row['Day150DepositReceivedDate'] = convert_date($row['Day150DepositReceivedDate'], PROJECT_DATE_FORMAT);
+		$row['Day210DepositDate'] = convert_date($row['Day210DepositDate'], PROJECT_DATE_FORMAT);
+		$row['OccupancyDepositDate'] = convert_date($row['OccupancyDepositDate'], PROJECT_DATE_FORMAT);
+		$row['OccupancyDepositReceivedDate'] = convert_date($row['OccupancyDepositReceivedDate'], PROJECT_DATE_FORMAT);
+
+		$row['AgreementControlSignDate'] = convert_date($row['AgreementControlSignDate'], PROJECT_DATE_FORMAT);
+
+		$row['AdditionalPurchaser1DateOfBirth'] = convert_date($row['AdditionalPurchaser1DateOfBirth'], PROJECT_DATE_FORMAT);
+		$row['AdditionalPurchaser2DateOfBirth'] = convert_date($row['AdditionalPurchaser2DateOfBirth'], PROJECT_DATE_FORMAT);
+		$row['AdditionalPurchaser3DateOfBirth'] = convert_date($row['AdditionalPurchaser3DateOfBirth'], PROJECT_DATE_FORMAT);
+		$row['AdditionalPurchaser4DateOfBirth'] = convert_date($row['AdditionalPurchaser4DateOfBirth'], PROJECT_DATE_FORMAT);
+		$row['FirstRevisedClosingDate'] = convert_date($row['FirstRevisedClosingDate'], PROJECT_DATE_FORMAT);
+		$row['SecondRevisedClosingDate'] = convert_date($row['SecondRevisedClosingDate'], PROJECT_DATE_FORMAT);
+	}
+}
+?></H3>
+<centre>
+<FORM NAME="updateUserInfoForm" ENCTYPE="multipart/form-data"
+	METHOD=POST ACTION="updateUserInfo_audit.phtml?action=<?= $action?>&mode=<?= $mode?><?
+	if ($mode == "visitor") {
+		if ($VisitorID > 0) {
+			echo "&VisitorID=$VisitorID";
+		}
+	} else
+	if ($mode == "purchaser") {
+		if ($UserID > 0) {
+			echo "&UserID=$UserID";
+		}
+	}
+	?>"> <? if ($showTab){ ?>
+<div id="mainTabContainer" dojoType="TabContainer"
+	style="width: 100%; height: 87%" selectedTab="PersonalInfoTab">
+	<? } ?>
+	<? if ($showTab){ ?>
+<div id="PersonalInfoTab" dojoType="ContentPane"
+	label="<?= ($mode=="purchaser") ? "Purchaser" : "Visitor" ?> Information" STYLE="overflow: auto;">
+	<? } ?> <BR>
+
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+<?
+
+if ($action != "add") {
+	?>
+	<INPUT TYPE="HIDDEN" NAME="forward" VALUE="<?
+		$forwardURL = $PHP_SELF."?action=display&mode=$mode";
+	if ($mode == "visitor") {
+		if ($VisitorID > 0) {
+			$forwardURL .= "&VisitorID=$VisitorID";
+		}
+	} else
+		if ($mode == "purchaser") {
+			if ($UserID > 0) {
+				$forwardURL .= "&UserID=$UserID";
+			}
+		}
+	echo urlencode($forwardURL);
+?>"> <?	}	else { ?>
+	<INPUT TYPE="HIDDEN" NAME="forward" VALUE="">
+<?
+
+}
+
+// if action is add, set the file RegistrationDate to be today
+if ($action == "add") {
+	$row['RegistrationDate'] = date("Y-m-d");
+} else {
+	$row['RegistrationDate'] = convert_date($row['RegistrationDate'], PROJECT_DATE_FORMAT);
+}
+
+if (0) //$action == "display") // display different layout for "display" action
+	{
+?>
+	<TR>
+<?
+
+	if ($mode == "visitor") {
+?>
+		<TD>Registration Number :</TD>
+		<TD><? display_text("VisitorID", "", FALSE, 50, FALSE, "", "", TRUE, 20, ""); ?></TD>
+	<?
+
+	}
+?>
+
+		<TD COLSPAN=10 ALIGN="LEFT">Registration Date (<?= PROJECT_DATE_FORMAT; ?>): <?= $row['RegistrationDate']; ?></TD>
+	</TR>
+<?	if ($mode == "purchaser") { ?>
+	<TR>
+		<TD COLSPAN=2>Corporate Purchase Company :</TD>
+		<TD><?= $row['Company']; ?></TD>
+	</TR>
+<? } ?>
+	<TR>
+		<TD COLSPAN=2><?= $mode=="visitor" ? "Visitor" : "Purchaser";?> Name : <?= $row['LastName'] . ", " . $row['FirstName']; ?></TD>
+		<TD>Salutation :</TD>
+		<TD><?= $row['Salutation']; ?></TD>
+	</TR>
+	<TR>
+		<TD>Gender:</TD>
+		<TD><?= $row['Gender']; ?></TD>
+	</TR>
+	<TR>
+		<TD>Language Preference:</TD>
+		<TD><?=  display_generic_table_list("Language", "Language"); ?></TD>
+	</TR>
+<?	if ($mode == "purchaser") { ?>
+	<TR>
+		<TD>Login:</TD>
+		<TD><?= $row['Login']; ?></TD>
+		<TD>Passwd:</TD>
+		<TD><?= $row['Passwd']; ?></TD>
+	</TR>
+<?	} ?>
+	<TR>
+		<TD><BR>
+		<BR>
+		</TD>
+	</TR>
+	<TR>
+		<TD COLSPAN=10>
+		<H3>Contact Information</H3>
+		</TD>
+	</TR>
+	<TR>
+		<TD>Suite:</TD>
+		<TD><?= $row['Suite']; ?></TD>
+	</TR>
+	<TR>
+		<TD>Address:</TD>
+		<TD><?= $row['Address']; ?></TD>
+		<TD>Telephone:</TD>
+		<TD><?= $row['PhoneNumber']; ?></TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD><?
+
+	echo $row['City'];
+	if ($row['Province'] != "")
+		echo ", ";
+	echo $row['Province'];
+?></TD>
+		<TD>Cellular:</TD>
+		<TD><?= $row['CellPhone']; ?></TD>
+	</TR>
+	<TR>
+		<TD></TD>
+		<TD><?= $row['PostalCode']; ?></TD>
+		<TD>Office:</TD>
+		<TD><?= $row['BusinessPhone']; ?></TD>
+	</TR>
+	<TR>
+		<TD>E-Mail:</TD>
+		<TD><?= $row['Email']; ?></TD>
+	</TR>
+	<TR>
+		<TD><BR>
+		</TD>
+	</TR>
+	<TR>
+		<TD>Source:</TD>
+		<TD><?= $row['Source']; ?></TD>
+	</TR>
+	<TR>
+		<TD COLSPAN="4"><INPUT TYPE="radio" NAME="SourceCategory"
+			VALUE="Incoming call" DISABLED<?
+
+	if ($row["SourceCategory"] == "Incoming call")
+		echo "CHECKED ";
+?>>Incoming call <INPUT
+			TYPE="radio" NAME="SourceCategory" VALUE="E-mail registration"
+			DISABLED<?
+
+	if ($row["SourceCategory"] == "E-mail registration")
+		echo "CHECKED ";
+?>>E-mail registration <INPUT TYPE="radio"
+			NAME="SourceCategory" VALUE="Outbound call" DISABLED<?
+
+	if ($row["SourceCategory"] == "Outbound call")
+		echo "CHECKED ";
+?>>Outbound
+		call <INPUT TYPE="radio" NAME="SourceCategory" VALUE="Walk in"
+			DISABLED<?
+
+	if ($row["SourceCategory"] == "Walk in")
+		echo "CHECKED ";
+?>>Walk in</TD>
+	</TR>
+<? if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)){ ?>
+	<TR>
+		<TD>Contact Note:</TD>
+		<TD colspan=5><? display_text_area("ContactNote","", 50, 3); ?></TD>
+	</TR>
+<?	} ?>				
+<?
+
+} else {
+?>
+	<TR>
+		<TD>Register Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? 
+				    	if ($row["RegistrationDate"] == "" || $row["RegistrationDate"] == null)
+				    		display_date("RegistrationDate", "", "", true);
+				    	else
+				    		display_date("RegistrationDate", "", "", false);?></TD>
+	</TR>
+	<TR>
+		<TD>Company Name :</TD>
+		<TD><? display_text("Company", "", FALSE, 255, FALSE, "", "", FALSE, 60);?></TD>
+	</TR>
+	<TR>
+		<TD>Salutation :</TD>
+		<TD><? display_generic_table_list("Salutation", "Salutation"); ?></TD>
+	</TR>
+	<TR>
+		<TD>First Name :</TD>
+		<TD><? display_text("FirstName"); ?></TD>
+		<TD>Last Name :</TD>
+		<TD><? display_text("LastName"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Gender :</TD>
+		<TD><? display_generic_table_list("Gender", "Gender"); ?></TD>
+		<TD>Language Preference:</TD>
+		<TD><?=  display_generic_table_list("Language", "Language"); ?></TD>
+	</TR>
+	<tr>
+		<TD>Status :</TD>
+		<TD><? display_generic_table_list_with_text_field("Status", "Status"); ?></TD>
+	</TR>
+	<?
+
+	if ($mode == "purchaser") {
+?>
+	<TR>
+		<TD>Login :</TD>
+		<TD><? display_text("Login"); ?></TD>
+		<TD>Passwd :</TD>
+		<TD><? display_text("Passwd"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Date Of Birth (YYYY-MM-DD) :</TD>
+		<TD><? 
+						display_date("DateOfBirth", "","", FALSE, "", "calculateAge('DateOfBirth', 'Age');")
+?></TD>
+		<TD>Age :</TD>
+		<TD><?
+
+		if ($row['DateOfBirth'] <> "" && $row['DateOfBirth'] <> "0000-00-00")
+		{
+			$birthday = strtotime($row['DateOfBirth']);
+			$currentday = strtotime("now");
+			$difference = floor(($currentday - $birthday) / (60 * 60 * 24 * 365));
+			$row['Age'] = $difference;
+		}
+		display_text("Age");
+?></TD>
+	</TR>
+	<TR>
+		<TD>S.I.N.# :</TD>
+		<TD><? display_text("SIN"); ?></TD>
+		<TD>Driver's License:</TD>
+		<TD><?= displayText(array("value"=> $row['DriversLicNumber'], "source" => "DriversLicNumber", "action" => $action, "cssClass"=>"td-upper")); ?></TD>
+	</TR>
+	<TR>
+		<TD>Health Card # :</TD>
+		<TD><? display_text("HealthCardNumber"); ?></TD>
+		<TD>Passport #:</TD>
+		<TD><? display_text("PassportNumber"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Other ID:</TD>
+		<TD COLSPAN=3><? display_text("OtherID", "", FALSE, 255, FALSE, "", "", FALSE, 60); ?></TD>
+	</TR>
+	<TR>
+		<TD>ID Provided/<BR>
+		Business Registration Cert Provided:</TD>
+		<TD><? display_check_box("IDProvided"); ?></TD>
+	</TR>
+				
+				
+	<?
+
+	}
+?>
+<? if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)){ ?>
+	<TR>
+		<TD>Suite # :</TD>
+		<TD><? display_text("Suite"); ?></TD>
+	</TR>
+<?	} ?>
+	<TR>
+		<TD>Address :</TD>
+		<TD COLSPAN=3><? display_text("Address", "", FALSE, 50, FALSE, "", "", FALSE, 60); ?></TD>
+	</TR>
+	<TR>
+		<TD>City :</TD>
+		<TD COLSPAN=3><? display_generic_table_list_with_text_field("City", "City"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Province :</TD>
+		<TD COLSPAN="4"><? display_generic_table_list_with_text_field("Province", "Province"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Country :</TD>
+		<TD COLSPAN="4"><? display_generic_table_list_with_text_field("Country", "Country"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Postal Code :</TD>
+		<TD><?= displayText(array("value" => $row['PostalCode'], "source" => "PostalCode", "action" => $action, "cssClass"=>"td-upper")); ?></TD>
+		<TD>Business Phone :</TD>
+		<TD><? display_text("BusinessPhone"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Home Phone :</TD>
+		<TD><? display_text("PhoneNumber"); ?></TD>
+		<TD>Cell Phone :</TD>
+		<TD><? display_text("CellPhone"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Fax Number :</TD>
+		<TD><? display_text("FaxNumber"); ?></TD>
+		<TD>E-mail :</TD>
+		<TD><? display_text("Email"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Source :</TD>
+		<TD><? display_generic_table_list("Source", "Source"); ?></TD>
+	</TR>
+	<TR>
+		<TD COLSPAN="4"><INPUT TYPE="radio" NAME="SourceCategory"
+			VALUE="Incoming call"<?
+
+	if ($row["SourceCategory"] == "Incoming call")
+		echo "CHECKED ";
+?>>Incoming call <INPUT TYPE="radio"
+			NAME="SourceCategory" VALUE="E-mail registration"<?
+
+	if ($row["SourceCategory"] == "E-mail registration")
+		echo "CHECKED ";
+?>>E-mail
+		registration <INPUT TYPE="radio" NAME="SourceCategory"
+			VALUE="Outbound call"<?
+
+	if ($row["SourceCategory"] == "Outbound call")
+		echo "CHECKED ";
+?>>Outbound call <INPUT TYPE="radio"
+			NAME="SourceCategory" VALUE="Walk in"<?
+
+	if ($row["SourceCategory"] == "Walk in")
+		echo "CHECKED ";
+?>>Walk in</TD>
+	</TR>
+<?
+
+	if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)) {
+?>
+	<TR>
+		<TD>Contact Note:</TD>
+		<TD><? display_text_area("ContactNote","", 50, 3); ?></TD>
+	</TR>
+<?
+
+	}
+}
+
+// requirement section
+if ($mode == "visitor") {?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+
+	<TR>
+		<TD COLSPAN=10><BR>
+		<? createCollapsibleDIVIcon("Requirements", "requirementsCollapsible"); ?></TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("requirementsCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD>Type :</TD>
+		<TD><? display_generic_table_list_with_text_field("Type", "UnitTypeDesired"); ?></TD>
+		<TD>Price Range :</TD>
+		<TD><? display_generic_table_list_with_text_field("PriceRange", "PriceRange"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Bedrooms :</TD>
+		<TD><? display_generic_table_list("Bedrooms", "BedroomsRequired"); ?></TD>
+		<TD>Size Range :</TD>
+		<TD><?
+
+		display_generic_table_list("SizeRange", "SizeRangeRequired");
+		?></TD>
+	</TR>
+	<TR>
+		<TD>Age Range :</TD>
+		<TD><? display_generic_table_list("AgeRange", "AgeRange"); ?></TD>
+		<TD>Inquiry :</TD>
+		<TD><? display_generic_table_list("Inquiry", "Inquiry"); ?></TD>
+	<TR>
+		<TD>Note :</TD>
+		<TD colspan="4"><? display_text_area("Note", "", 100, 5); ?></TD>
+	</TR>
+</TABLE>
+<?
+}
+
+
+if ($mode == "purchaser"){
+	 
+?>
+</TABLE>
+
+<?
+//-------------------------------------------------------------------------
+// Guarantor
+//-------------------------------------------------------------------------
+?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><? createCollapsibleDIVIcon("Guarantor", "guarantorCollapsible"); ?><BR>
+		</TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("guarantorCollapsible"); ?>
+<DIV id="GuarantorDIV">
+<?
+$guarantorSql = 	" SELECT * FROM Guarantor, Person, Address" .
+				" WHERE Guarantor.UserID=$UserID" .
+				" AND Guarantor.PersonID=Person.PersonID" .
+				" AND Person.AddressID=Address.AddressID" .
+				" ORDER BY Guarantor.GuarantorID ASC";
+
+				$guarantorResult = executeSql($guarantorSql);
+				$nextGuarantorNum = 1;
+				while ($guarantorRow = mysql_fetch_array($guarantorResult)){
+					$guarantorContent = getExistingGuarantorHTMLForm($nextGuarantorNum, $guarantorRow, $action);
+					$guarantorDIV = "<DIV id=\"GuarantorDIV" . $nextGuarantorNum . "\"><h4>Guarantor $nextGuarantorNum</h4>";
+					$guarantorDIV .= "<table CELLPADDING=2 CELLSPACING=4>" . $guarantorContent . "</table>";
+					$guarantorDIV .= "</DIV>";
+					print $guarantorDIV;
+					$nextGuarantorNum++;
+				}
+
+				?> <input
+	id="nextGuarantorNum" type="hidden"
+	name="nextGuarantorNum" value=<?= $nextGuarantorNum; ?>>
+</DIV>
+		
+	<?	if ($action == "edit" || $action == "add"){ ?> <input type="button"
+	value="Add Guarantor" onClick="addGuarantor()">
+	<?	} ?>
+		<script language="JavaScript" type="text/javascript">
+			var nextGuarantorNum = <?= $nextGuarantorNum; ?>;		
+			
+			function addGuarantor(){
+				x_getNewGuarantorHTMLForm(nextGuarantorNum, getNewGuarantorHTMLForm_CallBack);
+			}
+			
+			// ajax call to add guarantor html form content 
+			function getNewGuarantorHTMLForm_CallBack(html){
+				guarantorGroupDIVObj = document.getElementById("GuarantorDIV");
+				nextGuarantorNumObj = document.getElementById("nextGuarantorNum");
+				
+				// innerHTML may not keep form data in some broswer, use DOM menthod to append new DIV
+//				var htmlWithDIV = '<DIV id="GuarantorDIV' + nextGuarantorNum + '"><h4>Guarantor ' + nextGuarantorNum + '</h4><table>' + html + '</table></DIV>';
+//				guarantorGroupDIVObj.innerHTML = guarantorGroupDIVObj.innerHTML + htmlWithDIV;
+				var newGuarantoDivDom = document.createElement("DIV");
+				newGuarantoDivDom.setAttribute('id', "GuarantorDIV" + nextGuarantorNum);
+				newGuarantoDivDom.innerHTML = '<h4>Guarantor ' + nextGuarantorNum + '</h4><table>' + html + '</table>';
+				guarantorGroupDIVObj.appendChild(newGuarantoDivDom);
+				
+				nextGuarantorNum++;
+				nextGuarantorNumObj.value = nextGuarantorNumObj.value + 1;
+				guarantorGroupDIVObj.style.visibility="visible"; 					
+			}
+			
+			// delete guarantor . It sets the guarantor action to be delete, 
+			// and set the div to be invisible 
+			function deleteGuarantor(index){
+				var actionName = 'Guarantor' + '_' + index + '_Action';
+				guarantorActionObj = document.getElementById(actionName);
+				guarantorActionObj.value = 'delete';
+				
+				var divName = 'GuarantorDIV' + index;
+				guarantorDIVObj = document.getElementById(divName);
+				guarantorDIVObj.style.display="none";
+			}
+		</script>
+	</DIV>		
+		
+<?
+//-------------------------------------------------------------------------
+// Additional Purchaser
+//-------------------------------------------------------------------------
+?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><? createCollapsibleDIVIcon("Additional Purchaser", "agreementPurchaserCollapsible"); ?><BR>
+		</TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("agreementPurchaserCollapsible"); ?>
+<DIV id="AdditionalPurchaserDIV">
+<?
+$additionalPurchaserSql = 	" SELECT * FROM AdditionalPurchaser, Person, Address" .
+				" WHERE AdditionalPurchaser.UserID=$UserID" .
+				" AND AdditionalPurchaser.PersonID=Person.PersonID" .
+				" AND Person.AddressID=Address.AddressID" .
+				" ORDER BY AdditionalPurchaser.AdditionalPurchaserID ASC";
+
+				$additionalPurchaserResult = executeSql($additionalPurchaserSql);
+				$nextAdditionalPurchaserNum = 1;
+				while ($additionalPurchaserRow = mysql_fetch_array($additionalPurchaserResult)){
+					$additionalPurchaserContent = getExistingAdditionalPurchaserHTMLForm($nextAdditionalPurchaserNum, $additionalPurchaserRow, $action);
+					$additionalPurchaserDIV = "<DIV id=\"AdditionalPurchaserDIV" . $nextAdditionalPurchaserNum . "\"><h4>Additional Purchaser $nextAdditionalPurchaserNum</h4>";
+					$additionalPurchaserDIV .= "<table CELLPADDING=2 CELLSPACING=4>" . $additionalPurchaserContent . "</table>";
+					$additionalPurchaserDIV .= "</DIV>";
+					print $additionalPurchaserDIV;
+					$nextAdditionalPurchaserNum++;
+				}
+
+				?> <input
+	id="nextAdditionalPurchaserNum" type="hidden"
+	name="nextAdditionalPurchaserNum" value=<?= $nextAdditionalPurchaserNum; ?>></DIV>
+		
+	<?	if ($action == "edit" || $action == "add"){ ?> <input type="button"
+	value="Add Additional Purchaser" onClick="addAdditionalPurchaser()">
+	<?	} ?>
+<script language="JavaScript" type="text/javascript">
+			var nextAdditionalPurchaserNum = <?= $nextAdditionalPurchaserNum; ?>;		
+			
+			function addAdditionalPurchaser(){
+				x_getNewAdditionalPurchaserHTMLForm(nextAdditionalPurchaserNum, getNewAdditionalPurchaserHTMLForm_CallBack);
+			}
+			
+			// ajax call to add additional purchaser html form content 
+			function getNewAdditionalPurchaserHTMLForm_CallBack(html){
+				additionalPurchaserGroupDIVObj = document.getElementById("AdditionalPurchaserDIV");
+				nextAdditionalPurchaserNumObj = document.getElementById("nextAdditionalPurchaserNum");
+				
+				// innerHTML may not keep form data in some broswer, use DOM menthod to append new DIV
+				// By MingLei Yuan, May 22, 2007
+//				var htmlWithDIV = '<DIV id="AdditionalPurchaserDIV' + nextAdditionalPurchaserNum + '"><h4>Additional Purchaser ' + nextAdditionalPurchaserNum + '</h4><table>' + html + '</table></DIV>';
+//				additionalPurchaserGroupDIVObj.innerHTML = additionalPurchaserGroupDIVObj.innerHTML + htmlWithDIV;
+				var newAdditionalPurchaserDom = document.createElement("DIV");
+				newAdditionalPurchaserDom.setAttribute('id', "AdditionalPurchaserDIV" + nextAdditionalPurchaserNum);
+				newAdditionalPurchaserDom.innerHTML = '<h4>Additional Purchaser ' + nextAdditionalPurchaserNum + '</h4><table>' + html + '</table>';
+				additionalPurchaserGroupDIVObj.appendChild(newAdditionalPurchaserDom);
+
+				nextAdditionalPurchaserNum++;
+				nextAdditionalPurchaserNumObj.value = nextAdditionalPurchaserNumObj.value + 1;
+				additionalPurchaserGroupDIVObj.style.visibility="visible"; 					
+			}
+			
+			// delete additional purchaser. It sets the additional purchaser action to be delete, 
+			// and set the div to be invisible 
+			function deleteAdditionalPurchaser(index){
+				var actionName = 'AdditionalPurchaser' + '_' + index + '_Action';
+				additionalPurchaserActionObj = document.getElementById(actionName);
+				additionalPurchaserActionObj.value = 'delete';
+				
+				var divName = 'AdditionalPurchaserDIV' + index;
+				additionalPurchaserDIVObj = document.getElementById(divName);
+				additionalPurchaserDIVObj.style.display="none";
+			}
+		</script> <!--		
+		<TABLE CELLPADDING="<?= $tableCellPadding; ?>">			
+			<TR>
+				<TD  ALIGN="CENTER">First Name</TD>
+				<TD  ALIGN="CENTER">Last Name</TD>
+				<TD  ALIGN="CENTER">S.I.N.</TD>
+				<TD  ALIGN="CENTER">Date of Birth(YYYY/MM/DD)</TD>
+			</TR>
+			<TR>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser1FirstName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser1LastName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser1SIN"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser1DateOfBirth"); ?></TD>
+			</TR>
+			<TR>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser2FirstName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser2LastName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser2SIN"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser2DateOfBirth"); ?></TD>
+			</TR>
+			<TR>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser3FirstName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser3LastName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser3SIN"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser3DateOfBirth"); ?></TD>
+			</TR>
+			<TR>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser4FirstName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser4LastName"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser4SIN"); ?></TD>
+				<TD  ALIGN="CENTER"><? display_text("AdditionalPurchaser4DateOfBirth"); ?></TD>
+			</TR>
+		</TABLE>
+//--></DIV>
+		<? } ?>
+
+
+		<? if ($showTab){ ?></DIV>
+		<? } ?>
+
+		<?
+
+		if ($mode == "purchaser") {
+			if ($showTab){ ?>
+<div id="DealInfoTab" dojoType="ContentPane" label="Deal Information"
+	STYLE="overflow: auto;">	
+	<? } ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=10><BR>
+		<? createCollapsibleDIVIcon("Purchase Information", "purchaseInformationCollapsible"); ?></TD>
+	</TR>
+</TABLE>
+			<? createCollapsibleDIV("purchaseInformationCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD>Suite Number :</TD>
+		<TD><?
+
+		if ($mode == "purchaser" && $action == "add") {
+			display_text("UnitNumber", "", FALSE, 50, FALSE, "", "", FALSE, 17, "", "", "unitNumberChange");
+		} else {
+			print $row['UnitNumber'];
+			?> <INPUT TYPE="HIDDEN" NAME="UnitNumber" VALUE="<?= $row['UnitNumber']; ?>"> <?
+
+		}
+		?></TD>
+	</TR>
+<?= getPurchaserUnitInfo($UserID); ?>
+	<tr class="subhead-left-med">
+		<td colspan=10>Extra</td>
+	</tr>
+</table>	
+	<DIV id="InventoryItemDIV">
+		
+<?
+	$inventoryItemSql = " SELECT * FROM InventoryItem" .
+						" WHERE UserID=$UserID";
+
+	$inventoryItemResult		= executeSql($inventoryItemSql);
+	$nextInventoryItemNum = 1;
+	while ($inventoryItemRow = mysql_fetch_array($inventoryItemResult)){
+		$inventoryItemContent = getExistingInventoryItemHTMLForm($nextInventoryItemNum, $inventoryItemRow, "", $action);
+		$inventoryItemDIV = "<DIV id=\"InventoryItemDIV" . $nextInventoryItemNum . "\"><table CELLPADDING=$tableCellPadding >";
+		$inventoryItemDIV .= "" . $inventoryItemContent . "</table>";
+		$inventoryItemDIV .= "</DIV>";
+		print $inventoryItemDIV;
+		$nextInventoryItemNum++;
+	}
+?> <input id="nextInventoryItemNum" type="hidden"
+	name="nextInventoryItemNum" value=<?= $nextInventoryItemNum; ?>></DIV>
+		
+	<?	if ($action == "edit" || $action == "add"){ ?>
+	 <input type="button" value="Add Inventory Item" onClick="addInventoryItem()">
+	<?	} ?>
+<script language="JavaScript" type="text/javascript">
+			var nextInventoryItemNum = <?= $nextInventoryItemNum; ?>;		
+</script>	
+<!-- 
+<script language="JavaScript" type="text/javascript">
+			var nextInventoryItemNum = <?= $nextInventoryItemNum; ?>;		
+			
+			function addInventoryItem(){
+				x_getNewInventoryItemHTMLForm(nextInventoryItemNum, getNewInventoryItemHTMLForm_CallBack);
+			}
+			
+			// ajax call to add additional purchaser html form content 
+			function getNewInventoryItemHTMLForm_CallBack(html){
+				InventoryItemGroupDIVObj = document.getElementById("InventoryItemDIV");
+				nextInventoryItemNumObj = document.getElementById("nextInventoryItemNum");
+				
+				// innerHTML may not keep form data in some broswer, use DOM menthod to append new DIV
+				// By MingLei Yuan, May 22, 2007
+//				var htmlWithDIV = '<DIV id="AdditionalPurchaserDIV' + nextAdditionalPurchaserNum + '"><h4>Additional Purchaser ' + nextAdditionalPurchaserNum + '</h4><table>' + html + '</table></DIV>';
+//				additionalPurchaserGroupDIVObj.innerHTML = additionalPurchaserGroupDIVObj.innerHTML + htmlWithDIV;
+				var newInventoryItemDom = document.createElement("DIV");
+				newInventoryItemDom.setAttribute('id', "InventoryItemDIV" + nextInventoryItemNum);
+				newInventoryItemDom.innerHTML = '<table cellspacing=1>' + html + '</table>';
+				InventoryItemGroupDIVObj.appendChild(newInventoryItemDom);
+
+				nextInventoryItemNum++;
+				nextInventoryItemNumObj.value = nextInventoryItemNumObj.value + 1;
+				InventoryItemGroupDIVObj.style.visibility="visible"; 					
+			}
+			
+			// delete additional purchaser. It sets the additional purchaser action to be delete, 
+			// and set the div to be invisible 
+			function deleteInventoryItem(index){
+				var actionName = 'InventoryItem' + '_' + index + '_Action';
+				InventoryItemActionObj = document.getElementById(actionName);
+				InventoryItemActionObj.value = 'delete';
+				
+				var divName = 'InventoryItemDIV' + index;
+				InventoryItemDIVObj = document.getElementById(divName);
+				InventoryItemDIVObj.style.display="none";
+			}
+		</script>
+//-->		
+<table>
+	<TR>
+		<TD COLSPAN=2>Regular Parking Unit Included in Price: <? display_check_box('ParkingIncludedInPrice', "", 0); ?></TD>
+<?	if (INVENTORY_MODULE_ENABLED != 1 || !defined("INVENTORY_MODULE_ENABLED")){ ?>		
+		<TD>Locker Quantity:</TD>
+		<TD><? display_text('Locker'); ?></TD>
+	</TR>
+
+	<TR>
+		<TD COLSPAN=2>Extra Regular Parking Unit: <? display_check_box('ParkingSpace'); ?></TD>
+		<TD>Locker Charge:</TD>
+		<TD><? display_text('LockerCharge', "", FALSE, 50, FALSE, "", "", FALSE, 17, "","", "",TRUE); ?></TD>
+	</TR>
+	<TR>
+		<TD COLSPAN=2>Extended Parking Unit: <? display_check_box('ParkingExtended'); ?></TD>
+<?	} ?>
+		<TD>Additional Cost:</TD>
+		<TD><? display_text('AdditionalCost', "", FALSE, 50, FALSE, "", "", FALSE, 17, "","", "",TRUE); ?></TD>
+	</TR>
+	<TR>
+<?	if (INVENTORY_MODULE_ENABLED != 1 || !defined("INVENTORY_MODULE_ENABLED")){ ?>		
+		<TD>Parking Quantity:</TD>
+		<TD><? display_text('ParkingQuantity'); ?></TD>
+<?	} ?>
+		<TD>Additional Cost Note:</TD>
+		<TD COLSPAN=3><? display_text_area('AdditionalCostNote', "", 50, 3); ?></TD>
+	</TR>
+	<TR>
+		<TD>Extra Charge towards Parking Unit:</TD>
+		<TD><? display_text('ParkingSpaceCharge', "", FALSE, 50, FALSE, "", "", FALSE, 17, "","", "",TRUE); ?></TD>
+	</TR>
+
+<?	if (INVENTORY_MODULE_ENABLED != 1 || !defined("INVENTORY_MODULE_ENABLED")){ 
+		if (!defined('PROJECT_HAS_TANDEM') || PROJECT_HAS_TANDEM) {
+		?>
+	<TR>
+		<TD>Tandem Parking Unit:</TD>
+		<TD><? display_check_box('ParkingTandemUnit'); ?></TD>
+	</TR>
+	<?
+
+		}
+	}
+	if (INVENTORY_MODULE_ENABLED != 1 || !defined("INVENTORY_MODULE_ENABLED")){
+		if (!defined('PROJECT_HAS_ROOF_DECK') || PROJECT_HAS_ROOF_DECK) {
+		?>
+	<TR>
+		<TD COLSPAN=2>Roof Deck: <? display_check_box('RoofDeck'); ?></TD>
+	</TR>
+	<TR>
+		<TD>Roof Deck Unit:</TD>
+		<TD><? display_text('RoofDeckUnit', "", FALSE, 50, FALSE, "", "", FALSE, 17, "","", "",FALSE); ?></TD>
+		<TD>Roof Deck Charge:</TD>
+		<TD><? display_text('RoofDeckCharge', "", FALSE, 50, FALSE, "", "", FALSE, 17, "","", "",TRUE); ?></TD>
+	</TR>
+	<?
+
+		}
+		if (!defined('PROJECT_HAS_BICYCLE_RACK') || PROJECT_HAS_BICYCLE_RACK) {
+		?>
+	<TR>
+		<TD COLSPAN=2>Bicycle Rack: <? display_check_box('BicycleRack'); ?></TD>
+		<TD>Bicycle Rack Charge:</TD>
+		<TD><? display_text('BicycleRackCharge', "", FALSE, 50, FALSE, "", "", FALSE, 17, "","", "",TRUE); ?></TD>
+	</TR>
+<?		} 
+	} ?>
+</TABLE>
+</DIV>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD><BR>
+		</TD>
+	</TR>
+	<TR>
+		<TD COLSPAN=2><BR>
+		<? createCollapsibleDIVIcon("Agreement Control", "agreementControlCollapsible"); ?></TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("agreementControlCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD>Price :</TD>
+		<TD><?= display_text("Price","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB(); calculateOfferPrice()",TRUE); ?></TD>
+		<TD>Deal Status :</TD>
+		<TD><? display_generic_table_list("DealStatus", "DealStatus"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Payment Status :</TD>
+		<TD><? display_generic_table_list("PaymentStatus", "PaymentStatus"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Deposit with Agreement :</TD>
+		<TD><? display_text("AgreementDepositAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB(); ",TRUE,2);?></TD>
+		<TD>Cheque Number :</TD>
+		<TD><? display_text("AgreementDepositChequeNumber"); ?></TD>
+	</TR>
+<?	if (CHEQUE_MODULE_ENABLED)	{ ?>	
+	<TR>
+		<TD colspan=10>
+		<?= getExistingDepositTransactionsRecordHTMLForm(1, array ("TransactionsRecordID"=>$row['AgreementDepositTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>	
+<? } ?>	
+	<TR>
+		<TD>Purchase Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<?
+		//				display_date("AgreementDepositDate","","", FALSE, "", "agreementDepositDateChange();", "MDY");   //javascript function agreementDepositDateChange() only used in citygate 1, 2
+		display_date("AgreementDepositDate","","", FALSE, "", "", "MDY");
+		?>
+		<?
+
+		?></TD>
+		<TD>NSF Cheque :</TD>
+		<TD><? display_check_box("AgreementDepositNFS", "", 0, ""); ?></TD>
+	</TR>
+	<TR>
+		<TD>Rescission Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("RescissionDate","","", FALSE, "","", "MDY");?></TD>
+	</TR>
+	<TR>
+		<TD>Rescession Note :</TD>
+		<TD COLSPAN=3><? display_text_area('RescissionNote', "", 50, 3); ?></TD>
+	</TR>
+	<tr class="subhead-left-med">
+		<td colspan=5>Deposit 2</td>
+	</tr>
+	<TR>
+		<TD>Deposit 2 :</TD>
+		<TD><? display_text("Day30DepositAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB();",TRUE, 2);?></TD>
+		<TD>Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("Day30DepositDate","","", FALSE, "", "", "MDY");?>
+		<?
+
+		?></TD>
+	</TR>
+<?	if (CHEQUE_MODULE_ENABLED)	{ ?>	
+	<TR>
+		<TD colspan=10>
+<?= getExistingDepositTransactionsRecordHTMLForm(2, array ("TransactionsRecordID"=>$row['Day30DepositTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>
+<?	} else { ?>	
+	<TR>
+		<TD>Cheque Number :</TD>
+		<TD><? display_text("Day30DepositChequeNumber"); ?></TD>
+		<TD>Cheque Amount :</TD>
+		<TD><? display_text("Day30DepositChequeAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE, 2); ?></TD>
+	</TR>
+	<TR>
+		<TD>Received (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? display_text("Day30DepositReceivedDate"); ?></TD>
+		<TD>NSF Cheque :</TD>
+		<TD><? display_check_box("Day30DepositNFS", "", 0, ""); ?></TD>
+	</TR>
+<?	} ?>	
+	<tr class="subhead-left-med">
+		<td colspan=5>Deposit 3</td>
+	</tr>
+	<TR>
+		<TD>Deposit 3 :</TD>
+		<TD><? display_text("Day90DepositAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB();",TRUE, 2);?></TD>
+		<TD>Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("Day90DepositDate","","", FALSE, "", "", "MDY");?>
+		<?
+
+		?></TD>
+	</TR>
+<?	if (CHEQUE_MODULE_ENABLED)	{ ?>	
+	<TR>
+		<TD colspan=10>
+		<?= getExistingDepositTransactionsRecordHTMLForm(3, array ("TransactionsRecordID"=>$row['Day90DepositTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>	
+<?	} else { ?>	
+	<TR>
+		<TD>Cheque Number :</TD>
+		<TD><? display_text("Day90DepositChequeNumber"); ?></TD>
+		<TD>Cheque Amount :</TD>
+		<TD><? display_text("Day90DepositChequeAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE, 2); ?></TD>
+	</TR>
+	<TR>
+		<TD>Received (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? display_text("Day90DepositReceivedDate"); ?></TD>
+		<TD>NSF Cheque :</TD>
+		<TD><? display_check_box("Day90DepositNFS", "", 0, ""); ?></TD>
+	</TR>
+<?	} ?>	
+	<tr class="subhead-left-med">
+		<td colspan=5>Deposit 4</td>
+	</tr>
+	<TR>
+		<TD>Deposit 4 :</TD>
+		<TD>
+		<? display_text("Day150DepositAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB();",TRUE, 2);?></TD>
+		<TD>Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("Day150DepositDate","","", FALSE, "", "", "MDY");?>
+		<?
+
+		?></TD>
+	</TR>
+<?	if (CHEQUE_MODULE_ENABLED)	{ ?>	
+	<TR>
+		<TD colspan=10>
+		<?= getExistingDepositTransactionsRecordHTMLForm(4, array ("TransactionsRecordID"=>$row['Day150DepositTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>	
+<?	} else { ?>
+	<TR>
+		<TD>Cheque Number :</TD>
+		<TD><? display_text("Day150DepositChequeNumber"); ?></TD>
+		<TD>Cheque Amount :</TD>
+		<TD><? display_text("Day150DepositChequeAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE, 2); ?></TD>
+	</TR>
+	<TR>
+		<TD>Received (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? display_text("Day150DepositReceivedDate"); ?></TD>
+		<TD>NSF Cheque :</TD>
+		<TD><? display_check_box("Day150DepositNFS", "", 0, ""); ?></TD>
+	</TR>
+<?	} ?>	
+<?	if (PROJECT_HAS_DEPOSIT_5)	 { ?>
+	<tr class="subhead-left-med">
+		<td colspan=5>Deposit 5</td>
+	</tr>
+	<TR>
+		<TD>Deposit 5 :</TD>
+		<TD>
+		<? display_text("Day210DepositAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB();",TRUE, 2);?></TD>
+		<TD>Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("Day210DepositDate","","", FALSE, "", "", "MDY");?>
+		<?
+
+		?></TD>
+	</TR>
+	<TR>
+		<TD colspan=10>
+		<?= getExistingDepositTransactionsRecordHTMLForm(5, array ("TransactionsRecordID"=>$row['Day210DepositTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>	
+<?	} ?>	
+	
+	<tr class="subhead-left-med">
+		<td colspan=5>Deposit on Occupancy</td>
+	</tr>
+	<TR>
+		<TD>Deposit on Occupancy :</TD>
+		<TD><? display_text("OccupancyDepositAmount","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateVTB();",TRUE, 2);?></TD>
+		<TD>Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("OccupancyDepositDate","","", FALSE, "", "", "MDY");?>
+		<?
+
+		?></TD>
+	</TR>
+	<TR>
+		<TD>Occupancy Note :</TD>
+		<TD COLSPAN=3><? display_text_area('OccupancyNote', "", 50, 3); ?></TD>
+	</TR>
+<?	if (CHEQUE_MODULE_ENABLED)	{ ?>	
+	<TR>
+		<TD colspan=10>
+		<?= getExistingDepositTransactionsRecordHTMLForm(6, array ("TransactionsRecordID"=>$row['OccupancyDepositTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>	
+<?	} else { ?>	
+	<TR>
+		<TD>Cheque Number :</TD>
+		<TD><? display_text("OccupancyDepositChequeNumber"); ?></TD>
+		<TD>Cheque Amount :</TD>
+		<TD><? display_text("OccupancyDepositChequeAmount","",FALSE,50,FALSE,"","su",FALSE,17,"","","",TRUE, 2); ?></TD>
+	</TR>
+	<TR>
+		<TD>Received (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? display_text("OccupancyDepositReceivedDate"); ?></TD>
+		<TD>NSF Cheque :</TD>
+		<TD><? display_check_box("OccupancyDepositNFS", "", 0, ""); ?></TD>
+		
+	</TR>
+<?	} ?>	
+	</TR>
+	<tr class="subhead-left-med">
+		<td colspan=5></td>
+	</tr>
+	<TR>
+		<TD>Signed Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("AgreementControlSignDate","","", FALSE, "", "", "MDY");?>
+		</TD>
+		<TD>Signed By :</TD>
+		<TD><?
+
+		display_generic_table_list_with_text_field("SalesAgreementSignedBy", "AgreementControlSignedBy");
+		?></TD>
+	</TR>
+	<TR>
+		<TD colspan="2">Mortgage Commitment<? display_check_box('MortgageCommitment'); ?></TD>
+		<TD>1st Revised Closing Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("FirstRevisedClosingDate","","", FALSE, "", "", "MDY");?>
+		<?
+
+		?></TD>
+	</TR>
+	<TR>
+		<TD>Mortgage Commitment Amount</TD>
+		<TD><? display_text("MortgageCommitmentAmount"); ?></TD>
+		<TD>2nd Revised Closing Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("SecondRevisedClosingDate","","", FALSE, "", "", "MDY");?>
+		</TD>
+	</TR>
+	<TR>
+		<TD>Vendor Takeback mtg :</TD>
+		<TD><? display_text("VTB","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE); ?></TD>
+		<TD>3rd Revised Closing Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD>
+		<? display_date("ThirdRevisedClosingDate","","", FALSE, "", "", "MDY");?>
+		</TD>
+	</TR>
+	<TR>
+		<TD>Charge :</TD>
+		<TD><?= display_text("Charge","",FALSE,50,FALSE,"","",FALSE,17,"","","calculateOfferPrice()",TRUE); ?></TD>
+		<TD>Unit Transfer Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? display_date("UnitTransferDate","","", FALSE, "", "", "MDY");?></TD>
+	</TR>
+	<TR>
+		<TD>Offer Price :</TD>
+		<TD><?= display_text("OfferPrice","",FALSE,50,FALSE,"","",FALSE,17,"","","priceChange(); calculateVTB();",TRUE); ?></TD>
+		<TD>Delayed Interim Closing Date (<?= PROJECT_DATE_FORMAT; ?>):</TD>
+		<TD><? display_date("DelayedInterimClosingDate","","", FALSE, "", "", "MDY");?></TD>
+	</TR>
+	<? if ($action == "edit") {?>
+	<TR>
+		<TD><INPUT TYPE="BUTTON" Value="Calculate Deposits Amount"
+			onClick="calculateOfferPrice()"></TD>
+	</TR>
+	<? } ?>
+</TABLE>
+</DIV>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><BR>
+		<? createCollapsibleDIVIcon("Sales Incentives", "salesIncentiveCollapsible"); ?></TD>
+	</TR>
+</TABLE>
+		<? createCollapsibleDIV("salesIncentiveCollapsible");?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD>Unit Allowance:</TD>
+		<TD><? display_text('UnitAllowance',"",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE); ?></TD>
+	</TR>
+			
+<?
+
+		$prevRow = $row; // store the $row var
+		$prevSalesIncentiveCategory = "";
+
+		$sql = "SELECT * FROM Package ORDER BY SalesIncentiveCategory, PackageID";
+		$packageResult = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+
+		$sql = "SELECT * FROM User, UserPackage, Package 
+						WHERE User.UserID = \"$UserID\" 
+						AND User.UserID = UserPackage.UserID 
+						AND UserPackage.PackageID = Package.PackageID
+						ORDER BY SalesIncentiveCategory, Package.PackageID";
+		$userPackageResult = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+		$row = mysql_fetch_array($userPackageResult);
+
+		for ($i = 1; $packageRow = mysql_fetch_array($packageResult); $i ++) {
+			if ($prevSalesIncentiveCategory <> $packageRow["SalesIncentiveCategory"])
+			{
+				$prevSalesIncentiveCategory = $packageRow["SalesIncentiveCategory"];
+?>
+  <tr class="subhead-left-med">
+    <td colspan=5><?= $packageRow["SalesIncentiveCategory"] ?></td>
+  </tr>
+<?
+			}
+?>
+
+  <TR>
+<?
+
+			if ($action == "display") {
+?>
+    <TD><?= $packageRow['PackageName']; ?></TD>
+    <TD>
+				<?
+
+				if ($packageRow['PackageID'] == $row['PackageID']) {
+					echo " Yes ";
+				} else {
+					echo " No ";
+				}
+?>
+    </TD>
+<?
+
+			} else {
+?>
+    <TD  COLSPAN=2><INPUT TYPE="CHECKBOX" onChange="javascript:calculateUnitAllowance()" NAME="package_<?= $packageRow['PackageID']; ?>" VALUE="1" <?
+
+				if ($packageRow['PackageID'] == $row['PackageID']) {
+					echo "CHECKED";
+				}
+?>><?= $packageRow['PackageName']; ?></TD>
+<?
+
+			}
+			// if packageID doesn't match, set var row to be empty, in order to not allow the display_text 
+			// to show the incorrect value
+			if ($packageRow['PackageID'] != $row['PackageID']) {
+				$prevUserPackageRow = $row;
+				$row = "";
+			}
+?>
+    <TD >Value : </TD><TD ><?= display_text("Note", "", FALSE, 50, FALSE, "", "", FALSE, 20, "package_" . $packageRow['PackageID'],"","calculateUnitAllowance()",TRUE); ?></TD>
+<?
+
+			// restore the var row
+			if ($row == "") {
+				$row = $prevUserPackageRow;
+			}
+			if ($packageRow['PackageID'] == $row['PackageID']) {
+				$row = mysql_fetch_array($userPackageResult); // fetch next packageID in UserPackage table
+			}
+?>
+  </TR>
+<?
+
+		}
+		$row = $prevRow; // restore row var
+?>
+</TABLE>
+</DIV>
+
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><? createCollapsibleDIVIcon("Additional Options", "additionalOptionsCollapsible"); ?><BR>
+		</TD>
+	</TR>
+</TABLE>
+	<? createCollapsibleDIV("additionalOptionsCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+	<?
+	// store the row var
+	$prevRow = $row;
+	if ($action == "edit")
+	echo "<TD>Delete</TD>";
+	?>
+		<TD COLSPAN=2 ALIGN="CENTER">Description</TD>
+		<TD COLSPAN=2>Price</TD>
+	</TR>
+	<?
+
+	// Process records in table UserOption
+	$sql = "SELECT Description, Price
+					FROM UserOption
+					WHERE UnitNumber = " . $row['UnitNumber'] .
+					" ORDER BY Price";
+
+	$result = mysql_query($sql, $db);
+
+	// print out rows to the table
+	$checkboxCount = 0;
+
+	while ($row = mysql_fetch_array($result)) {
+		?>
+	<TR>
+	<?
+
+	if ($action == "edit") {
+		echo "<TD><INPUT TYPE = \"checkbox\" NAME=\"UserOption_".$checkboxCount."\"><br></TD>";
+
+		$checkboxCount ++;
+	}
+	?>
+		<TD COLSPAN=2><? echo $row["Description"] ?></TD>
+		<TD COLSPAN=2><? echo $row["Price"] ?></TD>
+		<TD><INPUT TYPE="HIDDEN" NAME="UserOptionDesc[]" VALUE="<?= $row['Description'] ?>">
+		<TD>
+	</TR>
+	<?
+
+	}
+
+	if ($action == "edit") {
+		?>
+	<TR>
+		<TD>Add Record</TD>
+		<TD COLSPAN=2><INPUT TYPE="text" NAME="UserOptionDescForAdd"
+			SIZE="75" MAXLENGTH="255"></TD>
+		<TD COLSPAN=2><INPUT TYPE="text" NAME="UserOptionPriceForAdd"
+			SIZE="6" MAXLENGTH="100"></TD>
+	</TR>
+	<?
+
+	}
+	
+	// restore the row var
+	$row = $prevRow;
+
+	?>
+</TABLE>
+</DIV>			
+			
+
+<? 
+} // end if $mode = "purchaser" (Deal Information)
+
+
+if (CLOSING_ENABLED && $mode=="purchaser"){
+	
+	if ($showTab){ ?>
+</DIV>
+<div id="ReleaseTab" dojoType="ContentPane" label="Release"
+	STYLE="overflow: auto;">	
+<? 
+	} // showTab
+?>	
+<TABLE>
+	<TR>
+		<TD colspan=10>
+		<?= getExistingReleaseTransactionsRecordHTMLForm(99, array ("TransactionsRecordID"=>$row['ReleaseTransactionsRecordID']), $action); ?>	
+		</TD>
+	</TR>	
+</TABLE>	
+<?  	
+} // IF CLOSING_ENABLED
+
+if ($showTab){ 
+?>
+</DIV>
+<div id="ContactTab" dojoType="ContentPane" label="Contact"
+	STYLE="overflow: auto;">	
+<? 
+} 
+
+if ($mode == "purchaser") {
+?>
+
+
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><? createCollapsibleDIVIcon("Solicitor of Purchaser", "solicitorOfPurchaserCollapsible"); ?><BR>
+		</TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("solicitorOfPurchaserCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD>Solicitor :</TD>
+		<TD><? display_text("SolicitorName"); ?></TD>
+		<TD>Address :</TD>
+		<TD COLSPAN=3><? display_text("SolicitorAddress"); ?></TD>
+	</TR>
+	<TR>
+		<TD>City :</TD>
+		<TD><? display_text("SolicitorCity"); ?></TD>
+		<TD>Postal Code :</TD>
+		<TD><? display_text("SolicitorPostalCode"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Telephone :</TD>
+		<TD><? display_text("SolicitorTelephone"); ?></TD>
+		<TD>Fax Number :</TD>
+		<TD><? display_text("SolicitorFaxNumber"); ?></TD>
+	</TR>
+</TABLE>
+</DIV>
+		
+<?
+
+	// retrieve referee info from table "Referee"
+	$prevRow = $row; // store the $row var
+
+	$refereeSql = "SELECT * FROM Referee WHERE UserID = $UserID";
+	$refereeResult = mysql_query($refereeSql) or log_err_die(mysql_error(), $PHP_SELF);
+	$row = mysql_fetch_array($refereeResult);
+	?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+
+	<TR>
+		<TD COLSPAN=10><BR>
+		<? createCollapsibleDIVIcon("Referee Details", "refereeDetailsCollapsible"); ?></TD>
+	</TR>
+</TABLE>
+	<? createCollapsibleDIV("refereeDetailsCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD>First Name :</TD>
+		<TD><? display_text("RefereeFirstName"); ?></TD>
+		<TD>Last Name :</TD>
+		<TD><? display_text("RefereeLastName"); ?></TD>
+	</TR>
+	<TR>
+		<TD>From Project :</TD>
+		<TD><? display_generic_table_list("FromProject", "FromProject"); ?></TD>
+		<TD>Suite # :</TD>
+		<TD><? display_text("RefereeUnitNumber"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Incentive :</TD>
+		<TD><? display_text("Incentive"); ?></TD>
+		<TD>Price :</TD>
+		<TD><? display_text("IncentivePrice","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE); ?></TD>
+	</TR>
+	<TR>
+		<TD>Incentive Sent? :</TD>
+		<TD><? display_check_box("IncentiveSent"); ?></TD>
+	</TR>
+</TABLE>
+</DIV>
+
+<?
+
+$row = $prevRow; // re-store the $row var
+
+}
+?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+
+	<TR>
+		<TD COLSPAN=10><BR>
+		<? createCollapsibleDIVIcon("Broker Details", "brokerDetailsCollapsible"); ?></TD>
+	</TR>
+</TABLE>
+
+<script language="JavaScript">
+function displayBrokerDIV(index, action){	
+	if (action == "edit"){
+		// retrieve current selected broker
+		var divName = 'Broker_' + index + '_BrokerID'
+		var brokerListObj = document.getElementById(divName);
+		var brokerID = brokerListObj.value;
+		return displayBrokerEditDIV(index,action, brokerID);
+	}
+	else {
+		return displayBrokerEditDIV(index, action, -1);	
+	}
+}
+
+// dispaly add/edit broker div layer 
+function displayBrokerEditDIV(index, action, brokerID){
+	newHTML = '<DIV class="popupDiv">';
+	newHTML = newHTML + getCloseButton(1);
+	var url = 'broker/brokerInfo.phtml?displayMenu=false&action=' + action + '&BrokerID=' + brokerID + '&jsAfterDone=window.parent.editBrokerDone(' + index + ', brokerID)&jsAfterCancel=window.parent.cancelEditBroker()';
+	
+	newHTML = newHTML + '<IFRAME FRAMEBORDER=0 SRC="' + url + '" WIDTH=740 HEIGHT=680></IFRAME>'; 
+	newHTML = newHTML + '</div>';
+//	alert('newHTML=' + newHTML);
+	getFloatingDivNoStyle(1).innerHTML = newHTML;
+
+	getFloatingDiv(1).position="absolute";
+	getFloatingDiv(1).width="760px";	
+	getFloatingDiv(1).height="690";
+	// put it at the center of browser	
+	centerDIV(getFloatingDivNoStyle(1));
+	// display it
+	getFloatingDiv(1).visibility="visible";	
+}
+
+function editBrokerDone(index, brokerID){
+	var newBrokerID = brokerID;
+	hideFloatingDiv(1);
+	
+	if ((typeof newBrokerID == 'undefined') || !(newBrokerID > 0)){
+		
+		var originalBrokerID = <?= $row['BrokerID'] == "" || $row['BrokerID'] < 0 ? 0 : $row['BrokerID']; ?>;
+		newBrokerID = originalBrokerID;		
+	}
+	
+	
+	// must set timer to perform the call because
+	// firefox doesn't allow children to access DIV element
+	var callBackObj = new Object();
+	callBackObj.callback = getBrokerList_callback;
+	callBackObj.extra_data = index;
+//	timerID = self.setTimeout("x_getBrokerList(" + newBrokerID + ", " + callBackObj + ")", 1);
+	x_getBrokerList(index, newBrokerID,callBackObj);
+	
+	var detailCallBackObj = new Object();
+	detailCallBackObj.callback = getBrokerDetail_callback;
+	detailCallBackObj.extra_data = index;	
+//	timerID = self.setTimeout("x_getBrokerDetail(" + newBrokerID + ", " + detailCallBackObj + ")", 1.2);
+	x_getBrokerDetail(index, newBrokerID, detailCallBackObj);
+}
+
+// Cancel the broker edit page
+function cancelEditBroker(){
+	hideFloatingDiv(1);
+}
+
+// function to compliment the problem of dojo.event.connect 
+// that cannot pass in argument
+function displayBroker1Detail(){
+	return displayBrokerDetail(1, -1);	
+}
+
+function displayBroker2Detail(){
+	return displayBrokerDetail(2, -1);	
+}
+
+// AJAX call to display broker detail when 
+// user changes broker in the combo box
+function displayBrokerDetail(index, brokerID){
+//	alert('index=' + index);
+	var selectedBrokerID = brokerID;
+	if (typeof brokerID == 'undefined' || (!(typeof brokerID > 0))){
+		
+		var divName = 'Broker_' + index + '_BrokerID';
+		selectedBrokerID = document.getElementById(divName).value;		
+	}
+	
+	var callbackObj = new Object();
+	callbackObj.callback = getBrokerDetail_callback;
+	callbackObj.extra_data = index;
+	x_getBrokerDetail(index, selectedBrokerID, callbackObj);
+	
+}
+
+function getBrokerList_callback(html, index){
+//	alert('index=' + index);
+//alert('html=' + html);
+	var divName = 'Broker' + index + 'ListDIV';
+	DIVObj = document.getElementById(divName);
+	// not work in IE	
+//	DIVObj.style.visibility="none";
+	var resultHTML = '<TABLE CELLSPACING=\"5\">' + html + '</TABLE>'
+	DIVObj.innerHTML = resultHTML;
+	divName = 'Broker_' + index + '_BrokerID';
+	var listObj = document.getElementById(divName);
+	var functionName = index == 1 ? "displayBroker1Detail" : "displayBroker2Detail" ; 	
+ 	dojo.event.connect(listObj, "onchange",
+          this, functionName);
+}
+
+
+function getBrokerDetail_callback(html, index){
+//	alert('index=' + index);
+	DIVObj = document.getElementById('Broker' + index + 'DetailDIV');
+	// not work in IE	
+//	DIVObj.style.visibility="none";
+	var resultHTML = '<TABLE CELLSPACING=\"5\">' + html + '</TABLE>'
+	DIVObj.innerHTML = resultHTML;
+//	DIVObj.style.visibility="visible"; 	
+}
+
+</script>
+
+<?
+	createCollapsibleDIV("brokerDetailsCollapsible"); 
+
+	if (BROKER_MODULE_ENABLED){
+		$numOfBroker = 2;
+		for ($i = 1; $i <= $numOfBroker; $i++){
+			$srcCol = "BrokerID";
+			if ($i > 1){
+				$srcCol = "BrokerID" . $i;
+			}	
+			if (($action != "display"  && $action != "")|| $row[$srcCol] > 0 || $i == 1){
+?>	
+	<table width=500>
+	<tr class="subhead-left-med">
+		<td colspan=5>Broker <?= $i; ?></td>
+	</tr>
+	</table>
+<?			}
+		
+			if ($action != "display" && $action != ""){						
+	 			$brokerView = new BrokerView();
+	 			$brokerArguments = array("index"=>$i, "mode"=>$action, "BrokerID"=>$row[$srcCol], "DisplayType"=>"LIST", "onChangeJSFunction"=>"displayBrokerDetail($i)");
+	 			$content = "<div id=\"Broker" . $i . "ListDIV\" name=\"Broker" . $i . "ListDIV\">";
+	 			$content .= "<TABLE CELLSPACING=\"5\">";
+	 			$content .= $brokerView->getExistingHTMLForm($brokerArguments);
+	 			$content .= "</TABLE>";
+	 			$content .= "</div>";
+	 			print $content;
+?> 		
+	<TABLE>
+			<tr>
+				<td><input type="button" value="Add new broker" onClick="displayBrokerDIV(<?= $i; ?>,'add')"></td>
+				<td><input type="button" value="Edit selected broker" onClick="displayBrokerDIV(<?= $i; ?>,'edit')"></td>
+			</tr>
+	</table>
+
+<? 			
+			}
+		
+				$brokerView = new BrokerView();
+				$brokerArguments = array("index"=>$i, "mode"=>$action, "BrokerID"=>$row[$srcCol], "DisplayType"=>"CONTACT");
+				
+				$content = "<div id=\"Broker" . $i . "DetailDIV\" name=\"Broker" . $i . "DetailDIV\">";
+				$content .= "<TABLE CELLSPACING=\"5\">";
+			if ($row[$srcCol] > 0){
+				$content .= getBrokerDetail($i, $row[$srcCol]);
+			}	
+				$content .= "</TABLE>";
+				$content .= "</div>";
+				print $content;
+		}						
+	}
+	else {
+?>	
+	<table>
+	<TR>
+		<TD>Agent :</TD>
+		<TD COLSPAN="4"><? display_generic_table_list_with_text_field("BrokerAgent", "BrokerAgentName"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Company :</TD>
+		<TD COLSPAN="4"><? display_generic_table_list_with_text_field("BrokerCompany", "BrokerCompany");  ?></TD>
+	</TR>
+	<TR>
+		<TD>Address :</TD>
+		<TD COLSPAN="4"><? display_text("BrokerAddress", "", FALSE, 50, FALSE, "", "", FALSE, 60); ?></TD>
+	</TR>
+	<TR>
+		<TD>City :</TD>
+		<TD COLSPAN="4"><? display_generic_table_list_with_text_field("BrokerCity", "BrokerCity"); ?></TD>
+
+	</TR>
+	<TR>
+		<TD>Postal Code :</TD>
+		<TD><? display_text("BrokerPostalCode"); ?></TD>
+		<TD>Telephone :</TD>
+		<TD><? display_text("BrokerPhoneNumber"); ?></TD>
+	</TR>
+	<TR>
+		<TD>Fax Number :</TD>
+		<TD><? display_text("BrokerFaxNumber"); ?></TD>
+		<TD>Email :</TD>
+		<TD><? display_text("BrokerEmail"); ?></TD>
+	</TR>
+	</table>
+<?	} ?>
+<TABLE width=500>
+	<TR class="subhead-left-med" >
+		<TD COLSPAN=5><?= get_project_name($PHP_SELF); ?> Internal User</TD>
+	</TR>
+</TABLE>
+<TABLE>
+	<TR>
+		<TD><?= get_project_name($PHP_SELF); ?> User :</TD>
+		<TD><? display_table_list_with_diff_val("LoginUser", "UserName", "LoginUserID", "SalesRepID"); ?></TD>
+		<TD><?= get_project_name($PHP_SELF); ?> User2 :</TD>
+		<TD><? display_table_list_with_diff_val("LoginUser", "UserName", "LoginUserID", "SalesRepID1"); ?></TD>
+	</TR>
+</TABLE>
+</DIV>
+						
+						
+<? if ($showTab){ ?>
+</DIV>
+
+<script language="JavaScript">
+// dispaly edit note div layer 
+function displayNoteAddDIV(salesRepID, userName, customerType, customerID){
+	newHTML = '<DIV class="popupDiv">';
+	newHTML = newHTML + getCloseButton(1);
+	newHTML = newHTML + '<IFRAME FRAMEBORDER=0 SRC="CRM/editNote.phtml?action=add&salesRepID='+ salesRepID + '&writtenBy=' + userName + '&customerType=' + customerType + '&customerID=' + customerID + '" WIDTH=640 HEIGHT=370></IFRAME>'; 
+	newHTML = newHTML + '</div>';
+//	alert('newHTML=' + newHTML);
+	getFloatingDivNoStyle(1).innerHTML = newHTML;
+
+	getFloatingDiv(1).position="absolute";
+	getFloatingDiv(1).width="660px";	
+	getFloatingDiv(1).height="380px";
+	// put it at the center of browser	
+	centerDIV(getFloatingDivNoStyle(1));
+	// display it
+	getFloatingDiv(1).visibility="visible";	
+}
+
+function addNoteDone(){
+	hideFloatingDiv(1);
+	// must set timer to perform the call because
+	// firefox doesn't allow children to access DIV element
+	timerID = self.setTimeout("x_getSalesRepNotesContent('<?= $mode; ?>', <?= ($UserID > 0? $UserID : $VisitorID); ?>, getSalesRepNotesContent_callback)", 1);
+}
+
+function getSalesRepNotesContent_callback(html){
+	DIVObj = document.getElementById("SalesRepNotesContentDIV");
+	DIVObj.innerHTML = html;
+	DIVObj.style.visibility="visible"; 	
+		
+}
+</script>
+
+<div id="SalesRepNoteTab" dojoType="ContentPane" label="Sales Rep Note"
+	STYLE="overflow: auto;">
+<? } ?>
+<? if (CRM_ENABLED && $action != "add") {
+	?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=10><BR>
+		<? createCollapsibleDIVIcon("Sales Rep Notes", "salesRepNotes"); ?> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <INPUT TYPE="BUTTON" VALUE="Add Note"
+			onClick="displayNoteAddDIV('<?= get_user_id(); ?>', '<?= get_user_name(); ?>', '<?= get_internal_customer_type($mode); ?>', <?= $mode=="purchaser" ? $UserID : $VisitorID;?>)"> <INPUT TYPE="BUTTON"
+			VALUE="Edit Notes" onClick="window.location='<?= CRM_RELATIVE_PATH; ?>/listNote.phtml?SalesRepID=<?= $salesRepID; ?>&CustomerType=<?= get_internal_customer_type($mode); ?>&CustomerID=<?= $mode=="purchaser" ? $UserID : $VisitorID;?>'"
+			<?	if ($salesRepID <= 0) {
+				?>			    onClick="alert('Please assign a sales representives for this customer first.')"
+				<?
+
+			} else {
+				?>			    onClick="window.location='<?= CRM_RELATIVE_PATH; ?>/listNote.phtml?SalesRepID=<?= $salesRepID; ?>&CustomerType=<?= get_internal_customer_type($mode); ?>&CustomerID=<?= $mode=="purchaser" ? $UserID : $VisitorID;?>'"
+<?
+
+	}
+		// disable the button if in edit mode
+			if ($action == "edit") {
+				echo " DISABLED ";	
+			}
+				?>></TD>
+	</TR>
+</TABLE>
+				<? createCollapsibleDIV("salesRepNotes"); ?>
+<DIV id="SalesRepNotesContentDIV">
+				<?= getSalesRepNotesContent($mode, ($mode=="purchaser") ? $UserID : $VisitorID); ?></DIV>
+</DIV>
+<? } ?>
+
+<?
+if ($mode == "purchaser") {
+?>
+
+<? if ($showTab){ ?>
+</DIV>
+<div id="FileManagementTab" dojoType="ContentPane"
+	label="File Management" STYLE="overflow: auto;">	
+<? } ?>
+
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><? createCollapsibleDIVIcon("File Management", "fileManagementCollapsible"); ?><BR>
+		</TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("fileManagementCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><BR>
+		<H4></H4>
+		</TD>
+	</TR>
+	<TR>
+<?
+
+if ($action == "edit")
+echo "<TD>Delete</TD>";
+?>
+		<TD ALIGN="CENTER">File Description</TD>
+		<TD>File Name</TD>
+	</TR>
+			
+<?
+// store current purchaser row
+$prevRow = $row;
+
+// Display file of $UserID
+$sql = "SELECT FileID, FileDesc, FileName
+					FROM UserFile
+					WHERE UserID = $UserID";
+
+$result = mysql_query($sql, $db);
+
+// print out rows to the table
+$Count = 0;
+
+while ($row = mysql_fetch_array($result)) {
+	?>
+	<TR>
+<?
+
+			// cannot use function display_text() here
+			// in order to embed identification for each file record for editing
+			if ($action == "display") {
+?>
+		<TD><?= $row["FileDesc"]=="" ? "n/a" : $row["FileDesc"];?></TD>
+		<TD><?= $row["FileName"]=="" ? "n/a" : $row["FileName"];?></TD>
+		<TD><NOBR>&nbsp|&nbsp<A HREF="./<?= UPLOAD_FOLDER . "/" . $UserID ?>/<?= $row['FileName'] ?>"
+		TARGET="_blank">Download</A></NOBR></TD>
+<?
+
+			}
+			if ($action == "edit") {
+?>
+		<TD><INPUT TYPE="CHECKBOX" NAME="UserFileInd_<?= $Count?>"></TD>
+		<TD><INPUT TYPE="INPUT" NAME="UserFileDesc[]" value="<?= $row['FileDesc'] ?>"
+		maxlength=50 size=50></TD>
+		<TD><INPUT TYPE="INPUT" NAME="UserFileName[]" value="<?= $row['FileName'] ?>"
+		maxlength=50 size=30></TD>
+		<TD><INPUT TYPE="HIDDEN" NAME="UserFileID[]" value="<?= $row['FileID'] ?>"></TD>
+		<TD><INPUT TYPE="HIDDEN" NAME="UserFileDesc_Orig[]" value="<?= $row['FileDesc'] ?>"></TD>
+		<TD><INPUT TYPE="HIDDEN" NAME="UserFileName_Orig[]" value="<?= $row['FileName'] ?>"></TD>
+<?
+
+				$Count ++;
+			}
+?>
+	</TR>
+<?
+
+		}
+
+		// display upload button when action is edit
+		if ($action == "edit") {
+?>
+	<TR>
+
+		<TD>Upload New File</TD>
+		<INPUT TYPE="hidden" name="MAX_FILE_SIZE" VALUE="52428800">
+		<TD><INPUT TYPE="text" NAME="FileDescForUpload" SIZE="50"
+			MAXLENGTH="50"></td>
+		<TD><INPUT TYPE="file" NAME="FileForUpload"></td>
+	</TR>
+	<TR>
+		<TD><BR>
+		</TD>
+	</TR>
+<?
+
+		}
+$row = $prevRow;
+
+?>
+</TABLE>
+</DIV>
+
+<? if ($showTab){ ?>
+</DIV>
+<div id="ClosingTab" dojoType="ContentPane"
+	label="Closing" STYLE="overflow: auto;">	
+<? } ?>
+
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><? createCollapsibleDIVIcon("Closing", "closingCollapsible"); ?><BR>
+		</TD>
+	</TR>
+</TABLE>
+<? createCollapsibleDIV("closingCollapsible"); ?>
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+	<TR>
+		<TD COLSPAN=2><BR>
+		<H4></H4>
+		</TD>
+	</TR>
+	
+	<TR>
+	  <TD>Development CAP Credit: <TD>
+	  <TD><? display_text("DevCAPCredit","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE, 2); ?><TD>
+	  <TD>Other CAP Credit: <TD>
+	  <TD><? display_text("OtherCAPCredit","",FALSE,50,FALSE,"","",FALSE,17,"","","",TRUE, 2); ?><TD>
+	</TR>
+	
+	<TR>
+	  <TD>CAP Note: <TD>
+		<TD><? display_text_area("CAPNote","", 50, 3); ?></TD>
+	</TR>
+ </TABLE>
+</DIV>
+</DIV>
+
+<?
+	} // end if $mode = "purchaser"
+?>
+<? if ($showTab){ ?>
+</DIV>
+</DIV>
+<? } ?>
+
+<TABLE CELLPADDING="<?= $tableCellPadding; ?>">
+
+	<TR>
+		<TD COLSPAN=10>
+<?
+
+if ($action == "display") {
+	// only above sales level can edit/delete
+	if (get_access_security_level() > SALES ||
+		($mode == "visitor" && get_access_security_level() >= SALES)) {
+		?> <INPUT TYPE="BUTTON" VALUE="Edit"
+			onClick="window.location= './userListing.phtml?action=edit&mode=<?= $mode;?>&<?
+
+			if ($mode == "visitor") {
+				echo "VisitorID=$VisitorID";
+			} else
+				if ($mode == "purchaser") {
+					echo "UserID=$UserID";
+				}
+?>'">&nbsp;&nbsp;
+		<?
+
+		}
+	} else {
+?>			
+<?
+ // only above sales level can edit/delete
+		if (get_access_security_level() > SALES ||
+		($mode == "visitor" && get_access_security_level() >= SALES)) {
+?> <INPUT TYPE="SUBMIT" VALUE="Submit">&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Cancel" onClick="window.location=
+			'./userListing.phtml?action=display&mode=<?= $mode; ?>&<?
+
+			if ($mode == "visitor") {
+				echo "VisitorID=$VisitorID";
+			} else
+				if ($mode == "purchaser") {
+					echo "UserID=$UserID";
+				}
+?>'"">&nbsp;&nbsp; <?			
+		}
+	}
+
+	// if dealSTatus is reserved,display Purchase button to 
+	// update all tables. e.g. Unit table, DealStatus in User table
+
+	if ($mode == "purchaser") {
+		if ($dealStatus == "WebReserved") {
+			if ($action == "edit") {
+				// only above sales level can edit/delete
+				if (get_access_security_level() > SALES) {
+?> <INPUT
+			TYPE="BUTTON" VALUE="Submit and Purchase"
+			onClick="submit_and_purchase()">&nbsp;&nbsp; <?
+
+				}
+			}
+		} else
+			if ($action == "edit" || $action == "add") {
+				// only above sales level can edit/delete
+				if (get_access_security_level() > SALES && SALES_DB_ENABLED) {
+?> <!--		        <INPUT TYPE="BUTTON" VALUE="Submit & Show Agreement Of Purchase and Sale" onClick="submit_and_show_deal_sheet()">&nbsp;&nbsp;
+		        <INPUT TYPE="BUTTON" VALUE="Submit & Show Sales Agreement Control" onClick="submit_and_show_agreement_control()">
+//-->		        
+<?
+
+				}
+			} else
+				if ($action == "display") {
+					// only above sales level can edit/delete
+					if (get_access_security_level() > SALES && SALES_DB_ENABLED) {
+?> <INPUT TYPE="BUTTON" VALUE="Show Agreement Of Purchase and Sale"
+			onClick="submit_and_show_deal_sheet()">
+<?
+					if (SHOW_ACKNOWLEDGEMENT_PDF){
+	?> <INPUT TYPE="BUTTON" VALUE="Show Acknowledgement"
+				onClick="show_acknowledgement_pdf()">
+	<?					}
+					}
+?> <INPUT TYPE="BUTTON"
+			VALUE="Show Sales Agreement Control"
+			onClick="submit_and_show_agreement_control()">
+<?
+
+				}
+?>
+
+<?
+
+	}
+	if ($action != "add") {
+		// only above sales level can edit/delete
+		if (get_access_security_level() > SALES) {
+?>
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <INPUT
+			TYPE="BUTTON" VALUE="<?
+
+			if ($dealStatus == "WebReserved") {
+				echo "Cancel Reservation";
+			} else {
+				echo "Delete";
+			}
+?>"
+		onClick="confirm_delete('./updateUserInfo.phtml?action=delete&mode=<?= $mode;?>&<?
+
+			if ($mode == "visitor") {
+				echo "VisitorID=$VisitorID";
+			} else
+				if ($mode == "purchaser") {
+					echo "UserID=$UserID";
+				}
+?>&forward=<?= urlencode("./description.phtml"); ?>')">&nbsp;&nbsp;
+
+		<?
+
+		}
+	} else {
+		if ($mode == "visitor") {
+			// only above sales level can edit/delete
+			if (get_access_security_level() > SALES) {
+?> <INPUT TYPE="BUTTON" VALUE="Reset"
+			onClick="window.location='./userListing.phtml?mode=visitor&action=add';">			
+<?
+
+			}
+		}
+	}
+
+	if ($action == "display") {
+		if ($mode == "visitor") {
+			// only above sales level can edit/delete
+			if (get_access_security_level() > SALES) {
+?>
+		<FORM NAME="purchaseForm" METHOD=POST ACTION="./updateUserInfo.phtml">
+		<INPUT TYPE="HIDDEN" NAME="action" VALUE="transfer"> <INPUT
+			TYPE="HIDDEN" NAME="forward" VALUE=""> <INPUT TYPE="HIDDEN"
+			NAME="mode" VALUE="<?= $mode;?>"> <INPUT TYPE="HIDDEN" NAME="VisitorID"
+			VALUE="<?= $row['VisitorID']; ?>"> <INPUT TYPE="HIDDEN" NAME="from" VALUE="Visitor">
+		<INPUT TYPE="HIDDEN" NAME="to" VALUE="User"> <INPUT
+			TYPE="SUBMIT" VALUE="PURCHASE"> Unit:<INPUT TYPE="TEXT"
+			NAME="UnitNumber" SIZE="5"></FORM>
+<?
+
+			}
+		}
+	}
+?></TD>
+	</TR>
+</table>
+</form>
+
+<?
+
+if (isSet ($err)) {
+	?>
+<script language="JavaScript">
+<!--
+	alert('<?= $err; ?>');
+//-->
+</SCRIPT>
+<?
+
+}
+?>
+</body>
+</html>
+

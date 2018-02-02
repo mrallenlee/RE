@@ -1,0 +1,59 @@
+<?
+/*
+ * Created on 11-Dec-2005
+ *
+ * Set up contractor information, like global mark-up
+ */
+ 
+ include "main_include.phtml";
+
+
+// This file displays the Contractor table. The file that displays all of
+// the Options and Upgrades tables is called display_user.phtml
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); 
+ 
+  
+ $sql	= "SELECT	*
+			FROM Contractor";
+	$result = mysql_query($sql,$db);
+	
+?>
+ 
+<table cellpadding="5" border="0" >
+	<tr class="head">
+		<th></th>
+		<th>Contractor Name</th>
+		<th>Global mark-up percentage</th>
+	</tr>
+<?
+	
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($row['Commit'])
+		{
+			$Commit = "Yes";
+		}
+		else
+		{
+			$Commit = "No";
+		}
+		
+		displayMouseOverTR();
+		echo "<form name=\"form_" . $row['ContractorID'] . "\" method=\"post\" action=\"contractor_edit.phtml\">";
+		echo "<input type=hidden name=ContractorID value=\"" . $row['ContractorID'] . "\">";
+		echo "<input type=hidden name=updateMode value=\"updateGeneralInfo\">\n";
+		echo "<td>" . $row['ContractorID'] . "&nbsp;</td>\n";
+		echo "<td><input type=text name=ContractorName size=20 value=\"" . $row['ContractorName'] . "\">&nbsp;</td>\n";
+		echo "<td align=\"center\"><input type=text name=MarkUpPercentage size=3 value=\"" . $row['MarkUpPercentage'] . "\">%&nbsp;</td>\n";
+
+//		echo "<td><nobr><input type=submit value=Update>";
+		echo "<td><nobr><input type=button onClick=\"document.forms['form_" . $row['ContractorID'] . "'].submit()\" value=\"Update\"></td>";
+		echo "</form>";
+		echo "</tr>\n";
+	}
+?>
+</table>
+</html>	
+
+

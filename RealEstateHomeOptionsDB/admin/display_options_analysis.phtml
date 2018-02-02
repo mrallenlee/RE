@@ -1,0 +1,53 @@
+<?
+
+include "main_include.phtml";
+
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+?>
+<H4>Home Options Analysis</H4>
+
+<?
+$sql = "select 	Item.ItemID, Item.Name AS ItemName,
+		Options.OptionId, Options.Name AS OptionName,
+		Choice.ChoiceID, Choice.Name AS ChoiceName,
+		Contractor.ContractorId, Contractor.ContractorName AS ContractorName,
+		count(cost) AS OrderedNumber, avg(cost) AS AvgCost
+		from Item, Contractor, StandardPO
+		LEFT JOIN  Options
+			ON StandardPO.OptionID = Options.OptionID
+		LEFT JOIN Choice
+			ON StandardPO.ChoiceID = Choice.ChoiceID
+		where 	StandardPO.ItemID = Item.ItemID
+		AND 	StandardPO.ContractorID	 = Contractor.ContractorID
+		
+ 		group by ItemID, OptionID, ChoiceID ORDER BY OrderedNumber DESC";
+
+$result = mysql_query($sql, $db);// or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql."<BR>".$PHP_SELF);
+
+
+?>
+<table>
+	<tr class="head">
+		<td>Item</td>
+		<td>Option</td>
+		<td>Choice</td>
+		<td>Contractor</td>
+		<td>Number ordered</td>
+		<td>Average cost</td>
+	</tr>
+<?
+while ($row = mysql_fetch_array($result)) {
+?>
+	<tr>
+		<td><?= $row['ItemName']; ?></td>
+		<td><?= $row['OptionName']; ?></td>
+		<td><?= $row['ChoiceName']; ?></td>
+		<td><?= $row['ContractorName']; ?></td>
+		<td><?= $row['OrderedNumber']; ?></td>
+		<td><?= number_format($row['AvgCost'],2); ?></td>
+	</tr>
+<?
+} // While
+?>
+	</tr>
+</table>

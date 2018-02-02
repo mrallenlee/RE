@@ -1,0 +1,998 @@
+2006/01/21 21:10:08: ID:20060121211008
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message:SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/01/21 21:10:08: ID:20060121211008
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message:
+2006/01/22 18:43:26: ID:20060122184326
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/01/22 18:43:26: ID:20060122184326
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/01/28 17:17:13: ID:20060128171713
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/01/28 17:17:13: ID:20060128171713
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/07 17:05:22: ID:20060207170522
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/07 17:05:22: ID:20060207170522
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/07 21:04:36: ID:20060207210436
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/07 21:04:36: ID:20060207210436
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/09 21:16:19: ID:20060209211619
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/09 21:16:19: ID:20060209211619
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/12 14:25:59: ID:20060212142559
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/12 14:25:59: ID:20060212142559
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/13 21:11:00: ID:20060213211100
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/13 21:11:00: ID:20060213211100
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/13 23:15:45: ID:20060213231545
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/13 23:15:45: ID:20060213231545
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/14 14:44:54: ID:20060214144454
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/14 14:44:54: ID:20060214144454
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/14 20:36:59: ID:20060214203659
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/14 20:36:59: ID:20060214203659
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/19 12:58:18: ID:20060219125818
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/19 12:58:18: ID:20060219125818
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/23 02:32:46: ID:20060223023246
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/23 02:32:46: ID:20060223023246
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 17:58:14: ID:20060225175814
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 17:58:14: ID:20060225175814
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 17:58:26: ID:20060225175826
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 17:58:26: ID:20060225175826
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 17:58:41: ID:20060225175841
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 17:58:41: ID:20060225175841
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 17:58:52: ID:20060225175852
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 17:58:52: ID:20060225175852
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 17:59:05: ID:20060225175905
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 17:59:05: ID:20060225175905
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 17:59:53: ID:20060225175953
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 17:59:53: ID:20060225175953
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 18:00:12: ID:20060225180012
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 18:00:12: ID:20060225180012
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 18:00:25: ID:20060225180025
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 18:00:25: ID:20060225180025
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 18:01:29: ID:20060225180129
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 18:01:29: ID:20060225180129
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/25 18:32:27: ID:20060225183227
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/25 18:32:27: ID:20060225183227
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/27 19:59:53: ID:20060227195953
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/27 19:59:53: ID:20060227195953
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/27 19:59:54: ID:20060227195954
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/27 19:59:54: ID:20060227195954
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/27 19:59:55: ID:20060227195955
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/27 19:59:55: ID:20060227195955
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/27 19:59:55: ID:20060227195955
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/27 19:59:55: ID:20060227195955
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/27 19:59:55: ID:20060227195955
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/27 19:59:55: ID:20060227195955
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/02/28 11:52:45: ID:20060228115245
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/02/28 11:52:45: ID:20060228115245
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/03/03 10:40:39: ID:20060303104039
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/03/03 10:40:39: ID:20060303104039
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/03/04 15:46:13: ID:20060304154613
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/03/04 15:46:13: ID:20060304154613
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/03/05 19:55:42: ID:20060305195541
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/03/05 19:55:42: ID:20060305195542
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/03/13 20:12:08: ID:20060313201205
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/03/13 20:12:08: ID:20060313201208
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/03/14 13:42:23: ID:20060314134223
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/03/14 13:42:23: ID:20060314134223
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/01 15:55:58: ID:20060401155558
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/01 15:55:58: ID:20060401155558
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/01 15:55:59: ID:20060401155559
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/01 15:55:59: ID:20060401155559
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/07 19:17:34: ID:20060407191734
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/07 19:17:34: ID:20060407191734
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/08 18:14:59: ID:20060408181458
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/08 18:14:59: ID:20060408181459
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/18 19:34:25: ID:20060418193425
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/18 19:34:25: ID:20060418193425
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/19 17:37:31: ID:20060419173731
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/19 17:37:31: ID:20060419173731
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/04/26 20:29:44: ID:20060426202944
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/04/26 20:29:44: ID:20060426202944
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/07 19:37:09: ID:20060507193709
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/07 19:37:09: ID:20060507193709
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/19 12:20:27: ID:20060519122027
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/19 12:20:27: ID:20060519122027
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/24 06:47:53: ID:20060524064753
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/24 06:47:53: ID:20060524064753
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/24 06:51:45: ID:20060524065145
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/24 06:51:45: ID:20060524065145
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/30 14:00:26: ID:20060530140026
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/30 14:00:26: ID:20060530140026
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/30 15:52:29: ID:20060530155229
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/30 15:52:29: ID:20060530155229
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/05/30 16:00:45: ID:20060530160045
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/05/30 16:00:45: ID:20060530160045
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/06/03 20:51:47: ID:20060603205147
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/06/03 20:51:47: ID:20060603205147
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/06/04 20:44:14: ID:20060604204414
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/06/04 20:44:14: ID:20060604204414
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/06/05 15:34:47: ID:20060605153447
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/06/05 15:34:47: ID:20060605153447
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/06/10 16:56:11: ID:20060610165611
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/06/10 16:56:11: ID:20060610165611
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/06/11 14:58:44: ID:20060611145844
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/06/11 14:58:44: ID:20060611145844
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/06/12 09:18:19: ID:20060612091819
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/06/12 09:18:19: ID:20060612091819
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/03 19:34:33: ID:20060703193433
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/03 19:34:33: ID:20060703193433
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/10 17:54:25: ID:20060710175425
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/10 17:54:25: ID:20060710175425
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/10 18:36:29: ID:20060710183629
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/10 18:36:29: ID:20060710183629
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/11 12:33:18: ID:20060711123318
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/11 12:33:18: ID:20060711123318
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/18 09:26:32: ID:20060718092632
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/18 09:26:32: ID:20060718092632
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/18 09:26:38: ID:20060718092638
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/18 09:26:38: ID:20060718092638
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/18 10:01:06: ID:20060718100106
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/18 10:01:06: ID:20060718100106
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/18 10:01:12: ID:20060718100112
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/18 10:01:12: ID:20060718100112
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/18 10:01:56: ID:20060718100156
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/18 10:01:57: ID:20060718100157
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/22 15:46:02: ID:20060722154602
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/22 15:46:02: ID:20060722154602
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/24 14:42:11: ID:20060724144211
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/24 14:42:11: ID:20060724144211
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/24 20:06:02: ID:20060724200602
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/24 20:06:02: ID:20060724200602
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/26 13:51:29: ID:20060726135129
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/26 13:51:29: ID:20060726135129
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/27 17:24:54: ID:20060727172454
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/27 17:24:54: ID:20060727172454
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/07/28 18:06:33: ID:20060728180633
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/07/28 18:06:33: ID:20060728180633
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/26 14:13:58: ID:20060826141358
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/26 14:13:58: ID:20060826141358
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/27 12:15:24: ID:20060827121524
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/27 12:15:24: ID:20060827121524
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/27 20:00:07: ID:20060827200007
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/27 20:00:07: ID:20060827200007
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/27 20:00:23: ID:20060827200023
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/27 20:00:23: ID:20060827200023
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/29 14:15:19: ID:20060829141519
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/29 14:15:19: ID:20060829141519
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/29 20:22:24: ID:20060829202224
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/29 20:22:24: ID:20060829202224
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/08/29 22:45:20: ID:20060829224520
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/08/29 22:45:20: ID:20060829224520
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/09/01 18:43:55: ID:20060901184355
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/09/01 18:43:55: ID:20060901184355
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/09/04 18:07:02: ID:20060904180702
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/09/04 18:07:02: ID:20060904180702
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/09/04 20:43:18: ID:20060904204318
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/09/04 20:43:18: ID:20060904204318
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/09/24 00:56:32: ID:20060924005632
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/09/24 00:56:32: ID:20060924005632
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/10/06 10:36:31: ID:20061006103631
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "-1" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = '-1'
+2006/10/06 10:36:31: ID:20061006103631
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/11/15 22:17:58: ID:20061115221758
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2006/11/15 22:17:58: ID:20061115221758
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/11/15 23:58:34: ID:20061115235834
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2006/11/15 23:58:34: ID:20061115235834
+FILE:/dsdinc/projects/solstice_1/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2006/12/18 22:10:57: ID:20061218221057
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2006/12/18 22:10:57: ID:20061218221057
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2007/01/12 12:59:43: ID:20070112125943
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2007/01/12 12:59:43: ID:20070112125943
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2007/01/17 12:27:20: ID:20070117122720
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2007/01/17 12:27:20: ID:20070117122720
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2007/01/17 16:16:33: ID:20070117161633
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2007/01/17 16:16:33: ID:20070117161633
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2007/01/17 17:07:15: ID:20070117170715
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2007/01/17 17:07:16: ID:20070117170716
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2007/01/31 15:58:10: ID:20070131155809
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2007/01/31 15:58:10: ID:20070131155810
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2007/03/08 13:56:13: ID:20070308135613
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2007/03/08 13:56:13: ID:20070308135613
+FILE:/dsdinc/projects/solstice_1/login/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/15 17:28:56: ID:20120415172856
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2012/04/15 17:28:56: ID:20120415172856
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/15 17:29:12: ID:20120415172912
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2012/04/15 17:29:12: ID:20120415172912
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/15 17:29:34: ID:20120415172934
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2012/04/15 17:29:34: ID:20120415172934
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/15 17:35:44: ID:20120415173544
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2012/04/15 17:35:44: ID:20120415173544
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/15 19:40:35: ID:20120415194035
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2012/04/15 19:40:35: ID:20120415194035
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/15 19:41:24: ID:20120415194124
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2012/04/15 19:41:24: ID:20120415194124
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/16 00:18:12: ID:20120416001812
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "The FreeMan(LW)" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = 'The FreeMan(LW)'
+2012/04/16 00:18:12: ID:20120416001812
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/16 00:19:18: ID:20120416001918
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "The FreeMan(LW)" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = 'The FreeMan(LW)'
+2012/04/16 00:19:18: ID:20120416001918
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/16 00:43:08: ID:20120416004308
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "The FreeMan(LW)" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = 'The FreeMan(LW)'
+2012/04/16 00:43:08: ID:20120416004308
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):
+2012/04/16 00:55:20: ID:20120416005520
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "The FreeMan(LW)" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = 'The FreeMan(LW)'
+2012/04/16 00:55:20: ID:20120416005520
+FILE:/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.
+Error Message(Internal):

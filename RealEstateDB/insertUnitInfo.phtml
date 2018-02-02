@@ -1,0 +1,60 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2);
+
+// Initialize heading to display
+if (is_citygate_1($PHP_SELF))
+{
+	$citygate_phase = "CityGate Phase 1";
+}
+elseif (is_citygate_2($PHP_SELF))
+{
+	$citygate_phase = "CityGate Phase 2";
+}
+?>
+
+<HTML>
+	<link href="stylesheet.css" rel="styleSheet" type="text/css">
+
+	<BODY BGCOLOR="#FFFFAF">
+		<H3><?= $citygate_phase ?> -- Insert unit information</H3>
+			<TABLE>
+			<FORM NAME="SingleUnitInfoForm" METHOD=POST ACTION="./updateUnitInfo.phtml">
+				<TR>
+					<TD><H4>Insert single unit</H4></TD>
+				</TR>
+				<TR>
+					<TD CLASS="blank">Suite Number</TD>
+					<TD CLASS="blank">Unit Type</TD>
+					<TD CLASS="blank">Unit Type Description</TD>
+					<TD CLASS="blank">Price</TD>
+				</TR>
+				<TR>
+					<TD CLASS="blank"><? display_text("UnitNumber","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+					<TD CLASS="blank"><? display_text("UnitType","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+					<TD CLASS="blank"><? display_text("UnitTypeDescription","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+					<TD CLASS="blank"><? display_text("Price","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+				</TR>
+				<TR>
+					<TD><BR><INPUT TYPE=SUBMIT  CLASS="blank"VALUE="Submit"></TD>
+				</TR>
+			</FORM>
+				<TR>
+					<TD><BR><BR><H4>Insert multiple units</H4></TD>
+				</TR>
+					
+			<FORM NAME="UnitInfoForm" METHOD=POST ACTION="./unitInfo.phtml">
+				<INPUT TYPE="hidden" NAME="action" VALUE="edit">
+				<INPUT TYPE="hidden" NAME="source" VALUE="query">
+				<TR>
+					<TD COLSPAN=10><TEXTAREA NAME="multiUnitInfo" ROWS="30" COLS="60"></TEXTAREA></TD>
+				</TR>
+				<TR>
+					<TD><BR><INPUT  CLASS="blank" TYPE=SUBMIT VALUE="Edit & Submit"></TD>
+				</TR>				
+			</FORM>
+			</TABLE>
+
+	</BODY>
+</HTML>

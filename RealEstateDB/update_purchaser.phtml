@@ -1,0 +1,63 @@
+<?
+include_once "main_include.phtml";
+// this page should not be used anymore
+
+
+function retrieve_data($key)
+{
+	return explode("_", $key);
+}
+
+$prevUserID = -1;
+$Commit = 0;
+$ContractorReport = "0";
+$UserReport = "0";
+
+while (list($key, $value) = each ($HTTP_POST_VARS))
+{
+	
+	list($UserID, $name) = retrieve_data($key);
+	if ($UserID != $prevUserID)
+	{
+		if ($prevUserID != -1)
+		{
+			// update the data
+			$sql = "UPDATE User
+				SET ContractorReport=$ContractorReport,
+				UserReport=$UserReport
+				WHERE UserID=$prevUserID";
+
+			$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+
+			updateUserUpgradeOptionStatus($prevUserID, $Commit);
+			
+			$Commit = 0;
+			$ContractorReport = "0";
+			$UserReport = "0";
+		}
+		$prevUserID = $UserID;		
+	}
+	if ($name == "Commit" || $name == "ContractorReport" || $name == "UserReport")
+	{
+		${$name} = 1;
+	}
+	else
+	{
+		${$name} = $value;		
+	}	
+}
+$sql = "UPDATE User
+	SET ContractorReport=$ContractorReport,
+	UserReport=$UserReport
+	WHERE UserID=$prevUserID";		
+
+$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+
+
+updateUserUpgradeOptionStatus($prevUserID, $Commit);
+?>
+<script language="JavaScript">
+<!--
+	history.go(-1);
+//-->
+</script>

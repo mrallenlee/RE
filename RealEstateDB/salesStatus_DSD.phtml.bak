@@ -1,0 +1,1388 @@
+<?
+include "main_include.phtml";
+// set the security level to be 3 for this page
+check_auth(ADMIN);
+
+$currentDate = strtotime(date("Y-M-d"));
+
+// special handling for Colour Selections
+// exclude fake user
+$userExcludeSql	= " AND (User.FirstName <> 'Colour' or User.LastName <> 'Selections') ";
+// exclude list, but this SQL actually includes the color selections user. 
+// This is used for including the color selection user in left join, then exclude them
+// after the left join.
+$userExcludeIncludeSql	= " OR (User.FirstName = 'Colour' or User.LastName = 'Selections') ";
+
+if (!isSet($date)) // if no date is assigned, set the date to be current date
+{
+	$date = date("M d, Y");
+}
+	$date = convert_date($date, "YYYY-MM-DD");
+	
+	$sql = "SELECT 	Unit.UnitNumber,
+					Unit.Price As UnitPrice, 
+					User.Price As UserPrice, 
+					User.OfferPrice AS UserOfferPrice,		
+					(User.Price / Unit.Area) AS AvgPricePerSqFeet,
+					round(Unit.Price / Unit.Area, 2) AS UnsoldAvgPricePerSqFeet,
+					Unit.UnitType, 
+					Unit.Model, 
+					Unit.UnitTypeDescription,
+					Unit.Area, 
+					Unit.Status,
+					User.LastName,
+					User.FirstName,
+					User.AgreementDepositDate,
+					User.RescissionDate,
+					User.DealStatus,
+					User.UserID,
+					User.UnitAllowance,
+					(SELECT SUM(IFNULL(Note,0)) 
+						FROM UserPackage, Package 
+						WHERE User.UserID = UserPackage.UserID 
+						AND UserPackage.PackageID = Package.PackageID
+						AND Package.SalesIncentiveCategory = '" . INCENTIVE_CATEGORY_CASH . "') CashIncentive,
+					User.AdditionalCost,
+					User.OccupancyDepositDate,
+					User.FirstRevisedClosingDate,
+					User.SecondRevisedClosingDate,
+					User.ThirdRevisedClosingDate
+					FROM Unit LEFT JOIN User 
+					ON Unit.UserID = User.UserID
+					AND User.AgreementDepositDate <= \"$date\" ";
+	
+	$sql .= $userExcludeSql;
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", LastName, FirstName";
+}
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+?>
+<HTML>
+
+
+<? print_top_frame($PHP_SELF, "./"); 
+$reportTableIndex = 0;
+?>
+	<TITLE>Sales Status</TITLE>
+	<H3><?= get_project_name($PHP_SELF); ?> -- Sales Status as at <?= $date; ?></H3>
+	<script language="javascript">
+	var tableBottom  = 0;
+	
+	</script>
+	<!--  Disable Scrollable table -->
+	<!-- <div class="tableContainer" id="unit-summary-table-cont">  //-->
+	<!-- <TABLE id="unit-summary-table" class="fix-header-table"> //-->
+<?
+createCollapsibleDIVIcon('Unit Summary Table','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+?>
+	<TABLE id="unit-summary-table" >
+	<tbody>
+<?
+
+	$totalSalesPrice = 0;
+	$totalUnitAllowance = 0;
+	$totalParkingSpaceCharge = 0;
+	$totalLockerCharge = 0;
+	$totalAdditionalCost = 0;
+	$totalNetPrice = 0;
+	$netPrice = 0;
+	$totalOfferPrice = 0;
+	$$num_of_rows = 0;
+	
+	while ($row = mysql_fetch_array($result))
+	{
+		$ParkingSpaceCharge = 0;
+		$LockerCharge = 0;
+
+		if ($row['UserID'] > 0 && $row['UserID'] <> "")
+		{
+			$parking_sql = "SELECT SUM(ifnull(InventoryItem.Price, 0)) As ParkingSpaceCharge
+				FROM InventoryItem
+				WHERE InventoryItem.UserID = " . $row['UserID'] . "
+					AND InventoryItem.ItemType in (" . PARKING_INCLUDE_LIST . ")
+					AND InventoryItem.Price > 0";
+
+		 	$parking_result = executeSql($parking_sql);
+		 	$parking_row = mysql_fetch_array($parking_result);
+	    $ParkingSpaceCharge = $parking_row['ParkingSpaceCharge'];
+	    
+			$locker_sql = "SELECT SUM(ifnull(InventoryItem.Price, 0)) As LockerCharge
+				FROM InventoryItem
+				WHERE InventoryItem.UserID = " . $row['UserID'] . "
+					AND InventoryItem.ItemType in (" . LOCKER_INCLUDE_LIST . ")
+					AND InventoryItem.Price > 0";
+
+		 	$locker_result = executeSql($locker_sql);
+		 	$locker_row = mysql_fetch_array($locker_result);
+	    $LockerCharge = $locker_row['LockerCharge'];
+		}
+
+		if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+		{
+?>	
+		<TR class="head">
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=<?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Unit</A></TD>
+			<TD>Sale Price</TD>
+			<TD>Cash Incentives</TD>
+			<TD>Parking Charge</TD>
+			<TD>Locker Charge</TD>
+			<TD>Additional Cost</TD>
+			<TD>Total Unit Sales</TD>
+			<TD>Offer Price</TD>
+			<TD>Avg. Price Per Sq Feet</TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=UnitType, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Type</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=UnitTypeDescription, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Type Desc.</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=Model, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Model</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=Area, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Size</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=FirstName,LastName, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Purchaser</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=AgreementDepositDate, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Offer Date</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=RescissionDate, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Recission Date</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=OccupancyDepositDate, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Occupancy Date</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=FirstRevisedClosingDate, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">1st Revised Date</A></TD>			
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=SecondRevisedClosingDate, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">2nd Revised Date</A></TD>			
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=ThirdRevisedClosingDate, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">3rd Revised Date</A></TD>			
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=DealStatus, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Deal Status</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=Status, <?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Web Reserved?</a></TD>
+			<TD><A HREF ="<?= $PHP_SELF;?>?orderby=<?= getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>, FirstName,LastName">Unit</A></TD>
+		</TR>
+<?	} ?>	
+		
+<?		
+		$netPrice = 0;	
+		displayMouseOverTR("blank", "body");		
+?>
+			<TD><?= $row['UnitNumber']; ?></TD>
+			<TD><? 
+				if ($row['UserPrice'] != "")
+				{
+					echo display_dollar_format($row['UserPrice']);
+					$netPrice += $row['UserPrice'];
+					$totalSalesPrice += $row['UserPrice'];
+				}
+				else
+				{
+					echo display_dollar_format($row['UnitPrice']); 
+					$totalSalesPrice += $row['UnitPrice'];					
+				}
+			?></TD>
+			<TD><? 
+				if ($row['CashIncentive'] != "")
+				{
+					echo display_dollar_format($row['CashIncentive']) ;
+					$netPrice -= $row['CashIncentive'];
+					$totalUnitAllowance += $row['CashIncentive'];
+				}
+				else
+				{
+					echo "";
+				}
+			?></TD>
+			<TD><? 
+				if ($ParkingSpaceCharge != "")
+				{
+					echo display_dollar_format($ParkingSpaceCharge);
+					// DSD do not want the total sales price to include the parking charge
+					// $netPrice += $row['ParkingSpaceCharge'];
+					$totalParkingSpaceCharge += $ParkingSpaceCharge;
+				}
+				else
+				{
+					echo "";
+				}
+			?></TD>
+			<TD><? 
+				if ($LockerCharge != "")
+				{
+					echo display_dollar_format($LockerCharge);
+					// DSD do not want the total sales price to include the parking charge
+					// $netPrice += $row['LockerCharge'];
+					$totalLockerCharge += $LockerCharge;
+				}
+				else
+				{
+					echo "";
+				}
+			?></TD>
+			<TD><? 
+				if ($row['AdditionalCost'] != "")
+				{
+					echo display_dollar_format($row['AdditionalCost']);
+					$netPrice += $row['AdditionalCost'];
+					$totalAdditionalCost += $row['AdditionalCost'];
+				}
+				else
+				{
+					echo "";
+				}
+			?></TD>			
+			<TD><?
+				if ($row['UserPrice'] != "")
+				{
+					echo display_dollar_format($netPrice);
+					$totalNetPrice += $netPrice;
+				}
+			?></TD>
+			<TD><? if ($row['UserOfferPrice'] != "") {
+					echo display_dollar_format($row['UserOfferPrice'] - $ParkingSpaceCharge - $LockerCharge);
+				} 
+				$totalOfferPrice += ($row['UserOfferPrice'] - $ParkingSpaceCharge - $LockerCharge);
+			?></TD>
+			<TD><? if (!is_null($row['AvgPricePerSqFeet']))
+					echo $row['AvgPricePerSqFeet']; 
+				else
+					echo $row['UnsoldAvgPricePerSqFeet']; 
+			?></TD>			
+			<TD><?= $row['UnitType']; ?></TD>
+			<TD><?= $row['UnitTypeDescription']; ?></TD>			
+			<TD><?= $row['Model']; ?></TD>
+			<TD><?= $row['Area']; ?></TD>
+			<TD><?
+			if ($row['FirstName'] != "")
+			{
+				$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];			
+				echo "<A HREF=\"" . $url . "\">" . $row['LastName'] . ", " . $row['FirstName'] . "</A>";
+			}
+			?></TD>
+			<TD nowrap><?= convert_date($row['AgreementDepositDate']); ?></TD>
+			<TD nowrap><?= convert_date($row['RescissionDate']); ?></TD>
+			<TD nowrap><?= convert_date($row['OccupancyDepositDate']); ?></TD>
+			<TD nowrap><?= convert_date($row['FirstRevisedClosingDate']); ?></TD>			
+			<TD nowrap><?= convert_date($row['SecondRevisedClosingDate']); ?></TD>			
+			<TD nowrap><?= convert_date($row['ThirdRevisedClosingDate']); ?></TD>			
+			<TD><?
+				echo $row['DealStatus'];
+				if ($row['DealStatus'] == "Pending" && $currentDate > strtotime ($row['RescissionDate']) )
+				{
+					echo " <font color=red>Overdue</font>";
+				}
+			?></TD>	
+			<TD><?
+				if ($row["Status"] == "R") echo "<font color=red>Reserved</font>";
+				else if ($row["Status"] == "H" )	echo "<font color=red>Held</font>";
+			?></TD>
+			<TD><?= $row['UnitNumber']; ?></TD>
+		</TR>
+<?
+	}
+?>
+	</TBODY>
+	<TFOOT>
+	<TR CLASS="tail">
+		<TD>Total</TD>
+		<TD><?= display_dollar_format($totalSalesPrice); ?></TD>
+		<TD><?= display_dollar_format($totalUnitAllowance); ?></TD>
+		<TD><?= display_dollar_format($totalParkingSpaceCharge); ?></TD>
+		<TD><?= display_dollar_format($totalLockerCharge); ?></TD>
+		<TD><?= display_dollar_format($totalAdditionalCost); ?></TD>
+		<TD><?= display_dollar_format($totalNetPrice); ?></TD>
+		<TD><?= display_dollar_format($totalOfferPrice); ?></TD>
+		<TD COLSPAN=10></TD>		
+	</TR>
+	</TFOOT>
+	</TABLE>
+</DIV>	
+
+<BR>
+<?
+createCollapsibleDIVIcon('Summary By Model','ReportTable' . $reportTableIndex);
+createCollapsibleDIV('ReportTable' . $reportTableIndex++);
+?>	
+	<TABLE>
+		<TR CLASS="head">
+			<TD>Model</TD>
+			<TD>Type</TD>
+			<TD>Type Desc.</TD>
+			<TD>Firm</TD>
+			<TD>Pending</TD>
+			<TD>Corporate</TD>
+			<TD>Overdue</TD>
+			<TD>NotReportToHeadOffice</TD>
+			<TD>Available</TD>
+			<TD>Total</TD>
+			<TD>% Firm Sales by # of units</TD>
+		</TR>
+<?
+	$sql = "SELECT *
+			FROM Unit LEFT JOIN User 
+			ON Unit.UserID = User.UserID 
+			AND User.AgreementDepositDate <= \"$date\" ";
+	
+	$sql .= $userExcludeSql;
+			
+	$sql	.= " ORDER BY Model";
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+	$ModelTotal 		= 0;
+	$ModelAvailable 	= 0;
+	$ModelPending 	= 0;
+	$ModelOverdue 	= 0;
+	$ModelCorporate 	= 0;
+	$ModelFirm 		= 0;
+	$ModelNotReportToHeadOffice = 0;
+	
+	$TotalModelTotal 	= 0;
+	$TotalUnitTypeAvailable = 0;
+	$TotalUnitTypePending = 0;
+	$TotalUnitTypeOverdue 	= 0;
+	$TotalUnitTypeCorporate 	= 0;
+	$TotalUnitTypeFirm 		= 0;
+	$TotalUnitTypeNotReportToHeadOffice = 0;
+
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($Model != $row['Model'] && isSet($Model))
+		{
+		displayMouseOverTR("blank", "body");		
+?>
+				<TD><?= $Model; ?></TD>
+				<TD><?= $UnitType; ?></TD>
+				<TD><?= $UnitTypeDescription; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelFirm; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelPending; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelCorporate; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelOverdue; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelNotReportToHeadOffice; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelAvailable; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelTotal; ?></TD>
+				<TD CLASS="blank-right"><?
+				if ($ModelTotal == 0)
+				{
+					echo "0.00";
+				}
+				else
+				{
+					echo number_format(($ModelFirm / $ModelTotal) * 100, 2); 
+				}
+				?>%</TD>
+
+			</TR>
+<?
+			$TotalModelTotal 	+= $ModelTotal;
+			$TotalModelAvailable += $ModelAvailable;
+			$TotalModelPending += $ModelPending;
+			$TotalModelCorporate += $ModelCorporate;
+			$TotalModelOverdue 	+= $ModelOverdue;
+			$TotalModelFirm 		+= $ModelFirm;
+			$TotalModelNotReportToHeadOffice 		+= $ModelNotReportToHeadOffice;
+
+			$Model = $row['Model'];
+			$ModelTotal	= 0;
+			$ModelAvailable 	= 0;
+			$ModelPending 	= 0;
+			$ModelOverdue 	= 0;
+			$ModelFirm 		= 0;
+			$ModelCorporate = 0;
+			$ModelNotReportToHeadOffice = 0;
+		}
+
+			$Model = $row['Model'];
+			$UnitType = $row['UnitType'];
+			$UnitTypeDescription = $row['UnitTypeDescription'];
+			$ModelTotal++;
+			if ($row['FirstName'] == "")
+			{
+				$ModelAvailable++;
+			}
+			else if ($row['DealStatus'] == "Firm")
+			{ // Firm
+				$ModelFirm++;
+			}
+			else if ($row['DealStatus'] == "NotReportToHeadOffice")
+			{ // NotReportToHeadOffice
+				$ModelNotReportToHeadOffice++;
+			}
+			else if ($row['DealStatus'] == "Corporate")
+			{ // Corporate Deal
+				$ModelCorporate++;
+			}			
+			else if ($currentDate <= strtotime ($row['RescissionDate']) && $row['DealStatus'] == "Pending")			
+			{ // pending // no more check  $row['RescissionFlag'] == 1
+				$ModelPending++;
+			}
+			// before was DealStatus != Firm, or == panding but todays date is past the rescission date
+			else 
+			{ // overdue
+				$ModelOverdue++;
+			}
+	}
+	
+	// print out the last unit type information after the loop ends
+	if (isSet($Model))
+	{
+		displayMouseOverTR("blank", "body");		
+?>
+				<TD><?= $Model; ?></TD>
+				<TD><?= $UnitType; ?></TD>
+				<TD><?= $UnitTypeDescription; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelFirm; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelPending; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelCorporate; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelOverdue; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelNotReportToHeadOffice; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelAvailable; ?></TD>
+				<TD CLASS="blank-right"><?= $ModelTotal; ?></TD>
+				<TD CLASS="blank-right"><?
+				if ($ModelTotal == 0)
+				{
+					echo "0.00";
+				}
+				else
+				{
+					echo number_format(($ModelFirm / $ModelTotal) * 100, 2); 
+				}
+				?>%</TD>
+
+			</TR>	
+<?
+			$TotalModelTotal 	+= $ModelTotal;
+			$TotalModelAvailable += $ModelAvailable;
+			$TotalModelPending += $ModelPending;
+			$TotalModelCorporate += $ModelCorporate;
+			$TotalModelOverdue 	+= $ModelOverdue;
+			$TotalModelFirm 		+= $ModelFirm;
+			$TotalModelNotReportToHeadOffice += $ModelNotReportToHeadOffice;
+			
+	}
+			// total sales price
+			$TotalModel	= $TotalModelFirm + $TotalModelPending + $TotalModelOverdue + $TotalCorporate + $TotalModelAvailable + $TotalModelNotReportToHeadOffice;
+
+?>
+			<TR CLASS=tail-right>
+				<TD align="left">Total</TD>
+				<TD></TD>
+				<TD></TD>
+				<TD><?= $TotalModelFirm; ?></TD>
+				<TD><?= $TotalModelPending; ?></TD>
+				<TD><?= $TotalModelCorporate; ?></TD>
+				<TD><?= $TotalModelOverdue; ?></TD>
+				<TD><?= $TotalModelNotReportToHeadOffice; ?></TD>
+				<TD><?= $TotalModelAvailable; ?></TD>
+				<TD><?= $TotalModelTotal; ?></TD>
+				<TD><?
+				if ($TotalModelTotal == 0)
+				{
+					echo "0.00";
+				}
+				else
+				{
+					echo number_format((($TotalModelFirm+$TotalModelCorporate) / $TotalModelTotal) * 100, 2); 
+				}
+				?>%</TD>
+
+			</TR>	
+	</TABLE>
+</DIV>
+
+<BR>
+
+<?
+createCollapsibleDIVIcon('Summary by Unit Type','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+?>
+	<TABLE>
+		<TR CLASS="head">
+			<TD>Unit Type</TD>
+			<TD>Firm</TD>
+			<TD>Pending</TD>
+			<TD>Corporate</TD>
+			<TD>Overdue</TD>
+			<TD>NotReportToHeadOffice</TD>
+			<TD>Available</TD>
+			<TD>Total</TD>
+			<TD>% Firm Sales by # of units</TD>
+		</TR>
+<?
+	$sql = "SELECT *, User.Price As PurchaserPrice, Unit.Price As UnitPrice 
+			FROM Unit LEFT JOIN User 
+			ON Unit.UserID = User.UserID 
+			AND User.AgreementDepositDate <= \"$date\" ";
+
+	$sql .= $userExcludeSql;
+	
+	$sql 	.= " ORDER BY Unit.UnitType";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+	$UnitTypeTotal 		= 0;
+	$UnitTypeAvailable 	= 0;
+	$UnitTypePending 	= 0;
+	$UnitTypeCorporate 	= 0;
+	$UnitTypeOverdue 	= 0;
+	$UnitTypeFirm 		= 0;
+	$UnitTypeNotReportToHeadOffice = 0;
+	
+	$TotalUnitTypeTotal 	= 0;
+	$TotalUnitTypeAvailable = 0;
+	$TotalUnitTypeCorporate = 0;
+	$TotalUnitTypePending = 0;
+	$TotalUnitTypeOverdue 	= 0;
+	$TotalUnitTypeFirm 		= 0;
+	$TotalUnitTypeNotReportToHeadOffice = 0;
+
+	$TotalFirmSize		= 0;
+	$TotalAvailableSize = 0;
+	$TotalPendingSize	= 0;
+	$TotalCorporateSize	= 0;
+	$TotalOverdueSize	= 0;
+	$TotalNotReportToHeadOfficeSize	= 0;
+
+	$TotalFirmSalesPrice		= 0;
+	$TotalAvailableSalesPrice	= 0;
+	$TotalPendingSalesPrice	= 0;
+	$TotalCorporateSalesPrice	= 0;
+	$TotalOverdueSalesPrice		= 0;
+	$TotalNotReportToHeadOfficeSalesPrice = 0;
+
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($UnitType != $row['UnitType'] && isSet($UnitType))
+		{
+		displayMouseOverTR("blank", "body");		
+?>
+				<TD><?= $UnitType; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeFirm; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypePending; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeCorporate; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeOverdue; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeNotReportToHeadOffice; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeAvailable; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeTotal; ?></TD>
+				<TD CLASS="blank-right"><?
+				if ($UnitTypeTotal == 0)
+				{
+					echo "0.00";
+				}
+				else
+				{
+					echo number_format(($UnitTypeFirm / $UnitTypeTotal) * 100, 2); 
+				}
+				?>%</TD>
+
+			</TR>
+<?
+			$TotalUnitTypeTotal 	+= $UnitTypeTotal;
+			$TotalUnitTypeAvailable += $UnitTypeAvailable;
+			$TotalUnitTypePending += $UnitTypePending;
+			$TotalUnitTypeCorporate += $UnitTypeCorporate;
+			$TotalUnitTypeOverdue 	+= $UnitTypeOverdue;
+			$TotalUnitTypeFirm 		+= $UnitTypeFirm;
+			$TotalUnitTypeNotReportToHeadOffice 		+= $UnitTypeNotReportToHeadOffice;
+
+			$UnitType = $row['UnitType'];
+			$UnitTypeTotal 		= 0;
+			$UnitTypeAvailable 	= 0;
+			$UnitTypePending 	= 0;
+			$UnitTypeCorporate 	= 0;
+			$UnitTypeOverdue 	= 0;
+			$UnitTypeFirm 		= 0;
+			$UnitTypeNotReportToHeadOffice = 0;
+		}
+
+			$UnitType = $row['UnitType'];
+			$UnitTypeTotal++;
+			if ($row['FirstName'] == "")
+			{
+				$UnitTypeAvailable++;
+				$TotalAvailableSize 		+= $row['Area'];
+				$TotalAvailableSalesPrice	+= $row['UnitPrice'];
+			}
+			else if ($row['DealStatus'] == "Firm")
+			{ // Firm
+				$UnitTypeFirm++;
+				$TotalFirmSize			+= $row['Area'];
+				$TotalFirmSalesPrice 	+= $row['PurchaserPrice'];
+			}
+			else if ($row['DealStatus'] == "NotReportToHeadOffice")
+			{ // NotReportToHeadOffice
+				$UnitTypeNotReportToHeadOffice++;
+				$TotalNotReportToHeadOfficeSize			+= $row['Area'];
+				$TotalNotReportToHeadOfficeSalesPrice 	+= $row['PurchaserPrice'];
+			}
+			else if ($row['DealStatus'] == "Corporate"){
+				$UnitTypeCorporate++;
+				$TotalCorporateSize			+= $row['Area'];
+				$TotalCorporateSalesPrice 	+= $row['PurchaserPrice'];
+				
+			}
+			else if ($currentDate <= strtotime ($row['RescissionDate']) && $row['DealStatus'] == "Pending")			
+			{ // pending // no more check  $row['RescissionFlag'] == 1
+				$UnitTypePending++;
+				$TotalPendingSize			+= $row['Area'];
+				$TotalPendingSalesPrice	+= $row['PurchaserPrice'];			
+			}
+			// before was DealStatus != Firm, or == panding but todays date is past the rescission date
+			else 
+			{ // overdue
+
+				$UnitTypeOverdue++;
+				$TotalOverdueSize	+= $row['Area'];
+				$TotalOverdueSalesPrice		+= $row['PurchaserPrice'];
+			}
+	}
+	
+	// print out the last unit type information after the loop ends
+	if (isSet($UnitType))
+	{
+		displayMouseOverTR("blank", "body");		
+?>
+				<TD><?= $UnitType; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeFirm; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypePending; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeCorporate; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeOverdue; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeNotReportToHeadOffice; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeAvailable; ?></TD>
+				<TD CLASS="blank-right"><?= $UnitTypeTotal; ?></TD>
+				<TD CLASS="blank-right"><?
+				if ($UnitTypeTotal == 0)
+				{
+					echo "0";
+				}
+				else
+				{
+					echo number_format(($UnitTypeFirm / $UnitTypeTotal) * 100, 2); 
+				}
+				?>%</TD>
+
+			</TR>	
+<?
+			$TotalUnitTypeTotal 	+= $UnitTypeTotal;
+			$TotalUnitTypeAvailable += $UnitTypeAvailable;
+			$TotalUnitTypePending += $UnitTypePending;
+			$TotalUnitTypeCorporate += $UnitTypeCorporate;
+			$TotalUnitTypeOverdue 	+= $UnitTypeOverdue;
+			$TotalUnitTypeFirm 		+= $UnitTypeFirm;
+			$TotalUnitTypeNotReportToHeadOffice += $UnitTypeNotReportToHeadOffice;
+			
+	}
+			// total sales price
+			$TotalUnit				= 	$TotalUnitTypeFirm + $TotalUnitTypePending + $TotalUnitTypeCorporate + $TotalUnitTypeOverdue + $TotalUnitTypeAvailable + $TotalUnitTypeNotReportToHeadOffice;
+			$TotalSalesPrice		= 	$TotalFirmSalesPrice + $TotalAvailableSalesPrice + $TotalPendingSalesPrice + $TotalCorporateSalesPrice + $TotalOverdueSalesPrice + $TotalNotReportToHeadOfficeSalesPrice;
+			$TotalSize				= 	$TotalFirmSize + $TotalPendingSize + $TotalCorporateSize + $TotalOverdueSize + $TotalAvailableSize + $TotalNotReportToHeadOfficeSize;
+
+?>
+			<TR CLASS=tail-right>
+				<TD align="left">Total</TD>
+				<TD><?= $TotalUnitTypeFirm; ?></TD>
+				<TD><?= $TotalUnitTypePending; ?></TD>
+				<TD><?= $TotalUnitTypeCorporate; ?></TD>
+				<TD><?= $TotalUnitTypeOverdue; ?></TD>
+				<TD><?= $TotalUnitTypeNotReportToHeadOffice; ?></TD>
+				<TD><?= $TotalUnitTypeAvailable; ?></TD>
+				<TD><?= $TotalUnitTypeTotal; ?></TD>
+				<TD><?
+				if ($TotalUnitTypeTotal == 0)
+				{
+					echo "0";
+				}
+				else
+				{
+					echo number_format(($TotalUnitTypeFirm / $TotalUnitTypeTotal) * 100, 2); 
+				}
+				?>%</TD>
+
+			</TR>	
+	</TABLE>
+</DIV>
+	
+	<BR>
+
+<?
+createCollapsibleDIVIcon('Summary by Deal Status','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+	include_once "Report/Model/RptDealStatusModel.phtml";
+	include_once "Report/Controller/RptDealStatusController.phtml";
+	include_once "Report/View/RptDealStatusView.phtml";
+
+	$view = new RptDealStatusView();
+	print $view->getRptHTML();
+	print $view->getRptJS();
+?>
+</DIV>
+
+	<BR>
+<?
+createCollapsibleDIVIcon('Summary by Deal Status(Old Version. Shall be revmoed)','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+?>
+	<TABLE>
+		<TR CLASS=head>
+			<TD>Type</TD>
+			<TD>#</TD>
+			<TD>Size(sq.ft.)</TD>
+			<TD>Sales Price</TD>
+			<TD>Avg. Price/sq. ft.</TD>
+			<TD>% by Value</TD>
+		</TR>
+<?				displayMouseOverTR("blank", "body");	 ?>
+			<TD>Firm</TD>
+			<TD><?= $TotalUnitTypeFirm; ?></TD>
+			<TD><?= $TotalFirmSize; ?></TD>
+			<TD><? display_dollar_format($TotalFirmSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalFirmSalesPrice, $TotalFirmSize));  ?></TD>
+			<TD><?= calculate_percentage($TotalFirmSalesPrice, $TotalSalesPrice); ?></TD>
+		</TR>
+<?				displayMouseOverTR("blank", "body");	 ?>
+			<TD>Pending</TD>
+			<TD><?= $TotalUnitTypePending; ?></TD>
+			<TD><?= $TotalPendingSize; ?></TD>
+			<TD><? display_dollar_format($TotalPendingSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalPendingSalesPrice, $TotalPendingSize)); ?></TD>
+			<TD><?= calculate_percentage($TotalPendingSalesPrice, $TotalSalesPrice) ; ?></TD>
+		</TR>
+<?				displayMouseOverTR("blank", "body");	 ?>
+			<TD>Corporate</TD>
+			<TD><?= $TotalUnitTypeCorporate; ?></TD>
+			<TD><?= $TotalCorporateSize; ?></TD>
+			<TD><? display_dollar_format($TotalCorporateSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalCorporateSalesPrice, $TotalCorporateSize)); ?></TD>
+			<TD><?= calculate_percentage($TotalCorporateSalesPrice, $TotalSalesPrice) ; ?></TD>
+		</TR>		
+<?				displayMouseOverTR("blank", "body");	 ?>
+			<TD>Overdue</TD>
+			<TD><?= $TotalUnitTypeOverdue; ?></TD>
+			<TD><?= $TotalOverdueSize; ?></TD>
+			<TD><? display_dollar_format($TotalOverdueSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalOverdueSalesPrice, $TotalOverdueSize)); ?></TD>
+			<TD><?= calculate_percentage($TotalOverdueSalesPrice, $TotalSalesPrice) ; ?></TD>
+		</TR>
+<?				displayMouseOverTR("blank", "body");	 ?>
+			<TD>NotReportToHeadOffice</TD>
+			<TD><?= $TotalUnitTypeNotReportToHeadOffice; ?></TD>
+			<TD><?= $TotalNotReportToHeadOfficeSize; ?></TD>
+			<TD><? display_dollar_format($TotalNotReportToHeadOfficeSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalNotReportToHeadOfficeSalesPrice, $TotalNotReportToHeadOfficeSize)); ?></TD>
+			<TD><?= calculate_percentage($TotalNotReportToHeadOfficeSalesPrice, $TotalSalesPrice) ; ?></TD>
+		</TR>
+<?				displayMouseOverTR("blank", "body");	 ?>
+			<TD>Available</TD>
+			<TD><?= $TotalUnitTypeAvailable; ?></TD>
+			<TD><?= $TotalAvailableSize; ?></TD>
+			<TD><? display_dollar_format($TotalAvailableSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalAvailableSalesPrice, $TotalAvailableSize)); ?></TD>
+			<TD><?= calculate_percentage($TotalAvailableSalesPrice, $TotalSalesPrice); ?></TD>
+		</TR>
+		<TR CLASS=tail>
+			<TD>Total</TD>
+			<TD><?= $TotalUnit; ?></TD>
+			<TD><?= $TotalSize; ?></TD>
+			<TD><? display_dollar_format($TotalSalesPrice); ?></TD>
+			<TD><? display_dollar_format(calculate_division($TotalSalesPrice, $TotalSize)); ?></TD>
+			<TD>100</TD>
+		</TR>
+	</TABLE>
+</DIV>
+
+<BR><BR>
+<?	if (get_access_security_level() >= MANAGEMENT) { ?>
+
+<DIV id="forecast" name="forecast">
+<?
+createCollapsibleDIVIcon("Sales Forcast Schedule", "SalesForcastScheduleDIV");
+createCollapsibleDIV("SalesForcastScheduleDIV"); 
+include ("./SalesSchedule/salesForecastSchedule.phtml");
+?>
+	</DIV>
+</DIV>
+</DIV>
+<? } ?>	
+	<BR>
+<?	
+createCollapsibleDIVIcon('Sales Incentive','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+?>	
+	<TABLE>
+		<TR CLASS=head>
+			<TD COLSPAN="3">Unit Extras</TD>
+		</TR>
+		<TR CLASS=head>
+			<TD>Parking/Locker Summary</TD>
+			<TD>#</TD>
+			<TD>Total</TD>
+		</TR>
+<?
+	// var to store total value
+	$totalNumber = 0;
+	$totalValue = 0;
+
+	$sql = "SELECT COUNT(*) As TotalNumber
+		FROM User, InventoryItem
+		WHERE User.UserID = InventoryItem.UserID
+		  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+			AND InventoryItem.ItemType = '" . REG_PARKING . "'
+			AND InventoryItem.Price = 0";
+
+	$sql .= $userExcludeSql;
+
+		
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	$totalNumber += $row['TotalNumber'];
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=ParkingIncludedInPrice">Regular Parking Unit Included in Price</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD CLASS="blank-right"></TD>
+		</TR>
+<?
+	$sql = "SELECT COUNT(*) As TotalNumber,
+	               SUM(InventoryItem.Price) As TotalValue
+		FROM User, InventoryItem
+		WHERE User.UserID = InventoryItem.UserID
+		  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+			AND InventoryItem.ItemType = '" . REG_PARKING . "'
+			AND InventoryItem.Price > 0";
+			
+	$sql .= $userExcludeSql;
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	$totalNumber += $row['TotalNumber'];
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=ParkingSpace">Extra Regular Parking Unit</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD></TD>
+		</TR>
+<?
+	if (!is_citygate_1($PHP_SELF)) 
+	{
+	$sql = "SELECT COUNT(*) As TotalNumber,
+	               SUM(InventoryItem.Price) As TotalValue
+		FROM User, InventoryItem
+		WHERE User.UserID = InventoryItem.UserID
+		  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+			AND InventoryItem.ItemType = '" . TANDEM_PARKING . "'";
+				
+		$sql .= $userExcludeSql;
+		
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$row = mysql_fetch_array($result);
+		$totalNumber += $row['TotalNumber'];
+		displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=ParkingTandemUnit">Tandem Parking Unit</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD></TD>
+		</TR>
+<?
+	}
+
+	$sql = "SELECT COUNT(*) As TotalNumber,
+	               SUM(InventoryItem.Price) As TotalValue
+		FROM User, InventoryItem
+		WHERE User.UserID = InventoryItem.UserID
+		  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+			AND InventoryItem.ItemType = '" . EXTENDED_PARKING . "'";
+	
+	$sql .= $userExcludeSql;
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	$totalNumber += $row['TotalNumber'];
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=ParkingExtended">Extended Parking Unit</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD></TD>
+		</TR>
+<?
+	if (is_citygate_2($PHP_SELF))
+	{
+		$sql = "SELECT COUNT(UserID) As TotalNumber
+			FROM User 
+			WHERE (User.DealStatus=\"FIRM\"
+				OR User.DealStatus=\"PENDING\"
+				OR User.DealStatus=\"CORPORATE\")
+				AND ParkingTandemUnit=1";
+			
+		$sql .= $userExcludeSql;
+		
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$row = mysql_fetch_array($result);
+		$totalNumber += $row['TotalNumber'];
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=ParkingTandemUnit">Tandem Parking Unit</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD></TD>
+		</TR>
+<?
+	}
+	
+	$sql = "SELECT COUNT(*) As TotalNumber,
+	               SUM(InventoryItem.Price) As TotalValue
+		FROM User, InventoryItem
+		WHERE User.UserID = InventoryItem.UserID
+		  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+			AND InventoryItem.ItemType in (" . PARKING_INCLUDE_LIST .")
+			AND InventoryItem.Price > 0";
+
+//	$sql = "SELECT COUNT(UserID) As TotalNumber, 
+//			SUM(ParkingSpaceCharge) As TotalValue
+//		FROM User 
+//		WHERE (User.DealStatus=\"FIRM\"
+//			OR User.DealStatus=\"PENDING\"
+//			OR User.DealStatus=\"CORPORATE\")
+//			AND ParkingSpaceCharge > 0";
+	
+	$sql .= $userExcludeSql;
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	$totalNumber += $row['TotalNumber'];
+	$totalValue += $row['TotalValue'] > 0 ? $row['TotalValue'] : 0;
+	displayMouseOverTR("blank", "body");	 
+	
+?>
+			<TD><a href="optionSummary.phtml?Option=ParkingSpaceCharge">Parking Sold</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD CLASS="blank-right"><?= display_dollar_format($row['TotalValue'] > 0 ? $row['TotalValue'] : 0); ?></TD>
+		</TR>
+<?
+//	$sql = "SELECT SUM(Locker) As TotalNumber, 
+//			SUM(LockerCharge) As TotalValue
+//		FROM User 
+//		WHERE (User.DealStatus=\"FIRM\"
+//			OR User.DealStatus=\"PENDING\"
+//			OR User.DealStatus=\"CORPORATE\")
+//			AND Locker>0";
+			
+	$sql = "SELECT COUNT(*) As TotalNumber,
+	               SUM(InventoryItem.Price) As TotalValue
+		FROM User, InventoryItem
+		WHERE User.UserID = InventoryItem.UserID
+		  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+			AND InventoryItem.ItemType in (" . LOCKER_INCLUDE_LIST . ")
+			AND InventoryItem.Price > 0";
+
+	$sql .= $userExcludeSql;
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	
+	$totalNumber += $row['TotalNumber'];
+	$totalValue += $row['TotalValue'] > 0 ? $row['TotalValue'] : 0;
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=Locker">Locker Sold</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD CLASS="blank-right"><?= display_dollar_format($row['TotalValue'] > 0 ? $row['TotalValue'] : 0); ?></TD>
+		</TR>
+<?
+	if (!defined('PROJECT_HAS_BICYCLE_RACK') || PROJECT_HAS_BICYCLE_RACK){
+		$sql = "SELECT COUNT(*) As TotalNumber,
+		               SUM(InventoryItem.Price) As TotalValue
+			FROM User, InventoryItem
+			WHERE User.UserID = InventoryItem.UserID
+			  AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+				AND InventoryItem.ItemType in ('" . BIKE_RAC . "')
+				AND InventoryItem.Price > 0";
+	
+		$sql .= $userExcludeSql;
+		
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$row = mysql_fetch_array($result);
+		
+		$totalNumber += $row['TotalNumber'];
+		$totalValue += $row['TotalValue'] > 0 ? $row['TotalValue'] : 0;
+		displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=BicycleRack">Bicycle Rack</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD CLASS="blank-right"><?= display_dollar_format($row['TotalValue'] > 0 ? $row['TotalValue'] : 0); ?></TD>
+		</TR>
+<?
+	}
+	
+	if (!defined('PROJECT_HAS_ROOF_DECK') || PROJECT_HAS_ROOF_DECK){
+	$sql = "SELECT COUNT(UserID) As TotalNumber, 
+			SUM(RoofDeckCharge) As TotalValue
+		FROM User 
+		WHERE (User.DealStatus=\"FIRM\"
+			OR User.DealStatus=\"PENDING\"
+			OR User.DealStatus=\"CORPORATE\")
+			AND RoofDeck=1";
+			
+	$sql .= $userExcludeSql;
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	
+	$totalNumber += $row['TotalNumber'];
+	$totalValue += $row['TotalValue'] > 0 ? $row['TotalValue'] : 0;
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><a href="optionSummary.phtml?Option=RoofDeck">Roof Deck</a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber']; ?></TD>
+			<TD CLASS="blank-right"><?= display_dollar_format($row['TotalValue'] > 0 ? $row['TotalValue'] : 0); ?></TD>
+		</TR>
+<?
+	}	
+	?>		
+		<TR CLASS="tail-left">
+			<TD>Total</TD>
+			<TD align="right"><?= $totalNumber; ?></TD>
+			<TD align="right"><?= display_dollar_format($totalValue); ?></TD>
+		</TR>
+		
+<?	
+	
+// reset totalNumber totalValue and subtotal vars
+	$totalNumber = 0;
+	$totalValue = 0;
+	$subtotalNumber = 0;
+	$subtotalValue = 0;
+
+//	$sql = "SELECT Package.PackageID As PackageID, Package.PackageName As PackageName, 
+//			COUNT(UserPackage.Note) As TotalNumber,
+//			SUM(UserPackage.Note) As TotalValue
+//		FROM Package 
+//			LEFT JOIN UserPackage 
+//				ON Package.PackageID=UserPackage.PackageID 
+//			LEFT JOIN User 
+//				ON UserPackage.UserID=User.UserID 
+//				AND (User.DealStatus=\"FIRM\"
+//				OR User.DealStatus=\"PENDING\") 
+//		GROUP BY(Package.PackageID)";
+
+
+
+//	$sql = "SELECT Package.PackageID As PackageID, Package.PackageName As PackageName, 
+//			COUNT(UserPackage.Note) As TotalNumber,
+//			SUM(UserPackage.Note) As TotalValue
+//		FROM Package 
+//			LEFT JOIN UserPackage 
+//				ON Package.PackageID=UserPackage.PackageID 
+//			LEFT JOIN User 
+//				ON UserPackage.UserID=User.UserID 
+//		WHERE User.DealStatus=\"FIRM\" 
+//		OR User.DealStatus=\"PENDING\" 
+//		OR User.DealStatus=NULL
+//		GROUP BY(Package.PackageID)";
+//		
+	$packageSql = "SELECT Package.PackageID As PackageID, Package.PackageName As PackageName, SalesIncentiveCategory
+		FROM Package 
+		ORDER BY SalesIncentiveCategory, PackageID";
+
+
+	$packageResult = mysql_query($packageSql) or log_err_die(mysql_error(),$PHP_SELF);
+
+	$prev_SalesIncentiveCategory = "nil";
+	
+	while ($packageRow = mysql_fetch_array($packageResult))
+	{
+
+		// print sales incentive category sub-header
+		if ($prev_SalesIncentiveCategory <> $packageRow["SalesIncentiveCategory"])
+		{
+			// print subtotal
+			if ($prev_SalesIncentiveCategory <> "nil")
+			{
+	?>		
+		<TR CLASS="tail-left">
+			<TD>Subtotal</TD>
+			<TD CLASS="blank-right"><?= $subtotalNumber; ?></TD>
+			<TD CLASS="blank-right"><?= display_dollar_format($subtotalValue); ?></TD>
+		</TR>
+<?	
+				$subtotalNumber = 0;
+				$subtotalValue = 0;
+			}
+			$prev_SalesIncentiveCategory = $packageRow["SalesIncentiveCategory"];
+?>			
+		<TR CLASS=head>
+			<TD><?= $packageRow["SalesIncentiveCategory"]; ?></TD>
+			<TD>#</TD>
+			<TD>Total</TD>
+		</TR>		
+
+<?
+		}
+		$sql = "SELECT Count(UserPackage.Note) As TotalNumber, SUM(UserPackage.Note) As TotalValue
+				FROM UserPackage, User
+				WHERE UserPackage.PackageID=" . $packageRow['PackageID'] . "
+				AND UserPackage.UserID=User.UserID
+				AND User.DealStatus!=\"Rescinded\"";
+					
+		$sql .= $userExcludeSql;
+		
+		$result= mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$row= mysql_fetch_array($result);
+
+		$subtotalNumber += $row['TotalNumber'];
+		$subtotalValue += $row['TotalValue'];
+		$totalNumber += $row['TotalNumber'];
+		$totalValue += $row['TotalValue'];
+	displayMouseOverTR("blank", "body");	 
+
+?>
+			<TD><a href="optionSummary.phtml?PackageID=<?= $packageRow['PackageID']; ?>"><?= $packageRow['PackageName'];?></a></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNumber'];  ?></TD>
+			<TD CLASS="blank-right"><?= display_dollar_format($row['TotalValue']); ?></TD>
+		</TR>
+<?
+	}
+?>	
+		<TR CLASS="tail-left">
+			<TD>Subtotal</TD>
+			<TD align="right"><?= $subtotalNumber; ?></TD>
+			<TD align="right"><?= display_dollar_format($subtotalValue); ?></TD>
+		</TR>
+
+		<TR CLASS="tail-left">
+			<TD>Total</TD>
+			<TD align="right"><?= $totalNumber;  ?></TD>
+			<TD align="right"><?= display_dollar_format($totalValue); ?></TD>
+		</TR>
+
+	</TABLE>
+</DIV>	
+
+<BR>
+<?
+createCollapsibleDIVIcon('Unit Sales Summary','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+?>
+	<TABLE>
+		<TR CLASS="head">
+			<TD>Type</TD>
+			<TD>Sales</TD>
+			<TD>Total Units</TD>
+			<TD>%</TD>
+			<TD>Area Sold</TD>
+			<TD>Sales Price</TD>
+			<TD>Sales Price/sq. ft.</TD>
+			<TD>Total Unit Sales</TD>
+			<TD>VTB</TD>
+		</TR>
+<?
+	$sql = "SELECT UnitTypeDescription, Count(UnitTypeDescription) As TotalNoOfUnit 
+			FROM Unit 
+			GROUP BY UnitTypeDescription";
+			
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+	$totalSales = 0;
+	$totalUnit = 0;
+	$totalArea = 0;
+	$totalSalesPrice = 0;
+	$totalNetPrice = 0;
+	$netPrice = 0;
+
+	while ($row = mysql_fetch_array($result))
+	{
+		$netPrice = 0;
+		
+		
+		$sql = "SELECT SUM(Area) As Area, Count(*) As NoOfSales, SUM(User.Price) As SumOfSalesPrice, 
+				SUM(User.UnitAllowance) As SumOfAllowance, SUM(User.ParkingSpaceCharge) As SumOfParkingSpaceCharge,
+				SUM(User.LockerCharge) As SumOfLockerCharge, SUM(User.AdditionalCost) As SumOfAdditionalCost,
+				SUM(User.VTB) As SumOfVTB
+				FROM Unit, User 
+				WHERE Unit.UserID = User.UserID 
+				AND Unit.UserID > 0 
+				AND User.AgreementDepositDate <= \"$date\" 
+				AND UnitTypeDescription=\"" . $row['UnitTypeDescription'] . "\"
+				AND (User.DealStatus=\"FIRM\" 
+				OR User.DealStatus=\"PENDING\"
+				OR User.DealStatus=\"CORPORATE\")";
+	
+		$sql .= $userExcludeSql;
+		
+				
+		$sales_result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+		$sales_row = mysql_fetch_array($sales_result);
+		
+		$totalSales += $sales_row['NoOfSales'];
+		$totalUnit += $row['TotalNoOfUnit'];
+		$totalArea += $sales_row['Area'];
+		$totalSalesPrice += $sales_row['SumOfSalesPrice'];
+
+		$netPrice = $sales_row['SumOfSalesPrice'] + $sales_row['SumOfParkingSpaceCharge'] + 
+			$sales_row['SumOfLockerCharge'] + $sales_row['SumOfAdditionalCost'];
+		
+		$totalNetPrice += $netPrice;
+		$totalVTB += $sales_row['SumOfVTB'];
+
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD align="left"><?= $row['UnitTypeDescription']; ?></TD>
+			<TD><?= $sales_row['NoOfSales']; ?></TD>
+			<TD CLASS="blank-right"><?= $row['TotalNoOfUnit']; ?></TD>
+			<TD CLASS="blank-right"><?
+				if ($row['TotalNoOfUnit'] > 0)
+				{
+					echo number_format(($sales_row['NoOfSales'] / $row['TotalNoOfUnit']) * 100, 2);
+				}
+				else
+				{
+					echo "0.00";
+				}
+			?>%</TD>
+			<TD CLASS="blank-right"><?= number_format($sales_row['Area'] != "" ? $sales_row['Area'] : 0,0); ?></TD>
+			<TD CLASS="blank-right"><?= $sales_row['SumOfSalesPrice'] != "" ? display_dollar_format($sales_row['SumOfSalesPrice']) : "$0"; ?></TD>
+			<TD CLASS="blank-right"><?
+				if ($sales_row['Area'] > 0)
+				{
+					display_dollar_format($sales_row['SumOfSalesPrice'] / $sales_row['Area']);
+				}
+				else
+				{
+					echo "$0";
+				}
+			?></TD>
+			<TD CLASS="blank-right"><?= $netPrice != "" ? display_dollar_format($netPrice) : "$0"; ?></TD>
+			<TD CLASS="blank-right"><?= $sales_row['SumOfVTB'] != "" ? display_dollar_format($sales_row['SumOfVTB']) : "$0"; ?></TD>
+		</TR>
+<?
+	}
+?>
+		<TR CLASS="tail-right">
+			<TD align="left">Total</TD>
+			<TD><?= $totalSales; ?></TD>
+			<TD><?= $totalUnit ;?></TD>
+			<TD><?
+				if ($totalUnit != 0)
+				{
+					echo number_format(($totalSales / $totalUnit) * 100, 2);
+				}
+				else
+				{
+					echo "0.00";
+				}
+			?>%</TD>
+			<TD><?= number_format($totalArea, 0); ?></TD>
+			<TD><?= "$" . number_format($totalSalesPrice, 0);?></TD>
+			<TD><?
+				if ($totalArea != 0)
+				{
+					echo "$" . number_format(($totalSalesPrice / $totalArea), 0);
+				}
+				else
+				{
+					echo "0.00";
+				}			
+			?></TD>
+			<TD><?= "$" . number_format($totalNetPrice, 0);?></TD>
+			<TD><?= "$" . number_format($totalVTB, 0);?></TD>
+		</TR>
+	</TABLE>
+</DIV>
+
+<BR>
+
+<?
+createCollapsibleDIVIcon('Availability','ReportTable'  . $reportTableIndex);
+createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
+
+	$startPrice = 150000;
+	$endPrice = 390000;
+	$increment = 10000;
+?>
+	<TABLE>
+		<TR CLASS="head">
+			<TD>Price Range</TD>
+			<TD>Number</TD>
+			<TD>%</TD>
+		</TR>
+<?
+	$sql = "SELECT COUNT(*) 
+			FROM Unit LEFT JOIN User 
+			ON Unit.UserID = User.UserID " ;		
+	$sql .= " WHERE Unit.UserID = 0 OR User.AgreementDepositDate > \"$date\" ";
+	$sql .= $userExcludeIncludeSql;
+	
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	$total = $row[0];
+
+ 	for ($currentPrice = $startPrice; $currentPrice <= $endPrice; $currentPrice += $increment)
+ 	{
+  		$sql = "SELECT COUNT(*)
+  				FROM Unit LEFT JOIN User 
+  				ON Unit.UserID = User.UserID " ;
+  		$sql .= " WHERE (Unit.UserID=0 OR User.AgreementDepositDate > \"$date\" ";
+
+		$sql .= $userExcludeIncludeSql;
+
+		$sql .= " )
+  				AND Unit.Price >= $currentPrice
+  				AND Unit.Price < " . ($currentPrice + $increment);	
+  		
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$row = mysql_fetch_array($result);
+	displayMouseOverTR("blank", "body");	 
+?>
+			<TD><?= $currentPrice . "~" . ($currentPrice + $increment - 1);?></TD>
+			<TD><?= $row[0]; ?></TD>
+			<TD><?
+			if ($total == 0)
+			{
+				echo "0";
+			}
+			else
+			{
+				echo number_format(($row[0] / $total) * 100, 2);
+			}
+			  ?></TD>
+		</TR>
+
+<?
+ 	}
+ 		// get $endPrice and above
+ 		$sql = "SELECT COUNT(*)
+ 			FROM Unit LEFT JOIN User
+ 			On Unit.UserID = User.UserID " ;
+		$sql .= " WHERE (Unit.UserID=0 OR User.AgreementDepositDate > \"$date\" ";
+ 		$sql .= $userExcludeIncludeSql; 		
+		$sql .= " ) AND Unit.Price >= $currentPrice";
+		
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		$row = mysql_fetch_array($result);
+	displayMouseOverTR("blank", "body");	 
+?>
+		<TD><?= $currentPrice . " and above";?></TD>
+			<TD><?= $row[0]; ?></TD>
+			<TD><?
+			if ($total == 0)
+			{
+				echo "0";
+			}
+			else
+			{
+				echo number_format(($row[0] / $total) * 100, 2);
+			}
+			  ?></TD>
+		</TR>
+		<TR CLASS="tail">
+			<TD>Total</TD><TD><?= $total; ?></TD><TD></TD>
+		</TR>
+	</TABLE>
+</DIV>
+
+<BR>
+<DIV id="search" name="search">
+	<TABLE>
+		<TR><TD><BR></TD></TR>
+		<FORM ACTION="<?= $PHP_SELF; ?>">
+		<TR CLASS="blank">
+			<TD>Enter date :</TD>
+			<TD><INPUT TYPE=TEXT NAME=date></TD>
+			<TD><INPUT CLASS="blank" TYPE=SUBMIT VALUE="Submit"></TD>
+		</TR>
+		<TR><TD>(format:</TD><TD>mm/dd/yyyy)</TD></TR>
+		</FORM>
+	</TABLE>
+</DIV>
+</BODY>
+</HTML>

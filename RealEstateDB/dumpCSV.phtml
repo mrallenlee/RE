@@ -1,0 +1,753 @@
+<?
+// This script is used to create CVS files of purchaser list, visitor list, rescission list.
+// input:
+//    table <= name of the table to retrieve data
+
+$not_include_javascript = 1;
+
+include "main_include.phtml";
+
+check_auth(2, "sales");
+
+set_time_limit(300);
+
+// used to provide "sales rep name" of the given "salesRepID"
+function get_salesRep_name($SalesRepID = 0)
+{
+	if (is_null($SalesRepID)) $SalesRepID = 0;
+	
+//	$sql = "SELECT SalesRepFirstName, SalesRepLastName
+//	FROM SalesRep
+//	WHERE SalesRepID=$SalesRepID";
+
+	$sql = "select UserName from LoginUser where LoginUserID=$SalesRepID";
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	
+	return $row["UserName"];
+}
+
+// print multiple header info into given file handler based on values in list table
+// Note: $content_result: 
+//       1st field is ignored if $skip_first_field=TRUE
+//       2nd field is list value
+//       the rest fields are the data to display
+// Example:
+//   header in $content_result are "UserID"(key), "listvalue", "Number", "Price"
+//   if $header_name = "InventoryItem", list values are "REG_PARKING", "REG_LOCKER"
+//   output:
+//   "InventoryItem_REG_PARKING_Number", "InventoryItem_REG_PARKING_Price", "InventoryItem_REG_LOCKER_Number", "InventoryItem_REG_LOCKER_Price"
+//
+function create_multiple_header_basedon_listvalue($out, $content_result, $header_name)
+{
+	$first_row = 0;
+	$list_value = array();
+
+  // generate array of list value
+  while ($content_row = mysql_fetch_array($content_result))
+	{
+		if ($first_row == 0)  
+		{
+			$first_row++;
+			$key_value = $content_row[0];     // initialize key value
+		}
+		
+		if ($key_value == $content_row[0])
+			array_push($list_value, $content_row[1]);
+		else
+			break;
+	}
+
+	for ($i = 0; $i < count($list_value); $i++)
+	{
+		for ($j=0; $j < mysql_num_fields($content_result); $j++)
+		{
+			if ($j == 0 || $j == 1) continue;		// skip UserID and list value
+			$field_name = mysql_field_name($content_result, $j);
+				
+			fputs ($out, $header_name . "_" . $list_value[$i] . "_" . $field_name. ",");
+		}
+	}
+}
+
+// print content into given file handler
+function create_multiple_content_basedon_listvalue($out, $current_UserID, $content_result)
+{
+	$num_of_fields = mysql_num_fields($content_result);
+
+	while ($current_content_row = mysql_fetch_array($content_result))
+	{
+		if ($current_content_row['UserID'] < $current_UserID)
+			continue;
+		else if ($current_content_row['UserID'] > $current_UserID)
+			break;
+		else   // rows for $current_UserID
+		{
+			for ($i=0; $i < $num_of_fields; $i++)
+			{
+				if ($i==0 || $i==1)
+					continue;		// skip UserID and list value
+				else
+					fputs ($out, "\"" . $current_content_row[$i] . "\",");
+			}
+		}
+	}
+}
+
+// print multiple header info into given file handler
+function create_multiple_header($out, $max_num_of_rows, $content_result, $header_name, $skip_first_field=TRUE)
+{
+	$num_of_fields = mysql_num_fields($content_result);
+
+	if ($skip_first_field)
+	{
+		$loop_initial_value = 1;
+		$max_num_of_rows++;
+	}
+	else
+	{
+		$loop_initial_value = 0;
+	}
+	
+	for ($i = $loop_initial_value; $i < $max_num_of_rows; $i++)
+	{
+		for ($j=0; $j < $num_of_fields; $j++)
+		{
+			if ($j == 0) continue;		// skip UserID
+			$field_name = mysql_field_name($content_result, $j);
+				
+			fputs ($out, $header_name . $i. $field_name. ",");
+		}
+	}
+}
+
+// print multiple content into given file handler
+function create_multiple_content($out, $max_num_of_rows, $current_UserID, $current_content_row, $content_result)
+{
+	$num_of_fields = mysql_num_fields($content_result);
+
+	while ($current_content_row['UserID'] < $current_UserID && !is_null($current_content_row['UserID']))
+	{
+		$current_content_row = mysql_fetch_array($content_result);
+	}
+
+	$counter = 0;
+	while ($current_content_row['UserID'] == $current_UserID && !is_null($current_content_row['UserID']))
+	{
+		$counter++;
+		
+		for ($i=0; $i < $num_of_fields; $i++)
+		{
+			if ($i==0)
+				continue;		// skip UserID
+			else
+				fputs ($out, "\"" . $current_content_row[$i] . "\",");
+		}
+		
+		$current_content_row = mysql_fetch_array($content_result);
+	}
+	
+	// print "" for unexisting guarantors
+	for ($j=$counter; $j < $max_num_of_rows; $j++)
+	{
+		for ($i=0; $i < $num_of_fields; $i++)
+		{
+			if ($i==0)
+				continue;		// skip UserID
+			else
+				fputs ($out, "\"\",");
+		}
+	}
+	
+	return $current_content_row;
+}
+
+// return max number of guarantor
+function get_max_num_of_guarantor()
+{
+	$max_num_guarantor_sql = "SELECT CASE 
+				WHEN max(num_of_guarantor) IS NULL THEN 0
+				ELSE max(num_of_guarantor) end max_num_of_guarantor
+				FROM 
+				(SELECT UserID, count(*) num_of_guarantor 
+				FROM Guarantor
+				GROUP BY UserID
+				) Guarantor_num";
+	$max_num_guarantor_result = executeSql($max_num_guarantor_sql);
+	$max_num_guarantor_row = mysql_fetch_array($max_num_guarantor_result);
+	return $max_num_guarantor_row["max_num_of_guarantor"];
+}
+
+// return max number of additional purchaser
+function get_max_num_of_additionalpurchaser()
+{
+	$max_num_additionalpurchaser_sql = "SELECT CASE 
+				WHEN max(num_of_additionalpurchaser) IS NULL THEN 0
+				ELSE max(num_of_additionalpurchaser) end max_num_of_additionalpurchaser
+				FROM 
+				(SELECT UserID, count(*) num_of_additionalpurchaser 
+				FROM AdditionalPurchaser
+				GROUP BY UserID
+				) additionalpurchaser_num";
+	$max_num_additionalpurchaser_result = executeSql($max_num_additionalpurchaser_sql);
+	$max_num_additionalpurchaser_row = mysql_fetch_array($max_num_additionalpurchaser_result);
+	return $max_num_additionalpurchaser_row["max_num_of_additionalpurchaser"];
+}
+
+// Main body starts here:
+
+if ($table == "")
+{
+	die("Error: table name is not specified");
+}
+
+if ($table == "User")
+{	
+
+	if ($rescission)
+	{
+		$sql = "SELECT 
+				UnitNumber,
+				Company,
+				CONCAT(FirstName, CONCAT(' ', LastName)) PruchaserName,
+				AgreementDepositDate DateSigned,
+				RescissionDate,
+				Price,
+				DealStatus,
+				PhoneNumber HomeTel,
+				BrokerName1,
+				BrokerName2,
+				RescissionNote
+				FROM User 
+				LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName1
+										FROM Broker, Person
+										WHERE Broker.PersonID = Person.PersonID) temp1
+									) as BrokerInfo1
+				ON User.BrokerID = BrokerInfo1.BrokerID
+				LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName2
+										FROM Broker, Person
+										WHERE Broker.PersonID = Person.PersonID) temp2
+									) as BrokerInfo2
+				ON User.BrokerID2 = BrokerInfo2.BrokerID
+				WHERE (DealStatus = 'Rescinded')
+			ORDER BY UnitNumber ";
+
+		$result = executeSql($sql);
+	
+		// create output file name and open it
+		$filename = "RescissionDump.csv";
+		$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+
+		$num = mysql_num_fields($result);
+		for ($i=0; $i < $num; $i++)
+		{
+			fputs ($out, mysql_field_name($result, $i) . ",");
+		}
+		fputs ($out, "\n");
+		while ($row = mysql_fetch_array($result))
+		{	
+			for ($i=0; $i < sizeof($row); $i++)
+			{
+				fputs ($out, "\"" . $row[$i] . "\",");
+			}
+			fputs ($out, "\n");
+		}
+		fclose($out);
+	}
+	else if ($overdue)
+	{
+		$sql = "SELECT 
+				UnitNumber,
+				Company,
+				CONCAT(FirstName, CONCAT(' ', LastName)) PruchaserName,
+				AgreementDepositDate DateSigned,
+				RescissionDate,
+				Price,
+				DealStatus,
+				PhoneNumber HomeTel,
+				BrokerName1,
+				BrokerName2,
+				RescissionNote
+				FROM User 
+				LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName1
+										FROM Broker, Person
+										WHERE Broker.PersonID = Person.PersonID) temp1
+									) as BrokerInfo1
+				ON User.BrokerID = BrokerInfo1.BrokerID
+				LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName2
+										FROM Broker, Person
+										WHERE Broker.PersonID = Person.PersonID) temp2
+									) as BrokerInfo2
+				ON User.BrokerID2 = BrokerInfo2.BrokerID
+				WHERE ((CURDATE() > RescissionDate 
+				AND DealStatus = 'Pending'))
+			ORDER BY UnitNumber ";
+
+		$result = executeSql($sql);
+	
+		// create output file name and open it
+		$filename = "OverdueDump.csv";
+		$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+
+		$num = mysql_num_fields($result);
+		for ($i=0; $i < $num; $i++)
+		{
+			fputs ($out, mysql_field_name($result, $i) . ",");
+		}
+		fputs ($out, "\n");
+		while ($row = mysql_fetch_array($result))
+		{	
+			for ($i=0; $i < sizeof($row); $i++)
+			{
+				fputs ($out, "\"" . $row[$i] . "\",");
+			}
+			fputs ($out, "\n");
+		}
+		fclose($out);
+	}
+	else
+	{
+		// query var : $includeAvailableUnit
+		
+		// only for User table since need to dump the incentive information
+		$sql = "SELECT Unit.UnitNumber as SuiteNumber, " .
+				" Unit.Level, Unit.Area, Unit.Model, Unit.Status, Unit.maintenance, " .
+				"  IF(User.Price IS NOT NULL AND User.Price > 0, User.Price, Unit.Price ) AS ListingPrice" .
+				" , User.UserID,
+						User.Salutation,
+						User.FirstName,
+						User.LastName,
+						User.Company,
+						User.Login,
+						User.Passwd,
+						User.Suite,
+						User.Address,
+						User.City,
+						User.Province,
+						User.Country,
+						User.PostalCode,
+						User.Email,
+						User.BusinessPhone,
+						User.PhoneNumber,
+						User.CellPhone,
+						User.FaxNumber,
+						User.RegistrationNumber,
+						User.RegistrationDate,
+						User.Gender,
+						User.DateOfBirth,
+						User.DriversLicNumber,
+						User.SIN,
+						User.HealthCardNumber,
+						User.PassportNumber,
+						User.OtherID,
+						User.IDProvided,
+						User.Language,
+						User.Status,
+						User.PaymentStatus,
+						User.UnitTypeDesired,
+						User.PriceRange,
+						User.Inquiry,
+						User.BedroomsRequired,
+						User.SizeRangeRequired,
+						User.BrokerAgentName,
+						User.BrokerCompany,
+						User.BrokerAddress,
+						User.BrokerCity,
+						User.BrokerPostalCode,
+						User.BrokerPhoneNumber,
+						User.Source,
+						User.ParkingSpace,
+						User.Locker,
+						User.UnitAllowance,
+						User.DealStatus,
+						User.IntExtDeal,
+						User.Commit,
+						User.Note,
+						User.ContractorReport,
+						User.RescissionDate,
+						User.RescissionNote,
+						User.RescissionFlag,
+						User.ConditionalDate,
+						User.AgreementDepositDate ContractedAgreementDepositDate,
+						User.AgreementDepositAmount ContractedAgreementDepositAmount,
+						(select sum(ChequeAmount) from Cheque 
+						  WHERE TransactionsRecordID = AgreementDepositTransactionsRecordID
+						    AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) CollectedAgreementDepositChequeAmount, 
+						(select ChequeDate from Cheque 
+						  WHERE TransactionsRecordID = AgreementDepositTransactionsRecordID 
+						  ORDER BY ChequeDate DESC LIMIT 1) CollectedAgreementDepositReceivedDate, 
+						User.Day30DepositAmount ContractedDay30DepositAmount,
+						User.Day30DepositDate ContractedDay30DepositDate,
+						(select sum(ChequeAmount) from Cheque 
+						  WHERE TransactionsRecordID = Day30DepositTransactionsRecordID
+						    AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) CollectedDay30DepositChequeAmount, 
+						(select ChequeDate from Cheque 
+						  WHERE TransactionsRecordID = Day30DepositTransactionsRecordID 
+						  ORDER BY ChequeDate DESC LIMIT 1) CollectedDay30DepositReceivedDate, 
+						User.Day90DepositAmount ContractedDay90DepositAmount,
+						User.Day90DepositDate ContractedDay90DepositDate,
+						(select sum(ChequeAmount) from Cheque 
+						  WHERE TransactionsRecordID = Day90DepositTransactionsRecordID
+						    AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) CollectedDay90DepositChequeAmount, 
+						(select ChequeDate from Cheque 
+						  WHERE TransactionsRecordID = Day90DepositTransactionsRecordID 
+						  ORDER BY ChequeDate DESC LIMIT 1) CollectedDay90DepositReceivedDate, 
+						User.Day150DepositAmount ContractedDay150DepositAmount,
+						User.Day150DepositDate ContractedDay150DepositDate,
+						(select sum(ChequeAmount) from Cheque 
+						  WHERE TransactionsRecordID = Day150DepositTransactionsRecordID
+						    AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) CollectedDay150DepositChequeAmount, 
+						(select ChequeDate from Cheque 
+						  WHERE TransactionsRecordID = Day150DepositTransactionsRecordID 
+						  ORDER BY ChequeDate DESC LIMIT 1) CollectedDay150DepositReceivedDate,
+						User.Day210DepositAmount ContractedDay210DepositAmount,
+						User.Day210DepositDate ContractedDay210DepositDate,
+						(select sum(ChequeAmount) from Cheque 
+						  WHERE TransactionsRecordID = Day210DepositTransactionsRecordID
+						  AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) CollectedDay210DepositChequeAmount, 
+						(select ChequeDate from Cheque 
+						  WHERE TransactionsRecordID = Day210DepositTransactionsRecordID 
+						  ORDER BY ChequeDate DESC LIMIT 1) CollectedDay210DepositReceivedDate,
+						User.OccupancyDepositAmount ContractedOccupancyDepositAmount,
+						User.OccupancyDepositDate ContractedOccupancyDepositDate,
+						(select sum(ChequeAmount) from Cheque 
+						  WHERE TransactionsRecordID = OccupancyDepositTransactionsRecordID
+						    AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) CollectedOccupancyDepositChequeAmount,
+						OccupancyDepositReceivedDate CollectedOccupancyDepositReceivedDate,
+						User.VTB,
+						User.OccupancyNote,
+						User.TotalAmountPaid,
+						User.AgreementControlSignDate,
+						User.AgreementControlSignedBy,
+						User.PaymentSignedBy,
+						User.UnitTransferDate,
+						User.DelayedInterimClosingDate,
+						User.SolicitorName,
+						User.SolicitorAddress,
+						User.SolicitorCity,
+						User.SolicitorPostalCode,
+						User.SolicitorTelephone,
+						User.SolicitorFaxNumber,
+						User.ParkingSpaceCharge,
+						User.LockerCharge,
+						User.AgreementDepositChequeNumber,
+						User.AdditionalCost,
+						User.AdditionalCostNote,
+						User.MortgageCommitment,
+						User.MortgageCommitmentAmount,
+						User.UserReport,
+						User.ParkingIncludedInPrice,
+						User.ParkingExtended,
+						User.ParkingTandemUnit,
+						User.AgeRange,
+						User.BicycleRack,
+						User.BicycleRackCharge,
+						User.RoofDeck,
+						User.RoofDeckUnit,
+						User.RoofDeckCharge,
+						User.AgreementDepositNFS,
+						User.Day30DepositNFS,
+						User.Day90DepositNFS,
+						User.Day150DepositNFS,
+						User.OccupancyDepositNFS,
+						User.FirstRevisedClosingDate,
+						User.SecondRevisedClosingDate,
+						User.ThirdRevisedClosingDate,
+						User.ContactNote,
+						User.BrokerFaxNumber,
+						User.BrokerEmail,
+						User.PNREF,
+						User.Reserver1FirstName,
+						User.Reserver1LastName,
+						User.Reserver2FirstName,
+						User.Reserver2LastName,
+						User.ParkingQuantity,
+						User.OfferPrice,
+						User.Charge,
+						User.SourceCategory,
+						User.Priority,
+						User.Rank,
+						User.IsImportant,
+						User.SalesRepID,
+						User.SalesRepID1,
+						User.UnitLocked,
+						User.DevCAPCredit,
+						User.OtherCAPCredit,
+						User.CAPNote
+						";
+		if (CRM_ENABLED){
+			$sql .= ",ContactVia, CreateDate";
+		}		
+		$sql .= " FROM Unit LEFT JOIN User " .
+				" ON Unit.UserID = User.UserID" .
+				" AND Unit.UnitNumber = User.UnitNumber " .
+				" AND DealStatus != 'Rescinded'";
+		
+		if (CRM_ENABLED){
+			$sql .= " LEFT JOIN " .
+					" (SELECT * FROM " .
+						" (SELECT CustomerType, CustomerID," .
+						" ContactVia, CreateDate FROM Note  " .
+						" ORDER BY CreateDate DESC) AS temp1" .
+						" GROUP BY CustomerID) as temp2" .
+					" ON temp2.CustomerID=User.UserID" .
+					" AND temp2.CustomerType=\"" . get_internal_customer_type("purchaser") . "\" ";
+		}
+
+		// if not include available unit, don't display row with User.UnitNumber is null
+		if ($includeAvailableUnit != 1){
+			$sql .= " WHERE Unit.UserID > 0 ";			
+		} 
+		$sql .= $sql_cond . " ORDER BY User.UserID";
+
+//		print "sql: ".$sql;
+		$user_result = executeSql($sql);
+	
+		// create output file name and open it
+		$filename = ($table == "User" ? "Purchaser" : $table) . "Dump.csv";
+		$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+		$num_of_user_fields = mysql_num_fields($user_result);
+	
+		// header (the first line): user information
+		for ($i=0; $i < $num_of_user_fields; $i++)
+		{
+			$field_name = mysql_field_name($user_result, $i);
+				
+			fputs ($out, "$field_name,");
+		}
+		
+		// header: guarantor
+		$max_num_guarantor = get_max_num_of_guarantor();
+
+		$guarantor_sql = 
+			"SELECT 
+				UserID, CompanyName, FirstName, LastName, DateOfBirth, BusinessPhone, HomePhone, CellPhone, Fax, Email,
+				DriverLicenseNumber, SIN, HealthCardNumber, PassportNumber, Citizenship, OtherID,
+				Unit, Street, City, Province, Country, PostalCode
+			FROM Guarantor, Person
+			LEFT JOIN Address
+			ON Person.AddressID = Address.AddressID
+			WHERE Guarantor.PersonID = Person.PersonID
+			ORDER BY UserID";
+
+		$guarantor_result = executeSql($guarantor_sql);
+
+		create_multiple_header($out, $max_num_guarantor, $guarantor_result, 'Guarantor');
+		// Initialize current_guarantor_row
+		$current_guarantor_row = mysql_fetch_array($guarantor_result);
+		
+		// header: additional purchaser
+		$max_num_additionalpurchaser = get_max_num_of_additionalpurchaser();
+
+		$additionalpurchaser_sql = 
+			"SELECT 
+				UserID, CompanyName, FirstName, LastName, DateOfBirth, BusinessPhone, HomePhone, CellPhone, Fax, Email,
+				DriverLicenseNumber, SIN, HealthCardNumber, PassportNumber, Citizenship, OtherID,
+				Unit, Street, City, Province, Country, PostalCode
+			FROM AdditionalPurchaser, Person
+			LEFT JOIN Address
+			ON Person.AddressID = Address.AddressID
+			WHERE AdditionalPurchaser.PersonID = Person.PersonID
+			ORDER BY UserID";
+
+		$additionalpurchaser_result = executeSql($additionalpurchaser_sql);
+
+		create_multiple_header($out, $max_num_additionalpurchaser, $additionalpurchaser_result, 'AdditionalPurchaser');
+		// Initialize current_additionalpurchaser_row
+		$current_additionalpurchaser_row = mysql_fetch_array($additionalpurchaser_result);
+		
+		// header: Inventory item
+		$inventoryitem_sql = 
+			"select Inventory.UserID UserID, Inventory.InventoryItem InventoryItem, 
+              ifnull(InventoryDetail.Number, 0) Number, 
+              ifnull(InventoryDetail.Price, 0) Price
+         from (select UserID, InventoryItem
+                 from InventoryItem_list, User
+                where User.DealStatus <> 'Rescinded') Inventory
+         left join 
+              (select UserID, ItemType, count(RID) Number, sum(Price) Price 
+                 from InventoryItem
+                group by UserID, ItemType) InventoryDetail
+           on InventoryDetail.UserID = Inventory.UserID
+          and InventoryDetail.ItemType = Inventory.InventoryItem
+        order by Inventory.UserID, Inventory.InventoryItem";
+
+		$inventoryitem_result = executeSql($inventoryitem_sql);
+
+		create_multiple_header_basedon_listvalue($out, $inventoryitem_result, 'InventoryItem');
+		
+		// header: package information
+		$package_sql = "SELECT PackageName,PackageID FROM Package ORDER BY PackageID";	
+		$package_result = executeSql($package_sql);
+	
+		$no = mysql_num_fields($package_result);
+		$package_id_array = array(); // store the location of package ID
+		while ($package_row = mysql_fetch_array($package_result))
+		{
+			array_push($package_id_array, $package_row['PackageID']);
+			fputs($out, "\"" . $package_row['PackageName'] . "\",value,");
+		}	
+		fputs ($out, "\n");
+		// end of header
+		
+		// content: package information
+		$sql = "SELECT * FROM UserPackage ORDER BY UserID, PackageID";
+		$user_package_result = executeSql($sql);
+		// Initialize user_package_row
+		$user_package_row = mysql_fetch_array($user_package_result);
+	
+		while ($user_row = mysql_fetch_array($user_result))
+		{
+			//content: user information
+			for ($i=0; $i < $num_of_user_fields; $i++)
+			{
+				// translate "sales rep id" to sales rep name
+				if (stristr(mysql_field_name($user_result, $i), 'salesrepid') !== false)
+					fputs ($out, "\"" . get_SalesRep_name($user_row[$i]) . "\",");
+				else
+					fputs ($out, "\"" . $user_row[$i] . "\",");
+			}
+			
+			// guarantor information: run to the row which has the same UserID
+			$current_guarantor_row = create_multiple_content($out, $max_num_guarantor, $user_row['UserID'], $current_guarantor_row, $guarantor_result);
+
+			// additionalpurchaser information: run to the row which has the same UserID
+			$current_additionalpurchaser_row = create_multiple_content($out, $max_num_additionalpurchaser, $user_row['UserID'], 
+						$current_additionalpurchaser_row, $additionalpurchaser_result);
+			
+			// inventoryitem information
+			mysql_data_seek($inventoryitem_result, 0);
+			create_multiple_content_basedon_listvalue($out, $user_row['UserID'], $inventoryitem_result);
+
+			// package information: run to the row which has the same UserID
+			while ($user_package_row['UserID'] < $user_row['UserID'] && !is_null($user_package_row['UserID']))
+			{
+				$user_package_row = mysql_fetch_array($user_package_result);
+			}
+			$i = 0;
+			$counter = 0;
+			while ($user_package_row['UserID'] == $user_row['UserID'] && !is_null($user_package_row['UserID']))
+			{		
+				$counter++;
+				for (; $i < count($package_id_array); $i++)
+				{
+					if ($package_id_array[$i] == $user_package_row['PackageID'])
+					{
+						fputs ($out, "\"yes\",\"" .  $user_package_row['Note'] . "\",");
+						$i++; // Using break will not increment i at the end of the loop. need to do it manually
+						break;
+					}
+					else
+					{
+						fputs ($out, "\"\",\"\",");
+					}	
+				}
+				$user_package_row = mysql_fetch_array($user_package_result);
+			}
+			fputs ($out, "\n");
+			// end of content
+		}
+		fclose($out);	
+	}
+} 
+else
+{
+	$sql = "SELECT *, 'Visitor' ClientType FROM " . $table;
+
+	if (CRM_ENABLED){
+		$sql .= " LEFT JOIN " .
+				" (SELECT * FROM " .
+					" (SELECT CustomerType, CustomerID," .
+					" ContactVia, CreateDate FROM Note  " .
+					" ORDER BY CreateDate DESC) AS temp1" .
+					" GROUP BY CustomerID) as temp2" .
+				" ON temp2.CustomerID=Visitor.VisitorID" .
+				" AND temp2.CustomerType=\"" . get_internal_customer_type("visitor") . "\" ";
+	}	
+
+	$sql .= " WHERE 1 = 1 " . $sql_cond;
+
+	// Uncomment this if the version of mysql that supports UNION
+//	if (isSet($include_purchaser) && $include_purchaser == 1)
+//	{
+//		$sql .= " UNION 
+//			SELECT UserID, Salutation, FirstName, LastName, Suite, Address, City,
+//			Province, Country, PostalCode, Email, BusinessPhone, PhoneNumber,
+//			CellPhone, FaxNumber, RegistrationNumber, RegistrationDate, Status, 
+//			Gender, UnitTypeDesired, PriceRange, BedroomsRequired, SizeRangeRequired,
+//			Note, BrokerAgentName, BrokerCompany, BrokerAddress, BrokerCity, BrokerPostalCode,
+//			BrokerPhoneNumber, SalesRep, SalesRep1, SourceCategory, Source, AgeRange, 
+//			ContactNote, 'Purchaser' ClientType
+//			FROM User
+//			WHERE 1=1 " . $sql_cond;
+//	}
+
+	$result = executeSql($sql);
+
+	// output file
+	$filename = ($table == "User" ? "Purchaser" : $table) . "Dump.csv";
+	$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+	$no = mysql_num_fields($result);
+
+	for ($i=0; $i < $no; $i++)
+	{
+		fputs ($out, mysql_field_name($result, $i) . ",");
+	}
+	fputs ($out, "\n");
+	while ($row = mysql_fetch_array($result))
+	{	
+		for ($i=0; $i < sizeof($row); $i++)
+		{
+			// translate "sales rep id" to sales rep name
+			if (stristr(mysql_field_name($result, $i), 'salesrepid') !== false)
+				fputs ($out, "\"" . get_SalesRep_name($row[$i]) . "\",");
+			else
+				fputs ($out, "\"" . $row[$i] . "\",");
+		}
+		fputs ($out, "\n");
+	}
+
+	// Comment this part if mysql supports UNION
+	// if $include_purchaser is set to 1, export the purchaser info using the same sql condition
+	// only export the same fields as visitor info
+	if (isSet($include_purchaser) && $include_purchaser == 1)
+	{
+		$sql = "SELECT UserID, Salutation, FirstName, LastName, Suite, Address, City,
+			Province, Country, PostalCode, Email, BusinessPhone, PhoneNumber,
+			CellPhone, FaxNumber, RegistrationNumber, RegistrationDate, Status, 
+			Gender, UnitTypeDesired, PriceRange, BedroomsRequired, SizeRangeRequired,
+			Note, BrokerAgentName, BrokerCompany, BrokerAddress, BrokerCity, BrokerPostalCode,
+			BrokerPhoneNumber, Source, AgeRange, ContactNote, BrokerFaxNumber,
+			BrokerEmail, Priority, Rank, SalesRepID, SourceCategory, SalesRepID1, 'Purchaser' ClientType
+			FROM User
+			WHERE 1=1 " . $sql_cond;
+
+		$result = executeSql($sql);
+
+		while ($row = mysql_fetch_array($result))
+		{	
+			for ($i=0; $i < sizeof($row); $i++)
+			{
+				// translate "sales rep id" to sales rep name
+				if (stristr(mysql_field_name($result, $i), 'salesrepid') !== false)
+					fputs ($out, "\"" . get_SalesRep_name($row[$i]) . "\",");
+				else
+					fputs ($out, "\"" . $row[$i] . "\",");
+			}
+			fputs ($out, "\n");
+		}
+	}
+
+	fclose($out);
+}
+header('Content-type: application/excel');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+if(strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE'))
+{
+	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	header('Pragma: public');
+} 
+
+readfile($filename);
+?>

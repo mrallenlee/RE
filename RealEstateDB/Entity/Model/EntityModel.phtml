@@ -1,0 +1,160 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Base class of all entities model
+ * Requirement:
+ * 1. All arguments should be Capitalize, Action, SubAction
+ * 2. value should all be lower case
+ * 3. Each equity requres action specified. If no action is specified,
+ * 'no-action' is the default
+ * 4. If same ID apprears in 2 tables, which ID is the key to join 2 tables,
+ * 		then the child's ID should be used. like Person has CompanyID, but the 
+ * 		var name should be Company_CompanyID
+ * 5. Entity should handle its arguments, instead of parents parse it then 
+ * 		pass it to the child entity.
+ */
+ 
+ class EntityModel {
+ 	var $action = "";
+ 	var $subAction = "";
+	var $dataManipulator;
+	var $dataManipulationEnabled = false;
+	 	
+ 	function EntityModel(){}
+
+ 	/**
+ 	 * Set data manipulator to allow data customization 
+ 	 * defined in different subclass
+ 	 */
+ 	function setDataManipulator(&$dataManipulator){
+ 		$this->dataManipulator &= $dataManipulator;
+ 		$this->dataManipulationEnabled = true;
+ 	}
+ 	
+ 	/**
+ 	 * Reset data manipulator
+ 	 */
+ 	function clearDataManipulator(){
+ 		$this->dataManipulator = '';
+ 		$this->dataManipulationEnabled = false; 		
+ 	}
+ 	
+ 	/**
+ 	 * Get data manipulator to allow data customization
+ 	 * defined in different subclass
+ 	 *  	 */
+ 	function &getDataManipulator(){
+ 		$this->dataManipulator;
+ 	}
+ 	
+ 	
+ 	/**
+ 	 * arguments is an associative array MUST contain
+ 	 * action, and other information
+ 	 * action can be add,update/edit, delete, no-update
+ 	 */
+ 	function handle(&$arguments){
+ 		if ($this->getDataManipulator() != ''){
+ 			die('Error: Calling data manipulator');
+ 			$this->getDataManipulator().process($arguments);
+ 		}
+ 		$this->action = $arguments['Action'];
+ 		$this->subAction = $arguments['SubAction'];
+// 		print "EntityModel action=" . $this->action . " subaction=" . $this->subAction . "<BR>";
+ 		if (strcasecmp($this->action,"add") == 0){
+ 			if (strcasecmp($this->subAction,"All") == 0){
+	 			return $this->addAll($arguments);	
+ 			} else {			
+ 				return $this->add($arguments);
+ 			}	
+ 		} else if (strcasecmp($this->action,"update") == 0 || strcasecmp($this->action,"edit") == 0){
+ 			if (strcasecmp($this->subAction,"All") == 0){
+	 			return $this->updateAll($arguments);	
+ 			} else {			
+ 				return $this->update($arguments);
+ 			}	
+ 		} else if (strcasecmp($this->action,"delete") == 0){
+ 			if (strcasecmp($this->subAction,"All") == 0){
+	 			return $this->deleteAll($arguments);	
+ 			} else {			
+ 			return $this->delete($arguments);	
+ 			}	
+ 		} else if (strcasecmp($this->action,"no-update") == 0 || strcasecmp($this->action,"display") == 0){
+ 			return;
+ 		} else {
+ 			print_r($arguments); 
+ 			die("no action defined");	
+ 		} 		
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+ 		return $this->add($arguments);
+ 	}
+
+ 	function update(&$arguments){}
+
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){
+ 		return $this->update($arguments);
+ 	}
+ 	
+ 	/**
+	 * Delete Record
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){}
+
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+ 	function deleteAll(&$arguments){
+ 		return $this->delete($arguments);
+ 	}
+ 	
+ 	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql(&$arguments){}
+ 	
+	/**
+	 * Retrieve arguments that starts with prefix. All the prefix 
+	 * will be removed in the return array
+	 * Return: associative array that has the prefix removed
+	 */
+	function retrieveArguments($classPrefix, &$arguments){
+		$result = array();
+		// remove the dot . after classPrefix
+		$prefixLength = strlen($classPrefix) + 1;
+		
+		foreach ($arguments as $key=>$value){
+//			print "key=$key ";
+			if (preg_match("/^" . $classPrefix . "/", $key)){
+				$newKey = substr($key, $prefixLength);
+//				print "newKey=$newKey value=$value<BR>";
+				$result[$newKey] = $value;					
+			}	
+		}
+		
+		return $result;
+	}
+ 	
+ } // EntityModel
+?>

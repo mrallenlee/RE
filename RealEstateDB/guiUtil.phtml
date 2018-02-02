@@ -1,0 +1,1330 @@
+<?php
+/*
+ * Created on 23-Oct-2005
+ *
+ * Contain generic interface code 
+ */
+ 
+include_once "guiUtil_v2.phtml";
+
+// returns 0i if i < 10 (useful with photo file naming convention)
+function no_format($no){
+	if ($no < 10)
+		return "0" . $no;
+	else
+		return $no;
+}
+
+//
+// These db_XXX_fmt functions are convieniance routines that format data
+// retreived from the database. In all cases it is assumed that the data is
+// has been retreived from the database and is in an array called $row[].
+// The routines all echo the results to the page - the do not return a value.
+//
+
+// Formats a string
+function db_fmt($column_name, $value_on_empty = "n/a") {
+	global $row;
+
+	if ( empty($row[$column_name]) ) {
+		echo "$value_on_empty";
+	}
+    elseif ($row[$column_name] == "n/a"){
+          echo " ";
+    }
+    else {
+		echo nl2br($row[$column_name]);
+	}
+}
+
+// Formats a string as a link
+// The heading paramter can be used to add 'mailto:' etc
+// to the start of the href value
+function db_link_fmt(	$column_name, $heading = "",
+						$target = "", $value_on_empty = "n/a") {
+	global $row;
+
+	// Add the target tag
+	if ($target)
+		$target = " target=\"$target\"";
+
+	if ( empty($row[$column_name]) ) {
+		echo "$value_on_empty";
+	} else {
+		echo "<a href=\"" . $heading . $row[$column_name] . "\"$target>";
+		echo $row[$column_name] . "</a>";
+	}
+}
+
+// Formats a number with commas and 0 decimal places by default
+function db_num_fmt($column_name, $decimals = 2, $value_on_empty = "&nbsp;", $dollar_value = FALSE) {
+	global $row;
+
+	if ( !isset($row) || $row[$column_name] == 0.0 || empty($row[$column_name]) ) {
+		echo $value_on_empty;
+	} else {
+		if ($dollar_value)
+		{
+			echo "$";
+		}
+		echo number_format($row[$column_name], $decimals);
+	}
+}
+
+// Given an integer it returns:
+//		1			yes
+//		0			no
+//		-1			n/a
+//		null		n/a
+//		other		unknown
+function db_y_n_fmt($column_name, $value_on_empty = "n/a") {
+	global $row;
+
+	if ( $row[$column_name] == 1 ) {
+		echo "yes";
+	} elseif ( $row[$column_name] == 0) {
+		echo "no";
+	} elseif ( $row[$column_name] == -1) {
+		echo "$value_on_empty";
+	} elseif ( !isset($row[$column_name]) ) {
+		echo "$value_on_empty";
+	} else { // This should never happen
+		echo "unknown";
+	}
+}
+
+
+// input:
+// $result: mysql resource which contains all the values to be listed
+// $field_name: field name to be retrieved from $result
+// $curr_value: current value, the value being selected on the list
+// $prefix: used as part of the name of the list
+function create_edittable_list($result_in, $field_name, $curr_value, $prefix, $suffix = "") {
+?>
+          <SELECT NAME="<?
+          	if ($prefix != ""){
+          		print $prefix . "_";
+          	}
+          	?><?= $field_name ?><? 
+			if ($suffix != ""){
+				print "_" . $suffix;	
+			}
+			?>">
+          <OPTION VALUE="">Choose one</OPTION>
+<?
+
+
+	// reset mysql pointer to reselect from 1st record
+	mysql_data_seek($result_in, 0);
+
+	while ($row_in = mysql_fetch_array($result_in)) {
+?>
+          <OPTION VALUE='<?= $row_in["$field_name"]; ?>' 
+          <? if ($row_in["$field_name"] == $curr_value) print " SELECTED"; ?>
+          ><?= $row_in["$field_name"]; ?></OPTION>
+<?
+
+
+	}
+?>
+          </SELECT>
+<?
+
+}
+
+//
+// Displays a column value (from global $row) differently
+// depending on the action type.
+//	$action="display"	- simply format and print it
+//	$action="add"		- display blank text input to be filled in
+//	$action="edit"		- display existing value in text input to be edited
+//	$action="verify"	- simply format and print it, but add buttons
+//							that allow user to go back and modify values
+//
+// Paramters:
+//	$column_name	- the column in $row array that has the data we want
+//	$edit_heading		- this will be displayed before the text input box
+//	$default_value	- if true, display today as default value. Only for action "add"
+function 
+display_date_old(	$column_name,
+				$edit_heading = "",
+				$prefix = "",
+				$suffix = "",
+				$use_default_value = true,
+				$default_value = "",
+				$display_popup_calendar = true,
+				$onClickJS = "",
+				$onChangeJS = "",
+				$dateFormat = "YMD",
+				$calendarAlign = "left",
+				$calendarVAlign = "bottom"){
+	global $row;
+	global $action;
+	global $globalRelativePath;
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	} else {
+
+		$inputName = "";
+		if ($prefix != ""){
+			$inputName .= $prefix . "_";	
+		}
+		$inputName .= $column_name;
+		if ($suffix != ""){
+			$inputName .= "_" . $suffix;
+		}
+		
+		
+		if ($use_default_value){
+			if ($dateFormat == "YMD")
+				$dateValue = date("Y-m-d");
+			else if ($dateFormat = "MDY")
+				$dateValue = date("M d,Y");			
+		} else if ($default_value != ""){
+			$dateValue = $default_value;	
+		} else {
+			$dateValue = $row[$column_name];
+		}	
+
+		echo "<INPUT TYPE=\"TEXT\" ID=\"$inputName\" NAME=\"$inputName\" VALUE=\"";
+		echo "$dateValue";
+		echo "\"";
+
+		if ($onClickJS != ""){
+			print " onClick=\"$onClickJS\" ";	
+		}
+		
+		if ($onChangeJS != ""){
+	 		if (strpos($onChangeJS, "(") === false)
+	 		{
+	 			$onChangeJS .= "()";
+	 		}
+	 		$onChange = " onChange=\"javascript:" . $onChangeJS . " \" ";
+			
+			print $onChange;	
+		}
+		print " > ";
+		
+		if ($dateFormat == "YMD"){
+			$jsTimeFormat = "yyyy-MM-dd"; 	
+		} else if ($dateFormat = "MDY"){
+			$jsTimeFormat = "NNN dd,yyyy"; 				
+		}
+		
+?>
+<a class="image-link" href="#" onclick="cal1.select(document.getElementById('<?= $inputName; ?>'),'<?= $inputName . "anchor"; ?>','<?= $jsTimeFormat; ?>', '', '<?= $calendarAlign; ?>', '<?= $calendarVAlign; ?>'); return false;" name="<?= $inputName . "anchor"; ?>" id="<?= $inputName . "anchor"; ?>"><IMG SRC="<?= $globalRelativePath; ?>images/calendar.gif"></a>
+
+<?		
+	}
+}
+	 
+// IMPORTANT NOTE: Please include dojo.js in the caller script. for example:
+// Displays a dojo date field(from global $row)
+// depending on the action type.
+//	$action="display"	- simply format and print it
+//	$action="add"		- display blank text input to be filled in
+//	$action="edit"		- display existing value in text input to be edited
+//	$action="verify"	- simply format and print it, but add buttons
+//							that allow user to go back and modify values
+//
+// Paramters:
+//	$column_name	- the column in $row array that has the data we want
+//	$prefix				- prefix add to widgetId
+//	$suffix				- suffix add to widgetId
+//	$use_default_value	- if set to true, display today as default value. if $default_value is given, use it.
+//	$default_value	- the default value
+//	$onChangeJS		- javascript for onChange event
+//	$dateFormat		- "YMD" by default
+function 
+display_date(	$column_name,
+				$prefix = "",
+				$suffix = "",
+				$use_default_value = true,
+				$default_value = "",
+				$onChangeJS = "",
+				$dateFormat = "YMD"){
+
+	global $row;
+	global $action;
+	global $globalRelativePath;
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	} else {
+
+		$inputName = "";
+		if ($prefix != ""){
+			$inputName .= $prefix . "_";	
+		}
+		$inputName .= $column_name;
+		if ($suffix != ""){
+			$inputName .= "_" . $suffix;
+		}
+		
+		
+		if ($use_default_value){
+			if ($dateFormat == "YMD")
+				$dateValue = date("Y-m-d");
+			else if ($dateFormat = "MDY")
+				$dateValue = date("M d,Y");
+		} else if ($default_value != ""){
+			$dateValue = $default_value;	
+		} else {
+			$dateValue = $row[$column_name];
+		}
+		
+		if ($dateValue == "0000-00-00")
+			$dateValue="";
+
+		// when dojo dropdowndatepicker is set to a not-non default date
+		// at page load-up, onValueChanged will be triggered. This is
+		// what we don't want. So, $init is to indicate if there's a default 
+		// date. If there is, don't assign $onChangeJS at the first onValueChanged.
+		if ($dateValue == "" || !isSet($dateValue))
+		{
+			$init = "1";
+		}
+		else
+		{
+			$init = "0";
+		}
+?>
+
+<div dojoType="dropdowndatepicker" widgetId="<?= $inputName; ?>" inputName="<?= $inputName; ?>" 
+			value='<?= $dateValue; ?>' adjustWeeks="true"
+		onValueChanged="if(<?= $init; ?>==0){if(this.defaultValue){<?= $onChangeJS; ?>}else{this.defaultValue=1;}}else{<?= $onChangeJS; ?>}"></div>
+
+<?	
+		return ;
+	}
+}	 
+
+//
+// These display_XXX functions are convieniance routines that....
+//
+
+//
+// Displays a column value (from global $row) differently
+// depending on the action type.
+//	$action="display"	- simply format and print it
+//	$action="add"		- display blank text input to be filled in
+//	$action="edit"		- display existing value in text input to be edited
+//	$action="verify"	- simply format and print it, but add buttons
+//							that allow user to go back and modify values
+//
+// Paramters:
+//	$column_name	- the column in $row array that has the data we want
+//	$heading		- this will be displayed before the text input box
+//	$number_value	- if true, format output as a numeric
+//	$max_length		- the max. charaters the box accepts
+//	$is_link		- if true, format output as a hyperlink
+//	$link_heading	- heading for hyperlink	 (allows mailto: etc. to be added)
+// 	$input_prefix	- prefix for the name of the input tag
+// 	$onClickJSFunction - javascript function for onClick
+// 	$onChangeJSFunction - javascript function for onChange
+//	$enableSmartOnChangeJSFunction - preg match $column_name with phone, fax, postal code, drivers license
+//																	and call according javascript to re-format: add "-" into phone number
+//																	and drivers license, add space into postal code
+//
+function
+display_text(	$column_name,
+				$edit_heading = "",
+				$number_value = FALSE,
+				$max_length = 50,
+				$is_link = FALSE,
+				$link_heading = "",
+				$target = "",
+				$non_editable = FALSE,
+				$size = 17,
+				$input_prefix = "",
+				$onClickJSFunction = "",
+				$onChangeJSFunction = "",
+				$dollar_value = FALSE,
+				$decimal = 2,
+				$enableSmartMatchOnChangeJSFunction = TRUE
+				)
+{
+	global $row;
+	global $action;
+
+	$input_name = "";
+	if ($input_prefix) 
+		$input_name = $input_prefix . "_" . $column_name;
+	else
+		$input_name = $column_name;
+
+	if ($enableSmartMatchOnChangeJSFunction)
+	{
+		if (preg_match("*phone*", strtolower($column_name)) || preg_match("*fax*", strtolower($column_name)))
+			$onChangeJSFunction .= " this.value=tool.string.ReformatPhoneNumber(this.value)";
+		if (preg_match("*postalcode*", strtolower($column_name)))
+			$onChangeJSFunction .= " this.value=tool.string.ReformatPostalCode(this.value)";
+		if (preg_match("*driver*", strtolower($column_name)))
+			$onChangeJSFunction .= " this.value=tool.string.ReformatDriversLicense(this.value)";
+	}
+	
+	if (($action == "display" || $action == "verify") || $non_editable)
+	{
+		if ($number_value || $dollar_value)
+		{			
+			db_num_fmt($column_name, $decimal, " n/a", $dollar_value);
+		}
+		elseif ($is_link)
+		{
+			db_link_fmt($column_name, $link_heading, $target);
+		}
+		else
+		{
+			db_fmt($column_name);
+		}
+	}
+	else // add or edit - put in a text input
+	{
+		if (strlen($onClickJSFunction) > 0)
+		{
+	 		if (strpos($onClickJSFunction, "(") === false)
+	 		{
+	 			$onClickJSFunction .= "()";
+	 		}
+	 		$onClick = " onClick=\"javascript:" . $onClickJSFunction . " \" ";
+	 	}
+		if (strlen($onChangeJSFunction) > 0)
+		{
+	 		if (strpos($onChangeJSFunction, "(") === false)
+	 		{
+	 			$onChangeJSFunction .= "()";
+	 		}
+	 		$onChange = " onChange=\"javascript:" . $onChangeJSFunction . " \" ";
+		}
+
+		if ($number_value)
+		{
+			echo "$edit_heading<input name=\"" . $input_name . "\" id=\"" .$input_name . "\" ";
+			if ($non_editable)
+			{
+				echo " ";
+			}
+			echo " type=text maxlength=$max_length size=$size value=\"" . number_format($row[$column_name], $decimal) . "\" " . $onClick . $onChange . ">";	
+		}
+		else
+		{
+			echo "$edit_heading<input name=\"" . $input_name . "\" id=\"" .$input_name . "\" ";
+			if ($non_editable)
+			{
+				echo " READONLY ";
+			}
+			echo " type=text maxlength=$max_length size=$size value=\"$row[$column_name]\"" . $onClick . $onChange . ">";	
+		}
+	}
+	
+	if ($action == "verify" || $non_editable)
+	{
+			echo "<input name=\"" . $input_name . "\" id=\"" .$input_name . "\" ";
+			echo " type=hidden value=\"$row[$column_name]\"" . $onClick . $onChange . ">";		
+	}
+}
+
+function
+display_dollar_format($value, $decimals = 0)
+{
+	echo "$";
+	echo number_format($value, $decimals);
+}// display_dollar_format
+
+function 
+display_dollar_value($column_name)
+{
+	global $row;
+	global $action;
+	
+	if ($action == "display")
+	{
+		if ( $row[$column_name] == 0.0 || empty($row[$column_name]) ) 
+		{
+			echo "n/a";
+		}
+		else
+		{
+			echo "$";
+			db_num_fmt($column_name);
+		}
+	}
+	else
+	{
+		display_text($column_name);
+	}
+}
+
+function display_generic_table_list	(	$table, 
+											$column_name, 
+											$edit_heading = "",
+											$input_prefix = "",
+											$onChangeJSFunction = "")
+{
+	global $row;
+	global $action;
+	
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+        db_fmt($column_name);
+	}
+	else
+	{
+
+		if (strlen($onChangeJSFunction) > 0)
+		{
+	 		if (strpos($onChangeJSFunction, "(") === false)
+	 		{
+	 			$onChangeJSFunction .= "()";
+	 		}
+	 		$onChange = " onChange=\"javascript:" . $onChangeJSFunction . " \" ";
+		}
+		echo "$edit_heading<select name=\"";
+		if ($input_prefix != "")
+		{
+			echo $input_prefix . "_$column_name\"";
+		}
+		else
+		{
+			echo "$column_name\"";
+		}
+		echo ">\n";
+		
+		echo "<OPTION VALUE=\"\">Choose one</OPTION>\n";
+		$sql = "SELECT $table FROM " . $table . "_list";	
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		while ($sourceRow = mysql_fetch_array($result)) 
+		{
+			echo "<OPTION VALUE=\"" . $sourceRow[$table] . "\"";
+			if ($row[$column_name] == $sourceRow[$table])
+				echo " SELECTED ";
+			echo ">" . $sourceRow[$table] . "</OPTION>\n";		
+		}
+		echo "</SELECT>\n";
+	}
+} // display_generic_table_list
+
+// display generic table list and add a text field so that user can modify the value of it.
+// when the user choose an option in the menu, the text field will be updated automatically
+function display_generic_table_list_with_text_field	(	$table, 
+											$column_name, 
+											$edit_heading = "",
+											$input_prefix = "")
+{
+	global $row;
+	global $action;
+	
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+        db_fmt($column_name);
+	}
+	else
+	{
+		echo "$edit_heading<select name=\"listbox_";
+		if ($input_prefix != "")
+		{
+			echo $input_prefix . "_" . $column_name . "\" onChange=\"updateTextAfterListboxChange('listbox_" . $input_prefix . "_" . $column_name . "' ,'" . $input_prefix . "_" . $column_name . "')\">\n";
+		}
+		else
+		{
+			echo  "$column_name\" onChange=\"updateTextAfterListboxChange('listbox_" . $column_name . "', '" . $column_name . "')\">\n";		
+		}
+
+		echo "<OPTION VALUE=\"\">Choose one</OPTION>";
+		$sql = "SELECT $table FROM " . $table . "_list";	
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		while ($sourceRow = mysql_fetch_array($result)) 
+		{
+			echo "<OPTION VALUE=\"" . $sourceRow[$table] . "\"";
+			if ($row[$column_name] == $sourceRow[$table])
+				echo " SELECTED ";
+			if (strcmp(get_access_security_level(), "sales") == 0)
+				echo " DISABLED ";
+			echo ">" . $sourceRow[$table] . "</OPTION>";		
+		}
+		echo "</SELECT>\n";
+		
+		echo "<INPUT TYPE=\"TEXT\" SIZE=\"17\" NAME=\"";
+		if ($input_prefix != "")
+		{
+			echo $input_prefix . "_";
+		}
+		echo $column_name . "\" VALUE=\"" . $row[$column_name] ."\">";
+	}
+	
+
+} // display_generic_table_list_with_text_field
+
+// This function creates a dropdown list with contents from $display_col
+// and value from $value_col
+function display_table_list_with_diff_val	($list_table, 
+											$display_col, 
+											$value_col,
+											$table_list_name)
+{
+	global $row;
+	global $action;
+	
+	if (!empty($row[$value_col]) || !empty($row[$table_list_name]))
+	{
+		if (!empty($row[$value_col]))
+			$value_to_find = $row[$value_col];
+		elseif (!empty($row[$table_list_name]))
+			$value_to_find = $row[$table_list_name];
+		
+		$sql_currentval = "SELECT $list_table.$value_col, $list_table.$display_col 
+			FROM $list_table 
+			where $list_table.$value_col=" . $value_to_find;
+		$result_currentval = mysql_query($sql_currentval) or log_err_die(mysql_error() . "; $sql_currentval",$PHP_SELF);
+	
+		$row_currentval = mysql_fetch_array($result_currentval);
+	}
+
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+		
+		$prevrow = $row;    // save the global row
+		$row = $row_currentval;
+		
+		db_fmt($display_col);
+
+		$row = $prevrow;   // restore the old saved row
+	}
+	else
+	{
+		$sql = "SELECT $value_col, $display_col FROM $list_table";	
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+		echo "<select name=\"$table_list_name\" ";
+		if (strcmp(get_access_security_level(), "sales") == 0)  echo "DISABLED";
+		echo ">\n";
+
+		echo "<OPTION VALUE=\"\">Choose one</OPTION>";
+		while ($sourceRow = mysql_fetch_array($result)) 
+		{
+			echo "<OPTION VALUE=\"" . $sourceRow[$value_col] . "\"";
+			if ($row_currentval["$value_col"] == $sourceRow["$value_col"])
+				echo " SELECTED ";
+			echo ">" . $sourceRow[$display_col] . "</OPTION>";
+		}
+		echo "</SELECT>\n";
+	}
+} // display_table_list_with_diff_val
+
+function
+display_source_list(	$column_name,
+						$edit_heading = "")
+{
+	global $action;
+	global $row;
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+        db_fmt($column_name);
+	}
+	else
+	{
+		echo "$edit_heading<select name=\"$column_name\">\n";
+		$sql = "SELECT * FROM Source";
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		while ($sourceRow = mysql_fetch_array($result)) 
+		{
+			echo "<OPTION VALUE=\"" . $sourceRow['Source'] . "\"";
+			if ($row[$column_name] == $sourceRow['Source'])
+				echo " SELECTED ";
+			echo ">" . $sourceRow['SourceDescription'] . "</OPTION>";		
+		}
+		echo "</SELECT>\n";
+	}
+}
+
+
+function
+display_salutation_list(	$column_name,
+                                        $edit_heading = "")
+{
+	global $action;
+	global $row;
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+              db_fmt($column_name);
+        }
+        else
+        {
+			echo "$edit_heading<select name=\"$column_name\">\n";
+                echo "<option value=\"Mr.\" ";
+                if ($row[$column_name] == "Mr.") echo "SELECTED";
+                echo " >Mr.</option>";
+                echo "<option value=\"Miss\" ";
+                if ($row[$column_name] == "Miss") echo "SELECTED";
+				echo " >Miss</option>";
+                echo "<option value=\"Mrs.\" ";
+                if ($row[$column_name] == "Mrs.") echo "SELECTED";
+                echo " >Mrs.</option>";
+                echo "<option value=\"Dr.\" ";
+                if ($row[$column_name] == "Dr.") echo "SELECTED";
+                echo " >Dr.</option>";
+                echo "</select>";
+        }
+}
+
+function 
+display_gender_list(	$column_name,
+                        $edit_heading = "")
+{
+	global $action;
+	global $row;
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+              db_fmt($column_name);
+        }
+        else
+        {
+			echo "$edit_heading<select name=\"$column_name\">\n";
+                echo "<option value=\"M\" ";
+                if ($row[$column_name] == "M") echo "SELECTED";
+                echo " >M</option>";
+                echo "<option value=\"F\" ";
+                if ($row[$column_name] == "F") echo "SELECTED";
+				echo " >F</option>";
+                echo "</select>";
+        }
+}
+
+function
+display_check_box(	$column_name,
+			$edit_heading = "",
+			$default_checked = 0,
+			$onClickJSFunction = "")
+{
+	global $action;
+	global $row;
+	if ($action == "display" || $action == "verify" || $non_editable)
+	{
+              echo $edit_heading . " ";
+              if ($row[$column_name])
+              {
+              	echo "Yes ";
+              }
+              else
+              {
+              	echo "No ";
+              }
+        }
+        else
+        {
+			echo "<INPUT TYPE=CHECKBOX NAME=\"$column_name\" VALUE=\"1\"";
+			if (strlen($onClickJSFunction) > 0)
+			{
+		 		if (strpos($onClickJSFunction, "(") === false)
+		 		{
+		 			$onClickJSFunction .= "()";
+		 		}
+		 		echo " onClick=\"javascript:" . $onClickJSFunction . " \" ";
+			}
+
+			if ($row[$column_name] == 1 || $default_checked)
+			{
+				echo "CHECKED";
+			}
+
+			echo ">$edit_heading";
+        }	
+}					
+
+function
+display_text_area(	$column_name,
+					$edit_heading,
+					$num_cols,
+					$num_rows,
+					$max_length = 0)
+{
+	global $row;
+	global $action;
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	}
+	else // add or edit - put in a text input
+	{
+		echo "$edit_heading<textarea wrap=virtual name=\"$column_name\" cols=$num_cols rows=$num_rows";
+		if ( $max_length )
+			echo " onChange=\"check_max_length(this, $max_length)\"";
+		echo ">$row[$column_name]</textarea>";
+	}
+}
+
+function
+display_select_list($column_name, $sql)
+{
+	global $row;
+	global $action;
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	}
+	else
+	{
+		echo "<select name=\"$column_name\">\n";
+
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$selected = "";
+			if ($action == "edit" && $value == $row[$column_name])
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"$value\" $selected>$value</option>\n";
+		}
+		echo "</select>\n";
+	}
+}
+
+function
+display_province_list($column_name = "province", $list_header = "") {
+    global $action;
+    global $row;
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+          return;
+	}
+	else
+	{
+    	$sql =  "SELECT name_en FROM province_list ORDER BY province_id";
+		echo "<select name=\"$column_name\" onChange='fill_region_select()'>\n";
+
+		if ($list_header != "")
+			echo "<option value=\"\">$list_header</option>\n";
+
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$selected = "";
+			if ($action == "edit" && $value == $row[$column_name])
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"$value\" $selected>$value</option>\n";
+		}
+		echo "</select>\n";
+
+    	$sql =  "SELECT name_en FROM province_list ORDER BY province_id";
+          $result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+?>
+<script language="JavaScript">
+<!--
+<?
+          while ($local_row = mysql_fetch_row($result)){
+			$value = htmlspecialchars($local_row[0]);
+                $sql_region = "SELECT region_en
+                    FROM region_list, province_list
+                    WHERE region_list.province_id = province_list.province_id
+                    AND province_list.name_en = \"$value\";";
+                $result_region = mysql_query($sql_region) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+?>
+                init_province(<?echo ("'$value'");
+                if (mysql_num_rows($result_region) == 0) echo (",'n/a'");
+                while ($local_region = mysql_fetch_row($result_region)){
+                    $region_name = $local_region[0];
+                    echo (",'$region_name'");
+                }
+                ?>);
+<?
+           }
+?>
+//-->
+</script>
+<?
+	}
+}
+
+function
+display_province_and_state_list($column_name = "province_or_state")
+{
+	global $row;
+	global $action;
+
+	$sql_province = "SELECT name_en FROM province_list ORDER BY province_id";
+	$sql_state = "SELECT name_en FROM state_list ORDER BY state_id";
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	}
+	else
+	{
+		echo "<select name=\"$column_name\">\n";
+
+		// First list the provinces
+		$result = mysql_query($sql_province) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		echo "<option value=\"\">Select One</option>\n";
+		echo "<option value=\"\"></option>\n";
+		echo "<option value=\"\">CANADA</option>\n";
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$selected = "";
+			if ($action == "edit" && $local_row[0] == $row[$column_name])
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"$value\" $selected>$value</option>\n";
+		}
+
+		// Now the states
+		$result = mysql_query($sql_state) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		echo "<option value=\"\"></option>\n";
+		echo "<option value=\"\">USA</option>\n";
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$selected = "";
+			if ($action == "edit" && strtolower($local_row[0]) == strtolower($row[$column_name]))
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"$value\" $selected>$value</option>\n";
+		}
+
+		echo "</select>\n";
+	}
+}
+
+function
+display_region_list($column_name = "region")
+{
+//	display_select_list($column_name,"SELECT region_en FROM region_list ORDER BY province_id, province_region_id");
+	global $row;
+	global $action;
+
+	$sql = "SELECT region_en FROM region_list ORDER BY province_id, province_region_id";
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	}
+	else
+	{
+		echo "<select name=\"$column_name\">\n";
+		echo "<OPTION value=\"REGION\">REGION</option>\n";
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$selected = "";
+			if ($action == "edit" && strcmp(trim(strtolower($value)),trim(strtolower($row[$column_name])))==0)
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"$value\" $selected>$value</option>\n";
+		}
+		echo "</select>\n";
+	}
+
+}
+ 
+function 
+display_sales_incentives_list($column_name = "PackageID"){
+	global $row;
+	global $action;
+	global $PHP_SELF;
+	
+	$sql = "SELECT PackageName, PackageID FROM Package ORDER BY PackageID";	
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	}
+	else 
+	{
+		echo "<select name=\"$column_name\">\n";
+		echo "<OPTION value=\"-1\">No Sales Incentive</option>\n";
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$id = $local_row[1];
+			$selected = "";
+			if (strcmp($id,trim(strtolower($row[$column_name])))==0)
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"" . $id. "\" $selected>$value</option>\n";
+		}
+		echo "</select>\n";	
+	}
+}
+
+function 
+display_contractor_list_no_DB($inputName, $currentValue){
+	global $action;
+	
+	if ($action == "edit"){
+		$sql = "SELECT ContractorName, ContractorID  " .
+			" FROM Contractor ";
+		
+		echo "<select name=\"$inputName\">\n";
+		echo "<option value=\"-1\" " . printSelected("-1", $currentValue) . " >All</option>\n";
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$id = $local_row[1];
+			$selected = "";
+			echo "<option value=\"" . $id. "\" " . printSelected($id, $currentValue) . " >$value</option>\n";
+		}
+		echo "</select>\n";			
+	} else {
+		echo $currentValue;	
+	}		
+}
+
+
+function
+display_contractor_list($column_name = "ContractorID"){
+	global $row;
+	global $action;
+	global $PHP_SELF;
+	
+	$sql = "SELECT ContractorName, ContractorID  " .
+			" FROM Contractor ";
+			
+	if ($action == "display" || $action == "verify")
+	{
+		db_fmt($column_name);
+	}
+	else 
+	{
+		echo "<select name=\"$column_name\">\n";
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		while ($local_row = mysql_fetch_row($result))
+		{
+			$value = htmlspecialchars($local_row[0]);
+			$id = $local_row[1];
+			$selected = "";
+			if (strcmp($id,trim($row[$column_name]))==0)
+			{
+				$selected = "selected";
+			}
+			echo "<option value=\"" . $id. "\" $selected>$value</option>\n";
+		}
+		echo "</select>\n";	
+	}		
+}
+
+/**
+ * Display floor list
+ * Require config file to define REAL_ESTATE_LOWEST_FLOOR, REAL_ESTATE_HIGHEST_FLOOR, 
+ * and array var $REAL_ESTATE_SKIPPED_FLOOR
+ */
+function
+display_floor_list($inputName, $currentValue){
+	global $action;
+	global $REAL_ESTATE_SKIPPED_FLOOR;
+	
+	$numOfSkippedFloor = count($REAL_ESTATE_SKIPPED_FLOOR);
+	
+	if ($action == "edit"){
+		echo "<select name=\"$inputName\">\n";
+		for ($i = REAL_ESTATE_LOWEST_FLOOR; $i <= REAL_ESTATE_HIGHEST_FLOOR; $i++){
+			$skip = false;
+			$selected = "";
+			for ($j = 0; $j < $numOfSkippedFloor; $j++){
+				if ($i == $REAL_ESTATE_SKIPPED_FLOOR[$j] ){
+					$skip = true;
+				}
+			}
+			// if need to skip this floor
+			if ($skip){
+				continue;	
+			}
+			
+			if ($currentValue == $i){
+				$selected = "selected";	
+			}
+			echo "<option value=\"" . $i. "\" $selected>$i</option>\n";			
+		}
+		echo "</select>\n";			
+	}
+	else {
+		echo $currentValue;	
+	}
+}
+
+/**
+ * Helper function for list
+ * if value1 == value2, print SELECTED
+ */
+function printSelected($value1, $value2){
+	if ($value1 == $value2){
+		return " SELECTED ";	
+	}
+}
+
+
+/**
+ * Display combo box for All,Issued,Non-Issued PO
+ */
+function display_PO_issued_list($inputName, $currentValue){
+	global $action;
+	
+	if ($action == "edit"){
+		echo "<select name=\"$inputName\">\n";		
+			echo "<option value=\"all\" " . printSelected("all", $currentValue) . ">All</option>\n";			
+			echo "<option value=\"issued\" " . printSelected("issued", $currentValue) . ">Issued</option>\n";			
+			echo "<option value=\"notIssued\" " . printSelected("notIssued", $currentValue) . ">Not Issued</option>\n";					
+		echo "</select>\n";			
+	} else {
+		echo $currentValue;	
+	}		
+}
+
+/**
+ * Display combo box for Standard and Non-Standard PO
+ */
+function display_PO_type_list($inputName, $currentValue){
+	global $action;
+	
+	if ($action == "edit"){
+		echo "<select name=\"$inputName\">\n";		
+			echo "<option value=\"all\" " . printSelected("all", $currentValue) . ">All</option>\n";			
+			echo "<option value=\"standardPO\" " . printSelected("standardPO", $currentValue) . ">Standard PO</option>\n";			
+			echo "<option value=\"nonStandardPO\" " . printSelected("nonStandardPO", $currentValue) . ">Non-Standard PO</option>\n";					
+		echo "</select>\n";			
+	} else {
+		echo $currentValue;	
+	}		
+}
+
+
+function
+display_y_n($column_name)
+{
+	global $row;
+	global $action;
+
+	if ($action == "display" || $action == "verify")
+	{
+		db_y_n_fmt($column_name);
+	}
+	else // add or edit - put in a text input
+	{
+		if ($action == "edit" && $row[$column_name])
+		{
+			echo "<input type=radio checked name=\"$column_name\" value=1>yes&nbsp;";
+			echo "<input type=radio name=\"$column_name\" value=0>no&nbsp;";
+		}
+		else
+		{
+			echo "<input type=radio name=\"$column_name\" value=1>yes&nbsp;";
+			echo "<input type=radio checked name=\"$column_name\" value=0>no&nbsp;";
+		}
+	}
+
+}
+
+// convert date to specific format, e.g. "YYYY-MM-DD", "english"
+function
+convert_date($date, $to = "english")
+{
+	if ($to == ""){
+		return $date;
+	}
+	$timeStamp = strtotime ($date);
+	if ($to == "YYYY-MM-DD")
+	{
+		// since there is a problem in unix that 
+		// while converting YYYY-MM-DD to same format 
+		// leads to 1 day difference than original,
+		// so we skip the conversion at here
+		return $date;
+		if ($date == "" || $date == "0000-00-00")
+		{
+			return "";
+		}
+		$formattedDate = date("Y\-m\-d", $timeStamp);
+	}
+	else if ($to == "english")
+	{
+		if ($date == "" || $date == "0000-00-00")
+		{
+			return "";
+		}
+
+		$formattedDate = date("M d,Y", $timeStamp);	
+	}	
+	return $formattedDate;
+}
+
+/**
+ * Return true of false according to the given value
+ */
+function display_boolean($value){
+	return $value > 0 ? "true" : "false";	
+}
+
+function print_space($numOfSpace = 1){
+	for ($i = 0; $i < $numOfSpace; $i++){
+		print "&nbsp;";	
+	}	
+}
+
+function print_newline($numOfNewLine = 1){
+	for ($i = 0; $i < $numOfNewLine; $i++){
+		print "<BR>";	
+	}	
+}
+
+//--------------------------------------------------------------------------------
+// Automatically create tr row which will be highted to different color
+//--------------------------------------------------------------------------------
+function displayMouseOverTR($rowClass = "blank", $altRowClass = "blank", $onClick = ""){
+	global $currentRowClass;
+	
+	if ($currentRowClass != $rowClass){
+		$currentRowClass = $rowClass;
+	} else {
+		$currentRowClass = $altRowClass;		
+	}
+	echo "<TR height=20 CLASS=\"$currentRowClass\" onmouseover=\"this.className='$currentRowClass-highlight'\" " .
+			"onmouseout=\"this.className='$currentRowClass'\"";
+	
+	if ($onClick != ""){
+		echo " onClick=\"" . $onClick . "\"";	
+	}
+	
+	echo ">";		
+}
+
+// Display icon to expand/collapse div
+function createCollapsibleDIVIcon($title, $divName ){
+	global $globalRelativePath;?>				<IMG ID="<?= $divName; ?>DIVExpander" SRC="<?= $globalRelativePath; ?>images/collapse-icon.jpg"
+			    onClick="var d=document.getElementById('<?= $divName; ?>DIV').style;
+			    var imgObj=document.getElementById('<?= $divName; ?>DIVExpander');
+			    if(d.display=='block'){
+			    	d.display='none';
+			    	this.src='<?= $globalRelativePath; ?>images/expand-icon.jpg';
+			    } else{ 
+			    	d.display='block';
+			    	this.src='<?= $globalRelativePath; ?>images/collapse-icon.jpg';
+			    } 
+			    return false;">
+			    <SPAN CLASS="header3"><?= $title; ?></SPAN><?}
+
+// Call this function after createCollapsibleDivIcon
+function createCollapsibleDIV($divName){	    
+?>		
+		<DIV ID="<?= $divName; ?>DIV" STYLE="display: block;">
+<?
+}
+
+
+// Display icon to expand/collapse div WITHOUT title
+function getCollapsibleDIVIcon($divName ){
+	global $globalRelativePath;
+	ob_start();
+?>	
+			<IMG ID="<?= $divName; ?>DIVExpander" SRC="<?= $globalRelativePath; ?>images/collapse-icon.jpg"
+			    onClick="var d=document.getElementById('<?= $divName; ?>DIV').style;
+			    
+			    var imgObj=document.getElementById('<?= $divName; ?>DIVExpander');
+			    if(d.display=='block' || d.display == ''){
+			    	d.display='none';
+			    	this.src='<?= $globalRelativePath; ?>images/expand-icon.jpg';
+			    } else{ 
+			    	d.display='block';
+			    	this.src='<?= $globalRelativePath; ?>images/collapse-icon.jpg';
+			    } 
+			    return false;">
+<?
+   $output = ob_get_contents();
+   ob_end_clean();
+   return $output;
+}
+
+function defineCollapsibleGroup($groupName, $expanderList){
+$js = "
+	var " . $groupName . " = new Array(" . sizeof($expanderList) . ");";
+
+	for ($i=0; $i < sizeof($expanderList); $i++){
+		$js .= $groupName . "[" . $i . "]='" . $expanderList[$i] . "';";
+	}
+	
+	return $js;
+}
+
+// Display icon to expand/collapse group of div WITHOUT title
+// REQUIRE: define expanderList which contains DIV ID of all the expander of the group
+function getCollapsibleManagerDIVIcon($divName, $groupName ){
+	global $globalRelativePath;
+	ob_start();
+?>	
+			<IMG ID="<?= $divName; ?>DIVExpander" SRC="<?= $globalRelativePath; ?>images/collapse-icon.jpg"
+			    onClick="			    
+					for (var i=0; i < <?= $groupName;?>.length; i++){
+						var domCollapsibleDIVIcon = document.getElementById(<?= $groupName;?>[i]);
+						
+						if (!domCollapsibleDIVIcon) break;
+						if ( domCollapsibleDIVIcon.src == this.src) {
+							tool.dom.fireClickEvent(domCollapsibleDIVIcon);
+						}
+					}
+
+					var is_expander = this.src.indexOf('collapse') != -1;
+					if (is_expander) {
+						this.src='<?= $globalRelativePath; ?>images/expand-icon.jpg';
+					} else {
+						this.src='<?= $globalRelativePath; ?>images/collapse-icon.jpg';
+					}
+				  return false;">			    
+<?
+   $output = ob_get_contents();
+   ob_end_clean();
+   return $output;
+}
+
+// Setup calendar popup div. This is used with displayCalendarPopupDiv
+// use display_date to call the calendar
+// e.g. display_date("DueDate", "", "", "", false, date('Y-m-d', $nextWeek))
+function createCalendarPopupDiv(){
+	global $globalRelativePath;
+	 
+?>
+<script language="javascript" src="<?= $globalRelativePath; ?>javascript/calendarPopup.js" type="text/javascript"></script>
+<script language="JavaScript">
+// define calendar
+var cal1 = new CalendarPopup("calendarDIV1")
+cal1.showNavigationDropdowns()	
+</script>
+<?
+}
+
+// display the calendar popup created before
+function displayCalendarPopupDiv(){
+	
+}
+
+//function popup_window(name, url, left, top, width, height, resizable)
+//{
+//  resizable_str = resizable ? 'yes' : 'no';
+//  window.open(url, name, 'left='+left+',top='+top+',width='+width+',height='+height+',resizable='+resizable_str);
+//}
+?>

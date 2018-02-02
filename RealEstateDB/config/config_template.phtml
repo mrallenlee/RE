@@ -1,0 +1,218 @@
+<?
+/* This script includes configurations for RealEstateDB */
+
+// Global vars
+// Global vars
+define("ROOT_URL", "");
+define("ROOT_PATH", "");
+
+// Menu file
+define("MENU_FILE", "menu.phtml");
+
+// User management module for login
+define("USER_MANAGEMENT_ENABLED", 1);
+
+// Error handler module
+define("ERROR_HANDLER_ENABLED", 1);
+define("ERROR_CONFIG_FILE", "config/errorConfig.phtml");
+
+// Cheque module enabled
+define("CHEQUE_MODULE_ENABLED", 1);
+
+// Broker module enabled
+define("BROKER_MODULE_ENABLED", 1);
+
+// turn on or off "Summary by Model" section in "Sales Status" page
+define("MODEL_SALES_STATUS_ENABLED", 0);
+
+// turn on or off CRM module
+define("CRM_ENABLED", 1);					
+
+// relative path to folder "admin" of CRM module, where CRM scripts are located
+define("CRM_RELATIVE_PATH", "./CRM");
+
+define("ONLINE_RESERVATION_ENABLED", 0);
+
+// turn on or off CRM module
+define("HOME_OPTIONS_ENABLED", 1);					
+
+// relative path to folder "admin" of CRM module, where CRM scripts are located
+define("HOME_OPTIONS_RELATIVE_PATH", "../RealEstateHomeOptionsDB");
+
+
+// turn on or off CRM module
+define("CLOSING_ENABLED", 1);			
+
+//This is the number of months we need previously to calculate future TargetUnitSalesNum
+
+//This is the number of months we need previously to calculate future TargetUnitSalesNum
+define("PROJECT_OPENING_DATE", "2005-04-01");
+define("SALES_FORECAST_MAX_MONTH", 36);
+define("SALES_FORECAST_PREVIOUS_MONTHS", 4);
+define("SALES_FORECAST_AVG_PREVIOUS_MONTHS", 4);
+define("SALES_FORECAST_CARRYOVER_MONTH", 1);
+define("DEFAULT_ACTUAL_SALES_VALUE", 10);	
+
+define("REAL_ESTATE_DB_USERNAME", 	"root");
+define("REAL_ESTATE_DB_SERVER", 	"localhost");
+define("REAL_ESTATE_DB_PASSWORD",	"Simple73");
+define("REAL_ESTATE_DB_NAME",		"Solstice_1");	
+
+define("PROJECT_NAME",				"Solstice");
+define("PROJECT_INTERNAL_NAME",		"solstice_1");
+define("PROJECT_SHORT_NAME",		"SOL1");
+
+define("DEFAULT_CITY",			"Whitby");
+
+define("DEFAULT_AGREEMENT_DEPOSIT",     2000);
+define("DEFAULT_AGREEMENT_DEPOSIT_PERCENTAGE",     "");
+define("DEFAULT_DEPOSIT_2_PERCENTAGE",     0.05);
+define("DEFAULT_DEPOSIT_3_PERCENTAGE",     0.05);
+define("DEFAULT_DEPOSIT_4_PERCENTAGE",    0.05);
+define("DEFAULT_DEPOSIT_5_PERCENTAGE",    0.05);
+define("DEFAULT_OCCUPANCY_DEPOSIT_PERCENTAGE",      0.05);
+
+// IF USE_PRESET_DEPOSIT_DATE is set to 1, use preset date, 
+// otherwise, use DEFAULT_DEPOSIT_DAY
+define("USE_PRESET_DEPOSIT_2_DATE", 0);
+define("USE_PRESET_DEPOSIT_3_DATE", 0);
+define("USE_PRESET_DEPOSIT_4_DATE", 0);
+define("USE_PRESET_DEPOSIT_5_DATE", 1);
+
+define("PRESET_DEPOSIT_5_DATE", "2008-10-01");
+
+define("DEFAULT_DEPOSIT_2_DAY",     30);
+define("DEFAULT_DEPOSIT_3_DAY",     90);
+define("DEFAULT_DEPOSIT_4_DAY",     150);
+
+define("DEFAULT_OCCUPANCY_DATE", 	"Jun 20,2008");
+define("DEFAULT_1_REVISED_CLOSING_DATE", 	"");
+define("DEFAULT_2_REVISED_CLOSING_DATE", 	"");
+define("DEFAULT_3_REVISED_CLOSING_DATE", 	"");
+
+define("PROJECT_OPENING_DATE", "2005-03-27");
+define("SALES_FORECAST_MAX_MONTH", 36);
+define("SALES_FORECAST_PREVIOUS_MONTHS", 4);
+//This is the number of months we need previously to calculate future TargetUnitSalesNum
+define("SALES_FORECAST_AVG_PREVIOUS_MONTHS", 4);
+define("SALES_FORECAST_CARRYOVER_MONTH", 10);
+define("DEFAULT_ACTUAL_SALES_VALUE", 10);	
+
+// display table header every certain number of rows
+define("DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER", "25");
+
+// Incentive category constant
+define("INCENTIVE_CATEGORY_CASH", "Cash Incentive");
+define("INCENTIVE_CATEGORY_CLOSING_CASH", "Closing Cash Incentive");
+define("INCENTIVE_CATEGORY_REGULAR", "Incentive");
+define("INCENTIVE_CATEGORY_SPECIAL", "Special");
+
+
+// display Acknowledge PDF
+define ("SHOW_ACKNOWLEDGEMENT_PDF", 0);
+
+// Unit information
+define("PROJECT_HAS_TANDEM", 1);
+define("PROJECT_HAS_ROOF_DECK", 0);
+define("PROJECT_HAS_BICYCLE_RACK", 0);
+define("PROJECT_HAS_DEPOSIT_5", 0);
+
+// define folder to upload user specific folder
+define("UPLOAD_FOLDER", "UploadFolder");
+
+// date format can be english, YYYY-MM-DD
+define("PROJECT_DATE_FORMAT", "YYYY-MM-DD");
+
+define("PREV_GST_RATE", 0.07);
+define("CURRENT_GST_RATE", 0.06);
+define("GSTEffectiveDate", "2006-07-01");
+
+
+if (time() >= $GSTEffectiveTimestamp ){
+	define("GST_RATE", 0.06);	
+} else {
+	define("GST_RATE", 0.07);	
+}
+
+define("PST_RATE", 0.08);
+
+// constant for GST Rebate
+define("GST_REBATE_ENABLED", 1);
+define("GST_REBATE_6_PERCENT_MAGIC_NUMBER",  2228703.7040 );
+define("GST_REBATE_7_PERCENT_MAGIC_NUMBER",  1898013.4790 );
+
+// get occupancy date depends on the floor	
+function get_occupancy_date($UnitNumber = -1){
+	return DEFAULT_OCCUPANCY_DATE;
+}
+ 
+function get_legal_level($level){
+	global $PHP_SELF;
+
+	if (preg_match("/.*\/hearthstone_1.*/", $PHP_SELF)){
+		if ($level < 13){
+			return $level;
+		} else {
+			return ($level - 1);
+		}
+	} else {
+		return $level;
+	}
+	
+}
+
+
+// Cheque module
+define("CHEQUE_TYPE_DEBIT", 				"DEBIT");
+define("CHEQUE_TYPE_CREDIT", 				"CREDIT");
+define("CHEQUE_STATUS_DEPOSITED", 			"Deposited");
+define("CHEQUE_STATUS_NOT_DEPOSITED", 		"Not Deposited Yet");
+define("CHEQUE_STATUS_NSF", 				"NSF");
+define("CHEQUE_STATUS_PAYMENT_RECEIVED", 	"Payment Received");
+define("CHEQUE_STATUS_RELEASED_FROM_TRUST", "Released from trust");
+
+
+define("CHEQUE_GROUP_DEPOSIT_EXCLUDE_LIST",		"'" . CHEQUE_STATUS_NSF . "', '" . CHEQUE_STATUS_RELEASED_FROM_TRUST . "'");
+define("CHEQUE_GROUP_PAYMENT_RECEIVED_LIST",	"'" . CHEQUE_STATUS_PAYMENT_RECEIVED . "'");
+define("CHEQUE_GROUP_INTERNAL_LIST",			"'" . CHEQUE_STATUS_DEPOSITED . "', '"  . CHEQUE_STATUS_NOT_DEPOSITED . "', '"  .CHEQUE_STATUS_NSF . "', '"  .CHEQUE_STATUS_PAYMENT_RECEIVED . "'");
+define("CHEQUE_GROUP_EXTERNAL_LIST",			"'" . CHEQUE_STATUS_RELEASED_FROM_TRUST . "'");
+
+// Deal Status Constant
+define("DEAL_STATUS_AVAILABLE", 			"Available");
+define("DEAL_STATUS_FIRM", 				"Firm");
+define("DEAL_STATUS_PENDING",				"Pending");
+define("DEAL_STATUS_OVERDUE",				"Overdue");
+define("DEAL_STATUS_CORPORATE", 			"Corporate");
+define("DEAL_STATUS_NOT_REPORTED", 			"NotReportToHeadOffice");
+define("DEAL_STATUS_RESCINDED", 			"Rescinded");
+
+define("DEAL_STATUS_PURCHASE_INCLUDE_LIST", "'" . DEAL_STATUS_FIRM . "', '" . DEAL_STATUS_CORPORATE . "', '" . DEAL_STATUS_PENDING . "'");
+define("DEAL_STATUS_PURCHASE_EXCLUDE_LIST", "'" . DEAL_STATUS_RESCINDED . "'");
+define("DEAL_STATUS_TENTATIVE_LIST", "'" . DEAL_STATUS_PENDING . "', '" . DEAL_STATUS_OVERDUE . "', '" . DEAL_STATUS_NOT_REPORTED . "'");
+
+define('REG_PARKING', "REG_PARKING");
+define('COMPACT_PARKING', "COMPACT_PARKING");
+define('TANDEM_PARKING', "TANDEM_PARKING");
+define('EXTENDED_PARKING', "EXTENDED_PARKING");
+define('REG_LOCKER', "REG_LOCKER");
+define('BIKE_RAC', "BIKE_RAC KER");
+define('ROOF_DECK', "ROOF_DECK");
+
+define("PARKING_INCLUDE_LIST", "'" . REG_PARKING . "', '" . COMPACT_PARKING . "', '" . TANDEM_PARKING . "', '" . EXTENDED_PARKING . "'");
+define("LOCKER_INCLUDE_LIST", "'" . REG_LOCKER . "'");
+
+define("CLOSING_CASH_FORCAST_START_MTH", 'December 1, 2007');
+define("CLOSING_CASH_FORCAST_END_MTH", 'December 1, 2008');
+//----------------------------------------------------------------------------------
+// UserListing
+//----------------------------------------------------------------------------------
+define("USER_LISTING_DISPLAY_UNIT_DETAILED", 1);
+define("USER_LISTING_DISPLAY_UNIT_ORIGINAL_MEASUREMENT", 1);
+define("USER_LISTING_DISPLAY_UNIT_FINAL_MEASUREMENT", 1);
+
+// PDF Lib
+define("PDFLIB_LICENSE_FILE_PATH", "/usr/home/dsdinc/config/license.txt");
+
+define("DEBUG_LEVEL", 3);
+
+?>

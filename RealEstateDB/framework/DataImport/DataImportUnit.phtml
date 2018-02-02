@@ -1,0 +1,109 @@
+<?php
+/*
+ * Created on 29-Jan-2007
+ *
+ * Inherit from DataImport class: when action is update (means update price), 
+ * move the old price into UnitPriceHistory and update new price into Unit
+ */
+ 
+include_once "main_include.phtml";
+include_once "framework/DataImport/DataImport.phtml";
+
+class DataImportUnit extends DataImport {
+ 
+/**
+  * The only difference between this function and the one in super class
+  * is mysql_query is used here instead of executeSql() to prevent it
+  * goes to error.phtml when there's a database error so that ajax won't
+  * have problem with this extra output.
+  */
+ function insertRecord($arguments){
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+ 	
+ 	$numOfCol = sizeof($headerInfoArray);
+ 	$multiAdditionalPurchaserArray = array();
+ 	
+ 	$sql = "INSERT INTO $table SET ";
+ 	for ($i =0; $i < $numOfCol; $i++){
+ 		if ($i > 0){
+ 			$sql .= ",";	
+ 		}
+ 		$sql .= $headerInfoArray[$i] . "=\"" . trim($dataArray[$i]) . "\""; 		
+ 	}
+	
+ 	$result = mysql_query($sql);
+
+ 	if ($result) return 1;
+ 	else return 0;
+ }
+
+/**
+  * move the old price into UnitPriceHistory and update new price into Unit
+  */
+function updateRecord($arguments){
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+	$primaryKey = $arguments['primaryKey'];
+
+ 	$numOfCol = sizeof($headerInfoArray);
+ 	$primaryKeyValue = -1;
+ 	$addComma = false;
+ 	
+ 	
+ 	$sql = "UPDATE $table SET ";
+ 	
+ 	for ($i =0; $i < $numOfCol; $i++){
+ 	
+		if ($headerInfoArray[$i] == $primaryKey){
+			$primaryKeyValue = $dataArray[$i]; 
+			continue;
+		}
+		 
+ 		if ($addComma){
+ 			$sql .= ",";
+ 		}
+ 		$sql .= $headerInfoArray[$i] . "=\"" . trim($dataArray[$i]) . "\"";
+ 		if (!$addComma){
+ 			$addComma = true;
+ 		}
+	}
+ 	
+	if ($primaryKeyValue > 0){
+		$sql .= " WHERE $primaryKey=$primaryKeyValue";	
+	}
+	
+ 	$sql_get_history="SELECT * FROM Unit WHERE ".$primaryKey ."='".$primaryKeyValue."'";
+ 	$result = mysql_query($sql_get_history);
+	$row = mysql_fetch_array($result);
+	
+ 	// Compose sql to insert UnitPriceHistory
+ 	$sql_insert_history = "INSERT INTO UnitPriceHistory ( ";
+ 	$sql_insert_history_values = " VALUES ( ";
+
+ 	for ($i =0; $i < $numOfCol; $i++){
+	 	$sql_insert_history .= $headerInfoArray[$i] . ",";
+		$sql_insert_history_values .= "'".$row["$headerInfoArray[$i]"]."',";
+	}
+ 	
+ 	$sql_insert_history .= "UpdatedBy,CreatedDate) ";
+	$sql_insert_history_values .= "'".get_user_name() . "',curdate())";
+
+	$sql_insert_history .= $sql_insert_history_values;
+	
+ 	$result_insert = mysql_query($sql_insert_history);
+ 	$result_update = mysql_query($sql);
+ 	
+ 	
+ 	// for now, don't bother to update AdditionalPurchaserInformation
+ 	if ($result_insert && $result_update)
+ 		return 1;
+ 	else
+ 		return 0;
+ 	
+ 	
+ }  	 
+}
+?>

@@ -1,0 +1,46 @@
+<?php
+/*
+ * Created on 12-Jan-2007
+ *
+ * Sice Release transactions record is not supposed to be added dynamically, so
+ * this class is not available for AJAX. Only cheque has AJAX call.
+ */
+ 
+include_once "config/config.phtml";
+include_once "guiUtil.phtml";
+require_once "Entity/View/ReleaseChequeView.phtml";
+include_once "framework/sajax/Sajax.php";
+
+function getNewReleaseChequeHTMLForm($index, $inputPrefix = ""){
+	$ReleaseCheque = new ReleaseChequeView();
+	$ReleaseCheque->setInputPrefix($inputPrefix);
+	$arguments = array();
+	$arguments['Index'] = $index;
+	return $ReleaseCheque->getNewHTMLForm($arguments);
+}
+
+function getExistingReleaseChequeHTMLForm($index, $arguments, $inputPrefix = "", $mode = "display"){
+	$ReleaseCheque = new ReleaseChequeView();
+	$ReleaseCheque->setInputPrefix($inputPrefix);
+	$arguments['Index'] = $index;
+	$arguments['Mode'] = $mode;
+	$result =  $ReleaseCheque->getExistingHTMLForm($arguments);
+	return $result;
+}
+
+// should be initialized by caller
+//sajax_init();
+//$sajax_debug_mode = 1;
+sajax_export("getNewReleaseChequeHTMLForm");
+// should be handled by caller
+//sajax_handle_client_request();
+//
+?><?
+//<html>
+//<body>
+//<form>
+//<?= getNewReleaseChequeHTMLForm(1); 
+//</form>
+//</body>
+//</html>
+?>

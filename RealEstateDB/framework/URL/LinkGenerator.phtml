@@ -1,0 +1,112 @@
+<?
+/*
+ * Created on 13-Feb-2006
+ *
+ * Handle links after go to a specific page. Usually used at
+ * calling update db page, then tells where to go after updating
+ * db
+ */
+ 
+if (!class_exists(URLEncoding)){
+	require "URLEncoding.phtml";
+}
+
+// change of constant should change the LinkHandler.phtml
+define("QUERY_KEY_LINK_AFTER_DONE", 			"urlwhendone");
+define("QUERY_KEY_JS_AFTER_DONE", 				"jswhendone");
+define("QUERY_KEY_BACK_AFTER_DONE",				"backwhendone");
+
+class LinkGenerator{
+	var $from = "";
+	var $to = "";
+	var $linkAfterDone = "";
+	var $jsAfterDone = "";
+	var $queryString ="";
+	var $urlEncoding = "";
+	var $back = -1;
+	
+
+	/**
+	* Input information for the Link Handler
+	*/	
+	function LinkGenerator($from, $to, $linkAfterDone = "", $jsAfterDone = "", $back = -1){
+		$this->from = $from;
+		$this->to = $to;
+		$this->linkAfterDone = $linkAfterDone;
+		$this->jsAfterDone = $jsAfterDone;
+		$this->back	= $back;
+		$this->urlEncoding = new URLEncoding();
+		
+	}
+	
+	/**
+	* Add query string to the destination link
+	*/
+	function addQueryString($key, $value){		
+		if ($this->queryString != ""){
+			$this->queryString .= "&";
+		}
+		$this->queryString .= $key . "=" . urlencode($value);		
+	}
+
+	/**
+	* Get destination link with encoded link after done and js after done
+	*/
+	function getDestinationLink(){
+		$hasQueryString = false;
+		$destination = $this->to;
+		if (strpos($destination, "?") <= 0){
+			$destination .= "?";
+		} else {
+			$hasQueryString = true;		
+		}
+		if ($this->queryString != ""){
+			$destination .= $this->queryString;
+			$hasQueryString  = true;
+		}
+		if ($this->linkAfterDone != ""){
+			if ($hasQueryString){
+				$destination .= "&";
+			}
+			$destination .= QUERY_KEY_LINK_AFTER_DONE . "=" . $this->urlEncoding->encodeURL($this->linkAfterDone);
+			$hasQueryString = true;
+		}
+		
+		if ($this->jsAfterDone){
+			if ($hasQueryString){
+				$destination .= "&";
+			}
+			$destination .= QUERY_KEY_JS_AFTER_DONE . "=" . $this->urlEncoding->encodeURL($this->jsAfterDone);
+		}
+		return $destination;		
+	}
+	
+	/**
+	 * For the use with post method
+	 * Return hidden input with encoded link after done
+	 */
+	function getForwardLinkHiddenInput(){
+		return "<input type=\"hidden\" name=\"". QUERY_KEY_LINK_AFTER_DONE . "\" value=\"" . 
+				$this->urlEncoding->encodeURL($this->linkAfterDone) . "\">\n";
+	}
+
+	
+	/**
+	 * For the use with post method
+	 * Return hidden input with encoded javascript after done
+	 */
+	function getJavascriptActionHiddenInput(){
+		return "<input type=\"hidden\" name=\"". QUERY_KEY_JS_AFTER_DONE . "\" value=\"" . 
+				$this->urlEncoding->encodeURL($this->jsAfterDone) . "\">\n";
+	}	
+	
+	/**
+	 * For the use with post method
+	 * Return number of back level should do
+	 */
+	function getBackLevelHiddenInput(){
+		return "<input type=\"hidden\" name=\"". QUERY_KEY_BACK_AFTER_DONE . "\" value=\"" . 
+				$this->urlEncoding->encodeURL($this->back) . "\">\n";
+	}		
+} // LinkGenerator
+?>

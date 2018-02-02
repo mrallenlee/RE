@@ -1,0 +1,143 @@
+<?
+// generate NSF cheque report
+
+include "main_include.phtml";
+include "multiPageNavigation.phtml";
+include_once "util.phtml";
+include_once "listChequeAction.phtml";
+
+// set the security level to be 3 for this page
+check_auth(2);
+
+
+// get essential cheque list esql
+$sql = getChequeListSql();
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$_GET;
+	$search_criterion = "";
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+				$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>$search_field, "csvValue"=>$val)) . ") ";
+				$sql .= $sql_cond;
+				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+}
+
+// list all
+else
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY " . $orderby . "," . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", TransactionsRecordID";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", DepositNumber, ChequeDate";
+}
+
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+
+//echo "pageSql=$pageSql";
+$result = executeSql($pageSql);
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<TITLE>Cheque List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+		<FORM NAME="form_search" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+			<TABLE>
+			<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+			<TR CLASS="blank">
+				<TD>Suite Number: </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+				<TD>First Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+				<TD>Last Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+			</TR>
+			<TR CLASS="blank">
+				<TD>Cheque Status : </TD>
+				<TD><? display_generic_table_list("ChequeStatus", "ChequeStatus", "", "search", ""); ?></TD>
+				<TD>Company: </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+			</TR>
+			<TR CLASS="blank">
+				<td>Results per Page : </td>
+				<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+			</TR>
+			<TR CLASS="blank">
+				<TD COLSPAN=6 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+			</TR>
+			<TR>
+				<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+					<INPUT TYPE="SUBMIT" VALUE="Search">
+					<INPUT TYPE="BUTTON" VALUE="List All" onClick="window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>'">
+					<INPUT TYPE="BUTTON" VALUE="Dump Data" onClick="window.location='dumpCSVCheque.phtml'">
+				</TD>
+			</TR>
+				
+			</TABLE>
+		</FORM>
+	</DIV>
+	</DIV>
+
+<script language="JavaScript">
+	document.form_search.search_ChequeStatus.value = "<?= $search_ChequeStatus; ?>";
+</script>
+
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+
+	{
+		die("");
+	}
+?>	
+
+	<H4>List Cheques</H4>
+	<TABLE>
+  	<TR>
+  	<? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&orderby=" . $orderby; ?>
+    	<TD colspan="11" align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?>
+    	<?= $multiPageNavigation->getAllPageButtons($linkCreterion);?>
+    	<?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  	</TR>
+<?	print getChequeListTable($result); ?>
+	</TABLE>	
+
+</BODY>
+</HTML>

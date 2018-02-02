@@ -1,0 +1,153 @@
+<?
+/**
+ * Get a list of purchase info by this broker
+ */
+function getBrokerPurchaseInfo($arguments){
+	
+	ob_start();
+	
+	$action = checkValue($arguments['action'], "display");
+	$arguments['mode'] = checkValue($arguments['action'], $arguments['mode']);
+	$brokerID = checkValue($arguments['BrokerID'], -1);
+	
+	if ($brokerID <= 0){
+		return;		
+	}
+	
+	$sql = "SELECT User.UnitNumber, FirstName, LastName, Company, DealStatus,
+			User.AgreementDepositDate,
+			UserBroker.*, (
+				SELECT SUM(IF(ChequeType = 'CREDIT', ChequeAmount * -1, ChequeAmount))
+				FROM Cheque
+				WHERE TransactionsRecordID IN (	UserBroker.Commission1TransactionID,
+												UserBroker.Commission2TransactionID,
+												UserBroker.Commission3TransactionID,
+												UserBroker.Commission4TransactionID)
+				AND ChequeStatus = 'Deposited') AS CommissionPaid
+			FROM User, UserBroker
+			WHERE (User.BrokerID=" . $brokerID . " OR User.BrokerID2=" . $brokerID . ")
+			AND UserBroker.BrokerID=$brokerID
+			AND UserBroker.UserID=User.UserID";
+
+	if(isset($arguments['orderby']) && $arguments['orderby'] != '') {
+		$sql = $sql . " order by " . $arguments['orderby'];
+	} else {
+		$sql = $sql . " order by " . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) ;
+			
+	}
+
+	$result = executeSql($sql);			
+	
+//	echo $sql;
+	
+?>
+	<TABLE>
+		<TR CLASS="head">		
+			<TD><A HREF="<?= $_SERVER['PHP_SELF'] . "?BrokerID=$brokerID&displayType=stand-alone&action=display&orderby=" . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Suite</A></TD>
+			<TD><A HREF="<?= $_SERVER['PHP_SELF'] . "?BrokerID=$brokerID&displayType=stand-alone&action=display&orderby=FirstName,LastName," . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));?>">Purchaser</A></TD>
+			<TD><A HREF="<?= $_SERVER['PHP_SELF'] . "?BrokerID=$brokerID&displayType=stand-alone&action=display&orderby=Company," . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Company</A></TD>
+			<TD><A HREF="<?= $_SERVER['PHP_SELF'] . "?BrokerID=$brokerID&displayType=stand-alone&action=display&orderby=AgreementDepositDate," . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Date of Agreement</A></TD>
+			<TD>GST Rate</TD>
+			<TD><A HREF="<?= $_SERVER['PHP_SELF'] . "?BrokerID=$brokerID&displayType=stand-alone&action=display&orderby=DealStatus" ?>">Deal Status</A></TD>
+<?		for ($i= 1; $i <= BROKER_COMMISSION_NUMBER; $i++){ ?>
+			<TD>Commission<?= $i; ?></TD>
+<? //			<TD>Commission1 Date</TD> ?>
+<?		} ?>			
+			<TD>Total Paid Commission</TD>
+			<TD><A HREF="<?= $_SERVER['PHP_SELF'] . "?BrokerID=$brokerID&displayType=stand-alone&action=display&orderby=(Commission1Total%2BCommission2Total%2BCommission3Total%2BCommission4Total)" ?>">Outstanding Amount</A></TD>
+		</TR>
+<?	
+	while ($row = mysql_fetch_array($result)){
+		displayMouseOverTR("blank", "body", "displayBrokerUnitInfo('" . $brokerID . "', '" . $row['UserID'] . "')");
+		$totalCommission = 0;
+?>
+			<TD><?= $row['UnitNumber']; ?></TD>
+			<TD><?= $row['FirstName'] . " " . $row['LastName']; ?></TD>
+			<TD><?= $row['Company']; ?></TD>
+			<TD><?= $row['AgreementDepositDate']; ?></TD>	
+                        <TD><?= (getGSTRate($row['AgreementDepositDate']) * 100) . "%"; ?></TD>						
+			<TD><?= $row['DealStatus']; ?></TD>
+<?		for ($i= 1; $i <= BROKER_COMMISSION_NUMBER; $i++){ 
+			$totalCommission += $row['Commission' . $i . 'Total'];
+?>	    		<td align=right><?= numberFormat(array("value"=>$row['Commission' . $i . 'Total'],
+								"decimals"=>2, "isDollarValue"=>TRUE, 
+								"defaultValue"=>0)); ?>								
+			</td>			 
+			<? ${'columnTotalCommission' . $i} += $row['Commission' . $i . 'Total'];
+		} 
+		
+		$outstandingCommission = $totalCommission - $row['CommissionPaid'];
+		$columnTotalPaidCommission += $row['CommissionPaid'];
+		$columnTotalOutstandingAmount += $outstandingCommission;
+?>			
+    		<td align=right><?= numberFormat(array("value"=>$row['CommissionPaid'],
+    							"decimals"=>2,
+    						 	"isDollarValue"=>TRUE, 
+    						 	"defaultValue"=>0)); ?>
+    		</td>
+    		<td align=right><?= numberFormat(array("value"=>$outstandingCommission,
+    							"decimals"=>2,
+    						 	"isDollarValue"=>TRUE, 
+    						 	"defaultValue"=>0)); ?>
+    		</td>
+    		
+		</TR>		
+<?		
+	}
+	//Display the totals of all columns at the bottom		
+?>	<TD>Total</TD>
+	<TD></TD>
+	<TD></TD>
+	<TD></TD>
+	<TD></TD>
+	<TD></TD>
+	<? for($i= 1; $i <= BROKER_COMMISSION_NUMBER; $i++){ 		
+		//echo ("<TD align=\"right\">$" . number_format(${'columnTotalCommission' . $i}, 2) . "</TD>");		
+		echo ("<TD align=\"right\">") ;
+		echo (numberFormat(array("value"=>${'columnTotalCommission' . $i}, "decimals"=>2, "isDollarValue"=>TRUE, "defaultValue"=>0)));
+		echo ("</TD>");		
+	   }
+	?>	
+	<TD align="right"><?= numberFormat(array("value"=>$columnTotalPaidCommission,
+								"decimals"=>2, "isDollarValue"=>TRUE, 
+								"defaultValue"=>0)) ?></TD>
+	<TD align="right"><?= numberFormat(array("value"=>$columnTotalOutstandingAmount,
+								"decimals"=>2, "isDollarValue"=>TRUE, 
+								"defaultValue"=>0)) ?></TD>
+	</TABLE> <?
+	
+   $output = ob_get_contents();
+   ob_end_clean();
+   return $output;	
+}
+
+/**
+ * set commisssions of all units belonging to this broker to default commisssions in Broker table
+ */
+function setDefaultCommission($BrokerID)
+{
+	ob_start();
+	
+	$sql = "select * from Broker where BrokerID = ". $BrokerID;
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	$defaultTotalCommission = $row['DefaultTotalCommission'];
+	$defaultCommission1 = $row['DefaultCommission1'];
+	$defaultCommission2 = $row['DefaultCommission2'];
+	$defaultCommission3 = $row['DefaultCommission3'];
+	$defaultCommission4 = $row['DefaultCommission4'];
+	
+	$sql = "update UserBroker 
+	           set TotalCommission = " . $defaultTotalCommission . ", 
+	               Commission1 = " . $defaultCommission1 . ",
+	               Commission2 = " . $defaultCommission2 . ",
+	               Commission3 = " . $defaultCommission3 . ",
+	               Commission4 = " . $defaultCommission4 . "
+	         where BrokerID = ". $BrokerID;
+	$result = executeSql($sql);
+
+   ob_end_clean();
+	 return 1;
+}
+
+?>

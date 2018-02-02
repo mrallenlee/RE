@@ -1,0 +1,49 @@
+<?php
+/*
+ * Created on 20-Jan-2007
+ *
+ * Export sales status data
+ */
+ 
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExportMysqlWrapper.phtml";
+
+check_auth(2, "sales");
+ 
+$date_to_search = $_REQUEST["date_to_search"];
+
+	$sql = "SELECT 	Unit.UnitNumber Unit,
+					CASE 
+					WHEN User.Price IS NULL THEN Unit.Price
+					ELSE User.Price end SalesPrice,
+					User.UnitAllowance UnitAllowance,
+					User.ParkingSpaceCharge ParkingCharge,
+					User.LockerCharge LockerCharge,
+					User.AdditionalCost AdditionalCost, 
+					User.Price-User.UnitAllowance+User.ParkingSpaceCharge+User.LockerCharge+User.AdditionalCost AS TotalUnitSales,		
+					User.OfferPrice AS OfferPrice,		
+					(User.Price / Unit.Area) AS AvgPricePerSqFeet,
+					Unit.UnitType, 
+					UnitTypeDescription,
+					Model,
+					Unit.Area Size, 
+					concat(User.LastName, ', ', User.FirstName) Purchaser,
+					User.AgreementDepositDate OfferDate,
+					User.RescissionDate RescissionDate,
+					OccupancyDepositDate,
+					FirstRevisedClosingDate,
+					User.DealStatus DealStatus,
+					Unit.Status
+					FROM Unit LEFT JOIN User 
+					ON Unit.UserID = User.UserID
+					AND User.AgreementDepositDate <= '$date_to_search' 
+					ORDER BY Unit.UnitNumber, User.LastName, User.FirstName";
+ 		
+$result = executeSql($sql);
+
+$exporter = new DataExportMysqlWrapper($result);
+$exporter->exportHeader("SalesStatus.csv");
+$exporter->exportData();
+?>

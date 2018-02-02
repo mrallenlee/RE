@@ -1,0 +1,209 @@
+<?php
+
+include "config.phtml";
+
+// Class DOField: = database.table.row.column 
+Class DOField {
+	var $fieldName;
+	var $fieldValue;
+	var $fieldType;
+	var $isDirty;
+	
+	function DOField($name, $value, $type = 'string', $dirty = false) {
+		$this->fieldName = $name;
+		$this->fieldValue = $value;
+		$this->fieldType = $type;
+		$this->isDirty = $dirty;
+	}
+	
+	function toXML() {
+		return "<" . $this->fieldName . ">" . $this->fieldValue . "</" . $this->fieldName . ">";
+	}
+}
+
+// Class DataObject: = database.table.row
+Class DataObject {
+	var $doFields;
+	var $doName;
+	
+	function DataObject($doName, $doFields = array()) {
+		$this->doName = $doName;
+		$this->doFields = $doFields;
+	}
+	
+	function getField($fieldName) {
+		return $this->doFields[$fieldName]->fieldValue;
+	} 
+	function setField($fieldName, $fieldValue) {
+		if (array_key_exists($fieldName, $this->doFields))
+			$this->doFields[$fieldName]->fieldValue = $fieldValue;
+		else
+			$this->doFields[$fieldName] = new DOField($fieldName, $fieldValue);
+	}
+	
+	function toXML() {
+		$xml = ""; 
+		foreach ($this->doFields as $doField)
+			$xml = $xml . $doField->toXML();
+			
+		return "<DataObject><" . $this->doName . ">" . $xml . "</" . $this->doName . "></DataObject>";
+	}
+
+	function fromXML() {
+		
+	}
+}
+
+// Class DataObject: = database.table
+Class DOFactory {
+	function doSql($sql, $rowSize=99999) {
+		//print $sql . "<br>";
+		
+		// Connecting, selecting database
+		$link = mysql_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD);
+		mysql_select_db(DB_NAME);
+
+		// Performing SQL query
+		$result = mysql_query($sql)  or die('Query failed: ' . mysql_error());
+		
+		if (substr($sql,0,6) != 'select') {
+			mysql_close($link);
+			return $result;
+		}
+
+		// Printing results in HTML
+		$rows = array();
+		while ($line = mysql_fetch_assoc($result)) {
+			$rows[] = $line;
+			
+			if (count($rows) > $rowSize) break;
+		}
+
+		// Free resultset
+		mysql_free_result($result);
+
+		// Closing connection
+		mysql_close($link);
+		
+		return $rows;
+		
+		/*
+		$dbh = new PDO("mysql:host=localhost;dbname=yml", "yml", "yml",array(PDO::ATTR_PERSISTENT => true));
+		$rows = array();
+		foreach ($dbh->query($sql) as $row) {
+     		$rows[] = $line;
+     		if (count($rows) > $rowSize) break;
+   		}
+   		
+   		$dbh = null;
+		return $rows;
+		*/
+	}
+	
+	function row2DataObject($row, $doName) {
+		$dataObject = new DataObject($doName);
+
+		foreach ($row as $col => $val) {
+			$dataObject->SetField($col, $val);
+		}
+		
+		return $dataObject;
+	}
+	
+	function rows2DataObjects($rows, $doName) {
+		$dataObjects = array();
+		foreach ($rows as $row) {
+			$dataObjects[] = DOFactory::Row2DataObject($row, $doName);
+		}
+
+		return $dataObjects;
+	}
+	
+	function find($doName, $parameters = array()) {
+		$sql = 'select * from ' . $doName;
+		
+		if (array_key_exists("condition", $parameters))
+			$sql = $sql . ' where ' . $parameters['condition'];
+		
+		if (array_key_exists("sort", $parameters))
+			$sql = $sql . ' order by ' . $parameters['sort'];
+		
+		$rowSize = array_key_exists("rowSize", $parameters) ? 
+			$parameters['rowSize'] : 99999;
+
+		$rows = DOFactory::doSql($sql, $rowSize);
+		$dataObjects = DOFactory::rows2DataObjects($rows, $doName);
+		return $dataObjects;
+	}
+
+	function findAll($doName) {
+		return DOFactory::find($doName);
+	}
+
+	function findFirst($doName, $parameters = array()) {
+		$parameter['rowSize'] = 1;
+		$dataObjects = DOFactory::find($doName, $parameters = array());
+		if (count($dataObjects) > 0 ) return $dataObjects[0];
+	}
+	
+	function create($dataobject) {
+		$cols = "";
+		$vals = "";
+		foreach ($dataobject->doFields as $doField) {
+			$cols= $cols . "," . $doField->fieldName;
+			$vals= $vals . ",'" .  $doField->fieldValue . "'";
+		}
+		$sql = 'insert into ' . $dataobject->doName . '('. substr($cols,1) . ') values(' . substr($vals,1) . ')';
+		$result = DOFactory::doSql($sql);
+		
+		return $dataobject;
+	}
+	
+	function delete($dataobject) {
+		$conds = "";
+		$vals = "";
+		foreach ($dataobject->doFields as $doField) {
+			$conds= $conds . " and " . $doField->fieldName . "='" . $doField->fieldValue . "'";
+		}
+		$sql = 'delete from ' . $dataobject->doName . ' where '. substr($conds,5);
+		$result = DOFactory::doSql($sql);
+		
+		return $dataobject;
+	}
+
+	function update($dataobject, $parameters = array()) {
+		$upds = "";
+		foreach ($dataobject->doFields as $doField) {
+			$upds= $upds . "," . $doField->fieldName . "='" . $doField->fieldValue . "'";
+		}
+
+		$conds = "";
+		foreach ($parameters as $key => $value) {
+			$conds= $conds . " and " . $key . "='" . $value . "'";
+		}
+
+		$sql = 'update ' . $dataobject->doName . ' set '. substr($upds,1) . ' where ' . substr($conds,5);
+		$result = DOFactory::doSql($sql);
+		
+		return $dataobject;
+	}
+}
+
+
+//$doUser = new DataObject("user");
+//$doUser->setField("login_name","abc");
+//print $doUser->getField("login_name") . "\n";
+
+//$doMyTable = DOFactory::FindAll("sys_rid");
+//print_r($doMyTable);
+
+//$doMyTable = DOFactory::Find("sys_rid", array("condition"=>"rid=1"));
+//print_r($doMyTable);
+
+//$doMyTable = DOFactory::FindFirst("sys_rid");
+//print_r($doMyTable);
+//
+//$doMyTable = DOFactory::FindFirst("sys_rid");
+//print($doMyTable->toXML());
+
+?>

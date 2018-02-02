@@ -1,0 +1,221 @@
+<?
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/UserPackageHandler.phtml";
+
+$UnitNumber = getUnitNumber();
+
+if($UnitNumber == -1)
+{
+	handleError ("", "", SESSION_EXPIRED);
+}
+
+$UnitType = getUnitType();
+
+if (getCommit() == 1)
+{
+	handleError ("", "", COMMIT_ALREADY);
+}
+
+// This file saves the user's selections to the database. It
+// is called when the user clicks on the Save button when
+// viewing and selecting their Options and Upgrades.
+
+// get user package 
+$userPackage = new UserPackageHandler($db, getUserID());
+
+// return true if the specific Item should be omitted
+function checkOmitItemOrNot($itemID)
+{
+	global $item_omit;
+
+	// if no item needs to be omit, return true
+	if (!isSet($item_omit))
+	{
+		return 0;
+	}
+
+	for ($i=0; $i < sizeOf($item_omit); $i++)
+	{
+		// if itemID is in item_omit array, return false
+		if ($itemID == $item_omit[$i])
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+// if there is nothing to add to DB
+if ($noOfInput <= 0)
+{
+?>
+<script language="javascript">
+	location.href = "display_upgrades.phtml?SectionID=<?echo $SectionID;?>&msg=<?= urlencode("Save successful");?>";
+</script>
+<?
+}
+
+if (!$SectionID || !$Item_array)
+{
+	goto_url("display_upgrades.phtml?SectionID=$SectionID&errMsg=" . urlencode("Choice missing for a subsection"));
+	die ();
+}
+
+// query for do loop
+$sql_Item = "SELECT Item.ItemID as ItemID, Item.Name as Name
+		FROM Subsection,Item
+		WHERE Subsection.SectionID = $SectionID
+		AND Subsection.SubsectionID = Item.SubsectionID
+		ORDER BY Item.ItemID";
+
+$result_Item = mysql_query($sql_Item,$db) or handleError("", "SQL=$sql_item <br>Error=" . mysql_error(), SQL_ERROR, true);	
+$row = mysql_fetch_array($result_Item);
+$ItemID = $row['ItemID'];
+
+/* This is a useful feature (because it is meant to
+   reduce the number of delete calls to the database)
+   but it causes problems when the user has a selection
+   saved in the database and then the admin decides to
+   change the price to -1.
+   If you decide to uncomment this code then make sure
+   you also uncomment the lines pertaining to:
+   'if ($delete_flag)...' in the do loop for Item table.
+
+// check if user has saved in current section before
+
+$sql_userSave = "SELECT ItemID
+		FROM UserSave
+		WHERE ItemID = $ItemID
+		AND UnitNumber = $UnitNumber";
+		
+
+$result_userSave = mysql_query($sql_userSave,$db) or die("ERROR : $sql_userSave <br>" . mysql_error());
+if (mysql_num_rows($result_userSave) > 0)
+{
+	$delete_flag = 1;
+}
+else 
+{
+	$delete_flag = 0;
+}
+
+*/
+
+// do loop for Item table
+do
+{
+	$ItemID = $row['ItemID'];
+	$OptionID = $Item_array[$ItemID];
+	$ItemName = $row['Name'];
+//print "ItemID=$ItemID OptionID=$OptionID Name=$ItemName<BR>";
+	// check this Item should be omitted or not
+	if (checkOmitItemOrNot($ItemID) == 1) 
+	{
+		continue;
+	}
+	// retrieve the item name from DB in order to show error  
+	// message for not choosing choice in an option
+	if ($Option_array[$ItemID][$OptionID] == OPTION_IS_NOT_AVAILABLE )
+	{
+		$sql_option = "SELECT * FROM Options WHERE OptionID=$OptionID";
+		$result_option = mysql_query($sql_option,$db) or handleError("", "SQL=$sql_option <br>Error=" . mysql_error(), SQL_ERROR, true);	
+		if (mysql_num_rows($result_option) <= 0) handleError("There is no Options", "SQL=$sql <br>Error=" . mysql_error(), GENERAL_ERROR, true);	
+		$data_option = mysql_fetch_array($result_option);
+		if ($err_msg == "")
+		{
+			$err_msg = "display_upgrades.phtml?SectionID=$SectionID&errMsg=" . urlencode("Missing option choice for " . $data_option['Name']);
+		}
+		continue;
+	}
+	if ($OptionID == "")
+	{
+		if ($err_msg == "")
+		{
+			$err_msg = "display_upgrades.phtml?SectionID=$SectionID&errMsg=" . urlencode("Selection missing for " . $ItemName);
+		}
+		continue;
+	}
+	if ($Option_array[$ItemID][$OptionID])
+	{
+		$ChoiceID = intVal($Option_array[$ItemID][$OptionID]);
+	}
+	else
+	{
+		$ChoiceID = 0;
+	}
+	if (!isSet($OptionID) || $OptionID == "")
+	{
+		continue;
+	}
+	$sql_price = "SELECT *
+			FROM Price
+			WHERE ItemID = $ItemID
+			AND OptionID = $OptionID
+			AND UnitType = '$UnitType'";
+	$result_price = mysql_query($sql_price,$db) or handleError("", "SQL=$sql_price <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+	$row = mysql_fetch_array(	$result_price);
+	$Price = is_null($row['Price']) ? 0 : $row['Price'];
+
+	// if this is an incentive, set the Price to be OPTION_IS_INCENTIVE.
+	if ($row['PackageID'] > 0){
+		if ($userPackage->containsPackage($row['PackageID'])){
+			$Price = OPTION_IS_INCENTIVE;	
+		}
+	}
+	
+	for ($i = 0; $i < $no_of_contractor; $i++)
+	{
+		$var_contractor = "contractor" . $i;
+		
+		$$var_contractor = is_null($row['contractor' . $i]) ? 0 : $row['contractor' . $i];
+	}
+
+	$sql_delete = "DELETE FROM UserSave
+			WHERE UnitNumber = '$UnitNumber'
+			AND ItemID = '$ItemID'";
+	$result_delete = mysql_query($sql_delete,$db) or handleError("", "SQL=$sql_delete <br>Error=" . mysql_error(), SQL_ERROR, true);			
+
+	// if there is a value in the Item_array array at $ItemID
+	// then insert it into the UserSave table
+	if ($OptionID)
+	{
+		$sql_UserSave = "INSERT INTO UserSave
+				(UnitNumber, ItemID, OptionID, ChoiceID, Price, contractor0, 
+				contractor1, contractor2, contractor3, contractor4, 
+				contractor5, contractor6, contractor7, contractor8, 
+				contractor9, contractor10, contractor11, contractor12, 
+				contractor13, contractor14, contractor15, contractor16, 
+				contractor17, contractor18, contractor19, contractor20,
+				contractor21, contractor22, contractor23, contractor24,
+				contractor25, contractor26, contractor27, contractor28,
+				contractor29, contractor30, contractor31, contractor32,
+				contractor33, contractor34, contractor35, contractor36,
+				contractor37, contractor38, contractor39)
+			VALUES 
+				('$UnitNumber', '$ItemID','$OptionID','$ChoiceID', $Price, $contractor0,
+				$contractor1, $contractor2, $contractor3, $contractor4,
+				$contractor5, $contractor6, $contractor7, $contractor8,
+				$contractor9, $contractor10, $contractor11, $contractor12,
+				$contractor13, $contractor14, $contractor15, $contractor16,
+				$contractor17, $contractor18, $contractor19, $contractor20,
+				$contractor21, $contractor22, $contractor23, $contractor24,
+				$contractor25, $contractor26, $contractor27, $contractor28,
+				$contractor29, $contractor30, $contractor31, $contractor32,
+				$contractor33, $contractor34, $contractor35, $contractor36,
+				$contractor37, $contractor38, $contractor39)";
+
+		$result_UserSave = mysql_query($sql_UserSave) or handleError("", "SQL=$sql_UserSave <br>Error=" . mysql_error(), SQL_ERROR, true);	
+	}
+} while($row = mysql_fetch_array($result_Item)); // end do for Item table
+
+if ($err_msg != "")
+{
+	goto_url($err_msg);
+	die();
+}
+?>
+
+<script language="javascript">
+	location.href = "display_upgrades.phtml?SectionID=<?echo $SectionID;?>&msg=<?= urlencode("Save successful");?>";
+</script>

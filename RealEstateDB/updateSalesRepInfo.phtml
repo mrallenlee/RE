@@ -1,0 +1,100 @@
+<?
+include "main_include.phtml";
+
+// called by "salesRep.phtml" to add, delete, update sales rep info
+// and transfer customers of one agent to another
+
+// expect: action (add, delete, update, transfer)
+
+function retrieve_data($key)
+{
+	return explode("_", $key);
+}
+
+if ($action == "add")
+{
+	$sql = "INSERT INTO SalesRep (SalesRepFirstName, SalesRepLastName)
+		VALUES ('$SalesRepFirstName_new', '$SalesRepLastName_new')";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	goto_url("./salesRep.phtml");
+}
+
+if ($action == "delete")
+{
+	// set this sales rep's customers to nobody
+	$sql = "UPDATE User SET SalesRepID=0 WHERE SalesRepID=$id";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	$sql = "UPDATE Visitor SET SalesRepID=0 WHERE SalesRepID=$id";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	// delete the sales rep
+	$sql = "DELETE FROM SalesRep WHERE SalesRepID=$id";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	goto_url("./salesRep.phtml");
+}
+
+if ($action == "transfer")
+{
+	if ($SalesRepID_from == "")
+		$error = "Error: Please choose transfer-from sales rep.";
+	
+	if ($SalesRepID_to == "")
+		$error = "Error: Please choose transfer-to sales rep.";
+
+	if (isSet($error))
+		goto_url("./salesRep.phtml?error=$error");
+	
+	$sql = "UPDATE User SET salesRepID=$SalesRepID_to WHERE SalesRepID=$SalesRepID_from";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	$sql = "UPDATE Visitor SET salesRepID=$SalesRepID_to WHERE SalesRepID=$SalesRepID_from";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	$error = "Transferred Successfully.";
+
+	goto_url("./salesRep.phtml?error=$error");
+}
+
+if ($action == "update")
+{
+	$prevSalesRepID = -1;
+	$SalesRepFirstName = "";
+	$SalesRepLastName = "";
+
+	while (list($key, $value) = each ($_POST))
+	{
+		list($SalesRepID, $name) = retrieve_data($key);
+
+		if ($SalesRepID != $prevSalesRepID)
+		{
+			if ($prevSalesRepID != -1)
+			{
+				//print $prevSalesRepID;
+				// update the previous record
+				$sql = "UPDATE SalesRep
+					SET SalesRepFirstName='$SalesRepFirstName',
+					SalesRepLastName='$SalesRepLastName'
+					WHERE SalesRepID=$prevSalesRepID";
+
+				$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+				
+				$SalesRepFirstName = "";
+				$SalesRepLastName = "";
+			}
+			$prevSalesRepID = $SalesRepID;	
+		}
+
+		${$name} = $value;		
+	}
+	$sql = "UPDATE SalesRep
+		SET SalesRepFirstName='$SalesRepFirstName',
+		SalesRepLastName='$SalesRepLastName'
+		WHERE SalesRepID=$prevSalesRepID";
+	
+	$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+
+	goto_url("./salesRep.phtml");
+}
+
+?>

@@ -1,0 +1,814 @@
+<?
+/**
+ * Display and Edit the Sales Forcast Schedule 
+ * 
+ */
+include "../main_include.phtml";
+//include_once "guiUtil_v2.phtml";
+//include_once "util.phtml";
+
+define (TARGET_SALES_INPUT_PREFIX, "TARGET_SALES_INPUT");
+
+// index nubmer of target sales input box
+//Check if we are in salesStatus page
+$inSalesStatusPage = strpos($PHP_SELF, 'salesStatus');
+
+$isStandAloneMode = ($inSalesStatusPage == null);
+
+$index = 0;
+
+//Check all constants are defined
+if (!defined('DEFAULT_ACTUAL_SALES_VALUE')){
+	die("DEFAULT_ACTUAL_SALES_VALUE is not defined");
+}
+if (!defined('SALES_FORECAST_AVG_PREVIOUS_MONTHS')){
+	die("SALES_FORECAST_AVG_PREVIOUS_MONTHS is not defined");
+}
+if (!defined('SALES_FORECAST_PREVIOUS_MONTHS')){
+	die("SALES_FORECAST_PREVIOUS_MONTHS is not defined");
+}
+if (!defined('SALES_FORECAST_MAX_MONTH')){
+	die("SALES_FORECAST_MAX_MONTH is not defined");
+}
+if (!defined('SALES_FORECAST_CARRYOVER_MONTH')){
+	die("SALES_FORECAST_CARRYOVER_MONTH is not defined");
+}
+
+
+
+$realCurrentYear = date("Y");
+$realCurrentMonth = date("n");
+//$action = "Display";
+//$addNumMonths = "4";
+$action = $_GET['action'];
+$displayArray = array();
+
+if (!isSet($action) || $action == ""){
+      $action = "display";
+}
+//echo $action;
+$addNumMonths = $_GET['addNumMonths'];
+if (!isSet($addNumMonths) || $addNumMonths == ""){
+      //$addNumMonths = 1;
+      //If the page is loaded for the first time, display months until all units are expected to be sold
+      $addNumMonths = NumMonthsNeededForAllUnitsSold();
+}
+
+///////////////////////////////////////////////////////////////
+//Calculate real-time Inventory Remain or unsold units
+///////////////////////////////////////////////////////////////
+function calculateRealTimeInvRemain (){
+	//calculate sum of future month's target sales (only months that are displayed on the schedule)
+	//$numMonths = NumMonthsNeededForAllUnitsSold();
+	global $addNumMonths;
+	$numMonths = $addNumMonths;
+	$sum = 0;
+	$currentMonthActualSales = getActualUnitSoldByMonth(date('n'), date('Y'));
+	for ($i=1; $i <= $numMonths-1; $i++) {	
+		$tempDate = "+ " . $i . " months";
+		$year = date('Y', strtotime($tempDate));
+		$month = date('m', strtotime($tempDate));		
+		$sum += getExpectedUnitsSoldByMonth($month, $year);
+	}
+	$value = calculateInvRemain () - (  (getExpectedUnitsSoldByMonth(date("n"), date("Y")) - $currentMonthActualSales) + $sum );	
+	if ($value < 0) {
+		$value = 0;
+	}
+
+	return $value;
+}
+
+///////////////////////////////////////////////////////////////
+//Calculate Inventory Remain or unsold units
+///////////////////////////////////////////////////////////////
+function calculateInvRemain (){
+	return (getTotalUnits() - getUnitsSold());
+}
+
+///////////////////////////////////////////////////////////////
+//Check if (month,year) is past, current or future
+//If past, 
+//////////////////////////////////////////////////////////////
+function checkMonthYearStatus ($month, $year) {
+	if ($month == date("n") && $year == date("Y")){		
+		return "current";
+	} else if ($year < date("Y")) {		
+		return "past";
+	} else if ($year == date("Y") && $month < date("n")) {		
+		return "past";
+	} else {		
+		return "future";
+	}
+}
+
+//INSERT TaregetUnitSalesNum into database
+function insertTargetUnitSalesNum ($month, $year, $value) {
+	$sql = "INSERT SalesSchedule SET Date = '" . $year . "-" . $month . "-01', TargetUnitSalesNum='" . $value . "';";
+	$result = executeSql($sql);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//Auto-fill TargetUnitSalesNum if there is no value - NOTE: value will be stored in database
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+function autofillTargetUnitSalesNum($month, $year) {	
+
+	$tempSum = 0;	
+			
+	//Return month's actual sales if month is in the past
+	if (checkMonthYearStatus ($month, $year)=="past"){
+		$getValue = getActualUnitSoldByMonth ($month, $year); 
+		if (($getValue == 0) || ($getValue == null)) {				 
+						
+			$getValue = DEFAULT_ACTUAL_SALES_VALUE;   
+			
+		}
+		insertTargetUnitSalesNum ($month, $year, $getValue);
+		return $getValue; 
+		//return getActualUnitSoldByMonth ($month, $year); 
+	//Calculate average of past month's actual sales if month is current month
+	} else if (checkMonthYearStatus ($month, $year)=="current"){
+		//calculate average of previous month's actual sales
+		for ($i=SALES_FORECAST_AVG_PREVIOUS_MONTHS; $i > 0 ; $i--) {
+			$tempDate = "- " . $i . " months";		
+			$tempSum += getActualUnitSoldByMonth (date('n', strtotime($tempDate)), date('Y', strtotime($tempDate)));	
+		}
+		$getValue = round($tempSum/SALES_FORECAST_AVG_PREVIOUS_MONTHS);
+		insertTargetUnitSalesNum ($month, $year, $getValue);
+		return $getValue;
+		
+	//If future date...
+	} else {
+		//calculate previous 4 month's actual sales
+		$tempDiff = calculateDiffinMonths($month, $year);
+		if ($tempDiff == 1){
+			for ($i=SALES_FORECAST_AVG_PREVIOUS_MONTHS; $i > 0 ; $i--) {
+				$tempDate = "- " . $i . " months";		
+				$tempSum += getActualUnitSoldByMonth (date('n', strtotime($tempDate)), date('Y', strtotime($tempDate)));					
+			}
+			return round($tempSum/SALES_FORECAST_AVG_PREVIOUS_MONTHS);
+		//Calculates average of actual sales and targetUnitSalesNum if actual sales is not available for past few months
+		} else {											
+			for ($i=SALES_FORECAST_AVG_PREVIOUS_MONTHS; $i > 0 ; $i--) {
+				//Move pointer to target month 
+				$tempDatePointer = $tempDiff;
+				if ($i <= $tempDiff - 1){				
+					$tempDatePointer -= $i;
+					if ($tempDatePointer < 0){
+						$moveDate = "- " . abs($tempDatePointer) . " months";						
+					} else {
+						$moveDate = "+ " . abs($tempDatePointer) . " months";
+					}
+					$tempSum += getExpectedUnitsSoldByMonth (date('n', strtotime($moveDate)), date('Y', strtotime($moveDate)));
+					
+				} else {
+					$tempDatePointer -= $i;
+					if ($tempDatePointer < 0){
+						$moveDate = "- " . abs($tempDatePointer) . " months";						
+					} else {
+						$moveDate = "+ " . abs($tempDatePointer) . " months";
+					}					
+					$tempSum += getActualUnitSoldByMonth (date('n', strtotime($moveDate)), date('Y', strtotime($moveDate)));					
+				}
+			}
+			$getValue = round($tempSum/SALES_FORECAST_AVG_PREVIOUS_MONTHS);
+			//return round($tempSum/SALES_FORECAST_AVG_PREVIOUS_MONTHS);
+			insertTargetUnitSalesNum ($month, $year, $getValue);
+			return $getValue;
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//calculate how many months apart the given future date is with respect to the current date
+//////////////////////////////////////////////////////////////////////////////////////////////
+function calculateDiffinMonths($month, $year){
+	return (($year - date("Y"))*12) + ($month - date("n"));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//DON"T NEED THIS!!!!!!
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//select count(*) from SalesSchedule WHERE Month(Date) = $month AND Year(Date) = $year 
+function checkTargetUnitSalesNumExistInDatabase ($month, $year) {
+	$sql = "select count(*) from SalesSchedule where YEAR(Date) = '" . $year . "'"; 
+	$sql .=	" and MONTH(Date) = '" . $month . "';";
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	return $row[0];	
+}
+
+
+///////////////////////////////////
+//Calculates fraction of the month
+//////////////////////////////////
+function calulateFractionOfMonth () {
+	return (date('j')/date('t'));
+}
+
+///////////////////////////////////
+//Calculates remaining fraction of the month
+//////////////////////////////////
+function calulateRemainFractionOfMonth () {
+	return ((date('t') - date('j'))/date('t'));
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//Calculates remaining expected Sales of Current month with current actual sales
+/////////////////////////////////////////////////////////////////////////////
+function calulateRemainExpectedSalesOfCurrentMonth () {
+	return round((calulateRemainFractionOfMonth () * getExpectedUnitsSoldByMonth(date('n'), date('Y'))) + getActualUnitSoldByMonth(date('n'), date('Y')));
+}
+
+///////////////////////////////////////////////////////////////////////////
+//Calculate # of months needed for all units to be sold
+///////////////////////////////////////////////////////////////////////////
+function NumMonthsNeededForAllUnitsSold(){
+	$invRemain = getTotalUnits() - getUnitsSold();
+	$tempCount = 1;
+	//get expected units sold for the current month minus units already sold during current month
+	//$currentMonthExpectedUnitsSold = getExpectedUnitsSoldByMonth (date("n"), date("Y")) - getActualUnitSoldByMonth (date("n"), date("Y"));
+	$currentMonthExpectedUnitsSold = calulateRemainExpectedSalesOfCurrentMonth ();
+	//return $currentMonthExpectedUnitsSold;
+	While ($invRemain > $currentMonthExpectedUnitsSold ) {		
+		$tempDate = "+ " . $tempCount . " months";
+		$TargetYear = date('Y', strtotime($tempDate));
+		$TargetMonth = date('m', strtotime($tempDate));
+		$invRemain = $invRemain - $currentMonthExpectedUnitsSold;
+		$currentMonthExpectedUnitsSold = getExpectedUnitsSoldByMonth ($TargetMonth, $TargetYear);
+		$tempCount = $tempCount + 1;
+	}	
+        return $tempCount;
+}
+
+////////////////////////////////////////////////////////////////////////////
+//Get the date(Month, Year) when all units are expected to be sold
+////////////////////////////////////////////////////////////////////////////
+function getDateWhenAllUnitsSold(){		
+	$tempDate = "+ " . (NumMonthsNeededForAllUnitsSold()-1) . " months";
+	$TargetDate = date('F, Y', strtotime($tempDate));
+	return $TargetDate;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Calculate the sum of all TargetUnitSalesNum from beginning to current date(not include current date)
+//Calculate the sum of all Actual Sales from beginning to current date(not include current date)
+//return the different of the these two numbers
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function TargetActualDiff(){	
+	//$openMonth = substr(PROJECT_OPENING_DATE, 5, 2);
+	//return $openMonth;
+	$tempDate = "- 1 day";
+	$yesterday = date('Y-m-d', strtotime($tempDate));
+	
+	//Calculate Sum of actual sales
+	$sql = "select count(*) from User where AgreementDepositDate >= '" . PROJECT_OPENING_DATE  . "'"; 		
+	$sql .=	" and AgreementDepositDate <= '" . $yesterday . "' and DealStatus in ('Firm', 'Pending', 'Corporate');";
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	$sumOfActual = $row[0];
+	
+	//Calculate Sum of Target Unit Sales
+	$sql = "select sum(TargetUnitSalesNum) from SalesSchedule where Date >= '" . PROJECT_OPENING_DATE  . "'"; 		
+	$sql .=	" and Date <= '" . $yesterday . "';";
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	$sumOfTarget = $row[0];
+	return ($sumOfTarget - $sumOfActual);	
+}
+
+////////////////////////////////////////////
+//Update TargetUnitSalesNum entered by user
+///////////////////////////////////////////
+function updateTargetUnitSalesNum($month, $year, $value) {
+	$sql = "update SalesSchedule set TargetUnitSalesNum='" . $value;
+	$sql .= "' WHERE MONTH(Date)='" . $month . "' and YEAR(DATE)='" . $year . "'";
+	executeSql($sql);
+}
+
+//Converts a numeric number from 1 - 12 to its abbreviated three letters month
+//Handles numbers without leading zero as well
+function convertMonth ($num) {
+	switch($num) {
+		case "01":
+			$strMonth = "Jan";
+			break;
+		case "02":
+			$strMonth = "Feb";
+			break;
+		case "3":
+			$strMonth = "Mar";
+			break;
+		case "4":
+			$strMonth = "Apr";
+			break;
+		case "5":
+			$strMonth = "May";
+			break;
+		case "6":
+			$strMonth = "Jun";
+			break;
+		case "7":
+			$strMonth = "Jul";
+			break;
+		case "8":
+			$strMonth = "Aug";
+			break;
+		case "9":
+			$strMonth = "Sep";
+			break;
+		case "10":
+			$strMonth = "Oct";
+			break;
+		case "11":
+			$strMonth = "Nov";
+			break;
+		case "12":
+			$strMonth = "Dec";
+			break;
+	}
+	return $strMonth;
+}
+
+//get Actual Sales units for a certain month
+function getActualUnitSoldByMonth ($month, $year){
+	$sql = "select count(*) from User where YEAR(AgreementDepositDate) = '" . $year . "'"; 
+	$sql .=	" and MONTH(AgreementDepositDate) = '" . $month . "' and DealStatus in ('Firm', 'Pending', 'Corporate');";
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	return $row[0];	
+}
+
+//get Total units from database
+function getTotalUnits(){
+	$sql = "SELECT COUNT(*) FROM Unit;";
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	return $row[0];	
+}
+
+//get total units sold from database
+function getUnitsSold(){
+	$sql = "SELECT COUNT(dealStatus) FROM User where dealStatus IN (\"Firm\", \"Pending\",\"Corporate\");"; 
+	$result = executeSql($sql);
+	$row = mysql_fetch_array($result);
+	return $row[0];	
+}
+
+//Get Average Sales per month
+function getAveSalesPerMonth(){
+	$timeDiff = (time() - strtotime(PROJECT_OPENING_DATE));
+	$timeDiffInMonth = $timeDiff / (60*60*24*31);
+	$avgSoldUnit = round(getUnitsSold() / $timeDiffInMonth);
+	return $avgSoldUnit;	
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+//Function gets expected units sold from table by year
+//Store all data in array(we assume there are no missing months from the table)
+/////////////////////////////////////////////////////////////////////////////////////////
+function getExpectedUnitsSoldByYear ($year) {
+	$sql = "SELECT TargetUnitSalesNum 
+		FROM SalesSchedule 
+		WHERE YEAR(date)='" . $year . "' order by date;";
+	$result = executeSql($sql);
+	$rows = array();
+	while ($line = mysql_fetch_array($result)) {
+		$rows[] = $line;
+	}	
+	//$row = mysql_fetch_array($result);
+	return $rows;		
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//Calculate sum of expected units sold for future target months within a year
+//this number is used to keep track how many inventory is remaining
+/////////////////////////////////////////////////////////////////////////////////////////////
+function sumExpectedUnitsSoldForFutureMonthsWithinYear ($year) {
+	$currentMonth = date("n");
+	if ($year == date("Y")){	
+		//$tempSum += 	
+		for ($i=$currentMonth+1; $i <= 12; $i++) {	
+			$tempSum += getExpectedUnitsSoldByMonth($i, $year);
+		}
+	//future years
+	} else {
+		for ($i=1; $i <= 12; $i++) {	
+			$tempSum += getExpectedUnitsSoldByMonth($i, $year);
+		}
+	}
+	return $tempSum;
+}
+
+/////////////////////////////////////////////////////////////////////
+//Function gets expected units sold from table by month of the year
+//Calls autofill function if it is empty
+////////////////////////////////////////////////////////////////////
+function getExpectedUnitsSoldByMonth ($month, $year) {
+	$sql = "SELECT TargetUnitSalesNum 
+		FROM SalesSchedule 
+		WHERE YEAR(date)='" . $year . "' and MONTH(date)='" . $month . "';";
+	$result = executeSql($sql);
+	$targ = array();
+	$row = mysql_fetch_array($result);
+	//
+	if ($row[0] == null){
+		return autofillTargetUnitSalesNum($month, $year);
+	} else {
+		return $row[0];		
+	}
+}
+
+//function that displays the Forecast Schedule for a certain number of months up to SALES_FORECAST_MAX_MONTH(36)
+//$action is either "Edit" or "Display"
+//"Edit" mode allows the user to enter the "expected units sold"
+function displayForecastSchedule ($currentYear, $remainMonths, $currentMonth, $action, $globalRemainMonths, $invRemain) {	
+	
+	global $index;
+	
+	//keeps track if this is the final year to display
+	$globalRemainMonths = $globalRemainMonths - 1 - (12 - $currentMonth);
+	if ($globalRemainMonths >0) {
+		$finalDisplay = "N";
+	} else {
+		$finalDisplay = "Y";
+	}
+	
+	if (($currentMonth + $remainMonths)>= 13) {
+		$displayNumMonth = 13 - $currentMonth;		
+	} else {
+		$displayNumMonth = $remainMonths;	
+	}	
+	$getHTML = "<TD>";
+	$getHTML .= "<TABLE>";
+	$getHTML .= "	<TR>";
+	if ($currentYear == date("Y")){
+		$getHTML .= "<TD COLSPAN=4></TD>";
+	}
+	$getHTML .= "<TD CLASS=\"head\">" . $currentYear . "</TD>";
+	$getHTML .= "</TR>";	
+	
+	//$getHTML .= "<TABLE>";
+	$getHTML .= "<TR CLASS=\"head\">";
+	
+	if ($currentYear == date("Y")){
+		$getHTML .= "<TD>&nbsp;</TD>";
+		$getHTML .= "<TD nowrap>Total Units</TD>";
+		$getHTML .= "<TD nowrap>Current Sales</TD>";
+		$getHTML .= "<TD nowrap>%Sold to date</TD>";
+	}
+	////////////////////////////////////////////////////
+	//Display months header 
+	///////////////////////////////////////////////////
+	for ($i=0; $i < $displayNumMonth; $i++) {	
+		$getHTML .= "<TD>" . convertMonth( $currentMonth + $i) . "</TD>";
+	}
+	if (($finalDisplay == "Y") && ($action == "edit")) {	
+		//$getHTML .= "<TD>Total</TD>";
+		$getHTML .= "<TD nowrap>Inv Remain</TD>";
+	}
+	$getHTML .= "</TR>";
+	
+	$getHTML .= "<TR>";
+	//$resultArray = array[];
+	
+	//$resultArray = getExpectedUnitsSoldByYear($currentYear);		
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//Display expected units sold for the year - only current and future month's expected units sold are editable	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	if ($currentYear == date("Y")){
+		$getHTML .= "<TD>Target Sales</TD>";
+		$getHTML .= "<TD>" . getTotalUnits() . "</TD>";
+		$getHTML .= "<TD>" . getUnitsSold() . "</TD>";
+		$getHTML .= "<TD>" . round((getUnitsSold()/getTotalUnits())*100) . "%</TD>";
+	}	
+	for ($i=$currentMonth; $i < ($displayNumMonth + $currentMonth); $i++) {	
+		if ($action == "display") {
+			//$getHTML .= "<TD>" . $resultArray[$i]['TargetUnitSalesNum'] . "</TD>";
+			$getHTML .= "<TD>" . getExpectedUnitsSoldByMonth($i, $currentYear) . "</TD>";
+		} else if ($action == "edit") {
+			
+			if (checkMonthYearStatus ($i, $currentYear) == "past"){
+				$getHTML .= "<TD>" . getExpectedUnitsSoldByMonth($i, $currentYear) . "</TD>";
+			} else {
+				$getHTML .= "<TD> <INPUT ID='" . TARGET_SALES_INPUT_PREFIX . "_" . $index . "' onChange=\"javascript:calculateInventoryRemainNum(this);\" size=\"1\" TYPE=TEXT NAME=\"TargetSalesForMonth_"; 
+				$getHTML .= $currentYear . "_" . ($i+0) . "\" VALUE=" . getExpectedUnitsSoldByMonth($i, $currentYear) . "></TD>";	
+				$index++;
+			}			
+		}
+		//$index++;
+	}	
+	//////////////////////////////////////////
+	//Display Inventory Remaining
+	//////////////////////////////////////////
+	if (($finalDisplay == "Y") && ($action == "edit")) {	
+		//$getHTML .= "<TD></TD>";	
+		//$getHTML .= "<TD><DIV ID='InventoryRemainDIV'>" . (getTotalUnits() - getUnitsSold()). "</DIV></TD>";		
+		$getHTML .= "<TD><DIV ID='InventoryRemainDIV'>" . calculateRealTimeInvRemain () . "</DIV></TD>";
+			
+	}
+	$getHTML .= "</TR>";
+	//////////////////////////////////////////
+	//Display actual units sold for the year
+	//////////////////////////////////////////
+	
+	$getHTML .= "<TR>";
+	if ($currentYear == date("Y")){
+		$getHTML .= "<TD nowrap>Actual Sales</TD>";
+		$getHTML .= "<TD>&nbsp;</TD>";
+		$getHTML .= "<TD>&nbsp;</TD>";
+		$getHTML .= "<TD>&nbsp;</TD>";
+	} else {
+		$getHTML .= "<TD>&nbsp</TD>";
+	}
+	for ($i=$currentMonth; $i < (date("n")+ 1); $i++) {
+		if ($currentYear == date("Y")){	
+		//if ($currentYear == "2005"){	
+			$getHTML .= "<TD>" . getActualUnitSoldByMonth ($i, $currentYear) . "</TD>";
+		} else {
+			//put empty space to ensure rows line up
+			$getHTML .= "<TD>&nbsp;</TD>";
+		}
+	}
+	$getHTML .= "</TR>";	
+	
+	//////////////////////////////////////
+	//Display Revised #	
+	/////////////////////////////////////
+	
+	$getHTML .= "<TR>";
+	if ($currentYear == date("Y")){	
+		$getHTML .= "<TD>Revised Sales</TD>";	
+		$getHTML .= "<TD>&nbsp;</TD>";
+		$getHTML .= "<TD>&nbsp;</TD>";
+		$getHTML .= "<TD>&nbsp;</TD>";
+	} else {
+		//$getHTML .= "<TD>&nbsp</TD>";
+	}	
+	
+	$previousMonth = 0;
+	$tempCurrentMonth = $currentMonth;
+	
+	if ((getTotalUnits() - getUnitsSold()) < getExpectedUnitsSoldByMonth(date("n"), date("Y"))   ){
+		$invRemain = -1;
+	}
+	for ($i=0; $i < $displayNumMonth; $i++) {
+		//if not current or future months just display actual sales for that month
+
+		$ExpectedUnitSoldByMonth = getExpectedUnitsSoldByMonth ($tempCurrentMonth, $currentYear);
+		$ActualUnitSoldByMonth = getActualUnitSoldByMonth ($tempCurrentMonth, $currentYear);
+		//PAST MONTHS
+		if (checkMonthYearStatus ($tempCurrentMonth, $currentYear) == "past") {
+			$getHTML .= "<TD>" . $ActualUnitSoldByMonth . "</TD>";		
+		//CURRENT MONTH
+		} else if (checkMonthYearStatus ($tempCurrentMonth, $currentYear) == "current") {
+			//$RemainExpectedSales = round((calulateRemainFractionOfMonth () * $ExpectedUnitSoldByMonth) + $ActualUnitSoldByMonth);
+			$getHTML .= "<TD>" . round((calulateRemainFractionOfMonth () * $ExpectedUnitSoldByMonth) + $ActualUnitSoldByMonth) . "</TD>";
+			//((calulateRemainFractionOfMonth () * $ExpectedUnitSoldByMonth) + $ActualUnitSoldByMonth)
+			//$invRemain -= (getExpectedUnitsSoldByMonth(date("n"), date("Y")) - getActualUnitSoldByMonth(date("n"), date("Y")));
+
+		//FUTURE MONTHS
+		} else {			
+			if ($invRemain > 0) {
+				if ($invRemain <= $ExpectedUnitSoldByMonth) {
+					//LAST MONTH TO DISPLAY
+					$getHTML .= "<TD> " . $invRemain . "</TD>";
+				}
+				else {
+					$getHTML .= "<TD>" . $ExpectedUnitSoldByMonth . "</TD>";
+					
+				}				
+			} else {
+				$getHTML .= "<TD>&nbsp;</TD>";
+			}
+			$invRemain -= $ExpectedUnitSoldByMonth;				
+		}
+		$tempCurrentMonth = $currentMonth + $i + 1;
+		$previousMonth = 0;
+		//$getHTML .= "<TD>" . ($currentMonth+$i) . "</TD>";
+	}
+	$getHTML .= "</TR>";
+	
+	
+	$getHTML .= "</TABLE></TD>";	
+	
+	return $getHTML;	
+}
+
+
+function getHelpText(){
+	$getHTML .= "<TABLE>";
+	$getHTML .= "<TR>";
+	$getHTML .= "<TD>";
+	$getHTML .= "Note: Revised Sales number combines target sales number and actual sales number in order to project a more accurate future sales timeline.";
+	$getHTML .= "</TD>";
+	$getHTML .= "</TR>";
+	$getHTML .= "</TABLE>";
+	
+	return $getHTML;
+}
+?>
+
+	<? 
+	// don't include headline if not in standalone mode
+	if ($isStandAloneMode){
+		print_top_frame($PHP_SELF, "../");
+	}		
+	
+	   $totalUnits = getTotalUnits();
+	   $unitsSold = getUnitsSold();
+	 ?>
+	
+		<script type="text/javascript" language="JavaScript1.2" src="<?= $globalRelativePath; ?>SalesSchedule/salesForecastSchedule.js"></script>
+		<script type="text/javascript" language="JavaScript1.2">
+			targetSalesInputPrefix 	= '<?= TARGET_SALES_INPUT_PREFIX; ?>';
+			inventoryNum			= <?= calculateInvRemain () ?>;
+		</script>
+		 <TABLE>
+	 		<TR><TD>Sales Forecast Schedule as of <?= date("M d, Y"); ?></TD></TR>
+	 		<TD><?= "" ?></TD>
+	 	</TABLE>
+	 	<TABLE>	
+	 		<TR CLASS="head">
+	 			<TD> Project </TD>
+	 			<TD> Opening Date </TD>
+	 			<TD> Sales to Date </TD>
+	 			<TD> Ave. Sales/Month </TD>	 			
+	 			<TD> # Mths When All Units Sold</TD>	 			
+	 			<TD> All Units Sold By </TD>	 	 			
+	 			<TD> Inv. Remain </TD>		 			 			
+	 		</TR>
+	 		<TR> 
+	 			<TD> <?= get_project_name(); ?> </TD>
+	 			<TD> <?= PROJECT_OPENING_DATE; ?> </TD>
+	 			<TD> <?= getUnitsSold(); ?> </TD>
+	 			<TD> <?= getAveSalesPerMonth(); ?> </TD>
+	 			<TD> <?= NumMonthsNeededForAllUnitsSold(); ?> </TD>
+	 			<TD> <?= getDateWhenAllUnitsSold(); ?> </TD>
+	 			<TD> <?= calculateInvRemain (); ?> </TD>
+	 		</TR>
+	 	</TABLE>	
+		
+		<TABLE>	
+			<TR >	
+				<FORM ID="updateForm" METHOD="POST" ACTION="updateSalesForecastSchedule.phtml?action=edit&addNumMonths=<?=$addNumMonths;?>">			
+				<?      
+				        //Inventory Remain or Unsold units
+				        $invRemain = getTotalUnits() - getUnitsSold();
+				        
+				        //Add Inventory Remain for the current month: Expected Units Sold - Actual Sales
+				        $invRemain -= calulateRemainExpectedSalesOfCurrentMonth ();
+				        
+					//number of months entered by the user                   
+					$remainMonths = $addNumMonths + SALES_FORECAST_PREVIOUS_MONTHS;
+					//$remainMonths = SALES_FORECAST_PREVIOUS_MONTHS;
+					//Current year
+					$forecastYear = date("Y");
+					//$forecastYear = "2005";
+					//current month in number
+					$currentMonth = date("m");	
+					$tempmonth = SALES_FORECAST_PREVIOUS_MONTHS;			
+									
+					//Change current month to four months ago and change year if necessary
+					$tempDate = "- " . SALES_FORECAST_PREVIOUS_MONTHS . " months";
+					$forecastYear = date('Y', strtotime($tempDate));
+					$currentMonth = date('m', strtotime($tempDate));
+					
+                                        //Display yearly schedule as long as there are any remaining months
+					$i=0;
+					//$action = "Display";
+					while ($remainMonths > 0) {
+						
+						if (($remainMonths + $currentMonth) > 12) {							
+							echo displayForecastSchedule ($forecastYear+$i, 12, $currentMonth, $action, $remainMonths, $invRemain); 
+							//subtract the number of months that is displayed
+							$remainMonths = $remainMonths - 1 - (12 - $currentMonth);
+							$invRemain -= sumExpectedUnitsSoldForFutureMonthsWithinYear($forecastYear+$i);
+						} else {
+							echo displayForecastSchedule ($forecastYear+$i, $remainMonths, $currentMonth, $action, $remainMonths, $invRemain); 
+							//subtract the number of months that is displayed. $remainMonths might become negative so while loop will break
+							$remainMonths = $remainMonths - 1 - (12 - $currentMonth);							
+							$invRemain -= sumExpectedUnitsSoldForFutureMonthsWithinYear($forecastYear+$i);
+						}
+						$currentMonth = 1;
+						$i += 1;
+					}					
+				?>
+				</FORM>
+			</TR>
+		</TABLE>
+		
+		<BR>
+<?=	getHelpText(); ?>
+		<TABLE>
+			<TR>    
+			
+				<FORM ID="actionForm" METHOD="GET" ACTION="<?= $PHP_SELF;?> ">
+					<INPUT TYPE="HIDDEN" NAME="addNumMonths" VALUE="<?= $addNumMonths ?>">
+						
+					<TD>
+					<? 
+					   if ($action != "display") { ?>
+						<input type="button" value="Update" onClick="document.getElementById('updateForm').submit();">
+					<? } else { ?>
+					   	<input TYPE="<? 
+					   	
+					   	if ($isStandAloneMode) {
+							echo "submit";
+						} else {
+						   	echo "button";
+						   	
+					  	}?>"	 value="Edit" onClick="<?					  	
+
+					   	if ($isStandAloneMode) {
+							echo "window.location='./SalesForecastSchedule.phtml?action=display&addNumMonths=" . $addNumMonths . "'";
+						} else {
+						   	echo "window.location='./SalesSchedule/salesForecastSchedule.phtml?action=display&addNumMonths=" . $addNumMonths . "'";
+					  	}?>"					   	
+					   	>					   						   	
+					<? }	
+					?>
+					<INPUT TYPE="HIDDEN" NAME="action" VALUE="<?
+					if ($action != "display") {
+						echo "display";
+					} else {
+					   	echo "edit";
+				  	}?>">
+					</TD>
+					<TD>
+					   	<input type="<? 
+					   	
+					   	if ($action != "display") {
+							echo "button";
+						} else {
+						   	echo "hidden";
+					  	}?>"	
+					   	value="Cancel" onClick="<?					   	
+
+					   	if ($isStandAloneMode) {
+							echo "window.location='./SalesForecastSchedule.phtml?action=display&addNumMonths=" . $addNumMonths . "'";
+
+						} else {
+						   	echo "window.location='./SalesSchedule/salesForecastSchedule.phtml?action=display&addNumMonths=" . $addNumMonths . "'";
+					  	}?>"
+					   	
+					   	>					   	
+					   	
+					</TD>
+
+				</FORM>
+			</TR>
+			<TR>
+			
+				<FORM ID="actionForm2" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+					<TD COLSPAN="3" > 
+					<?      //Check in salesStatus page
+						if ($isStandAloneMode) {
+							echo ("Display # of Months");
+					   	}
+					?>				
+					</TD>
+					<TD><INPUT SIZE=1 TYPE="<? 
+					   	
+					   	if ($isStandAloneMode) {
+							echo "TEXT";
+						} else {
+						   	echo "hidden";
+					  	}?>"					
+					
+						NAME="addNumMonths"></TD>	
+					<INPUT TYPE="HIDDEN" NAME="action" VALUE="<?= $action; ?>">
+					<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">			
+						<INPUT TYPE="<? 
+					   	
+					   	if ($isStandAloneMode) {
+							echo "submit";
+						} else {
+						   	echo "hidden";
+					  	}?>"						
+						VALUE="Display" onClick="window.location='<?= $PHP_SELF;?>'">
+					</TD>	
+					<TD></TD>
+				</FORM>
+				
+			</TR>
+			<TR>
+				
+					<TD>
+						<INPUT TYPE="<?
+						
+					   	if ($isStandAloneMode) {
+							echo "button";
+						} else {
+						   	echo "hidden";
+					  	}?>"						
+						
+						NAME="action" VALUE="Go to Sales Status Page" onClick="window.location='../salesStatus.phtml'">
+						
+					</TD>				
+				
+			</TR>
+		</TABLE>
+		

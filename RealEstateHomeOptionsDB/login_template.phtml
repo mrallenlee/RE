@@ -1,0 +1,188 @@
+<?
+include "main_include.phtml";
+
+// This file displays the user's profile. Also checks to see
+// if they have been locked out of changing their info due
+// to committing to their Options and Upgrades.
+
+$usrID = loginSession($loginName,$password) ;
+if ($usrID == -1)
+{
+	// passwd error, go back to previous page with err message
+	handleError("", "", LOGIN_INVALID);
+}
+else
+{
+	$sql = "SELECT *, User.UnitNumber AS UnitNumber, User.Price AS Price 
+		FROM User
+		LEFT JOIN Unit
+		ON Unit.UserID=User.UserID
+		WHERE User.UserID=$usrID";
+		
+	$result = mysql_query($sql) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+	$row = mysql_fetch_array($result);
+	
+	$isCommitted = getCommit();
+}
+?>
+
+<html>
+<? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", false, false); ?>
+
+<head>
+<title><?= get_project_name($PHP_SELF);?> - Login</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF" >
+<center>
+<table height="100%" width="100%">
+	<tr>
+		<td align="center" valign="center">
+			<table cellspacing="0" cellpadding="0" border="0" width="700" height="10">
+				<td align="left" valign="bottom"><img src="images/project-logo-small.jpg"></td>
+				<td></td>
+			</tr>
+			<tr><td><br></td></tr>
+			<tr><td colspan=5 align="right"><img src="images/orange-bar.jpg"></td></tr>
+			<tr>
+				<td width=230 valign="top" align="right"><img width=230 src="images/project-building-side.jpg"></td>
+				<td valign="top"align="left" width=470>
+					<table cellspacing="0" cellpadding="0" border="0" width="100%" height="10">
+						<tr>
+							<td align="left" ><img src="images/blue-bar.jpg"></td>
+						</tr>
+						<tr><td><br></td></tr>
+						<tr>
+							<td align="center"><img width=150 src="images/home-options-logo-small.jpg"></td>
+						</tr>
+						<tr>
+						
+							<td class="blank">
+								<table cellpadding="2" width="100%">
+									<tr>
+										<td align="center" class="body-yellow">
+								<b><font size="3"><i>Welcome <?echo $row['FirstName'];?> <?echo $row['LastName'];?></i></font><br><br>
+										</td>
+									</tr>
+									<tr>
+										<td align="center" class="body-green">									
+								Please check the following information BEFORE proceeding to select<br>
+								your Options and Upgrades.<br>
+								If any of this information is incorrect, please Contact Davies Smith<br>
+								H.O.M.E Design Consultant at (905) 273 3792<br><br>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td align="center">
+								<table cellpadding=2>
+									<tr>
+										<td class="body-blue"><b>Purchaser Name : </b></td>
+										<td class="body-blue"><b><?echo $row['FirstName'];?> <?echo $row['LastName'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Address : </b></td>
+										<td class="body-blue"><b><?echo $row['Address'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>City : </b></td>
+										<td class="body-blue"><b><?echo $row['City'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Country : </b></td>
+										<td class="body-blue"><b><?echo $row['Country'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Postal Code : </b></td>
+										<td class="body-blue"><b><?echo $row['PostalCode'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Phone Number : </b></td>
+										<td class="body-blue"><b><?echo $row['PhoneNumber'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Email : </b></td>
+										<td class="body-blue"><b><?echo $row['Email'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Unit Type : </b></td>
+										<td class="body-blue"><b><?echo $row['UnitType'];?></b></td>
+									</tr>
+									<tr>
+										<td class="body-blue"><b>Unit Number : </b></td>
+										<td class="body-blue"><b><?echo $row['UnitNumber'];?></b></td>
+									</tr>
+								</b>
+								</table>
+							</td>
+						</tr>
+
+<?
+
+if ($isCommitted)
+{
+
+?>
+						<tr>
+							<td class="body-blue" align="center">
+						<br>
+						<font face="Arial,Verdana,Helvetica" color="#FF0000">&nbsp;You have already committed to your Options and Upgrades.<br>&nbsp;You cannot make any changes.</b></font>
+						<br><br>
+						<form action="preview.phtml" method="post" name="PreviewOptionsUpgrades">
+							<input type="submit" name="submit" value="View selected Options and Upgrades">
+							</td>
+						</tr>
+<?
+
+}
+else
+{
+
+$sql_section = "SELECT SectionID
+		FROM Section ORDER BY Name";
+$result_section = mysql_query($sql_section) or handleError("", "SQL=$sql_section <br>Error=" . mysql_error(), SQL_ERROR, true);	;
+if(mysql_num_rows($result_section) == 0)
+{
+	handleError("Error: No Options Available.", "SQL=$sql", SQL_ERROR, true);	
+}
+
+while ($row_section = mysql_fetch_array($result_section))
+{
+	if (!section_disabled($row['UnitType'], $row_section['SectionID']))
+	{
+		$SectionID = $row_section['SectionID'];
+		break;
+	}
+}
+?>
+						<tr>
+							<td align="center"><BR><BR>
+								<form action="instructions.phtml" method="post" name="OptionsUpgrades">
+									<input type="hidden" name="SectionID" value="<?echo $SectionID;?>">
+									<input type="submit" name="submit" value="Next >>"><br>
+								</form>
+							</td>
+						</tr>
+<?
+
+}
+
+?>
+</form>
+
+</font>
+	</table>			
+				</td>				
+			</tr>
+			
+			</table>
+		</td>
+	</tr>
+</table>
+</center>
+</body>
+
+</html>

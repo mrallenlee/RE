@@ -1,0 +1,31 @@
+<?php
+/*
+ * Created on 12-Feb-2006
+ *
+ * Fix bug that ImageName doesn't match the actual file name,
+ * or ImageName still contains the name even the file doesn't 
+ * exist anymore
+ */
+include "main_include.phtml";
+
+
+$sql = "SELECT * FROM Choice"; 
+$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+
+while ($row = mysql_fetch_array($result)){
+	if ($row['ImageName'] != ""){
+		print ("ImageName=" . $row['ImageName']);		
+		$imageFile = "../images/". $row['OptionID'] . "_". $row['ChoiceID'];
+ 		if (!is_file($imageFile)){
+			// update choice table
+			$sql =  "UPDATE Choice" .
+					" SET ImageName=''" .
+					" WHERE ChoiceID=". $row['ChoiceID'] .
+					" AND OptionID=" . $row['OptionID'] ;
+			$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			print ("Update ImageName $imageFile");
+			print("sql=$sql");					
+ 		}
+	}
+}
+?>

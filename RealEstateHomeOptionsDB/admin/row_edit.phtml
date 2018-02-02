@@ -1,0 +1,533 @@
+<?
+include "main_include.phtml";
+
+// This file displays an edit form for whichever record was
+// chosen to be editted.
+// query var: $mode
+
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+?>
+
+<head>
+<title>Admin</title>
+
+<script language="javascript">
+
+function check_fields()
+{
+	if (document.forms['AddUserOption'].elements['UserOptionDesc'].value != "")
+	{
+		document.forms['AddUserOption'].submit();
+	}
+	else
+	{
+		alert("Please input value for Description field");
+	}
+}
+
+</script>
+
+</head>
+
+
+<body>
+
+<table cellspacing="0" cellpadding="0" border="0" !width="700">
+<tr>
+<td>
+<font face="Verdana,Arial,Helvetica" size="1">
+
+
+
+<font size="2">
+<?
+
+
+if ($table_name == "User") {
+	echo "<a href=\"display_user.phtml\"><b>Users</b></a>";
+}
+?>
+</font><br>
+<br>
+
+<?
+
+
+if (!$table_name) {
+	$table_name = "Section";
+}
+
+// if $SectionID exists then print the name
+if ($SectionID) {
+	$sql_Section = "SELECT SectionID, Name
+						FROM Section
+						WHERE SectionID = $SectionID";
+	$result_Section = mysql_query($sql_Section, $db);
+
+	$row = mysql_fetch_array($result_Section);
+	$SectionName = $row['Name'];
+
+	echo "<nobr><img src=\"../login/spacer.gif\" width=\"15\" height=\"1\" border=\"0\">&#149; Section: <a href=\"display_table.phtml?table_name=Subsection&mode=$mode&SectionID=$SectionID\">$SectionName</a></nobr><br>\n";
+	echo "<br>\n";
+
+	// if $SubsectionID exists then print the name
+	if ($SubsectionID) {
+		$sql_Subsection = "SELECT SubsectionID, Name
+									FROM Subsection
+									WHERE SubsectionID = $SubsectionID";
+		$result_Subsection = mysql_query($sql_Subsection, $db);
+
+		$row = mysql_fetch_array($result_Subsection);
+		$SubsectionName = $row['Name'];
+
+		echo "<nobr><img src=\"../login/spacer.gif\" width=\"30\" height=\"1\" border=\"0\">&#149; Subsection: <a href=\"display_table.phtml?table_name=Item&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID\">$SubsectionName</a></nobr><br>\n";
+		echo "<br>\n";
+
+		// if $ItemID exists then print the name
+		if ($ItemID) {
+			$sql_Item = "SELECT ItemID, Name
+												FROM Item
+												WHERE ItemID = $ItemID";
+			$result_Item = mysql_query($sql_Item, $db);
+
+			$row = mysql_fetch_array($result_Item);
+			$ItemName = $row['Name'];
+
+			echo "<nobr><img src=\"../login/spacer.gif\" width=\"45\" height=\"1\" border=\"0\">&#149; Item: <a href=\"display_table.phtml?table_name=Item_Options&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID\">$ItemName</a></nobr><br>\n";
+			echo "<br>\n";
+
+			// if $OptionID exists then print the name
+			if ($OptionID) {
+				$sql_Option = "SELECT OptionID, Name, Choice
+															FROM Options
+															WHERE OptionID = $OptionID";
+				$result_Option = mysql_query($sql_Option, $db);
+
+				$row = mysql_fetch_array($result_Option);
+				$OptionName = $row['Name'];
+
+				//				echo "<nobr><img src=\"../login/spacer.gif\" width=\"60\" height=\"1\" border=\"0\">&#149; Option: $OptionName (";
+				// these lines were		if ($row['Choice'])
+				// disabled because		{
+				// they cause				echo "<a href=\"display_table.phtml?table_name=Choice&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID\">Choices</a>, ";
+				// navigation			}
+				// problems			echo "<a href=\"display_table.phtml?table_name=Price&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=$OptionID\">Prices</a>)</nobr><br>\n";
+				//				echo "<br>\n";
+
+			} // end if (for Option)
+
+		} // end if (for Item)
+
+	} // end if (for Subsection)
+
+} // end if (for Section)
+?>
+<table cellspacing="0" cellpadding="5" border="0" width="100%">
+<tr>
+<td><?
+
+
+// this image spacer indents the tables
+if ($table_name == "Section") {
+	echo "<img src=\"../login/spacer.gif\" width=\"15\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Subsection") {
+	echo "<img src=\"../login/spacer.gif\" width=\"30\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Item") {
+	echo "<img src=\"../login/spacer.gif\" width=\"45\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Options") {
+	echo "<img src=\"../login/spacer.gif\" width=\"45\" height=\"1\" border=\"0\">";
+}
+?></td>
+<td><font face="Arial,Verdana,Helvetica" size="2">
+
+<?
+
+
+if ($table_name) {
+
+	echo "<img src=\"../login/black.gif\" width=\"700\" height=\"1\" border=\"0\"><br>\n";
+
+	echo "<font size=\"4\">Edit</font>";
+
+	if ($user_message) {
+		echo "<br>\n<br>\n".$user_message;
+	}
+}
+
+// display table (Section, Subsection, or Item)
+if ($table_name == "Section" || $table_name == "Subsection" || $table_name == "Item") {
+	// $where are needed when calling a database table other than Section
+	$where = "";
+
+	if ($table_name == "Section") {
+		$where = "WHERE SectionID = $SectionID";
+	}
+	elseif ($table_name == "Subsection") {
+		$where = "WHERE SubsectionID = $SubsectionID";
+	}
+	elseif ($table_name == "Item") {
+		$where = "WHERE ItemID = $ItemID";
+	}
+
+	$sql = "SELECT ".$table_name."ID, Name, Description
+					FROM $table_name
+					$where
+					ORDER BY ".$table_name."ID";
+
+	$result = mysql_query($sql, $db) or die("<br>\nSQL failed:<br>\n".mysql_error()."<br>\nFull SQL:<br>\n".$sql.$PHP_SELF);
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr class=\"head\">\n";
+	echo "<td>Name</td>\n";
+	echo "<td>Description</td>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	$row = mysql_fetch_array($result);
+	echo "<form action=\"process_row_edit.phtml\" method=\"get\" name=\"edit_form\">\n";
+	$id_name = $table_name."ID";
+
+	if ($table_name == "Section") {
+		$SectionID = $row['SectionID'];
+	}
+	elseif ($table_name == "Subsection") {
+		$SubsectionID = $row['SubsectionID'];
+	}
+	elseif ($table_name == "Item") {
+		$ItemID = $row['ItemID'];
+	}
+
+	echo "<tr>\n";
+
+	if ($SectionID) {
+		$tbl_name = "Subsection";
+	}
+	if ($SubsectionID) {
+		$tbl_name = "Item";
+	}
+	if ($ItemID) {
+		$tbl_name = "Item_Options";
+	}
+	echo "<td><input type=\"text\" name=\"Name\" value=\"".$row['Name']."\"></td>\n";
+	echo "<td><input type=\"text\" name=\"Description\" value=\"".$row['Description']."\"></td>\n";
+	echo "<td><nobr><input type=button value=\"Update\" onClick=\"document.forms['edit_form'].submit()\"></td>";
+	echo "</tr>\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"OptionID\" value=\"$OptionID\">\n";
+	echo "<input type=\"hidden\" name=\"UnitType\" value=\"$UnitType\">\n";
+
+	echo "<tr>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+
+}
+
+// display table (Options)
+elseif ($table_name == "Options") {
+	$sql = "SELECT Name, Choice
+					FROM Options
+					WHERE OptionID=$OptionID";
+
+	$result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td><b>Name</b></font></td>\n";
+	echo "<td><b>Choice</b></font></td>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	$row = mysql_fetch_array($result);
+
+	echo "<form action=\"process_row_edit.phtml\" method=\"get\" name=\"edit_option\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"OptionID\" value=\"$OptionID\">\n";
+	echo "<input type=\"hidden\" name=\"UnitType\" value=\"$UnitType\">\n";
+
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"70\" name=\"Name\" value=\"".$row['Name']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" name=\"Choice\" value=\"".$row['Choice']."\"></font></td>\n";
+	echo "<td><nobr><input type=button value=\"Update\" onClick=\"document.forms['edit_option'].submit()\"></td>";
+
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+elseif ($table_name == "Choice") {
+	$sql = "SELECT ChoiceID, Name
+					FROM Choice
+					WHERE ChoiceID=$ChoiceID";
+
+	$result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td><b>Name</b></font></td>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	$row = mysql_fetch_array($result);
+
+	echo "<form action=\"process_row_edit.phtml\" method=\"get\" name=\"edit_choice\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"OptionID\" value=\"$OptionID\">\n";
+	echo "<input type=\"hidden\" name=\"ChoiceID\" value=\"$ChoiceID\">\n";
+	echo "<input type=\"hidden\" name=\"UnitType\" value=\"$UnitType\">\n";
+
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"70\" name=\"Name\" value=\"".$row['Name']."\"></font></td>\n";
+	echo "<td><nobr><input type=button value=\"Update\" onClick=\"document.forms['edit_choice'].submit()\"></td>";
+
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+elseif ($table_name == "UserFile") {
+	$sql = "SELECT FileDesc, FileName
+					FROM UserFile
+					WHERE UserID = $UserID and FileID = $FileID";
+
+	$result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td><b>File Description</b></font></td>\n";
+	echo "<td><b>File Name</b></font></td>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	$row = mysql_fetch_array($result);
+
+	echo "<form action=\"process_row_edit.phtml\" method=\"get\" name=\"edit_userfile\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"UserID\" value=\"$UserID\">\n";
+	echo "<input type=\"hidden\" name=\"FileID\" value=\"$FileID\">\n";
+
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"70\" name=\"FileDesc\" value=\"".$row['FileDesc']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" name=\"FileName\" value=\"".$row['FileName']."\"></font></td>\n";
+	echo "<td><nobr><a href=\"javascript:document.forms['edit_userfile'].submit()\">Update</a>\n";
+
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+elseif ($table_name == "User") {
+	if (isSet ($UserID)) {
+		$sql = "SELECT UserUpgradeOptionStatus.Commit, *
+								FROM User, UserUpgradeOptionStatus
+								WHERE UserID=$UserID"." AND UserUpgradeOptionStatus.UserID = User.UserID ";
+
+		$result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
+		$row = mysql_fetch_array($result);
+	}
+
+	echo "<td></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+
+	if (isSet ($UserID)) {
+		echo "<form action=\"process_row_edit.phtml\" method=\"get\" name=\"edit_user\">\n";
+	} else {
+		echo "<form action=\"row_add.phtml\" method=\"get\" name=\"add_user\">\n";
+	}
+	echo "<input type=\"hidden\" name=\"UserID\" value=\"$UserID\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td><b>First Name</b></font></td>\n";
+	echo "<td><b>Last Name</b></font></td>\n";
+	echo "<td><b>Login </b></font></td>\n";
+	echo "<td><b>Passwd</b></font></td>\n";
+	echo "</tr>\n";
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"FirstName\" value=\"".$row['FirstName']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"LastName\" value=\"".$row['LastName']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" maxlength=\"10\" name=\"Login\" value=\"".$row['Login']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" maxlength=\"10\" name=\"Passwd\" value=\"".$row['Passwd']."\"></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+	echo "<td colspan=3 bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Address </b></font></td>\n";
+	echo "<td><b>Postal Code</b></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+	echo "<td colspan=3 bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"60\" name=\"Address\" value=\"".$row['Address']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"PostalCode\" value=\"".$row['PostalCode']."\"></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+
+	echo "<td><b>City</b></font></td>\n";
+	echo "<td><b>Country</b></font></td>\n";
+	echo "<td><b>Phone</b></font></td>\n";
+	echo "<td><b>Email</b></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"City\" value=\"".$row['City']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"Country\" value=\"".$row['Country']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"PhoneNumber\" value=\"".$row['PhoneNumber']."\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"Email\" value=\"".$row['Email']."\"></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+	echo "<td><b>Locked?</b></font></td>\n";
+	echo "<td><b>Unit Number</b></font></td>\n";
+	echo "<td><b>Unit Type</b></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"checkbox\" name=\"Commit\" value=\"1\"";
+	if ($row['Commit']) {
+		echo " checked";
+	}
+	echo "></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><input type=\"text\" size=\"20\" name=\"UnitNumber\" value=\"".$row['UnitNumber']."\"></font></td>\n";
+
+	// listbox on the form is generated using this
+	$listbox_UnitType = "\n<select name=\"UnitType\">\n";
+
+	$sql_ut = "SELECT Type
+					FROM UnitType
+					ORDER BY Type";
+	$result_ut = mysql_query($sql_ut, $db);
+
+	while ($row_ut = mysql_fetch_array($result_ut)) {
+		$listbox_UnitType .= "<option value=\"".$row_ut['Type']."\"";
+
+		if ($row_ut['Type'] == $row['UnitType']) {
+			$listbox_UnitType .= " selected";
+		}
+
+		$listbox_UnitType .= ">".$row_ut['Type']."\n";
+	}
+
+	$listbox_UnitType .= "</select>\n";
+
+	echo "<td bgcolor=\"#F6F6F6\">".$listbox_UnitType."</font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+	echo "<td><b>Admin Note</b></font></td>\n";
+	echo "</tr>\n";
+	echo "<tr>\n";
+	echo "<td colspan=\"4\" bgcolor=\"#F6F6F6\"><textarea rows=\"10\" cols=\"100\" name=\"Note\">".$row['Note']."</textarea>></font></td>\n";
+	echo "</tr>\n";
+
+	echo "<tr>\n";
+	if (isSet ($UserID)) {
+		echo "<td>&nbsp;<br><nobr><input type=\"submit\" value=\"Update\"></a>\n";
+	} else {
+		echo "<td>&nbsp;<br><nobr><input type=\"submit\" value=\"Add\"></a>\n";
+	}
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td colspan=\"2\"><b>&nbsp;<br>Additional Options</b></font></td>\n";
+	echo "</tr>\n";
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#CCCCCC\"><b>Description</b></font></td>\n";
+	echo "<td bgcolor=\"#CCCCCC\"><b>Price</b></font></td>\n";
+	echo "<td><b>&nbsp;</b></font></td>\n";
+	echo "</tr>\n";
+
+	if (isSet ($UserID)) {
+
+		// retrieve any custom options set by the admin
+		$sql = "SELECT Description, Price
+								FROM UserOption
+								WHERE UserID = $UserID
+								ORDER BY Price";
+		$result = mysql_query($sql, $db);
+
+		// print out rows to the table
+		while ($row = mysql_fetch_array($result)) {
+			echo "<tr>\n";
+			echo "<td bgcolor=\"#F6F6F6\">".$row['Description']."</font></td>\n";
+			echo "<td align=\"right\" bgcolor=\"#F6F6F6\">$ ".$row['Price']."</font></td>\n";
+			echo "<td><nobr><a href=\"row_delete.phtml?table_name=UserOption&mode=$mode&UserID=$UserID&UserOptionDesc=".urlencode($row['Description'])."\">Delete</a></nobr></font></td>\n";
+			echo "</tr>\n";
+		}
+	}
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" method=\"get\" name=\"AddUserOption\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"UserOption\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"UserID\" value=\"$UserID\">\n";
+	echo "<tr>\n";
+	echo "<td><input type=\"text\" name=\"UserOptionDesc\" size=\"40\" maxlength=\"255\"></font></td>\n";
+	echo "<td><input type=\"text\" name=\"UserOptionPrice\" size=\"6\" maxlength=\"100\"></font></td>\n";
+	echo "<td><input type=\"button\" name=\"submitbutton\" value=\"Add\" onClick=\"check_fields();\"></font></td>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+	// end HTML table
+	echo "</table>\n";
+} else {
+	if ($table_name)
+		echo "<font size=\"3\">Table \"<font color=\"#FF0000\">$table_name</font>\" does not exist.</font><br>\n<br>\n";
+}
+?>
+
+</font></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+
+
+</font>
+</td>
+</tr>
+</table>
+
+</body>
+
+</html>
+
+

@@ -1,0 +1,19 @@
+<?php
+/*
+ * Created on 31-Dec-2006
+ *
+ * Config error handling for ErrorHandler class
+ * $errorHandler->loadErrorDataFile(LOCAL_CONFIG_FOLDER . "/errorCofig.phtml"); 
+ **/
+ 
+$root = ROOT_URL;
+ 
+// all constant is defined in the config.phtml in the same folder
+$this->registerErrorData(SESSION_EXPIRED, $root . "login.phtml", "Session has been expired. Please login again.");
+$this->registerErrorData(LOGIN_INVALID, $root . "login.phtml", "Invalid login/password. Please try again.");
+$this->registerErrorData(COMMIT_ALREADY, $root . "preview.phtml", "Error. Cannot make changes once a commitment has been made.");
+$this->registerErrorData(SQL_ERROR, $root . "error.phtml", "There is a database error.<BR>Please try again later or contact head office.");
+$this->registerErrorData(PRIVILEGE_ERROR, $root . "error.phtml", "The page requires higher privilege to view it.");
+$this->registerErrorData(GENERAL_ERROR, $root . "error.phtml", "Error");
+
+?>

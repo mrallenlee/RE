@@ -1,0 +1,531 @@
+<?php
+/*
+ * Created on 27-Dec-2006
+ * 
+ * New version of Gui Util
+ */
+ 
+ 
+ //
+// These display_XXX functions are convieniance routines that....
+//
+
+//
+// Displays a column value (from global $row) differently
+// depending on the action type.
+//	$action="display"	- simply format and print it
+//	$action="add"		- display blank text input to be filled in
+//	$action="edit"		- display existing value in text input to be edited
+//	$action="verify"	- simply format and print it, but add buttons
+//							that allow user to go back and modify values
+//
+// Paramters:
+//	$column_name	- the column in $row array that has the data we want
+//	$heading		- this will be displayed before the text input box
+//	$editHeading	- if true, format output as a numeric
+//	$editHeading		- the max. charaters the box accepts
+//	$isLink		- if true, format output as a hyperlink
+//	$linkHeading	- heading for hyperlink	 (allows mailto: etc. to be added)
+// 	$inputPrefix	- prefix for the name of the input tag
+// 	$onClickJSFunction - javascript function for onClick
+// 	$onChangeJSFunction - javascript function for onChange
+//	$enableSmartOnChangeJSFunction - preg match $column_name with phone, fax, postal code, drivers license
+//																	and call according javascript function to re-format: add "-" into 
+//																	phone number and drivers license, add space into postal code
+// $cssClass
+//
+function
+displayText( $arguments ) {	
+	
+	$value 			= $arguments['value'];
+	$source 		= $arguments['source'];
+	$inputName 		= isSet($arguments['inputName']) ? $arguments['inputName'] : $source;
+	$displayName	= isSet($arguments['displayName']) ? $arguments['displayName'] : $source;
+	$action			= isSet($arguments['action']) ? $arguments['action'] : "display"; 
+	$editHeading   = isSet($arguments['editHeading']) ? $arguments['editHeading'] : "";
+	$editHeading 	= isSet($arguments['editHeading']) ? $arguments['editHeading'] : FALSE;
+	$maxLength 	= isSet($arguments['maxLength']) ? $arguments['maxLength'] : 50;
+	$isLink 		= isSet($arguments['isLink']) ? $arguments['isLink'] : FALSE;
+	$linkHeading 	= isSet($arguments['linkHeading']) ? $arguments['linkHeading'] : "";
+	$target 		= isSet($arguments['target']) ? $arguments['target'] : "";
+	$nonEditable 	= isSet($arguments['nonEditable']) ? $arguments['nonEditable'] : FALSE;
+	$size 			= isSet($arguments['size']) ? $arguments['size'] : 17;
+	$inputPrefix 	= isSet($arguments['inputPrefix']) ? $arguments['inputPrefix'] : "";
+	$inputSuffix 	= isSet($arguments['inputSuffix']) ? $arguments['inputSuffix'] : "";
+	$inputPrefixChar 	= isSet($arguments['inputPrefixChar']) ? $arguments['inputPrefixChar'] : "_";
+
+	$cssClass = isSet($arguments['cssClass']) ? $arguments['cssClass'] : "";
+	
+	$onClickJSFunction = isSet($arguments['onClickJSFunction']) ? $arguments['onClickJSFunction'] : "";
+	$onChangeJSFunction = isSet($arguments['onChangeJSFunction']) ? $arguments['onChangeJSFunction'] : "";
+	$dollarValue 	= isSet($arguments['dollarValue']) ? $arguments['dollarValue'] : FALSE;
+	$decimal 		= isSet($arguments['decimal']) ? $arguments['decimal'] : 2;
+	$enableSmartMatchOnChangeJSFunction = isSet($arguments['enableSmartMatchOnChangeJSFunction']) ? $arguments['enableSmartMatchOnChangeJSFunction'] : TRUE;
+			
+	// capture all stdout and redirects them to a string to return
+	ob_start();	
+	
+	if ($enableSmartMatchOnChangeJSFunction)
+	{
+		if (preg_match("*phone*", strtolower($inputName)) || preg_match("*fax*", strtolower($inputName)))
+			$onChangeJSFunction .= " this.value=tool.string.ReformatPhoneNumber(this.value)";
+		if (preg_match("*postalcode*", strtolower($inputName)))
+			$onChangeJSFunction .= " this.value=tool.string.ReformatPostalCode(this.value)";
+		if (preg_match("*driver*", strtolower($inputName)))
+			$onChangeJSFunction .= " this.value=tool.string.ReformatDriversLicense(this.value)";
+	}
+	
+	if (($action == "display" || $action == "verify") || $nonEditable)
+	{
+		if ($editHeading || $dollarValue)
+		{			
+			numberFormat(array( "value"=>$value, "decimals"=>$decimal, "defaultValue"=>" n/a", "isDollarValue"=>$dollarValue));
+		}
+		elseif ($isLink)
+		{
+			linkFormat($value, $linkHeading, $target);
+		}
+		else
+		{
+			textFormat($value);
+		}
+	}
+	else // add or edit - put in a text input
+	{
+		if (strlen($onClickJSFunction) > 0)
+		{
+	 		if (strpos($onClickJSFunction, "(") === false)
+	 		{
+	 			$onClickJSFunction .= "()";
+	 		}
+	 		$onClick = " onClick=\"javascript:" . $onClickJSFunction . " \" ";
+	 	}
+		if (strlen($onChangeJSFunction) > 0)
+		{
+	 		if (strpos($onChangeJSFunction, "(") === false)
+	 		{
+	 			$onChangeJSFunction .= "()";
+	 		}
+	 		$onChange = " onChange=\"javascript:" . $onChangeJSFunction . " \" ";
+		}
+
+		if (strlen($cssClass) > 0){
+			$cssClassString = " class=\"$cssClass\" ";	
+		}
+		
+		if ($editHeading)
+		{
+			echo "$editHeading<input name=\"";
+			if ($inputPrefix) 
+				echo $inputPrefix . $inputPrefixChar;
+				
+			echo "$inputName\"";
+
+			if ($inputSuffix)				
+				echo "_" . $inputSuffix;
+
+			if ($nonEditable)
+			{
+				echo " ";
+			}
+			echo " type=text maxlength=$maxLength size=$size value=\"" . number_format($value, $decimal) . "\" " . $onClick . $onChange . $cssClassString . ">";	
+		}
+		else
+		{
+			echo "$editHeading<input name=\"";
+			if ($inputPrefix) 
+				echo $inputPrefix . $inputPrefixChar;				
+			echo "$inputName\"";
+			if ($nonEditable)
+			{
+				echo " READONLY ";
+			}
+			echo " type=text maxlength=$maxLength size=$size value=\"$value\"" . $onClick . $onChange . $cssClassString . ">";	
+		}
+	}
+	
+	if ($action == "verify" || $nonEditable)
+	{
+			echo "<input name=\"";
+			if ($inputPrefix) 
+				echo $inputPrefix . $inputPrefixChar;				
+			echo "$inputName\" type=hidden value=\"$value\"" . $onClick . $onChange . ">";		
+	}
+		
+   $output = ob_get_contents();
+   ob_end_clean();
+   return $output;	
+}
+
+ /**
+ * Takes unlimited number of arguments
+ * Arguments: inputName, displayName, value, source=_REQUEST, or DB
+ */
+function displayCheckBox($arguments){
+	$value 			= $arguments['value'];
+	$submitValue	= $arguments['submitValue'];
+	$source 		= $arguments['source'];
+	$inputName 		= isSet($arguments['inputName']) ? $arguments['inputName'] : $source;
+	$displayName	= isSet($arguments['displayName']) ? $arguments['displayName'] : $source;
+	$inputPrefix 	= isSet($arguments['inputPrefix']) ? $arguments['inputPrefix'] : "";
+	$inputSuffix 	= isSet($arguments['inputSuffix']) ? $arguments['inputSuffix'] : "";
+	$action			= isSet($arguments['action']) ? $arguments['action'] : "display";
+				
+	
+	if ($action == "display" || $action == "verify")
+	{
+    	$code = $displayName . " ";
+        if ($value)
+		{
+			$code .= "Yes ";
+		}
+		else
+		{
+			$code .= "No ";
+		}
+}
+	else
+	{
+	
+		$code = "<input type=checkbox name=\"";
+		
+		if ($inputPrefix != ""){
+			$code .= $inputPrefix . "_";	
+		}
+		$code .= $inputName;
+		
+		if ($inputSuffix != ""){
+			$code .= "_" . $inputSuffix;	
+		}
+		
+		$code .= "\"";
+		
+		if ($value){
+			$code .=" CHECKED ";	
+		}
+		$code .= " value=\"$submitValue\">$displayName";
+	}	
+	return $code;
+}			
+
+/**
+ * Display list for generic table which has _list as a suffix
+ */
+function displayGenericTableList ( $arguments){	
+	$arguments['col'] = $arguments['table'];
+	$arguments['table'] = $arguments['table'] . "_list";
+	
+	return displayTableList($arguments);
+}
+
+/**
+ * Display table in a combo box
+ */
+function displayTableList ( $arguments){	
+
+	$col = checkValue($arguments['col'], $arguments['table']); 
+	$valueCol = checkValue($arguments['valueCol'], $arguments['col']); 
+	$sql = checkValue($arguments['sql'], ""); // sql without order by clause
+	$orderByClause = checkValue($arguments['orderByClause'], $arguments['col'] . " ASC"); 
+	$table = $arguments['table']; 
+	$value = $arguments['value'];
+	$source = $arguments['source'];
+	$inputName 		= isSet($arguments['inputName']) ? $arguments['inputName'] : $source;	
+	$action			= isSet($arguments['action']) ? $arguments['action'] : "display"; 
+	$editHeading   	= isSet($arguments['editHeading']) ? $arguments['editHeading'] : "";
+	$editHeading 	= isSet($arguments['editHeadingeditHeading']) ? $arguments['numberValue'] : FALSE;
+	$maxLength 		= isSet($arguments['maxLength']) ? $arguments['maxLength'] : 50;
+	$isLink 		= isSet($arguments['isLink']) ? $arguments['isLink'] : FALSE;
+	$linkHeading 	= isSet($arguments['linkHeading']) ? $arguments['linkHeading'] : "";
+	$target 		= isSet($arguments['target']) ? $arguments['target'] : "";
+	$nonEditable 	= isSet($arguments['nonEditable']) ? $arguments['nonditable'] : FALSE;
+	$size 			= isSet($arguments['size']) ? $arguments['size'] : 17;
+	$inputPrefix 	= isSet($arguments['inputPrefix']) ? $arguments['inputPrefix'] : "";
+	$inputSuffix 	= isSet($arguments['inputSuffix']) ? $arguments['inputSuffix'] : "";
+	$onClickJSFunction = isSet($arguments['onClickJSFunction']) ? $arguments['onClickJSFunction'] : "";
+	$onChangeJSFunction = isSet($arguments['onChangeJSFunction']) ? $arguments['onChangeJSFunction'] : "";
+	$dollarValue 	= isSet($arguments['dollarValue']) ? $arguments['dollarValue'] : FALSE;
+	$decimal 		= isSet($arguments['decimal']) ? $arguments['decimal'] : 2;	
+	
+	ob_start();
+	
+	if ($action == "display" || $action == "verify" || $nonEditable)
+	{
+        textFormat($value);
+	}
+	else
+	{
+
+		if (strlen($onChangeJSFunction) > 0)
+		{
+	 		if (strpos($onChangeJSFunction, "(") === false)
+	 		{
+	 			$onChangeJSFunction .= "()";
+	 		}
+	 		$onChange = " onChange=\"javascript:" . $onChangeJSFunction . " \" ";
+		}
+		
+		
+		if ($inputPrefix != "")
+		{
+			$name = $inputPrefix . "_$inputName\"";
+		}
+		else
+		{
+			$name = "$inputName\"" . $onChange . ">\n";
+		}
+		echo "$editHeading<select name=\"$name\" id=\"$name\" $onChange >";
+
+		echo "<OPTION VALUE=\"-1\">Choose one</OPTION>";
+		if ($sql == ""){
+			$sql = "SELECT $col, $valueCol FROM " . $table;
+		}
+		$sql .= " ORDER BY $orderByClause ";
+		
+		$result = executeSql($sql);
+		while ($sourceRow = mysql_fetch_array($result)) 
+		{
+			echo "<OPTION VALUE=\"" . $sourceRow[$valueCol] . "\"";
+			if ($value == $sourceRow[$valueCol])
+				echo " SELECTED ";
+			echo ">" . $sourceRow[$col] . "</OPTION>";		
+		}
+		echo "</SELECT>\n";
+	}
+
+	$output = ob_get_contents();
+    ob_end_clean();
+    return $output;	
+	
+} // displayTableList
+	
+	
+ 
+// IMPORTANT NOTE: Please include dojo.js in the caller script. for example:
+// Displays a dojo date field(from global $row)
+// depending on the action type.
+//	$action="display"	- simply format and print it
+//	$action="add"		- display blank text input to be filled in
+//	$action="edit"		- display existing value in text input to be edited
+//	$action="verify"	- simply format and print it, but add buttons
+//							that allow user to go back and modify values
+//
+// Paramters:
+//	$column_name	- the column in $row array that has the data we want
+//	$prefix				- prefix add to widgetId
+//	$suffix				- suffix add to widgetId
+//	$use_default_value	- if set to true, display today as default value. if $default_value is given, use it.
+//	$default_value	- the default value
+//	$onChangeJS		- javascript for onChange event
+//	$dateFormat		- "YMD" by default
+function 
+displayDate($arguments){
+	$value 			= checkValue($arguments['value'], "");
+	$submitValue	= $arguments['submitValue'];
+	$source 		= $arguments['source'];
+	$column_name	= isSet($arguments['inputName']) ? $arguments['inputName'] : $source;
+	$displayName	= isSet($arguments['displayName']) ? $arguments['displayName'] : $source;
+	$prefix 		= isSet($arguments['inputPrefix']) ? $arguments['inputPrefix'] : "";
+	$suffix 		= isSet($arguments['inputSuffix']) ? $arguments['inputSuffix'] : "";
+	$action			= isSet($arguments['action']) ? $arguments['action'] : "display";
+	$onChangeJS		= checkValue($arguments['onChangeJS'], "");
+	$dateFormat		= checkValue($arguments['dateFormat'], "YMD");
+	$use_default_value 	= 	checkValue($arguments['useDefaultValue'], FALSE);
+	$default_value 		=  checkValue($arguments['defaultValue'], "");
+	
+	ob_start();
+	
+	if ($action == "display" || $action == "verify")
+	{
+		textFormat($value);
+	} else {
+
+		$inputName = "";
+		if ($prefix != ""){
+			$inputName .= $prefix . "_";	
+		}
+		$inputName .= $column_name;
+		if ($suffix != ""){
+			$inputName .= "_" . $suffix;
+		}
+		
+		
+		if ($use_default_value || $value == ""){
+			if ($dateFormat == "YMD")
+				$dateValue = date("Y-m-d");
+			else if ($dateFormat = "MDY")
+				$dateValue = date("M d,Y");
+		} else if ($default_value != ""){
+			$dateValue = $default_value;	
+		} else {
+			$dateValue = $value;
+		}	
+
+		// when dojo dropdowndatepicker is set to a not-non default date
+		// at page load-up, onValueChanged will be triggered. This is
+		// what we don't want. So, $init is to indicate if there's a default 
+		// date. If there is, don't assign $onChangeJS at the first onValueChanged.
+		if ($dateValue == "" || !isSet($dateValue))
+		{
+			$init = "1";
+		}
+		else
+		{
+			$init = "0";
+		}
+
+?><div dojoType="dropdowndatepicker" widgetId="<?= $inputName; ?>" inputName="<?= $inputName; ?>" value='<?= $dateValue; ?>' adjustWeeks="true"
+<?	if (1){ ?>			
+		onValueChanged="if(<?= $init; ?>=='0'){if(this.defaultValue){<?= $onChangeJS; ?>}else{this.defaultValue=1;}}else{<?= $onChangeJS; ?>}"
+<?	} ?>></div><?					
+	}
+	
+	$output = ob_get_contents();
+    ob_end_clean();
+    return $output;	
+}	 
+
+
+// Formats a text
+function textFormat($value, $valueOnEmpty = "n/a") {
+
+	if ( empty($value) || $value == "" || !isSet($value) ) {
+		echo "$valueOnEmpty";
+	}
+    elseif ($value == "n/a"){
+          echo " ";
+    }
+    else {
+		echo nl2br($value);
+	}
+} // textFormat
+
+/**
+ * Check the value is defined or not. If not, return default value 
+ */
+function checkValue($value, $defaultValue = ""){
+	if (!isSet($value) || $value == ""){
+		return $defaultValue;	
+	} else {
+		return $value;
+	}		
+	
+}
+
+// Formats a number with commas and 0 decimal places by default
+function numberFormat($arguments){
+
+	$value 			= checkValue($arguments['value']);	
+	$decimals 		= checkValue($arguments['decimals'], 0);
+	$defaultValue 	= checkValue($arguments['defaultValue'], "&nbsp;");
+	$dollarValue 	= checkValue($arguments['isDollarValue'], FALSE);
+
+	
+	if ( $value== 0.0 || empty($value) ) {
+		echo $defaultValue;
+	} else {
+		if ($dollarValue)
+		{
+			echo "$";
+		}
+		echo number_format($value, $decimals);
+	}
+}
+
+// Formats a string as a link
+// The heading paramter can be used to add 'mailto:' etc
+// to the start of the href value
+function linkFormat(	$value, $heading = "",
+						$target = "", $value_on_empty = "n/a") {
+
+	// Add the target tag
+	if ($target)
+		$target = " target=\"$target\"";
+
+	if ( empty($value) ) {
+		echo "$value_on_empty";
+	} else {
+		echo "<a href=\"" . $heading . $value . "\"$target>";
+		echo $value . "</a>";
+	}
+}
+
+
+//Added May 20, 2007
+//Display Commission Type Combo Box
+// Arguments Var
+// $action, $type, $name, $source, $value, $inputPrefix
+function displayCommissionTypeComboBox($arguments) {
+  	$action			= isSet($arguments['action']) ? $arguments['action'] : "display"; 
+  	$value			= isSet($arguments['value']) ? $arguments['value'] : BROKER_COMMISSION_TYPE_PERCENTAGE; 
+  	$source 		= $arguments['source'];
+  	$name 			= checkValue($arguments['name'], $arguments['name'], $source);
+  	$inputPrefix 	= isSet($arguments['inputPrefix']) ? $arguments['inputPrefix'] : "";       	
+  	
+  	if ($inputPrefix != "") {
+  		$ComboBoxName = $inputPrefix . "_" . $source;
+	} else {
+		$ComboBoxName = $source;
+	}
+	if ($action == "display" OR $action == "verify") {
+		if ($value == BROKER_COMMISSION_TYPE_PERCENTAGE) {
+			return BROKER_COMMISSION_TYPE_PERCENTAGE_DISPLAY;
+		} else {
+			return BROKER_COMMISSION_TYPE_FLAT_RATE_DISPLAY;
+			}
+	} else {		
+	 	$comboBoxHTML .= "		 	
+		<select name=\"$ComboBoxName\">				        
+			<option value=\"" . BROKER_COMMISSION_TYPE_PERCENTAGE . "\"";
+	 	
+	 	if ($value == BROKER_COMMISSION_TYPE_PERCENTAGE){
+	 		$comboBoxHTML .= " SELECTED ";
+		}
+	 	$comboBoxHTML .= ">" . BROKER_COMMISSION_TYPE_PERCENTAGE_DISPLAY. "</option>";											
+	    $comboBoxHTML .= "<option value=\"" . BROKER_COMMISSION_TYPE_FLAT_RATE . "\"";
+	 	if ($value == BROKER_COMMISSION_TYPE_FLAT_RATE){
+	 		$comboBoxHTML .= " SELECTED ";
+		}	        
+	    $comboBoxHTML .= ">" . BROKER_COMMISSION_TYPE_FLAT_RATE_DISPLAY . "</option>					
+		</select>";
+	 	
+	        return $comboBoxHTML;
+	}
+}
+
+//Display commission and its type
+//Display commission text field and commission type combobox if action = edit
+// Arguments:
+// action
+// CommissionXType - X is the index number
+// CommissionX - X is the index nummber
+// index - index number
+function displayCommissionInputField($arguments) {
+		
+	$action = $arguments['action'];
+	$i = $arguments['index'];
+	if ($arguments["Commission$i" . Type] == "PERCENTAGE") {
+		$commType = BROKER_COMMISSION_TYPE_PERCENTAGE_DISPLAY;
+	} else { 
+		$commType = BROKER_COMMISSION_TYPE_FLAT_RATE_DISPLAY;
+	}
+	//echo $action;
+	if($action=="display" OR $action =="verify"){ 		
+		$CommHTML .= "<tr><td>Commission " . $i . ":</td> "; 
+		$CommHTML .= "<td align=\"right\"> " . $arguments["Commission$i"] . "</td>";	
+		$CommHTML .= "<td> " . $commType . "</td></tr>";
+				
+        } else {
+		$CommHTML .= "<tr><td>Commission " . $i . ": </td> ";
+		$CommHTML .= "<td><input name=\"Commission" . $i ."\" value=" . $arguments["Commission$i"] . "> </input> </td>";
+		$CommHTML .= "	        <td>";
+		$arguments['source'] = 'Commission' . $i . 'Type';
+		$arguments['value'] = $arguments["Commission$i" . Type];
+//print_r($arguments);
+		$CommHTML .= displayCommissionTypeComboBox($arguments);
+		$CommHTML .= "</td></tr>";
+	}
+	//var_dump ($arguments["Commission$i" . Type]);
+	return $CommHTML;		
+}
+?>

@@ -1,0 +1,33 @@
+<?php
+include_once "main_include.phtml";
+
+
+function updateVTB(){
+	$sql =  "SELECT UserID, UnitNumber, Price, OfferPrice, " .
+			"AgreementDepositAmount, Day30DepositAmount, " .
+			"Day90DepositAmount, Day150DepositAmount, " .
+			"OccupancyDepositAmount,VTB,MortgageCommitment " .
+			"FROM User " .
+			"WHERE VTB <> MortgageCommitment";
+			
+			
+	$result = executeSql($sql);
+	print "UnitNumber, UserID, OfferPrice, Price, AgreementDepositAmount, " .
+			"Day30DepositAmount, Day90DepositAmount, Day150DepositAmount, OccupancyDepositAmount, VTB, MorgateCommitmentAmount\n";
+	while ($row = mysql_fetch_array($result)){
+		$VTB = $row['OfferPrice'] - $row['AgreementDepositAmount'] - $row['Day30DepositAmount']
+				-  $row['Day90DepositAmount'] - $row['Day150DepositAmount'] - $row['OccupancyDepositAmount'];
+				
+		$updateSql = "UPDATE User SET VTB=$VTB WHERE UserID=" . $row['UserID'];
+		$updateResult = executeSql($updateSql);
+		print $row['UnitNumber'] . "," . $row['UserID'] . "," . 
+				$row['OfferPrice'] . "," . $row['Price'] . "," .  
+				$row['AgreementDepositAmount'] . "," . $row['Day30DepositAmount'] . "," .  
+				$row['Day90DepositAmount'] . "," . $row['Day150DepositAmount'] . "," .  
+				$row['OccupancyDepositAmount'] . "," . $row['VTB'] . "," .  
+				$row['MortgageCommitmentAmount'] . "\n";
+	}
+} 
+
+updateVTB();
+?>

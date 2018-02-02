@@ -1,0 +1,116 @@
+<?php
+
+include_once "EntityView.phtml";
+include_once "guiUtil.phtml";
+include_once "Entity/View/AddressView.phtml";
+/*
+ * Created on 27-Dec-2006
+ *
+ */
+class GuarantorView extends EntityView{
+	
+	function GuarantorView(){}
+	
+	/**
+	 * html form for new guarantor
+	 */
+	function getNewHTMLForm($index){
+		$dummy = array();
+		$html = $this->getExistingHTMLForm($index, $dummy, "add");			
+		return $html;
+	}
+	
+	/**
+	 * html form for new guarantor
+	 * This function is not for AJAX call because of the DBResultRow param
+	 * This html form contains information for Person
+	 */
+	function getExistingHTMLForm($index, $DBResultRow, $mode = "display"){
+		$address = new AddressView();
+		// Address belongs to Person table
+		$address->setInputPrefix("Guarantor_" . $index . "_Person_Address");
+		
+		$row = $DBResultRow;
+		$html = "	<input type=\"hidden\" name=\"Guarantor_" . $index . "_GuarantorID\" value=\"" . 
+						$row['GuarantorID'] ."\">" .
+				"	<input type=\"hidden\" name=\"Guarantor_" . $index . "_Person_PersonID\" id=\"Guarantor_" . $index . "_Person_PersonID\" value=\"" . 
+						$row['PersonID'] ."\">" .		
+				"	<input type=\"hidden\" name=\"Guarantor_" . $index . "_Person_AddAddress\" id=\"Guarantor_" . $index . "_Person_AddAddress\" value=\"FORCE\">" .		
+						"	<input type=\"hidden\" name=\"Guarantor_" . $index . "_Action\" id=\"Guarantor_" . $index . "_Action\" value=\"" . $mode . "\">" .
+				"	<tr>\n" .
+				"		<td>Company Name:</td><td colspan=3>" . displayText(array ("value" => $row['CompanyName'], "source" => "CompanyName", "action" => $mode, "inputPrefix" => "Guarantor_$index", "size" => 50 )) . "</td>\n" .
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>First Name:</td><td>" . displayText(array ("value" => $row['FirstName'], "source" => "FirstName", "action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_") ). "</td>\n" . 
+				"		<td>Last Name:</td><td>" . displayText(array ("value" => $row['LastName'], "source" => "LastName", "action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_") ) . "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Business Phone:</td><td>" . displayText(array ("value" => $row['BusinessPhone'], "source" => "BusinessPhone", "action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_") ) . "</td>\n" . 
+				"		<td>Home Phone:</td><td>" . displayText(array ("value" => $row['HomePhone'], "source" => "HomePhone", "action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_") ). "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>CellPhone:</td><td>" . displayText(array ("value" => $row['CellPhone'], "source" => "CellPhone", "action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_") ) . "</td>\n" . 
+				"		<td>Email:</td><td>" . displayText(array ("value" => $row['Email'], "source" => "Email", "action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_") ). "</td>\n" . 				
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Date Of Birth(YYYY--MM-DD):</td><td>" . 
+						displayText(array ("value" => $row['DateOfBirth'], "source" => "DateOfBirth",
+							"action" => $mode,"inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_"))
+						 . "</td>\n" . 
+				"		<td>Driver's License #:</td><td>" . 
+						displayText(array ("value" => $row['DriverLicenseNumber'], "source" => "DriverLicenseNumber", 
+							"action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_"))
+						. "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>SIN #:</td><td>" . 
+						displayText(array ("value" => $row['SIN'], "source" => "SIN",
+							"action" => $mode,"inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_"))
+						 . "</td>\n" . 
+				"		<td>Health Card #:</td><td>" . 
+						displayText(array ("value" => $row['HealthCardNumber'], "source" => "HealthCardNumber",
+							"action" => $mode,"inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_"))
+						 . "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Passport #:</td><td>" . 
+						displayText(array ("value" => $row['PassportNumber'], "source" => "PassportNumber", 
+							"action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_"))
+						. "</td>\n" . 
+				"		<td>Other ID:</td><td>" . 
+						displayText(array ("value" => $row['OtherID'], "source" => "OtherID", 
+							"action" => $mode, "inputPrefix" => "Guarantor_" . $index . "_Person", "inputPrefixChar"=>"_"))
+						. "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td colspan=2>" . 
+						displayCheckBox(array ("value" => $row['IDProvided'], "source" => "IDProvided", 
+							"displayName" => "ID Provided/Business Registration Provided",
+							"inputName" => "IDProvided", "action" => $mode,
+							"inputPrefix" => "Guarantor_$index"))
+						. "</td>\n" . 
+				"	</tr>\n" .
+				 $address->getExistingHTMLForm($row, $mode) . 
+				"	<tr>\n";
+			if ($mode == "add" || $mode == "edit"){
+				$html .= "		<td colspan=4 align=right><input type=button value=\"Delete Guarantor\" onClick=\"deleteGuarantor($index)\"</td>";
+			}
+				$html .= "	</tr>";
+				
+		return $html;
+	}
+} // GuarantorView 
+if ($isDebug == 1){
+	include_once "main_include.phtml";
+	?>
+	<html>
+	<table>
+	<?
+	$obj = new GuarantorView();
+	print $obj->getNewHTMLForm(1);
+	?>
+	</table>
+	</html>
+<?
+}
+?>

@@ -1,0 +1,218 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+		<TITLE>Rescission List</TITLE>
+<script type="text/javascript" src="framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+	dojo.require("dojo.widget.DatePicker");
+	dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+		
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+		<FORM METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+			<TABLE>
+			<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+			<TR CLASS="blank">
+				<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+				<TD>First Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+				<TD>Last Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+			</TR>
+			<TR CLASS="blank">
+				<TD>Company : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+				<TD>Home Phone : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_PhoneNumber" VALUE="<?= $search_PhoneNumber; ?>" onChange="this.value=tool.string.ReformatPhoneNumber(this.value);"></TD>
+				<TD>Broker Name : </TD>
+				<TD><INPUT TYPE="TEXT" NAME="search_BrokerName" VALUE="<?= $search_BrokerName; ?>"></TD>
+			</TR>
+			<TR>
+			<TD>Signed Date From :<BR>(YYYY-MM-DD) </TD>
+			<TD><? display_date("AgreementDepositDateFrom", "search", "", false, $search_AgreementDepositDateFrom, true, "", ""); ?></TD>
+			<TD>Rescission Date From :<BR>(YYYY-MM-DD) </TD>
+			<TD><? display_date("RescissionDateFrom", "search", "", false, $search_RescissionDateFrom, true, "", ""); ?></TD>			
+			</TR>			
+			<TR CLASS="blank">
+				<TD COLSPAN=6 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+			</TR>
+			<TR>
+				<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+					<INPUT TYPE="SUBMIT" VALUE="Search">
+					<INPUT TYPE="BUTTON" VALUE="List All" onClick="window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>'">
+
+					<INPUT TYPE="BUTTON" VALUE="Dump Data" onClick="window.location='./dumpCSV.phtml?table=User&rescission=1'">
+				</TD>
+			</TR>				
+			</TABLE>
+		</FORM>
+	</DIV>
+</DIV>
+
+<?
+// init var
+$searchFor = "";
+
+$sql = "SELECT 	UserID,
+				UnitNumber,
+				Company,
+				FirstName,
+				LastName,
+				Price,
+				AgreementDepositDate,
+				RescissionDate,
+				DealStatus,
+				PhoneNumber,
+				BrokerName1,
+				BrokerName2,
+				RescissionNote
+				FROM User 
+				LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName1
+										FROM Broker, Person
+										WHERE Broker.PersonID = Person.PersonID) temp1
+									) as BrokerInfo1
+				ON User.BrokerID = BrokerInfo1.BrokerID
+				LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName2
+										FROM Broker, Person
+										WHERE Broker.PersonID = Person.PersonID) temp2
+									) as BrokerInfo2
+				ON User.BrokerID2 = BrokerInfo2.BrokerID
+				WHERE (DealStatus = 'Rescinded')";
+
+
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$_GET;
+	$search_criterion = "";
+	$hasSearchValue = false;
+	//loop that adds the field names and values
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;		
+				
+				if ($key == "search_BrokerName")
+				{
+					$sql .= " AND (BrokerName1 LIKE '" . $val . "' OR BrokerName2 LIKE '" . $val . "')";
+				}
+				else if ($key == "search_UnitNumber")
+				{
+					$sql .= " AND (" . expandSearchCriteria(array("columnName"=>'UnitNumber', "csvValue"=>$val)) . ") ";				
+					$search_criterion .= "&" . $key . "=" . $val;					
+				}
+				else if ($key == "search_AgreementDepositDateFrom")
+				{
+					$sql .= " AND (AgreementDepositDate >= '" . $val . "')";
+				}
+				else if ($key == "search_RescissionDateFrom")
+				{
+					$sql .= " AND (RescissionDate >= '" . $val . "')";
+				}				
+				else
+				{
+					$sql .= " AND " . substr($key, $pos + 1) . " LIKE '" . $val . "'";
+				}
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+	{
+		die();
+	}
+}
+else
+{
+	$search_criterion .= "&listall=1";
+}
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+//die("sql=" . $sql);
+$result = executeSql($sql);
+?>
+
+		<H4>Rescission List</H4>
+		<TABLE>
+
+<?
+	$totalRescissionValue = 0;
+	$num_of_rows = 0;
+	while($row = mysql_fetch_array($result))
+	{
+		if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+		{
+?>
+			<TR CLASS="head">
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Suite Number</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Company,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Company</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=FirstName,LastName">Purchaser</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=AgreementDepositDate,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Date Signed</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=RescissionDate,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Rescission Date</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=Price,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Price</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=DealStatus,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Deal Status</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=PhoneNumber,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Home Tel</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=BrokerName1,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Broker Name 1</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=BrokerName2,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Broker Name 2</A></TD>
+				<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&orderby=RescissionNote,<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Rescission Notes</A></TD>
+			</TR>
+<?
+		}
+			$totalRescissionValue += $row['Price'];
+			
+			$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];
+			displayMouseOverTR("blank", "body");
+			
+?>
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['Company'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['FirstName'] . " " . $row['LastName'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= convert_date($row['AgreementDepositDate']);?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= convert_date($row['RescissionDate']);?></A></TD>
+				<TD align=right><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['Price'], "decimals"=>2 , "isDollarValue"=>TRUE)) ; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['DealStatus'];?>
+				<? if ($row['DealStatus'] == "Pending")
+				{
+					echo " <font color=red>Overdue</font>";
+				}
+				;?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['PhoneNumber'];?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['BrokerName1']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['BrokerName2']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['RescissionNote'];?></A></TD>
+			</TR>
+<?
+	}
+?>
+		<tr class="tail">
+			<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+			<td colspan=4>&nbsp;</td>
+			<td align="right"><?= numberFormat(array("value"=>$totalRescissionValue, "decimals"=>2, "isDollarValue"=>TRUE)); ?></td>
+			<td colspan=6>&nbsp;</td>
+		</tr>
+		</TABLE>
+	</BODY>
+</HTML>

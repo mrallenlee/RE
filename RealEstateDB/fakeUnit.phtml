@@ -1,0 +1,69 @@
+<?
+include "main_include.phtml";
+
+// set the security level to be 3 for this page
+check_auth(ADMIN);
+
+$sql .= "SELECT Unit.UnitNumber
+		FROM Unit 
+		WHERE UserID = 0";
+$result = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+  <TITLE>Create Fake-sold Suites</TITLE>
+  <H3><?= get_project_name($PHP_SELF); ?> -- Create Fake-sold Suites</H3>
+  <p CLASS="blankL">Note: Only list unsold units</p>
+
+  <BODY>
+  <FORM METHOD="POST" ACTION="./updateFakeUnit.phtml">
+    <TABLE>
+<?
+$num_of_rows = 0;
+
+while ($row = mysql_fetch_array($result)) {
+	if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+	{
+?>
+      <TR>
+        <TD CLASS="head">Suite Number</TD>
+        <TD CLASS="head">Fake-sold?</TD>
+      </TR>
+<?
+	}
+
+	if ($class == "body" || $class == "") {
+		$class = "blank";
+	} else {
+		$class = "body";
+	}
+
+	$sql_fakeUnit = "SELECT COUNT(*) count FROM FakeUnit
+			WHERE UnitNumber = ".$row["UnitNumber"];
+	$result_fakeUnit = mysql_query($sql_fakeUnit) or log_err_die(mysql_error(), $PHP_SELF);
+	$row_fakeUnit = mysql_fetch_array($result_fakeUnit);
+?>
+      <TR>
+        <TD CLASS="<?= $class; ?>"><?= $row["UnitNumber"]?></TD>
+        <TD CLASS="<?= $class; ?>">
+          <INPUT TYPE="checkbox" NAME="<?= $row['UnitNumber'] ?>_fake" VALUE="1" 
+          <?
+
+	if ($row_fakeUnit["count"] > 0)
+		echo " CHECKED ";
+?>>
+		</TD>
+      </TR>
+<?
+
+}
+?>
+      <TR>
+        <TD colspan="2" align="center"><BR><INPUT TYPE=SUBMIT  CLASS="blank" VALUE="Submit"></TD>
+      </TR>
+    </TABLE>
+  </FORM>
+  </BODY>
+</HTML>
+

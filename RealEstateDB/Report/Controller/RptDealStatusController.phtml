@@ -1,0 +1,245 @@
+<?
+/**
+ * Contains all the business logic to transform data from RptDealStatusModel
+ * to display class written in RptDealStatusView
+ */
+
+//include_once "Report/Model/RptDealStatusModel.phtml";
+include_once "../Model/RptDealStatusModel.phtml";
+
+class RptDealStatusController {
+	
+	function RptDealStatusController(){
+		$this->init();
+		
+	} // RptDealStatusController
+	
+	
+	function getNextDealStatus(){
+		return $this->dealStatusList[++$this->dealStatusIndex];		
+	}
+	
+	function getDealStatus(){
+		return $this->dealStatusList[$this->dealStatusIndex];				
+	}
+	
+	function &getHeaderRecord(){
+		$currentDealStatus = $this->getDealStatus();
+		$this->calculateSubtotal($currentDealStatus);
+		return $this->getDealStatusSummaryRecord($currentDealStatus);		
+	}
+	
+	function &getNextDetailRecord(){
+		$currentDealStatus = $this->getDealStatus();
+		$record = $this->getNextDealStatusDetailRecord($currentDealStatus);
+		return $record;
+	}
+
+	function &getSubTotalRecord(){
+		return $this->subtotalList;		
+	}
+	
+	function resetSubTotalRecord(){
+		$this->subtotalList = array();	
+	}
+	
+	function getTailerRecord(){
+		return '';		
+	}
+		
+	function &getAllDealStatusTailerRecord(){
+		return $this->totalList;		
+	}
+	
+	//------------------------------------------------------------------------
+	//	Internal methods
+	//------------------------------------------------------------------------
+
+	// 2D associated array 
+	var $dataList = array();
+	
+	var $dealStatusList = array();
+	var $dealStatusIndex = 0;
+
+	// store total record	
+	var $totalList			= array();
+	var $subtotalList		= array();
+	
+	var $SUMMARY_RECORD 	= 0;
+	var $DATA_RECORD 		= 1;
+	var $INDEX_RECORD		= 2;
+	
+	
+	function init(){
+		$this->initDealStatus();		
+		$this->retrieveData();
+		$this->postCalculation();
+	}
+	
+	function initDealStatus(){
+		$sql = 'SELECT DealStatus From DealStatus_list ORDER BY DealStatus ASC';
+		$result = executeSql($sql);
+		while ($row = mysql_fetch_array($result)){
+			$this->dealStatusList[] = $row[0];
+		}
+		$this->dealStatusList[] = DEAL_STATUS_AVAILABLE; 
+		mysql_free_result($result);
+		return;
+	}
+	
+	function retrieveData(){
+		foreach ($this->dealStatusList as $dealStatus){
+			$rptDealStatusModel = new RptDealStatusModel($dealStatus);
+			// init 2D array
+			$this->initDealStatusDataList($dealStatus);
+			$this->parseDealStatusData($dealStatus, $rptDealStatusModel);
+			
+			$rptDealStatusModel->finalize();
+		}
+	}
+
+	/**
+	 * Parse data for provided deal status
+	 */
+	function parseDealStatusData($dealStatus, $rptDealStatusModel){
+		$numOfRecord			= 0;
+		$totalArea				= 0;
+		$totalUnitSale			= 0;
+		$totalUnitSalePerSF		= 0;
+		$totalOfferPrice		= 0;
+		$totalOfferPricePerSF	= 0;
+		$percentageByValue		= -1;
+		
+		while ($data = $rptDealStatusModel->getNextRecord()){
+			
+			$totalArea 		+= $data['Area'];
+			$unitSale		= $data['Price'] - $data['CashIncentive'];
+			$totalUnitSale	+= $unitSale;
+			$data['TotalUnitSale'] = $unitSale;
+			$data['NetOfferPrice'] = $data['OfferPrice'] - $data['ParkingSpaceCharge'] 
+								- $data['LockerCharge'];
+			$totalOfferPrice	+= $data['NetOfferPrice'];
+			$this->addDealStatusDetailRecord($dealStatus, $data);
+			$numOfRecord++;
+		}
+		
+		$totalUnitSalePerSF 	= number_format($totalUnitSale / $totalArea, 2);
+		$totalOfferPricePerSF 	= number_format($totalOfferPrice / $totalArea,2);
+		
+		$this->setDealStatusSummaryData($dealStatus, 'DealStatus', 		$dealStatus);
+		$this->setDealStatusSummaryData($dealStatus, 'NumOfRecord', 	$numOfRecord);
+		$this->setDealStatusSummaryData($dealStatus, 'Area', 			$totalArea);
+		$this->setDealStatusSummaryData($dealStatus, 'UnitSale', 		$totalUnitSale);
+		$this->setDealStatusSummaryData($dealStatus, 'UnitSalePerSF', 	$totalUnitSalePerSF);
+		$this->setDealStatusSummaryData($dealStatus, 'OfferPrice', 		$totalOfferPrice);
+		$this->setDealStatusSummaryData($dealStatus, 'OfferPricePerSF', $totalOfferPricePerSF);
+		$this->setDealStatusSummaryData($dealStatus, 'PercentageByValue', $percentageByValue);		
+		
+		$this->calculateTotal($dealStatus);
+	} // parseDealStatusData
+	
+	
+	function calculateTotal($dealStatus){
+		
+		// get the total
+		$this->totalList['DealStatus'] = 'Total';
+		$this->totalList['NumOfRecord'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['NumOfRecord'];
+		$this->totalList['Area'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['Area'];
+		$this->totalList['UnitSale'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['UnitSale'];
+		$this->totalList['OfferPrice'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['OfferPrice'];
+		$this->totalList['UnitSalePerSF'] = 
+			$this->totalList['UnitSale'] / $this->totalList['Area'];
+		$this->totalList['OfferPricePerSF'] = 
+			$this->totalList['OfferPrice'] / $this->totalList['Area'];	
+		$this->totalList['PercentageByValue'] = '100';
+	}
+	
+	function calculateSubtotal($dealStatus){
+		
+	
+		// get the total
+		$this->subtotalList['DealStatus'] = 'Subtotal';
+		$this->subtotalList['NumOfRecord'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['NumOfRecord'];
+		$this->subtotalList['Area'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['Area'];
+		$this->subtotalList['UnitSale'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['UnitSale'];
+		$this->subtotalList['OfferPrice'] += 
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['OfferPrice'];
+		$this->subtotalList['UnitSalePerSF'] = 
+			$this->subtotalList['UnitSale'] / $this->subtotalList['Area'];
+		$this->subtotalList['OfferPricePerSF'] = 
+			$this->subtotalList['OfferPrice'] / $this->subtotalList['Area'];		
+		$this->subtotalList['PercentageByValue'] +=
+			$this->dataList[$dealStatus][$this->SUMMARY_RECORD]['PercentageByValue'];
+								
+	}	
+	
+	/**
+	 * Perform calculations required after data retrival
+	 */
+	function postCalculation(){
+	
+		// set the weight
+		foreach ($this->dataList as $key=>$val){
+			$this->dataList[$key][$this->SUMMARY_RECORD]['PercentageByValue']	=
+				($this->dataList[$key][$this->SUMMARY_RECORD]['UnitSale'] / $this->totalList['UnitSale']) * 100;
+		}
+		
+	}
+
+
+	//------------------------------------------------------------------------	
+	//	Deal Status Data Methods
+	//------------------------------------------------------------------------
+	function initDealStatusDataList($dealStatus){
+		$this->dataList[$dealStatus] = array();
+		$this->dataList[$dealStatus][$this->SUMMARY_RECORD] = array();
+		$this->dataList[$dealStatus][$this->DATA_RECORD] = array();
+		$this->dataList[$dealStatus][$this->INDEX_RECORD] = 0;
+	}
+	
+	/**
+	 * Set summary data for provided deal status
+	 */	
+	function setDealStatusSummaryData($dealStatus, $key, $value){
+		$this->dataList[$dealStatus][$this->SUMMARY_RECORD][$key] = $value;
+	}
+	
+	/**
+	 * Get summary data for provided deal status
+	 */
+	function getDealStatusSummaryData($dealStatus, $key){
+		return $this->dataList[$dealStatus][$this->SUMMARY_RECORD][$key];
+	}
+
+	/**
+	 * Get summary record for provided deal status
+	 */
+	function &getDealStatusSummaryRecord($dealStatus){
+		return $this->dataList[$dealStatus][$this->SUMMARY_RECORD];
+	}
+	
+	/**
+	 * Add detail record for provided deal status
+	 */
+	function addDealStatusDetailRecord($dealStatus, $dataList){
+		$this->dataList[$dealStatus][$this->DATA_RECORD][] = $dataList;
+		
+	}
+	
+	/**
+	 * Get next detail record for provided deal status
+	 */
+	function &getNextDealStatusDetailRecord($dealStatus){
+		$index = $this->dataList[$dealStatus][$this->INDEX_RECORD]++;
+		return $this->dataList[$dealStatus][$this->DATA_RECORD][$index];
+	}
+	
+} // RptDealStatusController
+?>

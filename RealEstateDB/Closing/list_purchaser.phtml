@@ -1,0 +1,377 @@
+<?
+include "../main_include.phtml";
+include "../multiPageNavigation.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "admin");
+
+// expect
+// orderby : set of column name separated by comma
+// MultiPageNavigationResultsPerPage : for multi page navigation
+
+// defulat mode to be purchaser
+$mode = "purchaser";
+
+// Get the max number of additional purchasers to determine how many additional purchasers in the temp table
+$sql_max_number_of_AdditionalPurchaser = 
+   "SELECT max(num_of_AdditionalPurchaser) max_number_of_AdditionalPurchaser
+      FROM (select userid, count(*) num_of_AdditionalPurchaser from AdditionalPurchaser group by userid) num_of_ap";
+
+$result = executeSql($sql_max_number_of_AdditionalPurchaser);
+
+$row = mysql_fetch_array($result);
+
+$max_number_of_AdditionalPurchaser = $row['max_number_of_AdditionalPurchaser'];
+
+// Drop and re-create temporary table
+$sql_drop_temp_tbl = 
+   "DROP TABLE IF EXISTS temp_purchasers";
+
+$result = executeSql($sql_drop_temp_tbl);	
+// end of dropping temporary TABLE
+
+// Create temporary table for purchaser and according additional purchasers.
+$sql_create_temp_tbl = 
+   "CREATE TABLE temp_purchasers
+    (PurchaserID BIGINT NOT NULL AUTO_INCREMENT ,
+     UserID      BIGINT,
+     UnitNumber  varchar(30),
+     FirstName   varchar(50),
+     LastName   varchar(50)";
+
+for ($i=1; $i<=$max_number_of_AdditionalPurchaser; $i++)
+{
+	$sql_create_temp_tbl .= 
+	   ",
+	   AdditionalPurchaser" . $i ."FirstName   varchar(50),
+     AdditionalPurchaser" . $i ."LastName   varchar(50)";
+}
+$sql_create_temp_tbl .= 
+   ",PRIMARY KEY (PurchaserID))";
+
+$result = executeSql($sql_create_temp_tbl);
+// end of creating temporary TABLE
+
+// insert records into temp table
+$sql = "INSERT INTO temp_purchasers (UserID, UnitNumber, FirstName, LastName)
+        SELECT UserID, UnitNumber, FirstName, LastName
+          FROM User
+				 WHERE User.DealStatus <> 'Rescinded'
+				 ORDER BY User.UserID ASC";
+
+$result = executeSql($sql);
+
+$sql = "SELECT User.UserID, Person.FirstName, Person.LastName 
+          FROM User, AdditionalPurchaser, Person
+				 WHERE User.DealStatus <> 'Rescinded'
+				   AND User.UserID = AdditionalPurchaser.UserID
+				   AND AdditionalPurchaser.PersonID=Person.PersonID
+				 ORDER BY User.UserID ASC";
+
+$result = executeSql($sql);
+
+$prev_UserID = 0;
+while ($row = mysql_fetch_array($result))
+{
+	if ($row['UserID'] <> $prev_UserID)
+	{
+		$i = 0;
+	}
+	
+	$i++;
+	
+	$sql = 
+	   "UPDATE temp_purchasers
+	       SET AdditionalPurchaser" . $i ."FirstName = '" . $row['FirstName'] . "', 
+	           AdditionalPurchaser" . $i ."LastName = '" . $row['LastName'] . "'
+	     WHERE UserID = " . $row['UserID'];
+	
+	$update_result = executeSql($sql);
+	
+	$prev_UserID = $row['UserID'];
+}
+// end of insert records into temp table
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+// init var
+
+$searchFor = "";
+
+$sql = 
+   "SELECT User.Company, User.Price, temp_purchasers.* 
+      FROM User, temp_purchasers
+     WHERE User.UserID = temp_purchasers.UserID";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+{
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+
+		{
+
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+				if ($search_field == "FirstName" || $search_field == "LastName")
+				{
+					$sql_cond .= " AND (temp_purchasers." . $search_field . " LIKE '" . $val . "' ";
+
+					for ($i = 1; $i <= $max_number_of_AdditionalPurchaser; $i++)
+					{
+						$sql_cond .= " OR temp_purchasers.AdditionalPurchaser" . $i . $search_field . " LIKE '" . $val . "' ";
+					}
+
+					$sql_cond .= ")";
+				}
+				else if ($search_field == "UnitNumber")
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"temp_purchasers.UnitNumber", "csvValue"=>$val)) . ") ";
+				else
+
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+
+				$sql .= $sql_cond;
+				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+}
+else
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby," . getOrderClause(array("columnName"=>"temp_purchasers.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+else
+{
+	$sql .= " ORDER BY temp_purchasers.FirstName, temp_purchasers.LastName, " . getOrderClause(array("columnName"=>"temp_purchasers.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+//echo "<br><br>pageSql=$pageSql<BR>";  	
+//die();
+
+$result = executeSql($pageSql);
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "../"); ?>
+
+<script language="JavaScript">
+<!--
+function btnPurchaserClosing_Click(unitNumber, max_number_of_AdditionalPurchaser){
+	newwindow=window.open('purchaser_closing.phtml?UnitNumber=' + unitNumber + '&max=' + max_number_of_AdditionalPurchaser, 
+		unitNumber, 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=900,height=850,left = 100,top = 100');
+	if (window.focus) {
+		newwindow.focus();
+	}
+	return false;
+}
+
+function listall(){
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+
+//-->
+</script>
+
+	<TITLE><?= get_project_name($PHP_SELF); ?> - Purchaser List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_purchaser" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+		<TABLE>
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+
+		<TR CLASS="blank">
+			<TD>First Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+			<TD>Last Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+			<TD>Company : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+		</TR>
+		<tr class="blank">
+			<td>Results per Page : </td>
+			<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+		<TR CLASS="blank">
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+		</TR>
+		<TR>
+			<TD COLSPAN="5" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listall()">
+			</TD>
+		</TR>
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+	
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+	{
+		die("");
+	}
+?>	
+
+	<H4>List Purchasers</H4>
+<center>
+<TABLE >
+  <TR>
+  <? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&orderby=" . $orderby; ?>
+    <TD align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?></td>
+    <td  align="center" ><?= $multiPageNavigation->getAllPageButtons($linkCreterion);?></td>
+    <td  align="center" valign="center" ><?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  </TR>
+</TABLE>  
+</center>
+	<TABLE BORDER=0>
+
+<?
+		if ($searchFor != "")
+		{
+?>
+		<TR CLASS="blank">
+			<TD COLSPAN="10">Search for <?= $searchFor; ?><BR><BR></TD>
+		</TR>
+<?
+		}
+?>
+		<form name="update_purchaser" action="update_purchaser.phtml" method="post">
+
+<?
+		$totalSoldPrice = 0;
+		while ($row = mysql_fetch_array($result))
+		{
+			$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
+
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Company,temp_purchasers.FirstName,temp_purchasers.LastName">Company</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=temp_purchasers.FirstName,temp_purchasers.LastName">FirstName</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=temp_purchasers.LastName,temp_purchasers.FirstName">LastName</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"temp_purchasers.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) ?>,LastName,FirstName">Suite Number</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Price,temp_purchasers.LastName,temp_purchasers.FirstName">Price</A></TD>			
+<?
+			for ($i = 1; $i <= $max_number_of_AdditionalPurchaser; $i++)
+{
+?>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=AdditionalPurchaser<?= $i; ?>FirstName,AdditionalPurchaser<?= $i; ?>LastName">AdditionalPurchaser<?= $i; ?><br>FirstName</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=AdditionalPurchaser<?= $i; ?>LastName,AdditionalPurchaser<?= $i; ?>FirstName">AdditionalPurchaser<?= $i; ?><br>LastName</A></TD>
+<?
+			}
+?>
+			<TD COLSPAN=1>Action</TD>
+		</TR>
+<?
+			}
+			
+			$url = "../userListing.phtml?action=display&mode=purchaser&";
+
+		 	$url .= "UserID=" . $row['UserID'];
+			$totalSoldPrice += $row['Price'];		
+
+			displayMouseOverTR("blank", "body");
+?>			
+				<TD><A HREF="<?= $url; ?>"><?= $row['Company']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['FirstName']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['LastName']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber']; ?></A></TD>
+				<TD align="right"><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['Price'], "decimals"=>0, "isDollarValue"=>TRUE)) ; ?></A></TD>
+<?
+			for ($i = 1; $i <= $max_number_of_AdditionalPurchaser; $i++)
+			{
+?>
+			<TD><A HREF="<?= $url; ?>"><?= $row["AdditionalPurchaser" . $i ."FirstName"]; ?></A></TD>
+			<TD><A HREF="<?= $url; ?>"><?= $row["AdditionalPurchaser" . $i ."LastName"]; ?></A></TD>
+<?
+			}
+?>
+				<TD><INPUT TYPE=BUTTON VALUE="Purchaser Closing" onClick="btnPurchaserClosing_Click('<?=  $row['UnitNumber']; ?>', '<?=  $max_number_of_AdditionalPurchaser; ?>')"></TD>
+
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UserID']?>" VALUE="<?= $row['UserID']?>"></TD>
+
+			</TR>
+
+<?
+
+		}
+
+?>
+
+	</FORM>
+
+		<tr class=tail>
+			<td colspan=3 align=left>Total:</td>
+			<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+			<td><?= numberFormat(array("value"=>$totalSoldPrice, "isDollarValue"=>TRUE)); ?></td>
+			<td colspan=7>&nbsp;</td>
+		</tr>
+	</TABLE>
+
+<?
+
+	if (isSet($err))
+
+	{
+
+?>
+
+<script language="JavaScript">
+
+<!--
+
+	alert('<?= $err; ?>');
+
+//-->
+
+</SCRIPT>
+
+<?	
+
+	}
+
+?>
+
+</BODY>
+
+</HTML>
+

@@ -1,0 +1,100 @@
+<?php
+/*
+ * Edit unit upgrade item cost. This is a page only displays 
+ * all the cost of one single item
+ * query var: unitNumber, itemID, optionID, choiceID
+ */
+ 
+include_once "main_include.phtml";
+
+function &getUserSaveTableRow($UnitNumber, $ItemID, $OptionID, $ChoiceID){
+	$usersave_sql = 	" SELECT UserSave.*, Section.Name AS SectionName," .
+						" Subsection.Name AS SubsectionName, " .
+						" Options.Name AS OptionName," .
+						" Item.Name AS ItemName " .
+						" FROM UserSave, Item, Options, Section, Subsection " .
+						" WHERE UnitNumber=" . $UnitNumber .
+						" AND UserSave.ItemID = Item.ItemID" .
+						" AND UserSave.OptionID = Options.OptionID" .
+						" AND Item.SubsectionID = Subsection.SubsectionID" .
+						" AND Subsection.SectionID = Section.SectionID " .
+						" AND UserSave.ItemID = " . $ItemID .
+						" AND UserSave.OptionID = " . $OptionID;
+						
+	if ($ChoiceID != ""){
+		$usersave_sql .= " AND UserSave.ChoiceID = " . $ChoiceID;	
+	}						
+						
+	$usersave_sql .= " ORDER BY Section.Name, Subsection.Name, Item.Name, Options.Name";
+						
+	$usersave_result = executeSql($usersave_sql);
+	return $usersave_result;
+}
+//$numOfContractor = getNumOfContractor();
+$contractor_result = getContractorResult();
+$usersave_row = mysql_fetch_array(getUserSaveTableRow($unitNumber, $itemID, $optionID, $choiceID));
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/", true, false); ?>
+<SCRIPT LANGUAGE="JavaScript">
+/** 
+* Cancel current edit/add operation. 
+* If this page is displayed in DIV, it should close the DIV.
+* If this page is displayed in a page, then it should go to previous page 
+*/  
+function cancel(){
+	
+	window.parent.hideFloatingDiv(1);
+}
+
+</SCRIPT> 
+	<FORM METHOD="PUT" ACTION="./updateUnitUpgradeItemCost.phtml">
+	<INPUT TYPE="HIDDEN" NAME="UnitNumber" VALUE="<?= $unitNumber; ?>">
+	<INPUT TYPE="HIDDEN" NAME="ItemID" VALUE="<?= $itemID; ?>">
+	<INPUT TYPE="HIDDEN" NAME="OptionID" VALUE="<?= $optionID; ?>">
+	<INPUT TYPE="HIDDEN" NAME="ChoiceID" VALUE="<?= $choiceID; ?>">
+	<INPUT TYPE="HIDDEN" NAME="jsAfterDone" VALUE="window.parent.editItemDone()">
+	<TABLE WIDTH=100%>
+		<TR class="head-left">
+			<TD COLSPAN=100><?= $usersave_row['SectionName'] . " - " . $usersave_row['SubsectionName']; ?><BR>
+			<?= $usersave_row['ItemName'] . " - " . $usersave_row['OptionName']; ?></TD>
+		</TR>
+		<TR class="tail-left">
+			<TD>Contractor</TD>
+			<TD>Cost</TD>
+			<TD>Contractor</TD>
+			<TD>Cost</TD>
+		</TR>
+<?	
+	$newRow = true;
+	while ($contractor_row = mysql_fetch_array($contractor_result)){
+		if ($contractor_row['ContractorName'] == ""){
+			continue;	
+		}
+		$id = strtolower($contractor_row['ContractorID']);
+		$value = convertPriceConstantToString($usersave_row[$id]);
+		if ($newRow){
+			displayMouseOverTR();
+			$newRow = false;
+		} else {
+			$newRow = true;
+		}
+?>
+			<TD><?= $contractor_row['ContractorName']; ?></TD>
+			<TD><INPUT TYPE="TEXT" NAME="<?= $id; ?>" VALUE="<?= $value; ?>">
+			<INPUT TYPE="HIDDEN" NAME="original_<?= $id; ?>" VALUE="<?= $value; ?>"></TD>
+<?		if ($newRow){ 
+?>			</TR>
+<?		}	
+	}
+?>		
+
+	<TR><TD><BR></TD></TR>
+	<TR>
+		<TD><INPUT TYPE="SUBMIT" VALUE="Update">
+		<INPUT TYPE="BUTTON" VALUE="Cancel" onClick="cancel()">
+		</TD>
+	</TR>
+	</TABLE>
+	</FORM>
+</HTML>

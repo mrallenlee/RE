@@ -1,0 +1,693 @@
+<?php
+/*
+ * Created on 2006-03-10
+ *
+ * Generate reports of visitor and purchaser
+ */
+
+include "main_include.phtml";
+
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+
+// get number of male, female
+// $mode is user, visitor
+// $gender is Male, Female
+function getNumOfGender($gender, $mode){
+	$sql = "SELECT count(Gender) AS NumOfGender" .
+			" FROM " .	get_internal_customer_type_table($mode) . 
+			" WHERE Gender=\"" . $gender . "\"";
+
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$row = mysql_fetch_array($result);
+	return $row['NumOfGender'];
+
+}
+
+// $mode is user, visitor
+function getMostPopularAgeRange($mode){
+	global $_SERVER;
+	
+	$sql = 	"SELECT AgeRange, count(AgeRange) AS AgeRangeCount " .
+			" FROM " . get_internal_customer_type_table($mode) . 
+			" WHERE AgeRange != '' " .
+			" GROUP BY AgeRange " .
+			" ORDER BY AgeRangeCount  DESC LIMIT 1";
+			
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$row = mysql_fetch_array($result);
+	return $row['AgeRange'];
+		
+}
+
+// get most popular city people come from
+function getMostPopularCityArray($mode){
+	$sql = "SELECT City, count(City) AS CityCount" .
+			" FROM " .	get_internal_customer_type_table($mode) . 
+			" GROUP BY CITY" .
+			" ORDER BY CityCount DESC" .
+			" LIMIT 25";
+
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$city = $row['City'] == "" ? "N/A" : $row['City'];		
+		$resultArray[$i++] = $city . ";" . $row['CityCount'];		 
+	}
+	return $resultArray;			
+}
+
+
+// get most popular postal code people come from
+// Only takes first 3 characters of postal code
+function getMostPopularPostalCodeArray($mode){
+	$sql = "SELECT PostalCodeArea AS PostalCode, Count(PostalCodeArea)AS PostalCodeCount" .
+			" FROM " .
+			"(SELECT SUBSTRING(PostalCode, 1, 3) AS PostalCodeArea " .
+			" FROM " .	get_internal_customer_type_table($mode) . "" .
+			" WHERE PostalCode <> '') AS PostalCodeAreaTable " .  
+			" GROUP BY PostalCodeArea" .
+			" ORDER BY PostalCodeCount DESC" .
+			" LIMIT 25";
+
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$postalCode = $row['PostalCode'] == "" ? "N/A" : $row['PostalCode'];		
+		$resultArray[$i++] = $postalCode . ";" . $row['PostalCodeCount'];		 
+	}
+	return $resultArray;			
+}
+
+// $mode is user, visitor
+// return array of price range which each element is in "PriceRange;PriceRangeCount" format
+function getMostPopularPriceRangeArray($mode){
+	global $_SERVER;
+	
+	$internalCustomerType =  get_internal_customer_type_table($mode);
+	if ($internalCustomerType == "Visitor"){
+		$sql = 	"SELECT PriceRange, count(PriceRange) AS PriceRangeCount " .
+			" FROM " . get_internal_customer_type_table($mode) . 
+			" WHERE PriceRange != '' " .
+			" GROUP BY PriceRange " .
+			" ORDER BY PriceRangeCount DESC";
+		$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+		
+		$resultArray = array();
+		$i = 0;
+		while($row = mysql_fetch_array($result)){
+			$resultArray[$i++] = $row['PriceRange'] . ";" . $row['PriceRangeCount'];		 
+		}
+		return $resultArray;		
+	} else if ($internalCustomerType == "User"){
+		$priceRangeArray = getMostPopularUserPriceRangeArray();
+		$resultArray = array();
+		for ($i=0; $i < count($priceRangeArray ); $i++){
+			$resultArray[$i] = $priceRangeArray[$i]['range'] . ";" . $priceRangeArray[$i]['count'] ;
+		}
+		return $resultArray;
+		
+	}
+}
+
+
+// get most popular purchased model
+// return array of model in "Model;UnitType;UnitTypeDescription;ModelCount" format
+function getMostPopularUnitTypePurchasedArray(){
+	$sql = " SELECT Model, UnitType, UnitTypeDescription, count(Model) AS ModelCount " .
+			" FROM User, Unit " . 
+			" WHERE User.UnitNumber = Unit.UnitNumber" .
+			" GROUP BY Model " .
+			" ORDER BY ModelCount DESC";
+			
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$resultArray[$i++] = $row['Model'] . ";" . $row['UnitType'] . ";" . $row['UnitTypeDescription'] . ";" . $row['ModelCount'];		 
+	}
+	return $resultArray;				
+}
+
+// get unit type desired array 
+// return array of unit type desired which each element is in "UnitTypeDesired,UnitTypeDesiredCount" format
+function getMostPopularUnitTypeDesiredArray($mode){
+global $_SERVER;
+	
+	$sql = 	"SELECT UnitTypeDesired, count(UnitTypeDesired) AS UnitTypeDesiredCount " .
+			" FROM " . get_internal_customer_type_table($mode) . 
+			" WHERE UnitTypeDesired != '' " .
+			" GROUP BY UnitTypeDesired " .
+			" ORDER BY UnitTypeDesiredCount DESC";
+			
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$resultArray[$i++] = $row['UnitTypeDesired'] . ";" . $row['UnitTypeDesiredCount'];		 
+	}
+	return $resultArray;		
+}
+
+// get source array sorted by popularity 
+// return array of source which each element is in "Source,SourceCount" format
+function getMostPopularSourceArray($mode){
+global $_SERVER;
+	
+	$sql = 	"SELECT Source, count(Source) AS SourceCount " .
+			" FROM " . get_internal_customer_type_table($mode) . 
+			" WHERE Source != '' " .
+			" GROUP BY Source " .
+			" ORDER BY SourceCount DESC";
+			
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$resultArray[$i++] = $row['Source'] . ";" . $row['SourceCount'];		 
+	}
+	return $resultArray;		
+}
+
+// get average number of registration per month includes visitor and purchaser
+// return array of average registration number per month in "Month;RegistrationNumber"
+function getAverageNumberOfRegistrationPerMonthArray($mode){
+	$sql = "SELECT Year(RegistrationDate) as RegistrationYear," .
+			" MONTH(RegistrationDate) as RegistrationMonth," .
+			" count(RegistrationDate) as RegistrationNumber," .
+			" count(RegistrationDate)/ DAYOFMONTH(LAST_DAY(RegistrationDate)) As AvgNumber" .
+			" FROM "  . get_internal_customer_type_table($mode) . 
+			" WHERE RegistrationDate > 0" .
+			" GROUP BY RegistrationYear,RegistrationMonth" .
+			" ORDER BY RegistrationYear DESC ,RegistrationMonth DESC" .
+			" LIMIT 15";
+
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$resultArray[$i++] = $row['RegistrationYear'] . ";" . $row['RegistrationMonth'] . ";" . $row['RegistrationNumber'] . ";" . $row['AvgNumber'];		 
+	}
+	return $resultArray;		
+}
+
+// get most popular month of sale
+function getMostPopularMonthOfSalesArray(){
+	$sql = "SELECT Year(AgreementDepositDate) as PurchaseYear," .
+			" MONTH(AgreementDepositDate) as PurchaseMonth," .
+			" count(AgreementDepositDate) as PurchaseNumber," .
+			" count(AgreementDepositDate)/ DAYOFMONTH(LAST_DAY(AgreementDepositDate)) As AvgNumber" .
+			" FROM User " .  
+			" WHERE AgreementDepositDate > 0" .
+			" GROUP BY PurchaseYear,PurchaseMonth" .
+			" ORDER BY PurchaseYear DESC ,PurchaseMonth DESC" .
+			" LIMIT 15";
+
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$resultArray[$i++] = $row['PurchaseYear'] . ";" . $row['PurchaseMonth'] . ";" . $row['PurchaseNumber'] . ";" . $row['AvgNumber'];		 
+	}
+	return $resultArray;	
+} 
+
+// get sales of each sales presentative
+// return in "SalesRep1;SalesRep2;NumberOfSales" format
+function getSalesRepresentativeSalesArray(){
+	$sql = "SELECT" .
+			" (SELECT SalesRepFirstName FROM SalesRep WHERE SalesRepID=SalesTable.SalesRepID) as SalesRep," .
+			" (SELECT SalesRepFirstName FROM SalesRep WHERE SalesRepID=SalesTable.SalesRepID1) as SalesRep1," .
+			" SalesTable.SalesCount" .
+			" FROM " .
+			" (SELECT SalesRepID, SalesRepID1, count(UnitNumber) AS SalesCount " .
+			"	FROM User " .
+			"	GROUP BY SalesRepID, SalesRepID1 " .
+			"	ORDER BY SalesCount DESC) " .
+			" AS SalesTable";
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$i = 0;
+	while($row = mysql_fetch_array($result)){
+		$salesRep = $row['SalesRep'] == "" ? "N/A" : $row['SalesRep'];
+		$salesRep1 = $row['SalesRep1'] == "" ? "N/A" : $row['SalesRep1'];
+		
+		$resultArray[$i++] = $salesRep . ";" . $salesRep1 . ";" . $row['SalesCount'] . ";" . $row['AvgNumber'];		 
+	}
+	return $resultArray;	
+}
+
+// get deal status recisission and firm information, 
+// and calculate % of rescission out of firm
+// format FirmCount;RescindedCount;GrossSaleCount;Percentage of Rescinded/FirmCount
+function getDealStatusArray(){
+	$sql = "SELECT " .
+			" (SELECT COUNT(UnitNumber) FROM User WHERE DealStatus=\"Rescinded\") AS RescindedCount," .
+			" (SELECT COUNT(UnitNumber) FROM User ) AS GrossSaleCount," .
+			" (SELECT COUNT(UnitNumber) FROM User WHERE DealStatus=\"Firm\") AS FirmCount";
+				
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$resultArray = array();
+	$row = mysql_fetch_array($result);
+	$recessionPercentage = number_format(($row['RescindedCount'] / $row['GrossSaleCount']) * 100, 2);
+	$resultArray[0] = $row['FirmCount'] . ";" . $row['RescindedCount'] . ";" . $row['GrossSaleCount'] . ";" . $recessionPercentage;		 	
+	return $resultArray;	
+}
+
+
+function str2no($number){
+  $number = str_replace("$", "", $number);
+  $number = str_replace(",", "", $number);
+  return $number;
+}
+
+// parse a range string, and return array contains 
+// ['min'] and ['max'] element from the range
+// return array if succeeded, empty array otherwise
+function parseRange($rangeString){
+	if (strpos($rangeString, '-')){
+		list($min, $max) = explode("-", $rangeString);
+		$range = array();
+		$range['min'] = str2no($min);
+		$range['max'] = str2no($max);
+	} else if (strpos($rangeString, '+')){
+		$range = array();
+		$range['min'] = str2no(substr($rangeString, 0, strpos($rangeString, '+')  ));
+		$range['max'] = MAX_INT;	
+	}
+	return $range;
+}
+
+
+// only require for purchasr since User table doens't store
+// age range field
+function getMostPopularAgeRangeArray($mode = "User"){
+	$sql = "SELECT AgeRange FROM AgeRange_list";
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$ageRangeArray = array();
+	// build 2D array which stores all AgeRange in ageRangeArray
+	while ($row = mysql_fetch_array($result)){
+		$range = parseRange($row['AgeRange']);
+		if ($range['min'] == "" && $range['max'] == ""){
+			continue;
+		}
+		$rangeArray = array();
+		$rangeArray['range'] = $row['AgeRange'];
+		$rangeArray['min'] = $range['min'];
+		$rangeArray['max'] = $range['max'];
+		$rangeArray['count'] = 0;
+		
+		$ageRangeArray[count($ageRangeArray)] = $rangeArray;
+	}
+	
+	$numOfAgeRange = count($ageRangeArray);
+	
+	$sql = " SELECT DateOfBirth  From ". get_internal_customer_type_table($mode) ;
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	// build 2D array which stores all AgeRange in ageRangeArray
+	while ($row = mysql_fetch_array($result)){
+		$date = $row['DateOfBirth'];
+		if ($date == 0){
+			continue;	
+		}
+		// cannot use unix time stamp because it only starts at 1970
+		// calcuate age
+		list($year, $month, $day) = explode("-", $date);
+		$currentYear = date("Y");
+		$yearDiff = $currentYear - $year;
+		
+		// check the age range
+		for ($i = 0; $i < $numOfAgeRange; $i++){
+			$rangeArray =& $ageRangeArray[$i];
+			if ($yearDiff >= $rangeArray['min'] && $yearDiff <= $rangeArray['max']){
+				$rangeArray['count'] = $rangeArray['count'] + 1;
+				break;	
+			}			
+		}
+		
+	}
+	return $ageRangeArray;	
+}
+
+
+// only require for purchasr since User table doens't store
+// price range field
+function getMostPopularUserPriceRangeArray($mode = "User"){
+	$sql = "SELECT PriceRange FROM PriceRange_list";
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	$priceRangeArray = array();
+	// build 2D array which stores all AgeRange in ageRangeArray
+	while ($row = mysql_fetch_array($result)){
+		$range = parseRange($row['PriceRange']);
+		if ($range['min'] == "" && $range['max'] == ""){
+			continue;
+		}
+		$rangeArray = array();
+		$rangeArray['range'] = $row['PriceRange'];
+		$rangeArray['min'] = $range['min'];
+		$rangeArray['max'] = $range['max'];
+		$rangeArray['count'] = 0;
+		
+		$priceRangeArray[count($priceRangeArray)] = $rangeArray;
+	}
+	
+	$numOfPriceRange = count($priceRangeArray);
+	
+	$sql = " SELECT Price  From ". get_internal_customer_type_table($mode) ;
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $_SERVER['PHP_SELF']);
+	
+	// build 2D array which stores all AgeRange in ageRangeArray
+	while ($row = mysql_fetch_array($result)){
+		$price = $row['Price'];		
+		// check the price range
+		for ($i = 0; $i < $numOfPriceRange; $i++){
+			$rangeArray =& $priceRangeArray[$i];
+			if ($price >= $rangeArray['min'] && $price <= $rangeArray['max']){
+				$rangeArray['count'] = $rangeArray['count'] + 1;
+				break;	
+			}			
+		}		
+	}
+	
+	for ($i = 0; $i < $numOfPriceRange; $i++){
+		for ($j = 0; $j < $numOfPriceRange; $j++){
+			if ($priceRangeArray[$i]['count'] > $priceRangeArray[$j]['count'] ){
+				// swap
+				$tempArray = $priceRangeArray[$j];
+				$priceRangeArray[$j] = $priceRangeArray[$i];
+				$priceRangeArray[$i] = $tempArray;				 	
+			}	
+		}	
+	}
+	return $priceRangeArray;	
+}
+//-----------------------------------------------------------------------------------
+// print functions
+//-----------------------------------------------------------------------------------
+// print most popular city 
+function printMosuPopularCityArray($mode){	
+	$cityArray = getMostPopularCityArray($mode);
+	$len = count($cityArray);
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td>Rank</td><td>City</td><td>Count</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($city, $cityCount) = explode(";", $cityArray[$i]);
+		displayMouseOverTR("blank", "body");		
+?>		<td align="center"><?= $i+1;?></td><td align="center"><?= $city; ?></td><td align="center"><?= $cityCount; ?></td></tr>
+<?	}							
+?>	</table>
+<?}			
+
+function printMostPopularPostalCodeArray($mode){
+	$postalCodeArray = getMostPopularPostalCodeArray($mode);
+	$len = count($postalCodeArray);
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td>Rank</td><td>Postal Code</td><td>Count</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($postalCode, $count) = explode(";", $postalCodeArray[$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $i+1;?></td><td align="center"><?= $postalCode; ?></td><td align="center"><?= $count; ?></td></tr>
+<?	}							
+?>	</table>
+<?}
+
+// print price range
+function printMostPopularPriceRangeArray($mode){
+	$priceRangeArray = getMostPopularPriceRangeArray($mode);
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Rank</td><td align="center">Price Range</td><td align="center">Count</td></tr>	
+<?	for ($i = 0; $i < 3; $i++){
+		list($priceRange, $priceRangeCount) = explode(";", $priceRangeArray[$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $i+1; ?></td><td align="center"><?= $priceRange; ?></td><td align="center"><?= $priceRangeCount; ?></td></tr>
+<?	}
+?>	</table>
+<?}							
+						
+
+// print unit type desired						
+
+function printMostPopularUnitTypeDesiredArray($mode){ 						
+	$priceRangeArray = getMostPopularUnitTypeDesiredArray($mode);
+	$len = count($priceRangeArray);
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Rank</td><td align="center">Unit Type Desired</td><td align="center">Count</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($unitTypeDesired, $unitTypeDesiredCount) = explode(";", $priceRangeArray[$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $i+1;?></td><td align="center"><?= $unitTypeDesired; ?></td><td align="center"><?= $unitTypeDesiredCount; ?></td></tr>
+<?	}							
+?>	</table>
+<?}					
+						
+// print source
+
+// $mode : Visitor, User						
+function printMostPopularSourceArray($mode){
+	$sourceArray = getMostPopularSourceArray($mode);
+	$len = count($sourceArray);
+	$len = $len > 25 ? 25 : $len;
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Rank</td><td align="center">Source</td><td align="center">Count</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($source, $sourceCount) = explode(";", $sourceArray[$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $i+1;?></td><td align="center"><?= $source;?></td><td align="center"><?= $sourceCount; ?></tr>
+<?	}							
+?>	</table>
+<?}						
+				
+// print average number of registration per month						
+
+function printAverageNumberOfRegistrationPerMonthArray($mode){
+	$registrationArray = getAverageNumberOfRegistrationPerMonthArray($mode);
+	$len = count($registrationArray);
+	if ($len <= 0){
+		return;
+	}
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Year</td><td align="center">Month</td><td align="center">Number of Registrations</td><td align="center">Average Registrations Per Day</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($year, $month, $registrationCount, $avgNumber) = explode(";", $registrationArray[$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $year; ?></td><td align="center"><?= $month; ?></td><td align="center"><?= $registrationCount;?></td><td align="center"><?= $avgNumber; ?></tr>
+<?	}								
+?>	</table>
+<?}
+
+// print most popular purchased unit type 
+
+// print most popular unit type purchased
+function printMostPopularUnitTypePurchasedArray(){
+	$unitTypePurchasedArray = getMostPopularUnitTypePurchasedArray();
+	$len = count($unitTypePurchasedArray);
+	if ($len <= 0){
+		return;
+	}
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Rank</td><td align="center">Model</td><td align="center">Unit Type</td><td align="center">Unit Type Description</td><td align="center">Number of Model Purchased</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($model, $unitType, $unitTypeDescription, $count) = explode(";", $unitTypePurchasedArray[$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $i + 1; ?></td></td><td align="center"><?= $model; ?></td><td align="center"><?= $unitType; ?></td><td align="center"><?= $unitTypeDescription; ?></td><td align="center"><?= $count; ?></td></tr>
+<?	}								
+?>	</table>
+<?}
+
+// print most popular month of sales
+function printMostPopularMonthOfSalesArray(){
+	$purchasedMonthArray = getMostPopularMonthOfSalesArray();
+	$len = count($purchasedMonthArray );
+	if ($len <= 0){
+		return;
+	}
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Year</td><td align="center">Month</td><td align="center">Number of Sales</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($year, $month, $count) = explode(";", $purchasedMonthArray [$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $year; ?></td><td align="center"><?= $month; ?></td><td align="center"><?= $count; ?></td></tr>
+<?	}								
+?>	</table>
+<?}
+
+// print number of sales per sales representative
+function printSalesRepresentativeSalesArray(){
+	$salesArray = getSalesRepresentativeSalesArray();
+	$len = count($salesArray );
+	if ($len <= 0){
+		return;
+	}
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Sales Rep 1</td><td align="center">Sales Rep 2</td><td align="center">Number of Sales</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($sale1, $sale2, $count) = explode(";", $salesArray [$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $sale1; ?></td><td align="center"><?= $sale2; ?></td><td align="center"><?= $count; ?></td></tr>
+<?	}								
+?>	</table>
+<?}	
+
+// print deal status 
+function printDealStatusArray(){
+	$dealStatusArray = getDealStatusArray();
+	$len = count($dealStatusArray );
+	if ($len <= 0){
+		return;
+	}
+?>	<table cellspacing=2 cellpadding=0>
+		<tr class="head"><td align="center">Firm</td><td align="center">Rescinded</td><td align="center">Gross Sale</td><td align="center">% of Recessions to Gross Sale</td></tr>	
+<?	for ($i = 0; $i < $len; $i++){
+		list($firmCount, $rescindedCount, $grossSaleCount, $rescindedPercentage) = explode(";", $dealStatusArray [$i]);
+		displayMouseOverTR("blank", "body");
+?>		<td align="center"><?= $firmCount; ?></td><td align="center"><?= $rescindedCount; ?></td><td align="center"><?= $grossSaleCount; ?></td><td align="center"><?= $rescindedPercentage; ?>%</td></tr>
+<?	}								
+?>	</table>
+<?}		
+	
+// print most popular age range	
+function printMostPopularAgeRangeArray(){
+	$ageRangeArray = getMostPopularAgeRangeArray();
+	$maxCount = 0;
+	$maxRange = "";
+	for ($i = 0; $i < count($ageRangeArray); $i++){
+		$rangeArray = $ageRangeArray[$i];
+		if ($rangeArray['count'] > $maxCount){
+			$maxCount = $rangeArray['count'];
+			$maxRange = $rangeArray['range'];  	
+		}
+//		print "$i range=" . $rangeArray['range'] . " min=" . $rangeArray['min'] . " max=" . $rangeArray['max'] . " count=" . $rangeArray['count'] . "<BR>";		
+	}
+			
+	print $maxRange;
+}
+
+
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+
+
+		<H3><?= get_project_name($PHP_SELF); ?> -- Visitor/Purhcser Report</H3>
+		<table>
+			<tr class="tail">
+				<td colspan=2 >Visitor</td>
+				<td colspan=2 >Purchaser</td>
+			</tr>
+			
+<?				displayMouseOverTR("blank", "body");?>
+				<td>Most popular Age Range</td>
+				<td valign="top"><?= getMostPopularAgeRange("Visitor"); ?></td>
+				<td>Most popular Age Range</td>
+				<td valign="top"><?= printMostPopularAgeRangeArray(); ?></td>
+			</tr>
+<?				displayMouseOverTR("blank", "body");?>
+				<td>Number of Male</td>
+				<td valign="top"><?= getNumOfGender("Male", "Visitor"); ?></td>
+				<td>Number of Male</td>
+				<td valign="top"><?= getNumOfGender("Male", "User"); ?></td>
+			</tr>
+<?				displayMouseOverTR("blank", "body");?>
+				<td>Number of Female</td>
+				<td><?= getNumOfGender("Female", "Visitor"); ?></td>
+				<td>Number of Female</td>
+				<td><?= getNumOfGender("Female", "User"); ?></td>
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2>Most Popular City Visitor Come from</td>
+				<td colspan=2>Most Popular City Purchaser Come from</td>
+			</tr>
+			<tr>							
+				<td valign="top" colspan=2><?= printMosuPopularCityArray("Visitor"); ?></td>
+				<td valign="top" colspan=2><?= printMosuPopularCityArray("User"); ?></td>
+			</tr>	
+			<tr>							
+				<td colspan=2 valign="top"><?= printMostPopularPostalCodeArray("Visitor"); ?></td>
+				<td colspan=2 valign="top"><?= printMostPopularPostalCodeArray("User"); ?></td>
+			</tr>						
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2>Most popular Price Range</td>
+				<td colspan=2>Most popular Price Range</td>
+			</tr>
+			<tr>							
+				<td valign="top" colspan=2><? printMostPopularPriceRangeArray("Visitor"); ?></td>						
+				<td valign="top" colspan=2><? printMostPopularPriceRangeArray("User"); ?></td>						
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td valign="top" colspan=2>Most popular Unit Type desired</td>
+				<td valign="top" colspan=2>Most popular Unit purchased</td>				
+			</tr>
+			<tr>							
+				<td valign="top" colspan=2><? printMostPopularUnitTypeDesiredArray("Visitor"); ?></td>
+				<td valign="top" colspan=2><? printMostPopularUnitTypePurchasedArray(); ?></td>
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2>Most popular Source</td>
+				<td colspan=2>Most popular Source</td>
+			</tr>
+			<tr>							
+				<td valign="top" colspan=2><? printMostPopularSourceArray("Visitor"); ?></td>
+				<td valign="top" colspan=2><? printMostPopularSourceArray("User"); ?></td>
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2>Average Number of Registration Per Month</td>
+				<td colspan=2>Average Number of Registration Per Month</td>
+			</tr>
+			<tr>							
+				<td valign="top" colspan=2 ><? printAverageNumberOfRegistrationPerMonthArray("Visitor"); ?></td>
+				<td valign="top" colspan=2 ><? printAverageNumberOfRegistrationPerMonthArray("User"); ?></td>
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2></td>
+				<td colspan=2>Number of Sales per month</td>
+			</tr>
+			<tr>
+				<td colspan=2></td>
+				<td colspan=2><?= printMostPopularMonthOfSalesArray(); ?></td>
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2></td>
+				<td colspan=2>Number of Sales from Sales Representative</td>
+			</tr>
+			<tr>
+				<td colspan=2></td>
+				<td colspan=2><?= printSalesRepresentativeSalesArray(); ?></td>
+			</tr>
+			<tr><td><br><br></td></tr>
+			<tr>
+				<td colspan=2></td>
+				<td colspan=2>Deal Status</td>
+			</tr>
+			<tr>
+				<td colspan=2></td>
+				<td colspan=2><?= printDealStatusArray(); ?></td>
+			</tr>
+			
+			
+		</table>
+</HTML>

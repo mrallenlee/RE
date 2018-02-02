@@ -1,0 +1,141 @@
+<?
+include "main_include.phtml";
+
+
+// This file displays the Contractor table. The file that displays all of
+// the Options and Upgrades tables is called display_user.phtml
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); 
+
+if ($action == ""){
+	$action = "display";
+}
+?>
+
+
+<table cellspacing="0" cellpadding="0" border="0" width="700">
+<tr>
+<td>
+
+<br>
+
+<?
+
+if (!$table_name)
+{
+	$table_name = "Contractor";
+}
+
+?>
+
+<table cellpadding="5" border="0" width="100%">
+<tr class="head">
+<th>Contractor ID</th>
+<th>Contractor Name</th>
+<th>Address</th>
+<th>City</th>
+<th>Country</th>
+<th>Postal Code</th>
+<th>Contact Person</th>
+<th>Phone</th>
+<th>Email</th>
+<th>Secondary Contact Person</th>
+<th>Secondary Contact Phone</th>
+<th>Scondary Contact Email</th>
+</tr>
+
+<?
+
+
+	$sql	= "SELECT	*
+			FROM Contractor";
+	$result = mysql_query($sql,$db);
+	
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($row['Commit'])
+		{
+			$Commit = "Yes";
+		}
+		else
+		{
+			$Commit = "No";
+		}
+		
+		displayMouseOverTR();
+		echo "<form name=\"form_" . $row['ContractorID'] . "\" method=\"post\" action=\"contractor_edit.phtml\">";
+		echo "<input type=hidden name=ContractorID value=\"" . $row['ContractorID'] . "\">";
+		echo "<td>" . $row['ContractorID'] . "&nbsp;</td>\n";
+		echo "<td nobr>"; display_text("ContractorName"); echo "</td>";
+		echo "<td nobr width=50>"; display_text("Address"); echo "</td>";
+		echo "<td>"; display_text("City"); echo "</td>";
+		echo "<td>"; display_text("Country"); echo "</td>";
+		echo "<td nobr>"; display_text("PostalCode"); echo "</td>";
+		echo "<td nobr>"; display_text("Person"); echo "</td>";
+		echo "<td nobr>"; display_text("Phone"); echo "</td>";
+		echo "<td nobr>"; display_text("Email"); echo "</td>";
+		echo "<td nobr>"; display_text("Person2"); echo "</td>";
+		echo "<td nobr>"; display_text("Person2Phone"); echo "</td>";
+		echo "<td nobr>"; display_text("Person2Email"); echo "</td>";
+		
+		// Code without using display_text function
+//		echo "<td><input type=text name=ContractorName size=20 value=\"" . $row['ContractorName'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Address size=25 value=\"" . $row['Address'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=City size=10 value=\"" . $row['City'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Country size=10 value=\"" . $row['Country'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=PostalCode size=10 value=\"" . $row['PostalCode'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Person size=15 value=\"" . $row['Person'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Phone size=13 value=\"" . $row['Phone'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Email size=15 value=\"" . $row['Email'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Person2 size=13 value=\"" . $row['Person2'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Person2Phone size=13 value=\"" . $row['Person2Phone'] . "\"&nbsp;</td>\n";
+//		echo "<td><input type=text name=Person2Email size=13 value=\"" . $row['Person2Email'] . "\"&nbsp;</td>\n";
+		
+		if ($action == "edit"){
+			echo "<td><nobr><input type=button value=Update onClick=\"document.forms['form_" . $row['ContractorID'] . "'].submit()\"></td>";
+		}
+//		echo "<td><nobr><a href=\"javascript:document.forms['form_" . $row['ContractorID'] . "'].submit()\">Update</a></td>";
+		echo "</form>";
+		echo "</tr>\n";
+	}
+	// end HTML table
+	echo "</table>\n";
+?>
+
+</td>
+</tr>
+
+<tr><td><br></td></tr>
+
+
+</table>
+</td>
+</tr>
+</table>
+
+
+
+
+</td>
+</tr>
+
+
+<tr>
+<?
+if ($action == "display"){
+?>	<td><input type="button" value="Edit" onClick="window.location='<?= $PHP_SELF . "?action=edit";?>'">
+<? } else {
+?>	<td><input type="button" value="Cancel Edit" onClick="window.location='<?= $PHP_SELF . "?action=display";?>'">
+<? } ?>
+
+</td>
+
+<td><input type="button" value="Export to Spreadsheet" onClick="window.location='dumpContractorInfo.phtml'">
+</td>
+</tr>
+
+</table>
+
+</body>
+
+</html>

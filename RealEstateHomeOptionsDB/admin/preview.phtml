@@ -1,0 +1,382 @@
+<?
+include "main_include.phtml";
+
+die("This preview should not be displayed anymore.");
+$commit = 0;
+
+?>
+<html>
+<head>
+<title>Options and Upgrades - <?
+if (!$commit)
+{
+	echo "Preview My Selections";
+}
+else
+{
+	echo "Contract";
+}
+?></title>
+</head>
+<style type="text/css">
+	td{font-family:"Verdana, Arial, Helvetica, sans-serif"; font-size:9pt; color:#0;text-decoration: none;}
+	a{font-family:"Verdana, Arial, Helvetica, sans-serif"; font-size:9pt; color:#999999;text-decoration: none;}
+</style>
+<body>
+<center>
+<table cellpadding="2" cellspacing="0" width="600">
+<tr>
+<td>
+<?
+$sql = "SELECT FirstName, LastName, User.UnitNumber AS UnitNumber, UnitType
+		FROM User
+		LEFT JOIN Unit
+		ON Unit.UserID=User.UserID
+		WHERE User.UserID = $UserID";
+$result = mysql_query($sql,$db) or die("ERROR : $sql <br>" . mysql_error());
+
+$row = mysql_fetch_array($result);
+
+echo "Name: <b>" . $row['FirstName'] . " " . $row['LastName'] . "</b><br>\n";
+echo "Unit Number: <b>" . $row['UnitNumber'] . "<br></b>\n";
+echo "Unit Type: <b>" . $row['UnitType'] . "<br></b>\n<br>";
+
+$UnitType = $row['UnitType'];
+
+?>
+<table cellpadding="2" cellspacing="2">
+
+<?
+// get the name of the current section
+$sql = "SELECT Name, Description, SectionID
+		FROM Section ORDER BY Name";
+$section_result = mysql_query($sql,$db) or die("ERROR : $sql <br>" . mysql_error());
+
+while ($section_row = mysql_fetch_array($section_result))
+{
+	if (section_disabled($UnitType, $section_row['SectionID']))
+		continue;
+	else
+		$sectionID = $section_row['SectionID'];
+?>
+<tr><td colspan="4" bgcolor="#ffffff"><font size="4"><b>&nbsp;<br>&nbsp;<br><?= $section_row['Name'];?></b></font></td></tr>
+<?
+	$sql = "SELECT Name, Description, SubsectionID
+			FROM Subsection
+			WHERE SectionID = '$sectionID' ORDER BY Name";
+	$subsection_result = mysql_query($sql,$db) or die("ERROR : $sql <br>" . mysql_error());
+	while ($subsection_row = mysql_fetch_array($subsection_result))
+	{
+		$subsectionID = $subsection_row['SubsectionID'];
+?>
+<tr><td colspan="5" bgcolor="#bbbbbb"><b><?= $subsection_row['Name'];?></b></td></tr>
+	<tr>
+		<td>&nbsp;</td>
+		<td bgcolor="#cccccc"><b><u>Item</u></b></td>
+		<td bgcolor="#cccccc"><b><u>Option</u></b></td>
+		<td bgcolor="#cccccc"><b><u>Choice</u></b></td>
+		<td bgcolor="#cccccc"><b><u>Price</u></b></td>
+	</tr>
+<?
+
+		// Since UserSave table may not have the options if user
+		// has not saved the options they choose, so standard will
+		// be display if no optionID in UserSave table. 
+		$sql = "SELECT Item.ItemID AS ItemID, Item.Name AS ItemName,
+				Options.Name AS OptionsName, Options.Choice AS OptionsChoice,
+				Choice.Name AS ChoiceName, UserSave.Price AS Price
+				FROM Item
+				LEFT JOIN UserSave 
+				ON Item.ItemID = UserSave.ItemID
+				AND UserSave.UserID = '$UserID'
+				LEFT JOIN Options 
+				ON UserSave.OptionID = Options.OptionID
+				LEFT JOIN Choice
+				ON UserSave.ChoiceID = Choice.ChoiceID
+				WHERE Item.SubsectionID = $subsectionID
+				ORDER BY Item.Name, Options.Name, Choice.Name";
+
+		$userSave_result = mysql_query($sql,$db) or die("ERROR : $sql <br><b>" . mysql_error() . "</b>");
+		while ($userSave_row = mysql_fetch_array($userSave_result))
+		{
+			$ItemID = $userSave_row['ItemID'];
+			// Check all the options for ItemName is -9999 or not. 
+			// If all of the price in the options are -9999, don't show this item
+	
+			// get all options for this item first, then check the price for the options
+			$sql_Option = "SELECT OptionID FROM Item_Options WHERE ItemID=$ItemID";
+			$result_Option = mysql_query($sql_Option,$db) or die("ERROR : $sql <br><b>" . mysql_error() . "</b>");
+			// init the flag to be false
+			$show = "false";
+			// check all the prices of the options, if all of them are not -9999, 
+			// set show to be "true", which means show the item
+
+			while ($row_Option = mysql_fetch_array($result_Option))
+			{
+
+				$OptionID = $row_Option['OptionID'];
+				$sql_Price = "SELECT Price.Price as Price 
+							FROM Price
+							WHERE ItemID = $ItemID
+							AND OptionID = $OptionID
+							AND UnitType = '$UnitType'";
+
+				$result_Price = mysql_query($sql_Price,$db) or die("ERROR : $sql <br><b>" . mysql_error() . "</b>");
+				$row_Price = mysql_fetch_array($result_Price);
+				if ($row_Price['Price'] != -9999 )
+				{
+					$show = "true";
+				}
+			} // end of row_Option while
+			// if show equals to false, don't show this item, and continue the loop
+			if ($show == "false")
+			{
+				continue;
+			}
+?>
+	<tr>
+		<td>&nbsp;</td>
+		<td bgcolor="#dddddd"><?= $userSave_row['ItemName'];?></td>
+		<td bgcolor="#dddddd">
+		<? if ($userSave_row['OptionsName'] != "" && $userSave_row['Price'] != -9999)
+			{
+				echo $userSave_row['OptionsName'];
+			}
+			else
+			{
+				echo "<font color=\"#ff0000\">&lt;no selection saved&gt;</font>";
+				$incomplete = 1;
+			}
+			$userSave_row['OptionsName'];
+		?></td>
+<?			if ($userSave_row['OptionsChoice'] != "")		
+			{
+?>		<td bgcolor="#dddddd"><i><?= $userSave_row['OptionsChoice'];?>:</i> <nobr><?= $userSave_row['ChoiceName'];?></nobr></td>
+<?			}
+			else
+			{
+?>
+		<td bgcolor="#dddddd">&nbsp;</td>
+<?
+}
+			if ($userSave_row['Price'] == "" || $userSave_row['Price'] == 0)
+			{
+?>
+		<td bgcolor="#dddddd" align="right"><nobr>No Charge</nobr></td>
+<?
+			}
+			else if ($userSave_row['Price'] != -9999)// Don't show -9999 options
+			{
+				$total += $userSave_row['Price'];
+?>
+		<td bgcolor="#dddddd" align="right">$<?
+		 echo number_format($userSave_row['Price']);
+		 if ($userSave_row['Price'] < 0) echo " (Credit)"; ?></td>
+<?
+			}
+?>
+
+	</tr>
+<?
+			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
+		}// end of userSave loop
+	}// end of subsection loop
+}// end of section loop
+
+$sql = "SELECT Description, Price
+		FROM UserOption
+		WHERE UserID = '$UserID'";
+$useroption_result = mysql_query($sql,$db) or die("ERROR : $sql <br>" . mysql_error());
+
+if (mysql_num_rows($useroption_result) > 0)
+{
+?>
+<tr><td colspan="4" bgcolor="#ffffff"><font size="4"><b>&nbsp;<br>&nbsp;<br>Additional Changes</b></font></td></tr>
+<tr>
+<td colspan="4" bgcolor="#cccccc"><b><u>Option</u></b></td>
+<td bgcolor="#cccccc"><b><u>Price</u></b></td>
+</tr>
+<?
+	while ($useroption_row = mysql_fetch_array($useroption_result))
+	{
+?>
+<tr>
+<td colspan="4" bgcolor="#dddddd"><?= $useroption_row['Description'];?></td>
+<td align="right" bgcolor="#dddddd">$<?= $useroption_row['Price'];?></td>
+</tr>
+<?
+		if ($useroption_row['Price'] < 0)
+			$credit += $useroption_row['Price'];
+		else
+			$total += $useroption_row['Price'];
+	} // end of useroption loop
+}
+
+$tax_rate = getGSTRate();
+$tax = $total * $tax_rate;
+$total_with_tax = $total + $tax;
+
+if ( $total < 0 ) // Don't tax -ve values
+{
+	$total_with_tax = $total;
+}
+
+?>
+<tr>
+	<td colspan="5">&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;</td>
+</tr>
+<tr>
+<?
+if ($commit)
+{
+?>
+	<td colspan="5"><font size="4"><b>Summary & Authorisation</b></font><br>
+<?
+}
+else
+{
+?>
+	<td colspan="5"><font size="4"><b>Summary</b></font><br>
+<?
+}
+?>
+	<img src="black.gif" width="600" height="1" alt="" border="0"></td>
+</tr>
+<tr>
+	<td colspan="5" bgcolor="#eeeeee" align="right"><div align="right">Total options before taxes: <font size="3"><b>$&nbsp;<?= number_format($total, 2)?></b></font>
+<br>
+GST: <font size="3"><b>$ <?= number_format($tax, 2)?></b></font>
+<br>
+Total including taxes: <font size="3"><b>$ <?= number_format($total_with_tax, 2)?></b></font>
+<br>
+Less credit: <font size="3"><b>$ <?= number_format($credit, 2)?></b></font>
+<br>
+Total owing: <font size="3"><b>$ <?= number_format($total_with_tax + $credit, 2)?></b></font></div></td>
+</tr>
+</table>
+<?
+	if ($commit)
+{
+?>
+
+<table cellspacing="0" cellpadding="5" border="0" width="100%">
+<tr>
+<td>
+
+<font face="Arial,Verdana,Helvetica" size="1">
+<br>
+<br>
+<br>
+<br>
+<br>
+<font size="2">
+I / We hereby confirm that the above List of Options and Upgrades represent my / our <b>final</b> instructions to the Davies Smith Developments Partnership to include these Options and Upgrades in my / our suite at CityGate 
+<?
+if (is_citygate_1($PHP_SELF))
+	echo "1";
+elseif (is_citygate_2($PHP_SELF))
+	echo "2";
+?>
+, subject to the following conditions:
+<br>
+<br>
+<ul>
+<li TYPE="CIRCLE">I / We understand that <b>the above selections are final</b> and that I / we cannot change my selections once I / we have authorised them below.
+<br><br>
+<li TYPE="CIRCLE">I / We understand that any selections that I / we have made based upon the Images shown on this Internet based program are limited by the Internet's low graphics resolution. I / we <b>have inspected actual samples of my selections</b> at the CityGate Sales Office Options and Upgrades Display area and satisfied my / ourselves as to their suitability.
+<br><br>
+<li TYPE="CIRCLE">If I / we have chosen Options and Upgrades that consist of natural materials, I / we understand that <b>natural materials are rarely consistent in colour or shade</b> and some colour variation between the samples and the materials that are installed in my suite is possible. 
+<br><br>
+<li TYPE="CIRCLE">I / We understand that <b>many suppliers have a continuing product improvement programme.</b> This means that the exact Options or Upgrades I / we have selected above may not then be available at the time those Options or Upgrades would be installed in my suite. In those circumstances, I / we authorise the Davies Smith Developments Partnership to use substitute materials of a similar or superior quality.
+</ul>
+I / we hereby acknowledge that these Options and Upgrades represent a total cost of 
+<nobr><b>$ <?= number_format($total_with_tax + $credit, 2)?></b></nobr> 
+<b>inclusive of tax</b> and I / we hereby confirm that I / we will be responsible for this cost. I / we further acknowledge that the payment schedule for this work is as follows: 
+<br>
+<br>
+<ul>
+<li>25% of the total cost upon signature hereof.</li>
+<br><br>
+<li>25% of the total cost on the 30th day of the signature hereof.
+<br><br>
+<li>25% of the total cost on the 60th day of the signature hereof.
+<br><br>
+<li>The remainder of the total cost 120 days of the signature hereof.
+</ul>
+<br>
+<br>
+<br>
+<br>
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+<tr>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Signed<br>
+<img src="black.gif" width="400" height="1" border="0"><br>
+Purchaser</font></td>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Date:<br>
+<img src="black.gif" width="170" height="1" border="0"></font></td>
+</tr>
+<tr>
+<td colspan="2"><font face="Arial,Verdana,Helvetica" size="2">&nbsp;</font></td>
+</tr>
+<tr>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">and<br>
+<img src="black.gif" width="400" height="1" border="0"><br>
+Purchaser</font></td>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Date:<br>
+<img src="black.gif" width="170" height="1" border="0"></font></td>
+</tr>
+<tr>
+<td colspan="2"><font face="Arial,Verdana,Helvetica" size="2">&nbsp;</font></td>
+</tr>
+<tr>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Signed<br>
+<img src="black.gif" width="400" height="1" border="0"><br>
+Davies Smith Developments Partnership</font></td>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Date:<br>
+<img src="black.gif" width="170" height="1" border="0"></font></td>
+</tr>
+<tr>
+<td colspan="2"><font face="Arial,Verdana,Helvetica" size="2">&nbsp;</font></td>
+</tr>
+<tr>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Legal documents finalised<br>
+<img src="black.gif" width="400" height="1" border="0"><br>
+Davies Smith Developments Partnership</font></td>
+<td valign="top"><font face="Arial,Verdana,Helvetica" size="2">Date:<br>
+<img src="black.gif" width="170" height="1" border="0"></font></td>
+</tr>
+</table>
+</font>
+
+</td>
+</tr>
+</table>
+
+<?
+}
+?>
+</td>
+</tr>
+<tr>
+<td>
+</td>
+</tr>
+</table>
+</center>                                                
+</body>                                                  
+                                                         
+<script language="javascript">                           
+<!--                                                     
+function commit()                                        
+{                                                        
+	var displayText = "If you continue, you will LOCK IN your selections. No further changes can be made after this. \nIt is preferable to wait until your final meeting with Marlene when she will lock in your selections with you.\n\nClick OK only you are sure you want to lock in.";
+                                                         
+	if (confirm(displayText))                        
+	{                                                
+		document.forms[0].submit();                            
+	}                                                
+}                                                        
+//-->                                                    
+</script>                                                
+                                                         
+</html>

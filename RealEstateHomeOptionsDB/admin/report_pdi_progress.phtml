@@ -1,0 +1,280 @@
+<?
+
+# Query String Var
+#format  optional. "html" is default. "csv" is another optional
+
+if ($format == "csv")
+	$not_include_javascript = 1;
+	
+include "../admin/main_include.phtml";
+
+check_auth(HOMEOPTIONS);
+
+$table_name = $_REQUEST["table_name"];
+
+function get_done_count ($db, $UnitNumber, $type)
+{
+	$sql = "SELECT count(PDIDefectID) count_done from PDIDefect,Section " .
+		"where UnitNumber = $UnitNumber " .
+		"and ". $type . "Defect = 1 " .
+		"and ". $type . "Fixed = 1 " .
+		"and PDIDefect.SectionID = Section.SectionID " .
+		"and LEFT(Section.Name, 1) <> 'Z' ";
+			
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	$row = mysql_fetch_array($result);
+	
+	return $row["count_done"];
+}
+
+function get_signoff_count ($db, $UnitNumber, $type)
+{
+	$sql = "SELECT count(PDIDefectID) count_signoff from PDIDefect,Section " .
+		"where UnitNumber = $UnitNumber " .
+		"and ". $type ."Defect = 1 " .
+		"and ". $type . "Signoff = 1 " .
+		"and PDIDefect.SectionID = Section.SectionID " .
+		"and LEFT(Section.Name, 1) <> 'Z' ";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	$row = mysql_fetch_array($result);
+	
+	return $row["count_signoff"];
+}
+
+function get_outstanding_count ($db, $UnitNumber, $type)
+{
+	$sql = "SELECT count(PDIDefectID) count_outstanding from PDIDefect,Section " .
+		"where UnitNumber = $UnitNumber " .
+		"and ". $type ."Defect = 1 " .
+		"and " . $type . "Fixed <> 1 " .
+		"and PDIDefect.SectionID = Section.SectionID " .
+		"and LEFT(Section.Name, 1) <> 'Z' ";
+		
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	$row = mysql_fetch_array($result);
+	
+	return $row["count_outstanding"];
+}
+
+// select unit/purchaser
+$sql = "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName
+	from $table_name 
+	LEFT JOIN User
+	ON ($table_name.UserID = User.UserID)
+	order by UnitNumber";
+
+$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+if ($format == "csv")
+{
+
+	header("Content-type: application/csv");
+	header("Content-Disposition: attachment; filename=file.csv");
+	header("Pragma: no-cache");
+	header("Expires: 0");
+  // ALLEN TODO Add QA into CSV format
+	print "Unit,Purchaser,QA Done, QA O/S, PDI Done,PDI O/S,PDI Signed Off,30 Day List Done,30 Day List O/S,30 Day List Signed Off,11 Month List Done,11 Month List O/S,11 Month List Signed Off\n";
+	while ($row = mysql_fetch_array($result))
+	{
+		print $row['UnitNumber'] . ",\"" . $row['PurchaserName'] . "\",\"" . get_done_count($db, $row['UnitNumber'], "PDI") . "\",\"" . 
+      get_done_count($db, $row['UnitNumber'], "QA") . "\",\"" . get_outstanding_count($db, $row['UnitNumber'], "QA")  . "\",\"" . 
+      get_outstanding_count($db, $row['UnitNumber'], "PDI") . "\",\"" . get_signoff_count($db, $row['UnitNumber'], "PDI") . "\",\"" . get_done_count($db, $row['UnitNumber'], "day30") . "\",\"" . get_outstanding_count($db, $row['UnitNumber'], "day30") . "\",\"" . get_signoff_count($db, $row['UnitNumber'], "day30") . "\",\"" . get_done_count($db, $row['UnitNumber'], "month11") . "\",\"" . get_outstanding_count($db, $row['UnitNumber'], "month11") . "\",\"" . get_signoff_count($db, $row['UnitNumber'], "month11") . "\"\n";
+	}
+	
+}
+else
+{
+?>
+
+<html>
+<?
+
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+?>
+<head>
+  <title>PDI Progress Report</title>
+</head>
+
+<body>
+
+  <table name="progress_rpt" cellspacing="0" cellpadding="0" border="0" width="700">
+    <tr>
+      <td class="link_small">
+        <b>PDI Progress Report</b><br><br>
+      </td>
+    </tr>
+    <tr>
+      <td  class="button">
+	<input type="button" value="Download in CSV format" onClick="window.location='<?= $PHP_SELF;?>?format=csv&table_name=<?=$table_name;?>'">
+      </td>
+    </tr>
+    
+      <td>
+        <!-- 4 data tables -->
+        <table cellspacing="0" cellpadding="0" border="0">
+	      <tr>
+	        <td valign="top">
+              <!--1st data table-->
+              <table cellspacing="0" cellpadding="5" border="0">
+                <!-- 1st data table header -->
+                <tr>
+                  <td class="head" colspan="2">&nbsp;</td>
+                </tr>
+
+                <tr>
+                  <td class="head"><b>Unit</b></td>
+                  <td class="head"><b>Purchaser</b></td>
+                </tr>
+
+<?
+	while ($row = mysql_fetch_array($result))
+	{
+?>
+                <tr>
+                  <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
+                  <td class="table_rec"><nobr><?= $row['PurchaserName'] ?>&nbsp;</nobr></td>
+                </tr>
+<?
+	}
+?>
+              </table>
+            </td>
+
+
+            <!--QA data table-->
+          <td>
+              <table cellspacing="0" cellpadding="5" border="0">
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head" colspan="3"><b>QA</b></td>
+                </tr>
+
+                <tr>
+                  <!-- QA data table header -->
+                  <!-- For now, no signoff process for QA -->
+                  <td class="head"><b><nobr>Done</nobr></b></td>
+                  <td class="head"><b><nobr>O/S</nobr></b></td>
+                  <td class="head"><b><nobr></nobr></b></td>
+                </tr>
+
+<?
+  mysql_data_seek($result, 0);
+  while ($row = mysql_fetch_array($result))
+  {
+?>
+                <tr align="center">
+                  <td class="table_rec"><?= get_done_count($db, $row['UnitNumber'], "QA") ?></td>
+                  <td class="table_rec"><?= get_outstanding_count($db, $row['UnitNumber'], "QA") ?></td>
+                  <td class="table_rec"></td>
+                </tr>
+<?
+  }
+?>
+              </table>
+            </td>
+
+            <!--2nd data table-->
+	        <td>
+              <table cellspacing="0" cellpadding="5" border="0">
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head" colspan="3"><b>PDI</b></td>
+                </tr>
+
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head"><b><nobr>Done</nobr></b></td>
+                  <td class="head"><b><nobr>O/S</nobr></b></td>
+                  <td class="head"><b><nobr>Signed Off</nobr></b></td>
+                </tr>
+
+<?
+	mysql_data_seek($result, 0);
+	while ($row = mysql_fetch_array($result))
+	{
+?>
+                <tr align="center">
+                  <td class="table_rec"><?= get_done_count($db, $row['UnitNumber'], "PDI") ?></td>
+                  <td class="table_rec"><?= get_outstanding_count($db, $row['UnitNumber'], "PDI") ?></td>
+                  <td class="table_rec"><?= get_signoff_count($db, $row['UnitNumber'], "PDI") ?></td>
+                </tr>
+<?
+	}
+?>
+              </table>
+            </td>
+            
+            <!--3rd data table-->
+	        <td>
+              <table cellspacing="0" cellpadding="5" border="0">
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head" colspan="3"><b>30 Day List</b></td>
+                </tr>
+
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head"><b><nobr>Done</nobr></b></td>
+                  <td class="head"><b><nobr>O/S</nobr></b></td>
+                  <td class="head"><b><nobr>Signed Off</nobr></b></td>
+                </tr>
+
+<?
+	mysql_data_seek($result, 0);
+	while ($row = mysql_fetch_array($result))
+	{
+?>
+                <tr align="center">
+                  <td class="table_rec"><?= get_done_count($db, $row['UnitNumber'], "day30") ?></td>
+                  <td class="table_rec"><?= get_outstanding_count($db, $row['UnitNumber'], "day30") ?></td>
+                  <td class="table_rec"><?= get_signoff_count($db, $row['UnitNumber'], "day30") ?></td>
+                </tr>
+<?
+	}
+?>
+              </table>
+            </td>
+            
+            <!--4th data table-->
+	        <td>
+              <table cellspacing="0" cellpadding="5" border="0">
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head" colspan="3"><b>11 Month List</b></td>
+                </tr>
+
+                <tr>
+                  <!-- 2nd data table header -->
+                  <td class="head"><b><nobr>Done</nobr></b></td>
+                  <td class="head"><b><nobr>O/S</nobr></b></td>
+                  <td class="head"><b><nobr>Signed Off</nobr></b></td>
+                </tr>
+
+<?
+	mysql_data_seek($result, 0);
+	while ($row = mysql_fetch_array($result))
+	{
+?>
+                <tr align="center">
+                  <td class="table_rec"><?= get_done_count($db, $row['UnitNumber'], "month11") ?></td>
+                  <td class="table_rec"><?= get_outstanding_count($db, $row['UnitNumber'], "month11") ?></td>
+                  <td class="table_rec"><?= get_signoff_count($db, $row['UnitNumber'], "month11") ?></td>
+                </tr>
+<?
+	}
+?>
+              </table>
+            </td>
+            
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+  </table>
+
+</body>
+</html>
+<?
+} // if format=="csv"
+?>

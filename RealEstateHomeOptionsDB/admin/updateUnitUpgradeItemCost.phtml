@@ -1,0 +1,85 @@
+<?php
+/*
+ * Handle update from editUnitUpgradeItemCost page
+ * Only Standard PO is handled in this page.
+ * Query Var: UnitNumber,ItemID, OptionID,ChoiceID,contractor0...contractor39 for the cost of each contrctor
+ * original_contractor0...original_contractor39 
+ */
+
+include_once "main_include.phtml";
+include_once "PO/POAction.phtml";
+
+
+/**
+ * Do clean up before leaving this page
+ */
+function quit(){
+	global $HTTP_REFERER;
+	global $forward;
+	global $jsAfterDone;
+	
+	
+	if (isset($jsAfterDone) && $jsAfterDone != ""){
+?>
+		<script language="JavaScript">
+<?= 		$jsAfterDone; ?>
+		</script>
+<?		
+	}	
+		
+	if (isset($forward) && $forward != ""){
+		goto_url(decodeURL($forward));	
+	}		
+}
+
+//init all contractorXX var
+$contractor_result = getContractorResult();
+$updateUserSaveSql = "UPDATE UserSave SET ";
+
+$first = true;
+while ($contractor_row = mysql_fetch_array($contractor_result)){
+	if ($contractor_row['ContractorName'] == ""){
+		continue;	
+	}
+	
+	$id = strtolower($contractor_row['ContractorID']);
+	if ($$id != ${"original_" . $id}){
+		$newValue = $$id;
+		$oldValue = ${"original_" . $id};
+		  
+		$newValue = convertPriceConstantToNum($newValue);
+		$oldValue = convertPriceConstantToNum($oldValue);
+		
+		if (!$first){
+			$updateUserSaveSql .= " ,";			
+		} else {
+			$first = false;	
+		}
+		$updateUserSaveSql .= $id . "=" . $newValue;
+		if ($newValue == $oldValue){
+			// do nothing if value has not been changed
+			continue;
+		}	
+		if ($newValue != 0 && $oldValue != 0){
+			// if both old value and new value is non0, modify the PO
+			updateStandardPO($UnitNumber, $ItemID, $OptionID, $ChoiceID, $id, $newValue);						
+		} else if ($newValue == 0){
+			// if new value is 0, should we delete the PO?
+			deleteStandardPO($UnitNumber, $ItemID, $OptionID, $ChoiceID, $id);
+		} else {
+			// if old value is 0, add new PO
+			addStandardPO($UnitNumber, $ItemID, $OptionID, $ChoiceID, $id, $newValue);
+		}		 
+	}
+}
+
+$updateUserSaveSql .= " WHERE UnitNumber=$UnitNumber " .
+						"AND ItemID=$ItemID " .
+						"AND OptionID=$OptionID " .
+						"AND ChoiceID=$ChoiceID ";
+						
+// update UserSave table
+$updateUserSaveResult = executeSql($updateUserSaveSql);
+
+quit();
+?>

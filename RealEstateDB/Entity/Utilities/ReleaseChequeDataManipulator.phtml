@@ -1,0 +1,36 @@
+<?php
+/*
+ * Created on 2007i-06-18
+ *
+ * Handle data for Transaction Records
+ */
+ 
+ include_once "Entity/Utilities/DataManipulator.phtml";
+
+ class ReleaseChequeDataManipulator extends DataManipulator {
+ 	function ReleaseChequeDataManipulator() {}
+
+ 	/**
+ 	 * Convert ChequeType to CREDIT if cheque STATUS is 
+ 	 * CHEQUE_STATUS_RELEASED_FROM_TRUST
+ 	 */
+ 	function process(&$arguments){
+ 	
+		foreach ($arguments as $key=>$value){
+			
+//		print "ReleaseChequeDataMAnipulator::CHEQUE_STATUS_RELEASED_FROM_TRUST=" . CHEQUE_STATUS_RELEASED_FROM_TRUST . "<BR>";
+			if (preg_match("/ChequeStatus$/", $key)){
+	//			print "key=$key value=$value<BR>";
+			
+				if ($value == CHEQUE_STATUS_RELEASED_FROM_TRUST){
+					$data = explode('_', $key, 3);
+					$prefix = $data[0];
+					$index = $data[1];
+					$varName = $data[2];
+					$arguments['$prefix_' . $index . '_ChequeType'] = CHEQUE_TYPE_DEBIT;
+				}
+			}				
+		}
+ 	} // process
+ } // ReleaseChequeDataManipulator
+?> 	

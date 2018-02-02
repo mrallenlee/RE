@@ -1,0 +1,791 @@
+<?
+include_once "main_include.phtml";
+include_once "upgradeOptionAction.phtml";
+
+# $mode : normal, print
+
+define('ADDITIONAL_CHANGE_TABLE_PREFIX',"additionalChangeTableRow_");
+
+//----------------------------------------------------------------------------------------------
+//Var
+$UnitNumber = getUnitNumber();
+
+if ($UnitNumber < 0)
+{
+	handleError ("", "", SESSION_EXPIRED);
+}
+
+$UnitType = getUnitType();
+$total = 0;
+$credit = 0;
+
+if ($set_commit)
+{
+	
+	// generate PO in StandardPO table
+// function not ready yet	
+	include_once "admin/main_include.phtml";
+	include_once "admin/PO/POAction.phtml";
+	
+	handlePOIntegrity($UnitNumber);	
+	updateUserUpgradeOptionStatus($UnitNumber, 1);
+}
+
+
+$upgradeOptionStatus = getUpgradeOptionStatus($UnitNumber);
+
+// global var 
+$commit = $upgradeOptionStatus['Commit'] == 1 	? 1 : 0;
+$gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'] : getGSTRate();
+
+
+//----------------------------------------------------------------------------------------------
+function generate_navigation()
+{
+?>	<input type="button" onClick="javascript:window.location='display_upgrades.phtml'" value="Back to Options and Upgrades">
+<? }
+
+
+function generate_print()
+{
+?>	<input type="button" onClick="javascript:window.location='preview.phtml?mode=print'" value="Print Friendly">
+<? }
+
+function generate_logout()
+{	
+	if (isAdmin()){
+?>			<input type="button" align = "right" onClick="window.location='admin/homeOptionsUserList.phtml?mode=purchaser&listall=1'" value="Back to Purchaser List">
+				<input type="button" align = "right" onClick="window.location='admin/homeOptionsVacantUnitList.phtml?mode=purchaser&listall=1'" value="Back to Vacant Unit List">
+<?	} else { 			
+?>			<input type="button" onClick="javascript:logout()" value="Logout">
+<?	}			
+}
+
+/**
+ * get title depends on commit flag
+ */
+function getTitle($commit){	
+	global $UnitNumber;
+	$title = "Options and Upgrades for Unit $UnitNumber -"; 
+	
+	if (!$commit)
+	{
+		$title .= "Preview My Selections";
+	}
+	else
+	{
+		$title .= "Contract";
+	}	
+	return $title;
+}
+
+/**
+ * Subsection style
+ */
+function getSubsectionStyle($mode){
+	if ($mode == "print"){
+		return "bgcolor=\"#bbbbbb\"";		
+	} else{	
+		return "class=\"head\"";
+	}
+}
+
+/**
+ * header style
+ */
+function getOptionHeaderStyle($mode){
+	if ($mode == "print"){
+		return "bgcolor=\"#CCCCCC\" border=5";	
+	} else {	
+		return "class=\"tail\"";
+	}
+}
+
+
+/**
+ * option content style
+ */
+function getOptionContentStyle($mode){
+	if ($mode == "print"){
+		return "bgcolor=\"#eeeeee\"";
+	} else {
+		return "class=\"blank\" onmouseover=\"this.className='blank-highlight'\" " .
+			"onmouseout=\"this.className='blank'\"";	
+	}	
+}	
+
+function getSummaryContentStyle($mode){
+	if ($mode == "print"){
+		return "bgcolor=\"#eeeeee\"";
+	} else {
+		return "class=\"blank\"";	
+	}	
+
+}
+
+function getAdminEditPrice($priceType) {
+	// only activate edit feature if user is admin
+	if (isAdmin()){
+		return "onClick=\"javascript:preview.editPrice(
+	'".$priceType."',
+	document.getElementById('".$priceType."_desc').childNodes[0].nodeValue, 
+	document.getElementById('".$priceType."').childNodes[0].nodeValue)\"";
+	}
+}
+?>
+<html>
+
+<head>
+	<style type="text/css">
+		button {width: 100px;}
+
+		#pane_grid {
+			overflow: auto;
+		}
+		
+		#pane_grid table {
+			font-family:Lucida Grande, Verdana;
+			font-size:0.8em;
+			width:100%;
+			border:1px solid #ccc;
+			border-collapse:collapse;
+			cursor:default;
+			position: absolute; 
+			left: 0; 
+			top: 0;
+		}
+		#pane_grid table td,
+		#pane_grid table th{
+			padding:2px;
+			font-weight:normal;
+		}
+		
+		#pane_grid table thead td, table thead th {
+			background-image:url(images/ft-head.gif);
+			background-repeat:no-repeat;
+			background-position:top right;
+		}
+		#pane_grid table thead td.selectedUp, table thead th.selectedUp {
+			background-image:url(images/ft-headup.gif);
+		}
+		#pane_grid table thead td.selectedDown, table thead th.selectedDown {
+			background-image:url(images/ft-headdown.gif);
+		}
+		
+		#pane_grid table tbody tr td{
+			border-bottom:1px solid #ddd;
+		}
+		#pane_grid table tbody tr.alt td{
+			background: #e3edfa;
+		}
+		#pane_grid table tbody tr.selected td{
+			background: yellow;
+		}
+		#pane_grid table tbody tr:hover td{
+			background: #a6c2e7;
+		}
+		#pane_grid table tbody tr.selected:hover td{
+			background:#ff9;
+		}
+
+		/* group multiple buttons in a row */
+		.box {
+			display: block;
+			float: right;
+		}
+		.box .dojoButton {
+			float: left;
+			margin-left: 10px;
+			foreground:#ffffff
+			
+		}	
+		
+body .dojoFloatingPaneTitleBar {
+	vertical-align: top;
+	margin: 2px 2px 2px 2px;
+	z-index: 10;
+	background-color: #FFFFFF;
+	cursor: default;
+	overflow: hidden;
+	border-color: ThreeDHighlight ThreeDShadow ThreeDShadow ThreeDHighlight;
+	vertical-align: middle;
+}
+
+body .dojoFloatingPaneTitleText {
+	float: left;
+	padding: 2px 4px 2px 2px;
+	white-space: nowrap;
+	color: CaptionText;
+	font: small-caption;
+}
+
+
+.dojoFloatingPaneClient {
+	position: relative;
+	z-index: 10;
+	border: 1px solid;
+	border-color: #ffffff #ffffff #ffffff #ffffff;
+	margin: 2px;
+	background-color: #ffffff;
+	padding: 8px;
+	font-family: Verdana, Helvetica, Garamond, sans-serif;
+	font-size: 12px;
+	overflow: auto;
+}
+
+.dojoContentPane {
+	background: #ffffff;
+}
+	</style>
+<script language="javascript">
+// global var
+// prefix for additional change js
+var ADDITIONAL_CHANGE_TABLE_PREFIX = '<?= ADDITIONAL_CHANGE_TABLE_PREFIX; ?>';
+var unitNumber = "<?= $UnitNumber; ?>";
+var GST_RATE = <?= getGSTRate(); ?>
+
+
+function logout()
+{
+var result = confirm("Are you sure you want to logout?")
+
+if (result){
+	location.href='logout.phtml?url=index.phtml';
+}
+
+}
+//-->
+</script>
+<script language="javascript" src="https://code.jquery.com/jquery-1.9.1.min.js" type="text/javascript"></script>
+<script language="javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH . "/javascript/dynamicWindow.js"; ?>" type="text/javascript"></script>
+<script language="javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/dojo/dojo.js"; ?>" type="text/javascript"></script>
+<script language="javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH . "/javascript/utils.js"; ?>" type="text/javascript"></script>
+<script language="javascript" src="preview.js"></script>
+
+<script language="JavaScript">
+// dispaly edit note div layer 
+function displayWaitingDIV(){
+	var divLayerIndex = 2
+	
+	newHTML = '<DIV class="popupDiv">';
+	newHTML = newHTML + '<center><BR><B>Storing data...<BR><BR>Please wait. This may take several minutes to process.<BR><BR></B></center>'; 
+	newHTML = newHTML + '</div>';
+	getFloatingDivNoStyle(divLayerIndex).innerHTML = newHTML;
+
+	getFloatingDiv(divLayerIndex).position="absolute";
+	getFloatingDiv(divLayerIndex).width="500";	
+	getFloatingDiv(divLayerIndex).height="400px";
+	// put it at the center of browser	
+	centerDIV(getFloatingDivNoStyle(divLayerIndex));
+	// display it
+	getFloatingDiv(divLayerIndex).visibility="visible";	
+}
+
+function hideWaitingDIV(){
+	var divLayerIndex = 2
+	getFloatingDiv(divLayerIndex).visibility="hidden";	
+
+}
+</script>
+
+<title><?= getTitle($commit); ?>></title>
+</head>
+<? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", $mode != "print", false); ?>
+<body>
+<table cellpadding="2" cellspacing="0" ID="previewTable">
+	<tr>
+		<td>
+          <table width="100%" border="0" cellspacing="0" cellpadding="5" >
+			<tr>
+			<td colspan=100 align="left"><img src="./images/project-logo-small.jpg"></td>
+			</tr>
+          
+            <tr>
+              <td class="big-head"><?= getTitle($commit); ?></td>
+            </tr>
+          </table>
+	<tr>
+		<td colspan=100 align="right">
+<?
+$sql = "SELECT User.UserID, FirstName, LastName, CashPayment, PayByMortgage, OutstandingAmt, UnitType
+		FROM Unit
+		LEFT JOIN User
+		ON User.UnitNumber=Unit.UnitNumber
+		AND User.DealStatus IN (" . DEAL_STATUS_PURCHASE_INCLUDE_LIST . ") 
+		WHERE Unit.UnitNumber = '" . $UnitNumber ."'";
+$result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+$row = mysql_fetch_array($result);
+
+$userID = $row['UserID'];
+$cashPayment = $row['CashPayment'];
+$payByMortgage = $row['PayByMortgage'];
+$outstandingAmt = $row['OutstandingAmt'];
+
+if (!$commit){
+	generate_navigation();	
+}
+if ($mode != "print")
+{
+	generate_print();
+	generate_logout();
+}
+else
+{
+	echo "<br><br>";
+	if ($row['FirstName'] != null || $row['LastName'] != null)
+	{
+		echo "Name: <b>" . $row['FirstName'] . " " . $row['LastName'] . "</b><br>\n";
+	}
+	echo "Unit Number: <b>" . $UnitNumber . "<br></b>\n";
+	echo "Unit Type: <b>" . $row['UnitType'] . "<br></b>\n<br>";
+}
+
+?>
+<table width="100%" cellpadding="2" cellspacing="2" >
+
+<?
+// get the name of the current section
+$sql = "SELECT Name, Description, SectionID
+		FROM Section ORDER BY Name";
+$section_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+while ($section_row = mysql_fetch_array($section_result))
+{
+	if (section_disabled($UnitType, $section_row['SectionID']))
+		continue;
+	else
+		$sectionID = $section_row['SectionID'];
+		
+	// cache the html code for section, subsection title. The code
+	// will be printed if item-option is available
+	$htmlCacheHeader = "<tr><td colspan=\"4\" ><font size=\"4\"><b>&nbsp;<br>&nbsp;<br>" . $section_row['Name'] . "</b></font></td></tr>";
+
+	$sql = "SELECT Name, Description, SubsectionID
+			FROM Subsection
+			WHERE SectionID = '$sectionID' ORDER BY Name";
+	$subsection_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+	while ($subsection_row = mysql_fetch_array($subsection_result))
+	{
+		$subsectionID = $subsection_row['SubsectionID'];
+		
+		$htmlCache = "<tr><td colspan=\"5\"" . getSubsectionStyle($mode) . "><b>" . $subsection_row['Name'] . "</b></td></tr>";
+		$htmlCache .= "<tr>";
+		$htmlCache .= "<td bgcolor=\"#FFFFFF\">&nbsp;</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Item</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Option</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Choice</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Price</td>";
+		$htmlCache .= "</tr>";
+
+
+		// Since UserSave table may not have the options if user
+		// has not saved the options they choose, so standard will
+		// be display if no optionID in UserSave table. 
+		$sql = "SELECT Item.ItemID AS ItemID, Item.Name AS ItemName,
+				Options.Name AS OptionsName, Options.Choice AS OptionsChoice,
+				Choice.Name AS ChoiceName, UserSave.Price AS Price
+				FROM Item
+				LEFT JOIN UserSave 
+				ON Item.ItemID = UserSave.ItemID
+				AND UserSave.UnitNumber = '$UnitNumber'
+				LEFT JOIN Options 
+				ON UserSave.OptionID = Options.OptionID
+				LEFT JOIN Choice
+				ON UserSave.ChoiceID = Choice.ChoiceID
+				WHERE Item.SubsectionID = $subsectionID
+				ORDER BY Item.Name, Options.Name, Choice.Name";
+
+		$userSave_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+		while ($userSave_row = mysql_fetch_array($userSave_result))
+		{
+			$ItemID = $userSave_row['ItemID'];
+			// Check all the options for ItemName is -9999 or not. 
+			// If all of the price in the options are -9999, don't show this item
+	
+			// get all options for this item first, then check the price for the options
+			$sql_Option = "SELECT Options.OptionID, Name FROM Item_Options, Options " .
+							"WHERE ItemID=$ItemID " .
+							"AND Item_Options.OptionID = Options.OptionID" 
+							;
+			$result_Option = mysql_query($sql_Option,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+			// init the flag to be false
+			$show = "false";
+			// check all the prices of the options, if all of them are not OPTION_IS_NOT_UNAVAILABLE, 
+			// set show to be "true", which means show the item
+
+			while ($row_Option = mysql_fetch_array($result_Option))
+			{
+				$OptionID = $row_Option['OptionID'];
+				$sql_Price = "SELECT Price.Price as Price 
+							FROM Price
+							WHERE ItemID = $ItemID
+							AND OptionID = $OptionID
+							AND UnitType = '$UnitType'";
+
+				$result_Price = mysql_query($sql_Price,$db) or handleError("", "SQL=$sql_Price <br>Error=" . mysql_error(), SQL_ERROR, true);	
+				$row_Price = mysql_fetch_array($result_Price);
+				if ($row_Price['Price'] != OPTION_IS_NOT_AVAILABLE)
+				{
+					$show = "true";
+				}
+			} // end of row_Option while
+			// if show equals to false, don't show this item, and continue the loop
+			if ($show == "false")
+			{
+				continue;
+			}
+			
+			// if user saved option name is not required, do not display this item
+			if (trim($userSave_row['OptionsName']) == OPTION_IS_NOT_REQUIRED ){
+				continue;
+			}
+			
+			
+			// print title if item-option is available
+			print $htmlCacheHeader;
+			$htmlCacheHeader = "";
+			print $htmlCache;
+			$htmlCache = "";
+	
+?>
+	<tr <?= getOptionContentStyle($mode); ?>>
+		<td bgcolor="#FFFFFF">&nbsp;</td>
+		<td ><?= $userSave_row['ItemName'];?></td>
+		<td >
+		<? if ($userSave_row['OptionsName'] != "" && $userSave_row['Price'] != -9999)
+			{
+				echo $userSave_row['OptionsName'];
+			}
+			else
+			{
+				echo "<font color=\"#ff0000\"><center>no selection saved</center></font>";
+				$incomplete = 1;
+			}
+			$userSave_row['OptionsName'];
+		?></td>
+<?			if ($userSave_row['OptionsChoice'] != "")		
+			{
+?>		<td ><i><?= $userSave_row['OptionsChoice'];?>:</i> <nobr><?= $userSave_row['ChoiceName'];?></nobr></td>
+<?			}
+			else
+			{
+?>
+		<td >&nbsp;</td>
+<?
+}
+			if ($userSave_row['Price'] == "" || $userSave_row['Price'] == 0)
+			{
+?>		<td  align="right"><nobr>No Charge</nobr></td>  
+<?			}
+			else {
+				if ($userSave_row['Price'] != OPTION_IS_NOT_AVAILABLE
+					&& $userSave_row['Price'] != OPTION_IS_A_STANDARD
+					&& $userSave_row['Price'] != OPTION_IS_INCENTIVE)
+				{		
+					if ($userSave_row['Price'] > 0){		
+						$total += $userSave_row['Price'];
+					} else {
+						$credit += $userSave_row['Price'];	
+					}
+				}
+?>
+		<td  align="right"><? 
+			print displayOptionPrice($userSave_row['Price']);
+?>		</td>
+<?			}
+?>
+	</tr>
+<?			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
+		}// end of userSave loop
+	}// end of subsection loop
+}// end of section loop
+	
+
+// Output current total in JS before including all the Additiona Change items
+?>
+<script language="JavaScript">
+	var total = <?= $total; ?>;
+	var credit = <?= $credit; ?>;
+</script>
+<?
+
+
+$sql = "SELECT Description, Price
+		FROM UserOption
+		WHERE UnitNumber = '$UnitNumber'";
+$useroption_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+?>
+<tr><td><BR></td></tr>
+<tr ID="<?= ADDITIONAL_CHANGE_TABLE_PREFIX . "HEADER";?>" >
+<td colspan=4 ><font size=\"4\"><b>Additional Changes</b></font></td>
+</tr>
+
+<tr <?= getOptionContentStyle($mode); ?>>
+</tr>
+<?
+$numOfAddChange = 0;
+
+if (mysql_num_rows($useroption_result) > 0)
+{
+?>
+<tr>
+<td colspan="4" <?= getOptionHeaderStyle($mode); ?>>Option</td>
+<td <?= getOptionHeaderStyle($mode); ?>>Price</td>
+</tr>
+<?
+	for ($i=0;$useroption_row = mysql_fetch_array($useroption_result);$i++)
+	{
+?>
+<tr ID="<?= ADDITIONAL_CHANGE_TABLE_PREFIX . $i;?>" <?
+	// only activate edit feature if user is admin
+	if (isAdmin()){
+?> onClick="javascript:preview.table.editRow(
+	this.id, unitNumber, document.getElementById(this.id + '_desc').childNodes[0].nodeValue, 
+	document.getElementById(this.id + '_price').childNodes[0].nodeValue)"
+<?	} ?>>
+<td ID='<?= ADDITIONAL_CHANGE_TABLE_PREFIX . $i;?>_desc' colspan="4" ><?= $useroption_row['Description'];?></td>
+<td ID='<?= ADDITIONAL_CHANGE_TABLE_PREFIX . $i;?>_price' align="right">$<?= $useroption_row['Price'];?></td>
+</tr>
+<?
+		if ($useroption_row['Price'] < 0){
+			$credit += $useroption_row['Price'];
+		}
+		else{
+			$total += $useroption_row['Price'];
+		}
+	} // end of useroption loop
+	$numOfAddChange = $i;
+	
+}
+
+	if (isAdmin() && $mode != "print"){
+?>
+	<tr ID="<?= ADDITIONAL_CHANGE_TABLE_PREFIX . "ADD_BUTTON";?>"><td colspan=5>
+	<input type="button" id="btnAddChangeAdd" onClick="javascript:preview.table.addRow('<?= $UnitNumber; ?>')" value="Add additional change">
+	</td></tr>
+<?
+	}
+$total_sales = $total + $credit;
+$gstAmount = $total_sales * $gstRate;
+$total_with_tax = $total_sales + $gstAmount;
+
+if ( $total_sales < 0 ) // Don't tax -ve values
+{
+	$gstAmount = 0;
+	$total_with_tax = $total_sales;
+}
+
+?>
+<tr>
+	<td colspan="5">&nbsp;<br>&nbsp;<br>&nbsp;<br>&nbsp;</td>
+</tr>
+<tr>
+<?
+if ($commit)
+{
+?>
+	<td colspan="5"><font size="4"><b>Signature and Authorization</b></font><br>
+<?
+}
+else
+{
+?>
+	<td colspan="5"><font size="4"><b>Summary</b></font><br>
+<?
+}
+?>
+	<img src="black.gif" width="100%" height="1" alt="" border="0"></td>
+</tr>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">
+	Total options before taxes:</td>
+	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="totalBeforeTaxes" ><?= number_format($total, 2)?></span></nobr></td>
+</tr>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
+	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="credit" ><?= number_format($credit, 2); ?></span></nobr></td>
+</tr>	
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
+</tr>	
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span id="gst"><?= number_format($gstAmount, 2)?></span></nobr></td>
+</tr>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="total" ><?= number_format($total_with_tax, 2)?></span></nobr></td>
+</tr>	
+
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right" ID="CashPayment_desc">Cash payment:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="CashPayment" <?
+	echo getAdminEditPrice("CashPayment"); ?>><?= number_format($cashPayment, 2)?></span></nobr></td>
+</tr>	
+
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right" ID="PayByMortgage_desc">Pay by mortgage:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="PayByMortgage" <?
+	echo getAdminEditPrice("PayByMortgage"); ?>><?= number_format($payByMortgage, 2)?></span></nobr></td>
+</tr>	
+
+<?php
+if ($outstandingAmt != 0) {
+	$outstandingAmt_to_display = $outstandingAmt;
+} else {
+	$outstandingAmt_to_display = $total_with_tax - $cashPayment - $payByMortgage;
+}
+?>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right" ID="OutstandingAmt_desc">Outstanding amount:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="OutstandingAmt" <?
+	echo getAdminEditPrice("OutstandingAmt"); ?>><?= number_format($outstandingAmt_to_display, 2)?></span></nobr></td>
+</tr>	
+
+</table>
+<?
+	if ($commit)
+	{
+		require "commit_agreement.phtml";
+
+	}
+	else 
+	{
+		if ($incomplete)
+		{
+			$action = "javascript:hideWaitingDIV();alert('You cannot commit to these selections until you go back to your Options and Upgrades\\nand make sure that you have saved your selections in every section.');";
+		}
+		else
+		{
+			$action = "preview.phtml";
+		}
+?>
+
+<BR><BR>
+<form method="post" action="<?echo $action;?>">
+	<input type="hidden" name="set_commit" value="1">
+	<input type="button" onClick="commit()" value="Commit to these Options and Upgrades">
+</form>
+
+<?
+	}
+?>
+</td>
+</tr>
+<tr>
+<td align="right">
+<?
+if (!$commit){
+	generate_navigation();	
+}
+if ($mode != "print")
+{
+	generate_print();
+	generate_logout();
+}
+?>
+</td>
+</tr>
+</table>
+
+
+<div id="pane_additional_change" 
+	dojoType="FloatingPane" 
+	title="Additional Change"
+	constrainToContainer="1"
+	hasShadow="true"
+	resizable="true"
+	style="width: 600px; height: 150px; display: none; "
+>
+	
+	<form name="additional_change_form" id="additional_change_form" method="post" action="updateUserAdditionalOption.phtml">
+	<input type="hidden" name="orgDesc" ID="ac_form_orgDesc">
+	<input type="hidden" name="act" ID="ac_form_act">
+	<input type="hidden" name="domID" ID="ac_form_domID">
+	<input type="hidden" name="unitNumber" ID="ac_form_unitNumber" value="<?= $UnitNumber; ?>">
+	<input type="hidden" name="domID_counter" ID="ac_form_domID_counter" value="<?= $numOfAddChange; ?>">	
+	<div dojoType="ContentPane" layoutAlign="client" class="dojoContentPane">
+		<table>
+			<tr>
+				<td style="width: 100px;">Description:</td>
+				<td width="30px">&nbsp;</td>
+				<td width="470px"><input type="text" name="newDesc" id="ac_form_newDesc" style="width: 100%;"></td>
+			</tr>
+			<tr>
+				<td>Price:</td>
+				<td>&nbsp;</td>
+				<td><input type="text" name="newPrice" id="ac_form_newPrice" style="width: 100%;"></td>
+			</tr>
+		</table>
+	</div>
+	<div class="dojoContentPane"><br></div>
+	<div dojoType="ContentPane" layoutAlign="bottom" class="dojoContentPane" style="height: 25px; padding-top: 5px; width: 100%;">
+		<div class="box">
+			<button id="btnAddChangeOK" dojoType="Button">OK</button>
+			<button id="btnAddChangeCancel" dojoType="Button">Cancel</button>
+			<button id="btnAddChangeDelete" dojoType="Button">Delete</button>
+		</div>
+	</div>
+	</form>
+</div>
+
+<div id="pane_edit_price" 
+	dojoType="FloatingPane" 
+	title="Edit Price"
+	constrainToContainer="1"
+	hasShadow="true"
+	resizable="true"
+	style="width: 600px; height: 150px; display: none; "
+>
+	
+	<form name="edit_price_form" id="edit_price_form" method="post" action="updateUserPrice.phtml">
+	<input type="hidden" name="userID" ID="ac_price_form_userID" value="<?php echo $userID; ?>">
+	<input type="hidden" name="unitNumber" ID="ac_price_form_unitNumber" value="<?= $UnitNumber; ?>">
+	<input type="hidden" name="priceType" ID="ac_price_form_priceType">
+	<div dojoType="ContentPane" layoutAlign="client" class="dojoContentPane">
+		<table>
+			<tr>
+				<td id="ac_price_form_price_title">Price:</td>
+				<td>&nbsp;</td>
+				<td width="470px"><input type="text" name="newPrice" id="ac_price_form_newPrice" style="width: 100%;"></td>
+			</tr>
+		</table>
+	</div>
+	<div class="dojoContentPane"><br></div>
+	<div dojoType="ContentPane" layoutAlign="bottom" class="dojoContentPane" style="height: 25px; padding-top: 5px; width: 100%;">
+		<div class="box">
+			<button id="btnEditPriceSave" dojoType="Button">Save</button>
+			<button id="btnEditPriceCancel" dojoType="Button">Cancel</button>
+		</div>
+	</div>
+	</form>
+</div>
+
+</body>
+
+<script language="javascript">
+<!--
+function commit()
+{
+	var displayText = "If you continue, you will LOCK IN your selections. No further changes can be made after this. \nIt is preferable to wait until your final meeting with Marlene when she will lock in your selections with you.\n\nClick OK only you are sure you want to lock in.";
+
+	if (confirm(displayText))
+	{
+		displayWaitingDIV();
+		document.forms[0].submit();
+	}
+}
+//-->
+</script>
+
+</html>

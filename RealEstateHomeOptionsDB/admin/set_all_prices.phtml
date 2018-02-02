@@ -1,0 +1,30 @@
+<?
+	include "../login/main_include.phtml"	;
+
+	// drop the temporary table
+	$sql_droptbl = "DROP TABLE IF EXISTS Item_Options_UnitType";
+	$result = mysql_query($sql_droptbl,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_droptbl . $PHP_SELF);
+	
+	// create temporary table
+	$sql_temp = "CREATE TEMPORARY TABLE Item_Options_UnitType
+			SELECT Item_Options.ItemID,
+				Item_Options.OptionID,
+				UnitType.Type
+				FROM Item_Options, UnitType
+				WHERE Item_Options.ItemID = $ItemID
+				AND Item_Options.OptionID = $OptionID";
+	$result = mysql_query($sql_temp,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_temp . $PHP_SELF);
+	
+	// left join Price with temporary table
+	$sql_pricelist = "SELECT Item_Options_UnitType.ItemID as ItemID,
+					Item_Options_UnitType.OptionID as OptionID,
+					Item_Options_UnitType.Type as UnitType,
+					Price.Price as Price
+					FROM Item_Options_UnitType
+					LEFT JOIN Price
+					ON Item_Options_UnitType.OptionID = Price.OptionID
+					AND Item_Options_UnitType.ItemID = Price.ItemID
+					AND Item_Options_UnitType.Type = Price.UnitType
+					ORDER BY Item_Options_UnitType.Type";
+	$result = mysql_query($sql_pricelist,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_pricelist . $PHP_SELF);
+	

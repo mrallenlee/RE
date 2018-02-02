@@ -1,0 +1,49 @@
+<?
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExportMysqlWrapper.phtml";
+
+check_auth(2, "sales");
+
+if (BROKER_MODULE_ENABLED){
+	$sql = "SELECT CONCAT(Person.FirstName, CONCAT(' ', Person.LastName)) AS BrokerName,
+					CompanyName Company,
+					Address.Unit Unit,
+					Address.Street Street,
+					Address.City City,
+					Address.Province Province,
+					Address.Country Country,
+					Address.PostalCode PostalCode, 
+					UnitNumber Suite, 
+					Price, 
+					Person.BusinessPhone, 
+					Person.CellPhone, 
+					Person.Fax, 
+					Person.Email
+				FROM User, Broker, Person 
+				LEFT JOIN Company
+					ON Person.CompanyID = Company.CompanyID
+				LEFT JOIN Address
+					ON Company.AddressID = Address.AddressID
+				WHERE Broker.PersonID = Person.PersonID
+					AND (User.BrokerID = Broker.BrokerID
+				   OR User.BrokerID2 = Broker.BrokerID)
+				ORDER BY BrokerName";
+
+}
+else {
+	// creates selected columns and conditions, leave out table
+	// because both User & Visitor tables are selected with the same information
+	$sql_cols = "SELECT distinct BrokerAgentName, BrokerCompany, BrokerAddress, 
+								BrokerCity, BrokerPostalCode, BrokerPhoneNumber,BrokerFaxNumber, BrokerEmail
+							   FROM User
+							  WHERE BrokerAgentName <> '' ";
+}
+
+$result = executeSql($sql);
+
+$exporter = new DataExportMysqlWrapper($result);
+$exporter->exportHeader("BrokerList.csv");
+$exporter->exportData();
+?>

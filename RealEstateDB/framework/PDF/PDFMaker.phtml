@@ -1,0 +1,654 @@
+<?php
+/*
+ * Created on 22-Mar-2006
+ *
+ * Helper class to build pdf file
+ * Work with pdf GVM version 4.01 
+ */
+include "PDFTableMaker.phtml";
+include "PDFLicenseConfig.phtml";
+ 
+ class PDFMaker {
+	var $pdf;
+	var $fileName 		= "";
+	var $fontName 		= "Helvetica-Bold";
+	var $fontID			= "";
+	var $fontSize 		= 12;
+	var $fontStack 		= array();
+	var $strokeColor 	= "000000";
+	var $fillColor 		= "000000";
+ 	var $debugLevel 	= 0;	
+	var $maxCharPerRow 	= 85;
+	var $avgRowHeight 	= 55;	
+
+	/**
+	 * Creates pdf by given file name.
+	 * FileName can be empty if pdf content is 
+	 * directly send to the browser
+	 */
+	function PDFMaker($fileName = ""){
+//die("PDF PATH=" . PDFLIB_LICENSE_FILE_PATH);	
+		$this->pdf = pdf_new();
+//die("PDF PATH=" . PDFLIB_LICENSE_FILE_PATH);	
+	//	if (defined(PDFLIB_LICENSE_FILE_PATH)){
+			//pdf_set_parameter($this->pdf, "licensefile", "/usr/home/dsdinc/config/license.txt");
+	
+//die("PDF PATH=" . PDFLIB_LICENSE_FILE_PATH);		
+pdf_set_parameter($this->pdf, "licensefile", PDFLIB_LICENSE_FILE_PATH);
+	//	}
+		$this->fileName = $fileName;
+		if (!pdf_open_file($this->pdf, $fileName)) {
+		   print error;
+		   exit;
+		};
+	}
+ 
+	/**
+	* Set debug level
+	*/  
+	function setDebugLevel($level){
+		$this->debugLevel = $level;
+	}
+	
+ 	/**
+ 	 * Set font type and size
+ 	 */
+ 	function setFont($font, $size = 12){
+$this->debug("setFont fontName=$font fontSize=$size");
+ 		$this->fontName = $font;	
+ 		$this->fontSize = $size;
+		$this->updateMaxCharPerRow();
+//		$this->fontID = pdf_findfont($this->pdf, $this->fontName, 'host', 0);		
+		$this->fontID = pdf_load_font($this->pdf, $this->fontName, 'host', '');		
+ 	}
+
+	function setFontSize($size){
+		$this->fontSize = $size;
+		$this->updateMaxCharPerRow();
+	}
+
+	/**
+	* Get max char per row. This is calculated by
+	* findMaxCharPerRow
+	*/
+	function getMaxCharPerRow(){
+		return $this->maxCharPerRow;
+	}
+
+	/**
+	* Update object var maxCharPerRow
+	*/
+	function updateMaxCharPerRow(){
+		$this->maxCharPerRow = $this->findMaxCharPerRow();
+	}
+ 
+	/**
+	* Find max char per row whenever a font setting has 
+	* been chanced.
+	*/
+	function findMaxCharPerRow($width = -1){
+
+//		$fontID = pdf_findfont($this->pdf, $this->fontName, 'host', 0);
+		$fontID = pdf_load_font($this->pdf, $this->fontName, 'host', '');		
+		if ($width < 0){
+			$width = (PAGE_END_X - PAGE_START_X);
+		}
+		$charWidth = pdf_stringwidth($this->pdf,"b", $fontID, $this->fontSize);
+		return floor($width / $charWidth);
+	}
+	
+	/**
+	 * create new page
+	 */ 
+	function newPage(){		
+		pdf_begin_page($this->pdf, PAGE_WIDTH, PAGE_HEIGHT);
+//		pdf_set_font($this->pdf, $this->fontName, $this->fontSize, "host");
+		// ALLEN not sure the 4th parameter is correct or not
+		$this->fontID = pdf_load_font($this->pdf, $this->fontName, 'host', '');		
+		pdf_setfont($this->pdf, $this->fontID, $this->fontSize);
+		
+		pdf_set_text_pos($this->pdf, PAGE_START_X, PAGE_START_Y);
+		$this->setColor($this->fillColor, "fill");
+		$this->setColor($this->strokeColor, "stroke");
+	}
+
+
+	/**
+	 * Print text into the pdf file. This 
+	 * function wraps the text automatically.
+	 * Accept multiple arguments in key=value format
+	 * Possible argument: text, align, backgroundColor, underlineColor,borderColor,fontColor,fontName,fontSize
+	 * textWidth, textStartX, textStartY
+	 * Return an Array contains: height
+	 */
+	function &printText(){
+		$text = "";
+		$align = "left";
+		$backgroundColor = "";
+		$borderColor = "";
+		$underlineColor = "";
+		$fontColor = "";
+		$fontName = "";
+		$fontSize = "";
+		$textWidth = -1;
+		$textStartX = -1;
+		$textStartY = -1;
+
+		for ($i=0; $i < func_num_args(); $i++){
+			$argument = func_get_arg($i);
+			list($key, $value) = explode("=", $argument);
+			${$key} = $value;
+		}
+$this->debug("1printText fontName=" . $this->fontName . " size=" . $this->fontSize . " fontColor=$fontColor");
+		if ($fontName != "" || $fontColor != "" || $fontSize != ""){
+			// use new font, and store the original one
+			$this->useFontBegin($fontName, $fontSize, $fontColor);
+		}
+$this->debug("2printText fontName=" . $this->fontName . " size=" . $this->fontSize . " fontColor=$fontColor");
+		//set font everytime in case font type has been changed
+//		pdf_set_font($this->pdf, $this->fontName, $this->fontSize, "host");
+		pdf_setfont($this->pdf, $this->fontID, $this->fontSize);
+		// add a space in front of the new line char
+		if ($align != "left"){
+			// first, we have to find the font, we are using
+			// in order to use stringwidth function
+		//	$fontID = pdf_findfont($this->pdf, $this->fontName, 'host', 0);
+			$fontID = pdf_load_font($this->pdf, $this->fontName, 'host', '');		
+		}
+		$wordWrappedLines = $this->parseLines($text, $textWidth);	
+		// set up return array
+		$returnArray = array();
+		// doesn't count text spread in 2 pages
+//		$returnArray['height'] = (count($wordWrappedLines) - $index) * $this->fontSize;
+		$returnArray['height'] = (count($wordWrappedLines)) * $this->fontSize;
+
+
+		$index = 0;
+		$drawRect = true;
+
+		// if textStartX and textStartY is > 0, set the starting point of the text
+		if ($textStartX > 0 && $textStartY > 0){
+			pdf_set_text_pos($this->pdf, $textStartX, $textStartY);
+			$boxStartX = $textStartX;
+			$boxWidth = $textWidth;
+			if ($boxWidth < 0){
+				$boxWidth = PAGE_END_X - $boxStartX;
+				$boxEndX = PAGE_END_X;
+			} else {
+				$boxEndX = $boxStartX + $boxWidth;
+			}
+		} else {
+			$boxStartX = PAGE_START_X;
+			$boxWidth = $textWidth;
+			if ($boxWidth < 0){
+				$boxWidth = PAGE_END_X - $boxStartX;
+				$boxEndX = PAGE_END_X;
+			} else {
+				$boxEndX = $boxStartX + $boxWidth;
+			}
+		}
+
+$this->debug("textStartX=$textStartX textStartY=$textStartY");	
+$this->debug("boxStartX=$boxStartX boxEndX=$boxEndX boxWidth=$boxWidth");
+		foreach($wordWrappedLines as $line){
+			$texty = pdf_get_value($this->pdf, "texty", 0);
+			// check is it the end of the page, if yes, 
+			// create a new page
+			if ($texty <= PAGE_END_Y){
+				$this->endPage($this->pdf);
+				$this->newPage($this->pdf);
+				$texty = pdf_get_value($this->pdf, "texty", 0);
+				$drawRect = true;
+			}
+			// draw rectangle if drawRect is true
+			if ($drawRect){
+				// contiue drawing rectangle in the new page
+				if ($backgroundColor != "" || $borderColor != ""){
+$this->debug("in backgroundColor || borderColor");
+					$startX = $boxStartX; 
+					$startY = pdf_get_value($this->pdf, "texty", 0);
+					$width = $boxWidth; 
+					// calculate the box height by counting number of lines
+					// then times the font size, which is the height of each line
+					$height = (count($wordWrappedLines) - $index) * $this->fontSize;
+					$this->drawRect($backgroundColor, $borderColor, $startX, 
+							$startY, $width, $height, true);
+					$drawRect = false;
+				}
+			}
+			if ($align != "left"){	
+			// always use this instead of continue_text call
+			//if (1){	
+				$width = pdf_stringwidth($this->pdf,$line, $fontID, $this->fontSize);
+				$y = $texty - $this->fontSize;
+				if ($align == "center"){
+					$x = $boxStartX + ($boxWidth - $width  ) /2;
+				} else if ($align == "right"){
+					$x = $boxEndX - $width;
+				} else if ($align == "left"){
+					$x = $boxStartX;
+				}
+$this->debug("printText line=$line");
+				pdf_show_xy($this->pdf, $line, $x, $y);
+				pdf_set_text_pos($this->pdf, $boxStartX, $y);
+				
+			} else {	
+				// left alignment
+$this->debug("printText line=$line");
+		        	pdf_continue_text($this->pdf,$line);
+			}
+			$index++;
+		} 		
+		if ($fontName != "" || $fontColor != "" || $fontSize != ""){
+			// restore original font
+			$this->useFontEnd($fontName, $fontSize, $fontColor);
+		}
+		return $returnArray;
+	}
+	
+	/**
+	 * Add image into the pdf file
+	 * $imagePath: path to the image file
+	 * $imageType: jpeg, gif, tiff, png
+	 * $align: horizontal alignment for the image. 
+	 * align can be left, center, right
+	 * $scale: scale of the image
+	 */
+	function addImage($imagePath, $imageType, $align = "center", $scale = 1, $overlap = false){
+		$image = @pdf_open_image_file($this->pdf, $imageType, $imagePath, "", 0);
+
+		if($image != 0){
+			$w = pdf_get_value($this->pdf, "imagewidth", $image) * $scale;
+			$h = pdf_get_value($this->pdf, "imageheight", $image) * $scale;
+			$texty = pdf_get_value($this->pdf, "texty", 0);
+			if ($align == "left"){
+				$x = PAGE_START_X;
+			} else if ($align == "center"){
+				$x = PAGE_START_X + (PAGE_END_X - PAGE_START_X - $w) / 2;	
+			} else if ($align == "right"){
+				$x = PAGE_END_X - $w;	
+			}
+			   
+			$textx = pdf_get_value($this->pdf, "textx", 0);
+			$texty = pdf_get_value($this->pdf, "texty", 0);
+			$y = $texty-$h ;
+			pdf_place_image($this->pdf, $image, $x, $y, $scale);
+			pdf_close_image($this->pdf, $image);
+			if (!$overlap){
+				// if not allow overlap, update the text position
+				// to the bottom of the image	
+				// set the text position so print text
+				// knows the location to print 
+				pdf_set_text_pos($this->pdf, PAGE_START_X, $y);
+			}else {
+				pdf_set_text_pos($this->pdf, $textx, $texty);
+			}
+		 }
+	}
+
+	/**
+	* Set color
+	* Take hex color, without # at the front
+	*/ 
+	function setColor($hexcolor, $type = '')
+	{
+$this->debug("setColor hexColor=$hexcolor");
+		if ($type == "fill"){
+			$this->fillColor = $hexcolor;
+		} else if ($type == "stroke"){
+			$this->strokeColor = $hexcolor;
+		} else if ($type == "both"){
+			$this->fillColor = $hexcolor;
+			$this->strokeColor = $hexcolor;
+		}
+       		$color['r'] = hexdec(substr($hexcolor, 0, 2))/255;
+       		$color['g'] = hexdec(substr($hexcolor, 2, 2))/255;
+       		$color['b'] = hexdec(substr($hexcolor, 4, 2))/255;
+       		if ($type != 'fill' && $type != 'stroke'){
+			$type = 'both';
+		}
+       		pdf_setcolor($this->pdf, $type, 'rgb', $color['r'], $color['g'], $color['b'], 0);
+	}
+
+	/**
+	* Draw a rectangle. This function handles all the set color code
+	* startY is the upper left corner
+	*/
+	function drawRect($backgroundColor, $borderColor, $startX, $startY, $width, $height, $addBottomMargin = 0){ 
+		$originalStrokeColor = $this->strokeColor;
+		$originalFillColor = $this->fillColor;
+		if ($backgroundColor != ""){
+			$this->setColor($backgroundColor, "fill");
+		}
+		if ($borderColor != ""){
+			$this->setColor($borderColor, "stroke");
+		}
+
+		if ($startY - $height < PAGE_END_Y){
+			// if the rectangle is longer than the page, 
+			// trim the rectangle
+			$height = $startY - PAGE_END_Y;
+		}
+		if ($addBottomMargin){
+			// add margin at the bottom of the text box
+			$height += BOX_BOTTOM_MARGIN;
+		}
+		$bottomLeftY = $startY - $height;
+$this->debug("drawRect x=$startX y=$bottomLeftY, width=$width height=$height");
+		pdf_rect ($this->pdf, $startX, $bottomLeftY, $width, $height );
+		if ($backgroundColor == ""){
+			pdf_stroke($this->pdf);
+		} else {
+			pdf_fill_stroke($this->pdf);
+		}
+		// reset color
+		$this->setColor($originalStrokeColor, "stroke");
+		$this->setColor($originalFillColor, "fill");
+	}
+
+	/**
+	 *  end the page
+	 */
+	function endPage(){
+		pdf_end_page($this->pdf);
+	} 
+	
+	/**
+	 * Close the pdf file
+	 */
+	function close(){
+		pdf_close($this->pdf);
+	}
+	
+	/**
+	 * get the pdf reference
+	 */ 
+	function &getPDF(){
+		return $this->pdf;
+	}
+ 	
+ 	/**
+ 	 * get binary content data of the pdf
+ 	 * Return a string
+ 	 */
+ 	function getContent(){
+		return pdf_get_buffer($this->pdf);
+ 		
+ 	}
+
+	/**
+	* Write debug message
+	*/ 
+	function debug($msg, $level = 1){
+		if ($this->debugLevel > $level){
+			print "DEBUG: $msg<BR>";
+		}
+	}
+
+
+	/**
+	* Parse lines of given text, and return an array of line
+	* Simple approach which ignores actual character width of the font
+	*/
+	function parseLines($text, $width = -1){
+		// parse text and wrap the text if it's too long
+		$text = ereg_replace("\n", " \n", $text); 
+		$lines = explode("\n",$text);
+		$wordWrappedLines = $this->constructWordWrapLines($lines, $width);
+
+		return $wordWrappedLines;
+	}	
+
+	/**
+	* Construct lines array with wrapping words in given lines array
+	*/
+	function constructWordWrapLines($lines, $width = -1){
+		$wordWrappedLines = array();
+		$index = 0;
+//		$maxCharPerRow = $this->getMaxCharPerRow();
+//		if ($width > 0){
+//			$maxCharWithGivenWidth = $this->findMaxCharPerRow($width);
+//			if ($maxCharWithGivenWidth <= $maxCharPerRow){
+//				$maxCharPerRow = $maxCharWithGivenWidth; 
+//			}
+//		}
+		// use page width
+		if ($width < 0){
+			$width = (PAGE_END_X - PAGE_START_X);
+		}
+		// set default width to be the width of the page
+		$index = 0;
+		foreach($lines as $line){
+			$lineResult = "";
+			$prevLineResult = "";
+			if ($this->getStringWidth($line) < $width){
+				$wordWrappedLines[$index++] = $line;				
+			} else {
+				$lineArray = explode(" ", $line);
+				for ($i=0; $i < count($lineArray); $i++){
+					$prevLineResult = $lineResult ;
+					$lineResult .= $lineArray[$i] . " ";
+					// if current line's width is larger than width,
+					// add previous line to the result array
+					if ($this->getStringWidth($lineResult) > $width){
+						if ($prevLineResult != ""){
+							$wordWrappedLines[$index++] = $prevLineResult;										
+							$lineResult = $lineArray[$i] . " ";
+						} else {
+							// if previous line result is empty, it means
+							// the current word is longer than the given
+							// width. In this case, print it anyway
+							$wordWrappedLines[$index++] = $lineResult;
+							$lineResult = "";
+						}
+					}
+				}
+				// add the remaining text into result
+				if ($lineResult != ""){
+					$wordWrappedLines[$index++] = $lineResult;					
+				}
+			}
+		}
+
+
+
+		return $wordWrappedLines;
+	}
+
+	/**
+	 * Get string width by current font
+	 */
+	function getStringWidth($string){
+//		$fontID = pdf_findfont($this->pdf, $this->fontName, 'host', 0);
+		$fontID = pdf_load_font($this->pdf, $this->fontName, 'host', '');		
+		return pdf_stringwidth($this->pdf,$string, $fontID, $this->fontSize);
+	}
+	
+	/**
+	* Use font and store the original font, so when 
+	* this font is done, original font can be restored
+	* by calling useFontEnd function
+	*/
+	function useFontBegin($fontName, $fontSize, $fontColor){
+		array_push($this->fontStack, array  ("fontName"=>$this->fontName, "fontSize"=>$this->fontSize, "fillColor"=>$this->fillColor));
+		if ($fontName != "" || $fontSize != "" ){
+			if ($fontName != "" || $fontSize != ""){
+				if ($fontName == ""){
+					$fontName = $this->fontName;
+				}
+				if ($fontSize == ""){
+					$fontSize = $this->fontSize;
+				}
+				$this->setFont($fontName, $fontSize);
+			}
+		}
+
+			if ($fontColor != ""){
+				$this->setColor($fontColor, "fill");
+			} 
+	}
+
+	function useFontEnd(){
+		$fontArray  = array_pop($this->fontStack);
+		$fontName = $fontArray['fontName'];
+		$fontSize = $fontArray['fontSize'];
+		$fontColor = $fontArray['fillColor'];
+		$this->setFont($fontName, $fontSize);
+		$this->setColor($fontColor, "fill");
+	}
+
+//---------------------------------------------------------------------
+// TABLE IMPLEMENTATION
+//---------------------------------------------------------------------
+	/**
+	* Takes multi arguments
+	* Insert a table at specific location
+	* Arguments: x, y, cellPadding, borderColor
+	*/
+	function insertTable(){
+		$x = -1;
+		$y = -1;
+		$numOfCol = -1;
+		$cellPadding = 0;
+		$borderColor = "";
+
+		for ($i=0; $i < func_num_args(); $i++){
+			$argument = func_get_arg($i);
+			list($key, $value) = explode("=", $argument);
+			${$key} = $value;
+		}
+	
+		if ($x == -1){
+                	$x = pdf_get_value($this->pdf, "textx", 0);
+		}
+		if ($y == -1){
+                        $y = pdf_get_value($this->pdf, "texty", 0);
+		}
+		$this->table = new PDFTableMaker($this->pdf, $this);
+		$this->table->setOrigin($x, $y);
+		if ($borderColor != ""){
+			$this->table->setBorderColor($borderColor);
+		}
+		$this->table->setCellPadding($cellPadding);
+	}
+
+	/**
+	 * Split current table across next page
+	 */
+	function splitTable(){
+		// end the table
+		$this->endTable();
+		
+		// end the page
+		$this->endPage($this->pdf);
+		
+		// start next page
+		$this->newPage();
+						
+		// continue to use the table by resetting origin
+     	$x = pdf_get_value($this->pdf, "textx", 0);
+        $y = pdf_get_value($this->pdf, "texty", 0);
+        
+		$this->table->setOrigin($x, $y);		
+	} // splitTable
+	
+	/**
+	* Set column width of the table
+	*/ 
+	function setTableColWidth($colIndex, $width){
+		$this->table->setColWidth($colIndex, $width);
+	}
+
+	/**
+	* Insert a new row. 
+	*/
+	function insertRow(){
+		// if new row is very clost to bottom of page, start in next page	
+		if (($this->table->getCurrentRowY() - $this->avgRowHeight) < PAGE_END_Y) {
+			$this->splitTable();			
+		}
+		
+		$this->table->insertRow();
+	}
+
+	/**
+	* Ends the current row
+	*/
+	function endRow(){
+		$this->table->endRow();
+	}
+	
+	/**
+	* Ends the table
+	*/
+	function endTable(){
+		$this->table->endTable();
+	}
+
+	/**
+	* Insert a table cell
+	* Arguments: text, colSpan, backgroundColor, borderColor,
+	* underlineColor, align, fontName, fontSize, fontColor, cellPadding
+	*/
+	function insertCell(){
+		$text = "";
+		$align = "left";
+		$backgroundColor = "";
+		$borderColor = "";
+		$underlineColor = "";
+		$fontColor = "";
+		$fontName = "";
+		$fontSize = "";
+		$colSpan = 1;
+   	 	$cellPadding = -1;
+
+		for ($i=0; $i < func_num_args(); $i++){
+			$argument = func_get_arg($i);
+			list($key, $value) = explode("=", $argument);
+			${$key} = $value;
+		}
+
+		$this->table->insertCell("text=$text", "align=$align", 
+					"backgroundColor=$backgroundColor",
+					"borderColor=$borderColor",
+					"underlineColor=$underlineColor",
+					"fontColor=$fontColor",
+					"fontName=$fontName",
+					"fontSize=$fontSize",
+					"colSpan=$colSpan",
+					"cellPadding=$cellPadding");
+	}
+	
+	/**
+	 * Insert an image into a table cell
+ 	 * Arguments: imagePath, imageType(jpeg, gif, tiff, png),
+ 	 * colSpan, backgroundColor, borderColor,
+	 * align, scale
+
+	 */
+	function insertImageCell(){
+		$scale = 1;
+		$align = "left";
+		$colSpan = 1;
+		$imagePath = "";
+		$imageType = "";
+		$backgroundColor = "";
+		$borderColor = "";
+
+		for ($i=0; $i < func_num_args(); $i++){
+			$argument = func_get_arg($i);
+			list($key, $value) = explode("=", $argument);
+			${$key} = $value;
+		}
+		
+		if ($imagePath == "" || $imageType == ""){
+			return;	
+		}
+		$this->table->insertImageCell("imagePath=$imagePath", "imageType=$imageType",
+									"align=$align", "colSpan=$colSpan", 
+									"backgroundColor=$backgroundColor",
+									"borderColor=$borderColor");
+
+	}
+ }
+?>

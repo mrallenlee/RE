@@ -1,0 +1,88 @@
+<?
+include_once "main_include.phtml";
+include_once "../upgradeOptionAction.phtml";
+
+function retrieve_data($key)
+{
+	return explode("_", $key);
+}
+
+$UID=-1;
+$prevUserID = -1;
+$prevUnitNumber = -1;
+$Commit = 0;
+$ContractorReport = "0";
+$UserReport = "0";
+
+while (list($key, $value) = each ($HTTP_POST_VARS))
+{
+	
+	list($UID, $name) = retrieve_data($key);
+
+	if ($name == "UserID" || $name == "ContractorReport" || $name == "UserReport")
+	{
+		$UserID = $UID;
+	}
+	else if ($name == "UnitNumber" || $name == "Commit")
+	{
+		$UnitNumber = $UID;
+	}
+	
+	if ($UserID != $prevUserID || $UnitNumber != $prevUnitNumber)
+	{
+		if ($UserID != $prevUserID && $prevUserID != -1 && $prevUserID != '')
+		{
+		// update the data
+			$sql = "UPDATE User
+				SET ContractorReport=$ContractorReport,
+				UserReport=$UserReport
+				WHERE UserID=$prevUserID";
+
+			$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+
+			$ContractorReport = "0";
+			$UserReport = "0";
+		}
+
+		if ($UnitNumber != $prevUnitNumber && $prevUnitNumber != -1 && $prevUnitNumber != "")
+		{
+			updateUserUpgradeOptionStatus($prevUnitNumber, $Commit);
+			
+			$Commit = 0;
+		}
+		$prevUserID = $UserID;
+		$prevUnitNumber = $UnitNumber;
+	}
+
+	if ($name == "Commit" || $name == "ContractorReport" || $name == "UserReport")
+	{
+		${$name} = 1;
+	}
+	else
+	{
+		${$name} = $value;		
+	}	
+}
+
+	// update the data
+	if ($prevUserID != '')
+	{
+		$sql = "UPDATE User
+			SET ContractorReport=$ContractorReport,
+			UserReport=$UserReport
+			WHERE UserID=$prevUserID";
+	
+		$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+	}
+	
+	if ($prevUnitNumber != '')
+	{
+		updateUserUpgradeOptionStatus($prevUnitNumber, $Commit);
+	}
+
+?>
+<script language="JavaScript">
+<!--
+	history.go(-1);
+//-->
+</script>

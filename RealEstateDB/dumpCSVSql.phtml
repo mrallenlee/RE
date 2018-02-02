@@ -1,0 +1,71 @@
+<?
+// This script is used to create CVS files for sql
+// input:
+// 	sql 		- The sql to be executed
+// 	filename 	- The output filename
+
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+
+check_auth(2, "sales");
+
+set_time_limit(300);
+
+if ($sql == "")
+{
+	die("Error: sql is not specified");
+}
+
+if(strpos($sql,"UserClosingFinalStatement") > 0 ) {
+	
+	$sql2 = str_replace('*','UnitNumber,PurchaserName,PurchaserAddress,TarionNumber,OfferPrice,GST,ContractedDeposit,TotalDepositPaid,OccupancyDate,OccupancyDeposit,DepositInterest,'.
+		'UnitCamFee,UnitCamFeeProRated,UnitCamFeePaid,ParkingCamFee,ParkingCamFeeProRated,ParkingCamFeePaid,LockerCamFee,LockerCamFeeProRated,'.
+    'LockerCamFeePaid,NumberOfUnit,LandTaxYear1,LandTaxYear2,SupplLandTaxYear1,SupplLandTaxYear2,SixFeeProvTax,SixFeeConnCharge,SixFeeWaterMeter,SixFeeHydroCharge,'.
+    'SixFeeDevCharge,SixFeeTarion,LawSocietyLevy,CheqRecoveryCost,DischargeFee,CreditAmount,CreditDescription,Balance',$sql);
+}
+else {
+	$sql2 = $sql;
+}
+
+//echo $sql2;
+//return;
+$result = executeSql($sql2);
+
+// output file
+if(!isset($filename)) $filename = "dump.csv";
+$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+	
+$no = mysql_num_fields($result);
+
+for ($i=0; $i < $no; $i++)
+{
+	fputs ($out, mysql_field_name($result, $i) . ",");
+}
+fputs ($out, "\n");
+while ($row = mysql_fetch_array($result))
+{	
+	for ($i=0; $i < sizeof($row); $i++)
+	{
+		// translate "sales rep id" to sales rep name
+		if (stristr(mysql_field_name($result, $i), 'salesrepid') !== false)
+			fputs ($out, "\"" . get_SalesRep_name($row[$i]) . "\",");
+		else
+			fputs ($out, "\"" . $row[$i] . "\",");
+	}
+	fputs ($out, "\n");
+}
+
+fclose($out);
+
+header('Content-type: application/excel');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+if(strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE'))
+{
+	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	header('Pragma: public');
+} 
+
+readfile($filename);
+?>

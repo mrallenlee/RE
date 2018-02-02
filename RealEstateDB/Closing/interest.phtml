@@ -1,0 +1,237 @@
+<?
+include "../config/config.phtml";
+include "../main_include.phtml";
+?>
+
+<html>
+<? 
+print_top_frame($PHP_SELF, "../"); 
+?>
+
+<script type="text/javascript" src="../framework/dojo/dojo.js"></script>
+<script type="text/javascript" src="interest.js"></script>
+
+<style type="text/css">
+.TDhighlight {
+  background: #F7F224;
+}
+.TDEdit {
+  background-color: #FFFFFF;
+}
+
+.header {
+	text-align: center;
+}
+</style>
+<body>
+<h2 align="center">Interest Rate</h2>
+<form name="form_InterestRate" method="post" action="" onSubmit="return false;">
+<table width="60%" id="InterestRateTable" >
+<thead>
+  <tr class="header">
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <th class="header">Jan</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Feb</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Mar</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Apr</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">May</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Jun</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Jul</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Aug</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Sep</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Oct</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Nov</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>
+  <tr>
+    <th class="header">Dec</th>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+    <td align=center></td>
+  </tr>   
+</tbody>
+</table>
+<hr>
+<p>
+<span>
+	<span id="InterestRateDate"></span>&nbsp;&nbsp;Interest Rate(%) :
+	<input id="InterestRate" name="InterestRate" type="text">
+	<input type="submit" id="btnUpdate" value="Update">
+	
+	<span style="position:absolute; right:10px;">
+		Year Range: 
+		<input type="button" id="btnPrevious" value="<" onClick="return false;">
+		<span id="startYear"></span> - <span id="endYear"></span>
+		<input type="button" id="btnNext" value=">" onClick="return false;">
+	</span>
+</span>
+</p>
+<p>
+Notes: click the rate to edit it
+</p>
+</form>
+</body>
+</html>

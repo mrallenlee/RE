@@ -1,0 +1,215 @@
+<?
+/**
+ * Essential SQL for the cheque list
+ * Criteria can be append to the returned sql
+ */
+function getChequeListSql(){	
+	$sql = "SELECT 	UserID,
+				TransactionsRecordID,
+				Company,
+				LastName,
+				FirstName,
+				UnitNumber,
+				Price, 
+				ChequeType,
+				ChequeStatus,
+				ChequeNumber,
+				ChequeAmount,
+				ChequeDate,
+				CASE
+					WHEN TransactionsRecordID = AgreementDepositTransactionsRecordID THEN 1
+					WHEN TransactionsRecordID = Day30DepositTransactionsRecordID THEN 2
+					WHEN TransactionsRecordID = Day90DepositTransactionsRecordID THEN 3
+					WHEN TransactionsRecordID = Day150DepositTransactionsRecordID THEN 4
+					WHEN TransactionsRecordID = Day210DepositTransactionsRecordID THEN 5
+					WHEN TransactionsRecordID = OccupancyDepositTransactionsRecordID THEN 'Occupancy'
+					WHEN TransactionsRecordID = ReleaseTransactionsRecordID THEN 'Release'
+					end DepositNumber
+				FROM Cheque, User
+				WHERE DealStatus != 'Rescinded'
+				AND (TransactionsRecordID = AgreementDepositTransactionsRecordID
+				OR TransactionsRecordID = Day30DepositTransactionsRecordID
+				OR TransactionsRecordID = Day90DepositTransactionsRecordID
+				OR TransactionsRecordID = Day150DepositTransactionsRecordID
+				OR TransactionsRecordID = Day210DepositTransactionsRecordID
+				OR TransactionsRecordID = ReleaseTransactionsRecordID
+				OR TransactionsRecordID = OccupancyDepositTransactionsRecordID) ";
+	
+	return $sql;
+} // getChequeListSql
+
+/**
+ * Return string cheque list table
+ */
+function getChequeListTable(&$result){	
+	global $search_criterion;
+	
+	// capture all stdout and redirects them to a string to return	
+	ob_start();		
+	
+	// Init arrays
+	$chequeGroupPaymentReceivedList = convertCSVToArray(CHEQUE_GROUP_PAYMENT_RECEIVED_LIST);
+	
+	$totalTransChequeAmount = 0;
+	$totalTransActualAmountReceived = 0;
+	
+	$totalUnitChequeAmount = 0;
+	$totalUnitActualAmountReceived = 0;
+	
+	$previous_unit = 0;
+	$previous_trans = 0;
+
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+		{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=">Suite Number</A></TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeNumber">Deposit Number</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=Company">Company</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=FirstName, LastName">Purchaser</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=Price">Sale Price</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeNumber">Cheque Number</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeAmount">Cheque Amount From Purchaser</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=DepositNumber">Actual Amount Received</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeAmount">Released From Trust</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeStatus">Cheque Status</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeType">Cheque Type</TD>
+			<TD><A HREF ="<?= $PHP_SELF . "?" .$search_criterion; ?>&orderby=ChequeDate">Received Date</TD>
+		</TR>
+<?
+		}
+	
+		// print transaction total
+		if ($previous_trans <> 0 && $previous_trans <> $row["TransactionsRecordID"])
+		{
+			if ($printTransTotal){
+				print_total("Transaction Total:", $totalTransChequeAmount, $totalTransActualAmountReceived,
+							 $totalTransAmountReleasedFromTrust, "tail");
+			}
+			$totalTransChequeAmount = 0;
+			$totalTransActualAmountReceived = 0;
+			$totalTransAmountReleasedFromTrust = 0;
+		}
+
+		// print unit total
+		if ($previous_unit <> 0 && $previous_unit <> $row["UnitNumber"])
+		{
+			print_total("Suite ". $previous_unit . " Total:", $totalUnitChequeAmount, 
+						$totalUnitActualAmountReceived, $totalTransAmountReleasedFromTrust ,"subhead");
+			$totalUnitChequeAmount = 0;
+			$totalUnitActualAmountReceived = 0;
+			$totalUnitAmountReleasedFromTrust = 0;;			
+		}
+		$chequeAmount = $row["ChequeAmount"];
+		$chequeStatus = $row["ChequeStatus"];
+		if ($chequeStatus == -1){
+			$chequeStatus = 'N/A';
+		}
+		
+		// set NSF cheque amount to negative
+//		if ($chequeStatus == CHEQUE_STATUS_NSF)
+//		{
+//			$chequeAmount = "-".$chequeAmount;
+//		}
+
+
+		$previous_trans = $row["TransactionsRecordID"];
+		$previous_unit = $row["UnitNumber"];
+
+		displayMouseOverTR("blank", "body");
+?>
+
+		<TD align="right"><?= $row["UnitNumber"]; ?></TD>
+		<TD align="right"><?= $row["DepositNumber"]; ?></TD>
+		<TD align="right"><?= $row["Company"]; ?></TD>
+		<TD align="right"><A HREF="./userListing.phtml?action=display&mode=purchaser&UserID=<?= $row["UserID"] ?>"><?= $row["FirstName"] . " " . $row["LastName"] ?></A>
+		<TD align="right"><? display_dollar_format($row["Price"]) ;?></TD>
+		<TD align="right"><?= $row["ChequeNumber"]; ?></TD>
+		<TD align="right"><? 
+		// Allen make function to encapsulate constant logic 
+		if ($chequeStatus != CHEQUE_STATUS_RELEASED_FROM_TRUST){
+			display_dollar_format($chequeAmount); 
+			$totalTransChequeAmount += $chequeAmount;
+			$totalUnitChequeAmount += $chequeAmount;
+		} else {
+			echo "$0";
+		}
+		?></TD>
+<?		
+		if (array_search($chequeStatus, $chequeGroupPaymentReceivedList) !== FALSE)
+		{
+			$actualAmountReceived = $chequeAmount;
+			$totalTransActualAmountReceived += $chequeAmount;
+			$totalUnitActualAmountReceived += $chequeAmount;
+		}
+		else
+		{
+			$actualAmountReceived = 0;
+		}
+		if ($chequeStatus == CHEQUE_STATUS_RELEASED_FROM_TRUST)
+		{
+			$amountReleasedFromTrust = $chequeAmount;
+			$totalTransAmountReleasedFromTrust += $chequeAmount;
+			$totalUnitAmountReleasedFromTrust += $chequeAmount;
+		}
+		else
+		{
+			$amountReleasedFromTrust = 0;
+		}
+		?>
+		<TD align="right"><? display_dollar_format($actualAmountReceived); ?></TD>
+		<TD align="right"><? display_dollar_format($amountReleasedFromTrust ); ?></TD>		
+		<TD align="right"><?= $chequeStatus; ?></TD>
+		<TD align="right"><?= $row["ChequeType"]; ?></TD>
+		<TD align="right"><?= $row["ChequeDate"]; ?></TD>
+	</TR>
+<?
+	}
+
+	// print transaction total for last transaction
+	if ($previous_trans <> 0 && $previous_trans <> $row["TransactionsRecordID"])
+	{	
+		if ($printTransTotal){		
+			print_total("Transaction Total:", $totalTransChequeAmount, 
+					$totalTransActualAmountReceived, $totalTransAmountReleasedFromTrust,"tail");
+		}
+	}
+
+	// print unit total for last unit
+	if ($previous_unit <> 0 && $previous_unit <> $row["UnitNumber"])
+	{
+		print_total("Suite ". $previous_unit . " Total:", $totalUnitChequeAmount, 
+					$totalUnitActualAmountReceived, $totalUnitAmountReleasedFromTrust, "subhead");
+	}
+?>
+		
+<?
+		
+   $output = ob_get_contents();
+   ob_end_clean();
+   return $output;	
+}
+
+function print_total($label, $totalAmount, $totalActualAmountReceived, 
+					$totalReleasedFromTrust,$display_class="tail")
+{
+//		<tr>
+//		<td colspan=14><hr align=left></td>
+//		</tr>
+	?>
+		<tr class=<?= $display_class; ?>>
+			<td colspan="6" align="left"><?= $label; ?></td>
+			<td align="right"><?// display_dollar_format($totalAmount); ?></td>
+			<td align="right"><?= display_dollar_format($totalActualAmountReceived); ?></td>
+			<td align="right"><?= display_dollar_format($totalReleasedFromTrust); ?></td>
+			<td colspan="3">&nbsp;</td>
+		</tr>
+		<tr><td><br></td></tr>
+
+<?
+}
+
+?>		
+	

@@ -1,0 +1,31 @@
+<?php
+// Action for PO Selection
+ob_start();
+define ("SUB_FOLDER_INVERT_RELATIVE_PATH", "../.."); 
+include_once "../main_include.phtml";
+ob_get_clean();  // main_include has a log of output we don't want, like javascript function
+
+// Action for mark invoiced
+if ($_REQUEST["act"] == "markInvoiced") {
+//	print_r($_REQUEST);
+	$sql = "";
+	$count = 0;
+	$invoiced = $_REQUEST["invoiced"]=="Yes"? "1" : "0";
+	foreach($_REQUEST as $key=>$val) {
+		$keyArray = explode ( "_", $key);
+		if($keyArray[0] == "selected" && $val == "on") {
+			$sql = "update " . $keyArray[1] . " set Invoiced=" . $invoiced . " where POID=" . $keyArray[2];
+			$count++;
+			executeSql($sql);
+		}
+	}
+
+	if($count == 0) {
+		echo "Please select PO first!";
+	} else {
+		echo "Total " . $count . " POs have been marked " . ($invoiced=="1"? "" : "not ") . "invoiced.";
+	}
+} else {
+  echo "Unkown request";
+}
+?>

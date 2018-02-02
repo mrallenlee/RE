@@ -1,0 +1,54 @@
+<?php
+/*
+ * Created on 6-Jan-2007
+ *
+ * To change the template for this generated file go to
+ * Window - Preferences - PHPeclipse - PHP - Code Templates
+ */
+ 
+if (isSet($ImportClass)){
+	// perform action
+	require "framework/DataImport/" . $ImportClass . ".phtml";
+	
+	$dataImporter = new $ImportClass();
+	$dataImporter->importData(array("action"=>$Action, "table"=>$Table, "primaryKey"=>$PrimaryKey, "data"=>$Data));
+}
+?>
+
+<html>
+<h1>Data Importer</h1>
+
+<form action="<?= $_SERVER['PHP_SELF']; ?>" method="post">
+	<table>
+		<tr>
+			<td>Import Class: (Class name only. e.g. "DataImportUser")</td>
+			<td><input type="text" name="ImportClass" value=""></td>
+		</tr>
+		<tr>
+			<td>Action:</td>
+			<td><select name="Action">
+				<option>add</option>
+				<option>update</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td>Primary Key(Update Only):</td>
+			<td><input type="text" name="PrimaryKey" value=""></td>
+		</tr>
+		
+		<tr>
+			<td>Table:</td>
+			<td><input type="text" name="Table" value=""></td>
+		</tr>
+		<tr>
+			<td>Data:</td>
+ 			<td><textarea cols=100 rows=30 name="Data"></textarea></td>
+ 		</tr>
+ 		<tr>
+ 			<td><input type="submit"</td>
+ 		</tr>
+ 	</table>
+ </form>
+ </html>
+ 		

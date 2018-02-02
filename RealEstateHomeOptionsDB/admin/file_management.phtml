@@ -1,0 +1,151 @@
+<?
+include "main_include.phtml";
+
+
+// This file displays the User table. The file that displays all of
+// the Options and Upgrades tables is called display_user.phtml
+
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); 
+
+?>
+
+<head>
+<title>Admin</title>
+</head>
+
+
+<table cellspacing="0" cellpadding="0" border="0">
+<tr>
+<td>
+<!--font face="Verdana,Arial,Helvetica" size="1"-->
+
+<?
+
+// if $UserID exists then print the name
+if ($UserID)
+{
+	$sql	= "SELECT FirstName, LastName
+				FROM User
+				WHERE UserID = $UserID";
+	$result = mysql_query($sql,$db);
+	
+	$row = mysql_fetch_array($result);
+	$FirstName = $row['FirstName'];
+	$LastName = $row['LastName'];
+	
+	echo "<nobr><img src=\"../login/spacer.gif\" width=\"15\" height=\"1\" border=\"0\">&#149; User: <a href=\"display_user.phtml?table_name=User&UserID=$UserID\">$FirstName $LastName</a></nobr><br>\n";
+	echo "<br>\n";
+}
+
+	// print all section headers
+	printSectionHeaders($SectionID, $SubsectionID, $ItemID, $OptionID, $ChoiceID, $mode);
+
+?>
+
+<table cellspacing="0" cellpadding="5" border="0" width="100%">
+<tr>
+<td><?
+
+// this image spacer indents the tables
+if ($table_name == "User")
+{
+	echo "<img src=\"../login/spacer.gif\" width=\"15\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "UserSave")
+{
+	echo "<img src=\"../login/spacer.gif\" width=\"30\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "UnitType")
+{
+	echo "<img src=\"../login/spacer.gif\" width=\"5\" height=\"1\" border=\"0\">";
+}
+
+?>
+</td>
+<td><!--font face="Arial,Verdana,Helvetica" size="2"-->
+
+<?
+
+if ($table_name == "User")
+{
+	echo "<img src=\"../login/black.gif\" width=\"700\" height=\"1\" border=\"0\"><br>\n";
+	echo "<font size=\"4\">$FirstName $LastName<br><br>";
+}
+
+if ($user_message)
+{
+	echo "<font color=#009900><b>". $user_message ."</b><br><br>\n";
+}
+
+// start HTML table and column labels
+echo "<table cellspacing=\"5\" cellpadding=\"2\" border=\"0\">\n";
+
+// display table (User)
+if ($table_name == "User")
+{
+	$sql	= "SELECT	*
+		FROM UserFile
+		WHERE UserID = ". $UserID;
+		
+	$result = mysql_query($sql,$db) or die("Error : " . mysql_error() . " <BR>" . $sql);
+	
+	echo "<tr class=\"head\">\n";
+	echo "<th><b>File Description</b></th>\n";	
+	echo "<th><b>File Name</b></th>\n";	
+	echo "<th></th>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result))
+	{
+		displayMouseOverTR();
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">" . $row['FileDesc'] . "</td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">" . $row['FileName'] . "</td>\n";
+		echo "<td><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><a href=\"" . $row['UserID'] . "/" . $row['FileName'] . "\">Download</a>&nbsp;|<td><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><a href=\"row_edit.phtml?UserID=" . $row['UserID'] . "&table_name=UserFile&FileID=" . $row['FileID'] . "\">Edit</a>&nbsp;|&nbsp;<td><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><a href=\"row_delete.phtml?UserID=" . $row['UserID'] . "&table_name=UserFile&FileID=" . $row['FileID'] . "&FileName=". $row['FileName'] ."\">Delete</a></td>\n";
+		echo "</tr>\n";
+	}
+}
+
+// Display form for loading file
+if ($table_name == "User")
+	echo "<form enctype=\"multipart/form-data\" action=\"upload_file.phtml?table_name=". $table_name ."&mode=$mode&UserID=". $UserID ."\" method=\"post\">\n";
+elseif ($table_name == "Options")
+	echo "<form enctype=\"multipart/form-data\" action=\"upload_file.phtml?table_name=". $table_name ."&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=". $OptionID ."\" method=\"post\">\n";
+elseif ($table_name == "Choice")
+	echo "<form enctype=\"multipart/form-data\" action=\"upload_file.phtml?table_name=". $table_name ."&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=". $OptionID ."&ChoiceID=". $ChoiceID ."\" method=\"post\">\n";
+
+//"MAX_FILE_SIZE" determines the biggest size an uploaded file can occupy
+
+echo "<input type=\"hidden\" name=\"MAX_FILE_SIZE\" value=\"52428800\">\n";
+
+if ($table_name == "User")
+	echo "<td><input type=\"text\" name=\"FileDesc\" maxlength=\"100\"></td>\n";
+else
+	echo "<td>File: </td>\n";
+
+echo "<td><input name=\"File\" type=\"file\"></td>\n";
+echo "<td><input type=\"submit\" name=\"submit\" value=\"Upload\"></td>\n";
+echo "</form>\n";
+
+// end HTML table
+echo "</table>\n";
+
+?>
+
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+
+
+
+</td>
+</tr>
+
+</table>
+
+</body>
+</html>

@@ -1,0 +1,155 @@
+<?
+include "main_include.phtml";
+// add, delete, update info of sales reps. Also used to transfer all customers of one rep to another.
+// set the security level to be 2 for this page
+check_auth(3);
+
+?>
+
+<HTML>
+  <TITLE>Sales Summary of Individual Sales Rep</TITLE>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<H3><?= get_project_name($PHP_SELF); ?> -- Sales Rep Summary</H3>
+
+<?
+
+$sql = "SELECT * FROM SalesRep ORDER BY SalesRepFirstName, SalesRepLastName";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+?>
+
+<BODY>
+<TABLE>
+  <TR>
+    <TD COLSPAN="10"><H4>Define Commission</H4></TD>
+  </TR>
+
+  <FORM NAME="editSalesRepCommission" METHOD="POST" ACTION="./updateSalesRepCommission.phtml">
+  	<TABLE>
+      <TR  CLASS="head">
+        <TD>Name</TD>
+        <TD>Commission</TD>
+      </TR>
+<?
+while ($row = mysql_fetch_array($result)) 
+{		
+	if ($class == "body" || $class == "")
+	{
+		$class = "blank";
+	}
+	else
+	{
+		$class = "body";
+	}
+?>
+      <TR CLASS="<?= $class; ?>">
+        <TD><?= $row['SalesRepFirstName'] . " " . $row['SalesRepLastName']; ?></TD>
+        <TD><INPUT TYPE="TEXT" SIZE="17" NAME="<?= $row['SalesRepID']; ?>_Commission" VALUE="<?= $row['Commission']; ?>"></TD>
+        <TD><INPUT TYPE="HIDDEN" NAME="<?= $row['SalesRepID']; ?>_SalesRepID" VALUE="<?= $row['SalesRepID']; ?>"></TD>
+      </TR>
+<?
+}
+?>
+      <TR COLSPAN="3">
+        <TD><INPUT TYPE="SUBMIT" VALUE="SUBMIT"></TD>
+      </TR>			
+  </FORM>
+
+<?
+// table for each sales rep
+$sql_salesrep = "SELECT * FROM SalesRep";
+$result_salesrep = mysql_query($sql_salesrep) or log_err_die(mysql_error(),$PHP_SELF);
+
+while ($row_salesrep = mysql_fetch_array($result_salesrep)) 
+{
+	$total_ListingPrice = 0;
+	$total_OfferPrice = 0;
+	$total_Locker = 0;
+	$total_Parking = 0;
+	$total_BicycleRack = 0;
+	$total_Charge = 0;
+	$total_Commission = 0;
+	$total_Bonus = 0;
+?>
+  <TR>
+    <TD COLSPAN="10"><BR><BR><H4><?= $row_salesrep["SalesRepFirstName"] . " " . $row_salesrep["FirstRepLastName"] ?></H4></TD>
+  </TR>
+
+  <TR CLASS="head">
+    <TD>Suite Number</TD>
+    <TD>Offer Date</TD>
+    <TD>Deal Status</TD>
+    <TD>Listing Price</TD>
+    <TD>Offer Price</TD>
+    <TD>Number of Locker</TD>
+    <TD>Number of Parking</TD>
+    <TD>Number of Bike Rack</TD>
+    <TD>Incentive</TD>
+    <TD>Commission</TD>
+    <TD>Bonus</TD>
+  </TR>
+<?
+	$sql = "SELECT User.SalesRepID, User.UnitNumber, 
+			User.DealStatus, User.OfferPrice, User.AgreementControlSignDate,
+			Unit.Price, User.Locker, User.ParkingQuantity, User.BicycleRack, User.Charge
+		FROM User, Unit
+		WHERE (User.SalesRepID = " . $row_salesrep["SalesRepID"] . 
+		" OR User.SalesRepID1 = " . $row_salesrep["SalesRepID"] . ")
+		AND User.UnitNumber = Unit.UnitNumber
+		ORDER BY User.UnitNumber";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	while ($row = mysql_fetch_array($result)) 
+	{
+		if ($class == "body" || $class == "")
+		{
+			$class = "blank";
+		}
+		else
+		{
+			$class = "body";
+		}
+?>
+  <TR CLASS="<?= $class ?>">
+    <TD><?= $row["UnitNumber"] ?></TD>
+    <TD><?= $row["AgreementControlSignDate"] ?></TD>
+    <TD><?= $row["DealStatus"] ?></TD>
+    <TD><?= $row["Price"] ?></TD>
+    <TD><?= $row["OfferPrice"] ?></TD>
+    <TD><?= $row["Locker"] ?></TD>
+    <TD><?= $row["ParkingQuantity"] ?></TD>
+    <TD><?= $row["BicycleRack"] ?></TD>
+    <TD><?= $row["Charge"] ?></TD>
+    <TD><?= $row_salesrep["Commission"] * $row["OfferPrice"] ?></TD>
+    <TD></TD>
+  </TR>
+<?
+		$total_ListingPrice += $row["Price"];
+		$total_OfferPrice += $row["OfferPrice"];
+		$total_Locker += $row["Locker"];
+		$total_Parking += $row["ParkingQuantity"];
+		$total_BicycleRack += $row["BicycleRack"];
+		$total_Charge += $row["Charge"];
+		$total_Commission += $row_salesrep["Commission"] * $row["OfferPrice"];
+		$total_Bonus += 0;
+	}
+?>
+  <TR CLASS="tail">
+    <TD>Total</TD>
+    <TD></TD>
+    <TD></TD>
+    <TD><?= $total_ListingPrice ?></TD>
+    <TD><?= $total_OfferPrice ?></TD>
+    <TD><?= $total_Locker ?></TD>
+    <TD><?= $total_Parking ?></TD>
+    <TD><?= $total_BicycleRack ?></TD>
+    <TD><?= $total_Charge ?></TD>
+    <TD><?= $total_Commission ?></TD>
+    <TD></TD>
+  </TR>
+<?
+}
+?>
+
+</TABLE>
+</BODY>
+</HTML>

@@ -1,0 +1,827 @@
+<?
+include "main_include.phtml";
+
+// expecting 
+// $action : add, edit, transfer
+// $mode : visitor, purchaser
+// $subAction : webReserved, purchaseReservedUnit
+
+//print_top_frame($PHP_SELF, "./");
+
+function quit($err = "")
+{
+	global $forward;
+	global $back;
+	global $action;
+	global $mode;
+	global $VisitorID;
+	global $UserID;
+	global $table_name;
+	global $PHP_SELF;
+
+	if (isSet($forward) && $forward != "")
+	{
+		$forward = urldecode($forward);
+		if (isSet($back))
+		{
+			$back--;
+			$forward .= "&back=" . $back;
+		}
+		if ($err != "")
+		{
+			$forward .= "&err=$err";
+		}
+		if ($action == "add")
+		{ // add UserID at to the forward query
+			$forward .= "&UserID=" . $UserID;
+		}
+		
+		goto_url($forward);
+		die();
+	}
+	if ($err != "" && $action == "add" && $mode == "purchaser"){
+		// since this is a new purchaser, can't go back to visitor without visitor id.
+		// so displaying error here
+		die($err);
+	}
+	// if no forward defined, show the proper page correspond to the action
+	if ($action == "add" || $action == "transfer")
+	{ 
+		// get the new id, then go to that page
+		$forward = "./userListing.phtml?action=display&mode=" . $mode . "&" . ($mode=="visitor" ? "VisitorID=" . $VisitorID : "UserID=" . $UserID);
+		if ($err != "")
+		{
+			$forward .= "&err=$err";
+		}
+		goto_url($forward);
+		die();
+	}
+	else
+	{
+?>
+		<script language="JavaScript">
+		<!--
+			history.back(<?= $back; ?>);
+		//-->
+		</script>
+<?
+	}
+	die();
+} // quit
+
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+if ($action == "delete")
+{
+	if (get_access_security_level() <= 1){
+		die("Error: Permission denied. Delete aborted");
+	}
+	if ($mode == "purchaser")
+	{
+		// get Suite Number from the purchaser info
+		$sql = "SELECT UnitNumber From User Where UserID=" . $UserID;
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		$row = mysql_fetch_array($result);
+		$UnitNumber = $row['UnitNumber'];
+
+		// delete purchaser record
+		$sql = "DELETE FROM User WHERE UserID=" . $UserID;
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		// reset UserID to be 0 in the unit table
+		$sql = "UPDATE Unit SET UserID = 0, Status = 'Available' WHERE UnitNumber = $UnitNumber";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		// delete all entries with the UserID in UserPackage table
+		$sql = "DELETE FROM UserPackage WHERE UserID=" . $UserID;
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+
+//		$sql 	= "DELETE FROM UserSave	WHERE UserID =" . $UserID;
+//		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+//		
+//		$sql 	= "DELETE FROM UserOption WHERE UserID =" . $UserID;
+//		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+		// Remove the physical folder for this user and according records in database
+		$res = exec ("rm -rf ./$UserID");
+		$sql = "DELETE FROM UserFile WHERE UserID =" . $UserID;
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+	}
+	else
+	{
+		$sql = "DELETE FROM Visitor WHERE VisitorID=" . $VisitorID;	
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+	}
+	quit();
+}
+else
+{
+	if ($action != "add"){
+		// only operator allows to edit user data
+			if (get_access_security_level() <= 0){
+			die("Error: Permission denied. Edit aborted");
+		}
+
+	}
+	if ($action == "transfer" || ($action == "add" && $mode == "purchaser"))
+	{
+		// check Suite Number is avilable
+		if (!isSet($UnitNumber))
+		{
+			quit();
+		}
+		$sql = "SELECT * FROM Unit WHERE UnitNumber = $UnitNumber";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		$row = mysql_fetch_array($result);
+		
+		if ($row['UserID'] == "" )
+		{
+			quit("Unit $UnitNumber does not exist");
+		}
+		else if ($row['UserID'] > 0)
+		{
+			quit("Unit $UnitNumber has been sold");
+		}
+		else if ($row['Status'] == "Reserved")
+		{
+			quit("Unit $UnitNumber has been reserved");
+		}
+		
+		$Price = $row['Price'];
+
+		if ($from == "Visitor" && $to == "User")
+		{
+			$mode = "purchaser"; // going to add a new row in User table
+			$sql = "SELECT * FROM Visitor WHERE VisitorID=" . $VisitorID;
+			$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+			$row = mysql_fetch_array($result);
+			
+			$Salutation 		= $row['Salutation'];
+			$FirstName		= $row['FirstName'];
+			$LastName		= $row['LastName'];
+			$Address		= $row['Address'];
+			$City			= $row['City'];
+			$Province		= $row['Province'];
+			$Country		= $row['Country'];
+			$PostalCode		= $row['PostalCode'];
+			$Email			= $row['Email'];
+			$ContactNote			= $row['ContactNote'];
+			$BusinessPhone		= $row['BusinessPhone'];
+			$PhoneNumber		= $row['PhoneNumber'];
+			$CellPhone		= $row['CellPhone'];
+			$FaxNumber		= $row['FaxNumber'];
+			$RegistrationNumber	= $row['RegistrationNumber'];
+			$RegistrationDate	= $row['RegistrationDate'];
+			$Status			= $row['Status'];
+			$Gender			= $row['Gender'];
+	//		$UnitTypeDesired	= $row['UnitTypeDesired'];
+	//		$PriceRange			= $row['PriceRange'];
+	//		$BedroomsRequired	= $row['BedroomsRequired'];
+	//		$SizeRangeRequired	= $row['SizeRangeRequired'];
+	//		$AgeRangeRequired	= $row['AgeRangeRequired'];
+			$Inquiry			= $row['Inquiry'];
+			$Note			= $row['Note'];
+			$BrokerAgentName	= $row['BrokerAgentName'];
+			$BrokerCompany		= $row['BrokerCompany'];
+			$BrokerAddress		= $row['BrokerAddress'];
+			$BrokerCity		= $row['BrokerCity'];
+			$BrokerPostalCode	= $row['BrokerPostalCode'];
+			$BrokerPhoneNumber	= $row['BrokerPhoneNumber'];
+			$BrokerFaxNumber	= $row['BrokerFaxNumber'];
+			$BrokerEmail		= $row['BrokerEmail'];
+			$Source			= $row['Source'];
+			$SalesRepID		= $row['SalesRepID'];
+			$SalesRepID1		= $row['SalesRepID1'];
+			$SourceCategory		= $row['SourceCategory'];
+			$Rank				= $row['Rank'];
+			$Priority			= $row['Priority']; 
+
+			if ($UserID > 0)
+			{
+				$action = edit; // edit mode if data already exists in database
+			}
+			else
+			{
+				$action = add;
+			}					
+		}
+		
+		if ($subAction == "webReserve"){
+				$DealStatus		= "WebReserved";
+		}
+		else if (($mode == "purchaser" && $action == "add") || ($from == "Visitor" && $to == "User")){
+			// MUST set Pending to be default !!!
+			$DealStatus		= "Pending";
+
+			// WARNING: when changing any of the default settings here, please
+			// change accordingly in citygate's online purchaser update script
+			// (../../focus360/updateUnitStatus.phtml)
+			
+			// calculate the date for following date
+			$AgreementDepositDate	= date("Y\-m\-d");
+			$timeStamp 		= strtotime ($AgreementDepositDate);
+			$secPerDay		= (60 * 60 * 24);
+			$RescissionDate		= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * 10);
+
+			// WARNING: when changing any of the default settings here, please
+			// change accordingly in citygate's online purchaser update script
+			// (../citygate_source/admin/updateUserInfo.phtml)
+			if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF)) {
+				$Day30DepositDate	= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * 30);
+				$Day90DepositDate	= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * 120);
+				$Day150DepositDate	= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * 180);
+			}		
+			else {
+				$Day30DepositDate	= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * DEFAULT_DEPOSIT_2_DAY);
+				$Day90DepositDate	= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * DEFAULT_DEPOSIT_3_DAY);
+				$Day150DepositDate	= date("Y\-m\-d", $timeStamp + 60 * 60 * 24 * DEFAULT_DEPOSIT_4_DAY);
+				$OccupancyDepositDate = get_occupancy_date($UnitNumber);
+				$FirstRevisedClosingDate = DEFAULT_1_REVISED_CLOSING_DATE;
+				$SecondRevisedClosingDate = DEFAULT_2_REVISED_CLOSING_DATE;
+							
+				$AgreementDepositAmount = DEFAULT_AGREEMENT_DEPOSIT; // default for this var										
+				$Day30DepositAmount = $Price * DEFAULT_DEPOSIT_2_PERCENTAGE - DEFAULT_AGREEMENT_DEPOSIT;
+				$Day90DepositAmount = $Price * DEFAULT_DEPOSIT_3_PERCENTAGE;
+				$Day150DepositAmount = $Price * DEFAULT_DEPOSIT_4_PERCENTAGE;
+				$OccupancyDepositAmount = $Price * DEFAULT_OCCUPANCY_DEPOSIT_PERCENTAGE;
+			}			
+
+		}
+		
+		if (!isset($RegistrationDate) || $RegistrationDate == ""){
+			$RegistrationDate = date("Y\-m\-d", $timeStamp);
+		}
+	}
+	
+	// if editing the purchaser, and subAction is purchase a reserverd unit
+	if ($action == "edit" && $subAction == "purchaseReservedUnit"){
+		$DealStatus		= "Pending";
+	}
+	$RegistrationDate 				= convert_date($RegistrationDate, "YYYY-MM-DD");
+	$ContactNote							= mysql_escape_string($ContactNote);
+	
+	if ($mode == "purchaser")
+	{
+		if ($Price == "" || $Price <= 0 ){
+			die("Error. Purchasing price cannot be empty or 0");	
+		}
+		$Price 							= $Price > 0 ? $Price : 0;
+		$ParkingSpace					= isSet($ParkingSpace) ? 1 : 0;
+		$ParkingIncludedInPrice			= isSet($ParkingIncludedInPrice) ? 1 : 0;
+		$ParkingExtended				= isSet($ParkingExtended) ? 1 : 0;
+		$ParkingSpaceCharge				= isSet($ParkingSpaceCharge) & $ParkingSpaceCharge != "" ? $ParkingSpaceCharge : 0;
+//		$ParkingSpaceCharge				= $ParkingSpaceCharge > 0 ? $ParkingSpaceCharge : 0;
+		$Locker							= $Locker > 0 ? $Locker : 0;
+		$LockerCharge					= $LockerCharge > 0 ? $LockerCharge  : 0;
+		$BicycleRack					= isSet($BicycleRack) ? 1 : 0;
+		$BicycleRackCharge				= isSet($BicycleRackCharge) & $BicycleRackCharge != "" ? $BicycleRackCharge : 0;
+		$RoofDeck						= isSet($RoofDeck) ? 1 : 0;
+		$RoofDeckCharge					= isSet($RoofDeckCharge) & $RoofDeckCharge != "" ? $RoofDeckCharge : 0;
+		$AdditionalCost					= $AdditionalCost > 0 ? $AdditionalCost : 0;
+		$UnitAllowance					= $UnitAllowance > 0 ? $UnitAllowance : 0;
+		$AgreementDepositAmount 		= $AgreementDepositAmount > 0 ? $AgreementDepositAmount : 0;
+		$Day30DepositAmount 			= $Day30DepositAmount > 0 ? $Day30DepositAmount : 0;
+		$Day30DepositChequeAmount 		= $Day30DepositChequeAmount > 0 ? $Day30DepositChequeAmount : 0;
+		$Day90DepositAmount 			= $Day90DepositAmount > 0 ? $Day90DepositAmount : 0;
+		$Day90DepositChequeAmount		= $Day90DepositChequeAmount > 0 ? $Day90DepositChequeAmount : 0;
+		$Day150DepositAmount 			= $Day150DepositAmount > 0 ? $Day150DepositAmount : 0;
+		$Day150DepositChequeAmount 		= $Day150DepositChequeAmount > 0 ? $Day150DepositChequeAmount : 0;
+		$OccupancyDepositAmount			= $OccupancyDepositAmount > 0 ? $OccupancyDepositAmount : 0;
+		$VTB					= $VTB > 0 ? $VTB : 0;
+		$DateOfBirth					= convert_date($DateOfBirth, "YYYY-MM-DD");
+		$RescissionDate					= convert_date($RescissionDate, "YYYY-MM-DD");
+		$ConditionalDate				= convert_date($ConditionalDate, "YYYY-MM-DD");
+		$AgreementDepositDate			= convert_date($AgreementDepositDate, "YYYY-MM-DD");
+		$Day30DepositDate				= convert_date($Day30DepositDate, "YYYY-MM-DD");
+		$Day30DepositReceivedDate		= convert_date($Day30DepositReceivedDate, "YYYY-MM-DD");
+		$Day90DepositDate				= convert_date($Day90DepositDate, "YYYY-MM-DD");
+		$Day90DepositReceivedDate		= convert_date($Day90DepositReceivedDate, "YYYY-MM-DD");
+		$Day150DepositDate				= convert_date($Day150DepositDate, "YYYY-MM-DD");
+		$Day150DepositReceivedDate		= convert_date($Day150DepositReceivedDate, "YYYY-MM-DD");
+		$OccupancyDepositDate			= convert_date($OccupancyDepositDate, "YYYY-MM-DD");
+		$OccupancyDepositReceivedDate		= convert_date($OccupancyDepositReceivedDate, "YYYY-MM-DD");
+		$AgreementControlSignDate		= convert_date($AgreementControlSignDate, "YYYY-MM-DD");
+		$FirstRevisedClosingDate			= convert_date($FirstRevisedClosingDate, "YYYY-MM-DD");
+		$SecondRevisedClosingDate			= convert_date($SecondRevisedClosingDate, "YYYY-MM-DD");
+		$AdditionalPurchaser1DateOfBirth= convert_date($AdditionalPurchaser1DateOfBirth, "YYYY-MM-DD");
+		$AdditionalPurchaser2DateOfBirth= convert_date($AdditionalPurchaser2DateOfBirth, "YYYY-MM-DD");
+		$AdditionalPurchaser3DateOfBirth= convert_date($AdditionalPurchaser3DateOfBirth, "YYYY-MM-DD");
+		$AdditionalPurchaser4DateOfBirth= convert_date($AdditionalPurchaser4DateOfBirth, "YYYY-MM-DD");
+		$MortgageCommitmentAmount		= $MortgageCommitmentAmount > 0 ? $MortgageCommitmentAmount : 0;
+		$MortgageCommitment				= isSet($MortgageCommitment) ? 1 : 0;
+		$AgreementDepositNFS 			= isSet($AgreementDepositNFS) ? 1 : 0;
+		$Day30DepositNFS 				= isSet($Day30DepositNFS) ? 1 : 0;
+		$Day90DepositNFS 				= isSet($Day90DepositNFS) ? 1 : 0;
+		$Day150DepositNFS 				= isSet($Day150DepositNFS) ? 1 : 0;
+		$OccupancyDepositNFS			= isSet($OccupancyDepositNFS) ? 1 : 0;
+		$AdditionalCostNote				= preg_replace($find, $replace, $AdditionalCostNote);
+		$ParkingQuantity				= $ParkingQuantity > 0 ? $ParkingQuantity : 0;
+		$Charge							= $Charge > 0 || $Charge < 0 ? $Charge : 0;
+		$OfferPrice						= $OfferPrice > 0 ? $OfferPrice : 0;
+		$IncentivePrice					= $IncentivePrice > 0 ? $IncentivePrice : 0;
+		$IncentiveSent					= isSet($IncentiveSent) ? 1 : 0;
+		$RefereeUnitNumber				= $RefereeUnitNumber > 0 ? $RefereeUnitNumber : 0;
+		$SalesRepID						= $SalesRepID > 0 ? $SalesRepID : 0;
+		$SalesRepID1						= $SalesRepID1 > 0 ? $SalesRepID1 : 0;
+#		$AdditionalCostNote				= mysql_escape_string($AdditionalCostNote);
+		
+		if (!is_citygate_1($PHP_SELF))
+			$ParkingTandemUnit				= isSet($ParkingTandemUnit) ? 1 : 0;
+
+	}
+				
+	if ($action == "add")
+	{		
+		// make sure the unit is available	
+		if ($mode == "purchaser"){
+			$sql = "select UserID from Unit where UnitNumber = $UnitNumber";
+			$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			$row = mysql_fetch_array($result);	
+			if ($row['UserID']  > 0){				
+				print("<font color=\"#FF0000\"><b>Unit $UnitNumber is not available. Please go Back and try another unit.<b></font>");
+				die("");
+			}
+			
+		}
+		$sql = "INSERT INTO";
+		if ($mode == "visitor")
+		{
+			$sql .= " Visitor ";
+		}
+		else if ($mode == "purchaser")
+		{
+			$sql .= " User ";
+		}
+	}
+	else if ($action == "edit")
+	{
+		if ($mode == "visitor")
+		{
+			if ($VisitorID <= 0)
+			{
+				die ("No VisitorID");
+			}
+			$sql = "UPDATE Visitor ";
+		}
+		else if ($mode == "purchaser")
+		{
+			if ($UserID <= 0)
+			{
+				die ("No UserID");
+			}
+			
+			if (isset($Login) && $Login != "")
+			{
+				$sql = "SELECT count(*) AS login_count FROM User where UserID != ". $UserID ." and Login = '". $Login ."'";
+					
+				$result = mysql_query($sql) or log_err_die(mysql_error() . "SQL=$sql",$PHP_SELF);
+				$row = mysql_fetch_array($result);
+			
+				if ($row['login_count'] > 0)
+				{
+					quit("Login ID {". $Login ."} has been used. Please choose another one.");
+				}
+			}
+			
+			$sql = "UPDATE User ";
+		}
+	}
+	else
+	{
+		// error
+		die("Invalid mode");
+	} 
+	
+			$sql .=	" SET
+											Salutation=\"$Salutation\",
+											FirstName=\"$FirstName\",
+											LastName=\"$LastName\", 
+											Address=\"$Address\",
+											City=\"$City\",
+											Province=\"$Province\",
+											Country=\"$Country\",
+											PostalCode=\"$PostalCode\",
+											Email=\"$Email\", ";
+if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)){ 											
+				$sql .= 		"				ContactNote=\"$ContactNote\", 
+														Suite=\"$Suite\", ";
+}
+			$sql .= "				BusinessPhone=\"$BusinessPhone\",
+											PhoneNumber=\"$PhoneNumber\",
+											CellPhone=\"$CellPhone\",
+											FaxNumber=\"$FaxNumber\",
+											RegistrationNumber=\"$RegistrationNumber\",
+											RegistrationDate=\"$RegistrationDate\",
+											Status=\"$Status\",
+											Gender=\"$Gender\",
+											UnitTypeDesired=\"$UnitTypeDesired\",
+											PriceRange=\"$PriceRange\",  
+											Inquiry=\"$Inquiry\", 
+											BedroomsRequired=\"$BedroomsRequired\",
+											SizeRangeRequired=\"$SizeRangeRequired\",
+											AgeRange=\"$AgeRange\",
+											Note=\"$Note\",
+											BrokerAgentName=\"$BrokerAgentName\",
+											BrokerCompany=\"$BrokerCompany\",
+											BrokerAddress=\"$BrokerAddress\",
+											BrokerCity=\"$BrokerCity\",
+											BrokerPostalCode=\"$BrokerPostalCode\",
+											BrokerPhoneNumber=\"$BrokerPhoneNumber\",
+											BrokerFaxNumber=\"$BrokerFaxNumber\",
+											BrokerEmail=\"$BrokerEmail\",
+											SalesRepID=\"$SalesRepID\",
+											SalesRepID1=\"$SalesRepID1\",
+											Source=\"$Source\",
+											SourceCategory=\"$SourceCategory\"";
+						
+			if ($mode == "visitor" && $action != "add")
+			{
+				$sql .= "WHERE VisitorID=$VisitorID";
+			}
+			else if ($mode == "purchaser")
+			{
+
+				$sql .= "						,Login=\"$Login\",
+											Passwd=\"$Passwd\",
+											UnitNumber=\"$UnitNumber\",			
+											Price=$Price,
+											DealStatus=\"$DealStatus\",
+											ParkingSpace=$ParkingSpace,
+											ParkingQuantity=$ParkingQuantity,
+											ParkingSpaceCharge=$ParkingSpaceCharge,
+											ParkingIncludedInPrice=$ParkingIncludedInPrice,
+											ParkingExtended=$ParkingExtended,
+											Locker=$Locker,
+											LockerCharge=$LockerCharge,
+											BicycleRack=$BicycleRack,
+											BicycleRackCharge=$BicycleRackCharge,
+											RoofDeck=$RoofDeck,
+											RoofDeckUnit=\"$RoofDeckUnit\",
+											RoofDeckCharge=$RoofDeckCharge,
+											AdditionalCost=$AdditionalCost,
+											AdditionalCostNote=\"$AdditionalCostNote\",
+											UnitAllowance=$UnitAllowance,
+											RescissionDate=\"$RescissionDate\",
+											RescissionNote=\"$RescissionNote\",
+											ConditionalDate=\"$ConditionalDate\",
+											AgreementDepositAmount=$AgreementDepositAmount,
+											AgreementDepositChequeNumber=\"$AgreementDepositChequeNumber\",
+											AgreementDepositDate=\"$AgreementDepositDate\",
+											Day30DepositAmount=$Day30DepositAmount,
+											Day30DepositDate=\"$Day30DepositDate\",
+											Day30DepositReceivedDate=\"$Day30DepositReceivedDate\",
+											Day30DepositChequeNumber=\"$Day30DepositChequeNumber\",
+											Day30DepositChequeAmount=\"$Day30DepositChequeAmount\",
+											Day90DepositAmount=$Day90DepositAmount,
+											Day90DepositDate=\"$Day90DepositDate\",
+											Day90DepositReceivedDate=\"$Day90DepositReceivedDate\",
+											Day90DepositChequeNumber=\"$Day90DepositChequeNumber\",
+											Day90DepositChequeAmount=\"$Day90DepositChequeAmount\",
+											Day150DepositAmount=$Day150DepositAmount,
+											Day150DepositDate=\"$Day150DepositDate\",
+											Day150DepositReceivedDate=\"$Day150DepositReceivedDate\",
+											Day150DepositChequeNumber=\"$Day150DepositChequeNumber\",
+											Day150DepositChequeAmount=\"$Day150DepositChequeAmount\",
+											VTB=$VTB,
+											OccupancyDepositAmount=$OccupancyDepositAmount,
+											OccupancyDepositDate=\"$OccupancyDepositDate\",
+											OccupancyDepositReceivedDate=\"$OccupancyDepositReceivedDate\",
+											OccupancyDepositChequeNumber=\"$OccupancyDepositChequeNumber\",
+											OccupancyDepositChequeAmount=\"$OccupancyDepositChequeAmount\",
+											AgreementControlSignDate=\"$AgreementControlSignDate\",
+											FirstRevisedClosingDate=\"$FirstRevisedClosingDate\",
+											SecondRevisedClosingDate=\"$SecondRevisedClosingDate\",
+											AgreementControlSignedBy=\"$AgreementControlSignedBy\",
+											DateOfBirth=\"$DateOfBirth\",
+											SIN=\"$SIN\",
+											DriversLicNumber=\"$DriversLicNumber\",
+											SolicitorName=\"$SolicitorName\",
+											SolicitorAddress=\"$SolicitorAddress\",
+											SolicitorCity=\"$SolicitorCity\",
+											SolicitorPostalCode=\"$SolicitorPostalCode\",
+											SolicitorTelephone=\"$SolicitorTelephone\",
+											SolicitorFaxNumber=\"$SolicitorFaxNumber\",
+											AdditionalPurchaser1FirstName=\"$AdditionalPurchaser1FirstName\",
+											AdditionalPurchaser1LastName=\"$AdditionalPurchaser1LastName\",
+											AdditionalPurchaser1SIN=\"$AdditionalPurchaser1SIN\",
+											AdditionalPurchaser1DateOfBirth=\"$AdditionalPurchaser1DateOfBirth\",
+											AdditionalPurchaser2FirstName=\"$AdditionalPurchaser2FirstName\",
+											AdditionalPurchaser2LastName=\"$AdditionalPurchaser2LastName\",
+											AdditionalPurchaser2SIN=\"$AdditionalPurchaser2SIN\",
+											AdditionalPurchaser2DateOfBirth=\"$AdditionalPurchaser2DateOfBirth\",
+											AdditionalPurchaser3FirstName=\"$AdditionalPurchaser3FirstName\",
+											AdditionalPurchaser3LastName=\"$AdditionalPurchaser3LastName\",
+											AdditionalPurchaser3SIN=\"$AdditionalPurchaser3SIN\",
+											AdditionalPurchaser3DateOfBirth=\"$AdditionalPurchaser3DateOfBirth\",
+											AdditionalPurchaser4FirstName=\"$AdditionalPurchaser4FirstName\",
+											AdditionalPurchaser4LastName=\"$AdditionalPurchaser4LastName\",
+											AdditionalPurchaser4SIN=\"$AdditionalPurchaser4SIN\",
+											AdditionalPurchaser4DateOfBirth=\"$AdditionalPurchaser4DateOfBirth\",
+											MortgageCommitmentAmount=$MortgageCommitmentAmount,
+											MortgageCommitment=$MortgageCommitment,
+											AgreementDepositNFS=$AgreementDepositNFS,
+											Day30DepositNFS=$Day30DepositNFS,
+											Day90DepositNFS=$Day90DepositNFS,
+											Day150DepositNFS=$Day150DepositNFS,
+											OccupancyDepositNFS=$OccupancyDepositNFS,
+											Charge=$Charge,
+											OfferPrice=$OfferPrice";
+				
+					if (!is_citygate_1($PHP_SELF))
+					{
+						$sql .= ", ParkingTandemUnit=$ParkingTandemUnit";
+					}
+					
+					if ($subAction == "webReserve")
+					{
+						$sql .= ", PNREF='$PNREF',
+						           Reserver1FirstName='$Reserver1FirstName',
+						           Reserver1LastName='$Reserver1LastName',
+						           Reserver2FirstName='$Reserver2FirstName',
+						           Reserver2LastName='$Reserver2LastName' ";
+					}
+			
+					if ($action != "add")
+					{
+						$sql .=	"							WHERE UserID=$UserID";
+					}
+			}	
+
+	// process DB operation
+	$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+
+	if ($action == "add")
+	{ 	// get the new id, then go to that page
+		if ($mode == "visitor")
+		{
+			$sql = "SELECT VisitorID As ID FROM Visitor WHERE ";
+		}
+		else
+		{
+			$sql = "SELECT UserID As ID FROM User WHERE ";	
+		}
+		$sql .= "FirstName=\"$FirstName\" AND LastName=\"$LastName\" AND Address=\"$Address\" AND City=\"$City\" ORDER BY ";
+		if ($mode == "visitor")
+		{
+			$sql .= " VisitorID ";
+		}
+		else
+		{
+			$sql .= " UserID ";		
+		}
+		$sql .= " DESC LIMIT 1";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		$row = mysql_fetch_array($result);
+		if ($mode=="visitor")
+		{
+			$VisitorID = $row['ID'];
+		}
+		else
+		{
+			$UserID = $row['ID'];
+		}
+	}
+	
+	if ($mode == "purchaser")
+	{
+		// update referee info
+		$sql 	= "REPLACE INTO Referee (UserID, RefereeFirstName, RefereeLastName, FromProject,
+				RefereeUnitNumber, Incentive, IncentivePrice, IncentiveSent)
+			VALUES ($UserID, '$RefereeFirstName', '$RefereeLastName', '$FromProject',
+				$RefereeUnitNumber, '$Incentive', $IncentivePrice, $IncentiveSent)";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		
+		// insert/update package in UserPackage table. This only happens in purchaser mode
+		// first delete all entries with the UserID
+		$sql = "SELECT PackageID FROM Package ORDER BY PackageID DESC";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+//echo "sql=$sql<BR>";
+
+		$row = mysql_fetch_array($result);
+		$numOfPackage = $row['PackageID']; // fetch the largest PackageID to determine number of iteration
+	
+		// delete all entries with the UserID	
+		$sql = "DELETE FROM UserPackage WHERE UserID=" . $UserID;
+//echo "sql=$sql<BR>";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+	
+		// add new entries in UserPackage
+	 	for ($i = 1; $i <= $numOfPackage; $i++)
+		{
+			$varName = "package_" . $i;
+			if (isSet($$varName))
+			{
+				$varName = "package_" . $i . "_Note";
+				$sql = "INSERT INTO UserPackage SET UserID=\"" . $UserID . "\", PackageID=\"" . $i . "\", Note=\"" . $$varName . "\"";
+				$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			}
+		}
+		// update Unit table
+		if ($DealStatus == "Rescinded" || $DealStatus == "")		
+		{	// rescinded
+			$sql 	= "SELECT UserID FROM Unit WHERE UnitNumber=$UnitNumber";
+//echo "sql=$sql<BR>";
+			$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			$row	= mysql_fetch_array($result);
+			if ($row['UserID'] == $UserID)
+			{
+				//$sql 	= "UPDATE Unit SET UserID=0 WHERE UnitNumber=$UnitNumber";
+				$sql 	= "UPDATE Unit SET UserID=0, Status='Available' WHERE UnitNumber='$UnitNumber'";
+// echo "sql=$sql<BR>";
+				$result = mysql_query($sql) or log_err_die("Update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			}
+		}
+		else
+		{
+			// get the UserID from Unit table
+			$sql 	= "SELECT UserID, Status FROM Unit WHERE UnitNumber=$UnitNumber";
+// echo "sql=$sql<BR>";
+
+			$result = mysql_query($sql) or log_err_die("Retrieve data failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			$row	= mysql_fetch_array($result);
+			if ($row['UserID'] != $UserID)
+			{
+				// if the unit (is not purchased, and not reserved by anyone), 
+				// OR a reserved unit is purchased by the reserved customer,
+				// set the unit
+				if (($row['UserID'] == 0 && $row['Status'] != "Reserved") || $subAction == "purchaseReservedUnit")
+				{	// set UserID to be this purchaser to indicate the unit has been purchased by this user
+						// if web reserving, put R in status field
+						if ($subAction == "webReserve"){
+							$sql = "UPDATE Unit SET Status ='Reserved' WHERE UnitNumber=$UnitNumber";
+						}
+						else {
+							$sql 	= "UPDATE Unit SET UserID=$UserID, Status = 'Sold' WHERE UnitNumber=$UnitNumber";
+						}
+						$result = mysql_query($sql) or log_err_die("Update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+				}
+				else
+				{	
+					// reset the RescissionFlag if the unit is not available anymore
+					$sql = "UPDATE User SET RescissionFlag=0 WHERE UserID=$UserID";
+					$result = mysql_query($sql) or log_err_die("Update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+					// unit has been sold if UserID not equal to 0
+					quit("Unit has been reserved or sold. If the reserved customer wants to purchase the unit, Press Edit button, then press Submit and Purchase button");
+				}
+			}
+		}
+	
+		// Delete UserOption if "delete" checkbox is checked
+		for ($i = 0; $i < sizeof($UserOptionDesc); $i++)
+		{
+			$varName = "UserOption_". $i;
+			
+			if (isSet($$varName))
+			{
+				if (isset($UserOptionDesc[$i]))
+				{
+					// fix bad characters
+					$Desc = preg_replace($find, $replace, $UserOptionDesc[$i]);
+				}
+
+				$sql = "DELETE FROM UserOption where UnitNumber=\"" . $UnitNumber . "\" and Description = \"" . $Desc . "\"";
+//echo "sql=$sql<BR>";
+				$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			}
+		}
+
+		// insert new record (used for table: UserOption)
+		if ($UserOptionDescForAdd)
+		{
+			// fix bad characters
+			$UserOptionDesc = preg_replace($find, $replace, $UserOptionDescForAdd);
+		
+			$UserOptionPrice = round($UserOptionPriceForAdd, 2);
+		
+			$sql 	= "REPLACE INTO UserOption (
+						UnitNumber,
+						Description,
+						Price
+						)
+				VALUES (
+						$UnitNumber,
+						'$UserOptionDesc',
+						$UserOptionPrice
+						)";
+//echo "sql=$sql<BR>";
+		
+			$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+		}
+
+		// Delete UserFile if "delete" is checked
+		for ($i = 0; $i < sizeof($UserFileID); $i++)
+		{
+			$var_UserFileInd = "UserFileInd_". $i;
+
+			if (isSet($$var_UserFileInd))
+			{
+				// Delete physical file
+				if (is_file("./". $UserID . "/". $UserFileName_Orig[$i]))
+				{
+					unlink("./". $UserID . "/". $UserFileName_Orig[$i]);
+					$sql = "DELETE FROM UserFile where UserID=" . $UserID . " and FileID = ". $UserFileID[$i];
+//echo "sql=$sql<BR>";
+					$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+				}
+				else log_err_die("./". $UserID . "/". $UserFileName_Orig[$i] . " is not a regular file.", $PHP_SELF);
+			}
+			// Update if action is not delete
+			else
+			{
+				// Rename physical filename if the filename changed
+				if ($UserFileName[$i] != $UserFileName_Orig[$i])
+				{
+					if (rename("./". $UserID ."/". $UserFileName_Orig[$i], "./". $UserID ."/". $UserFileName[$i]))
+					{
+						$sql = "UPDATE UserFile 
+							SET FileName = '". $UserFileName[$i] .
+							"' WHERE UserID = ". $UserID . 
+							" AND FileID = ". $UserFileID[$i];
+			
+//echo "sql=$sql<BR>";
+						$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+					}
+					else
+					{
+						log_err_die("Unable to rename file from ./". $UserID ."/". $UserFileName_Orig[$i], "to ./". $UserID ."/". $UserFileName[$i], $PHP_SELF);
+					}
+				}
+				
+				// Update file desc
+				$FileDesc = preg_replace($find, $replace, $UserFileDesc[$i]);
+				
+				$sql = "UPDATE UserFile 
+					SET FileDesc = '". $FileDesc .
+					"' WHERE UserID = ". $UserID . 
+					" AND FileID = ". $UserFileID[$i];
+	
+//echo "sql=$sql<BR>";
+				$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			}
+		}
+		
+		if (isset($FileForUpload) && $FileForUpload != "none" && $FileForUpload != "")
+		{
+			// Upload file of purchaser
+			if (!is_dir($UserID))
+			{
+				if (!mkdir($UserID, 0777)) quit("Error in creating directory ". $UserID);
+			}
+
+			$dir="./". $UserID ."/";
+
+			//echo "file for upload = {". $FileForUpload . "}; destination = {" . $dir.$FileForUpload_name ."}";
+			if (copy($FileForUpload, $dir.$FileForUpload_name))
+			{
+				$sql = "SELECT max(FileID) AS max_FileID from UserFile where UserID = ". $UserID;
+				$result = mysql_query($sql, $db) or die("Error : " . mysql_error() . " <BR>" . $sql);
+	
+				$row = mysql_fetch_array($result);
+				$next_FileID = $row['max_FileID'] + 1;
+				
+				// A unique index is created on UserFile on fields (UserID, FileName)
+				// so, if a file with the same filename existing in the UserFile is uploaded again,
+				// the insert statement will return error but the new file is still uploaded and overwrite the existing file
+				$sql	= "INSERT INTO UserFile (UserID, FileID, FileDesc, FileName)
+					values (". $UserID .",". $next_FileID . ",\"". $FileDescForUpload ."\",\"". $FileForUpload_name ."\")";
+				
+				$result = mysql_query($sql,$db) or die("Error : " . mysql_error() . " <BR>" . $sql);
+			}
+			else
+			{
+				quit("Unable to copy ". $FileForUpload_name ." to server.");
+			}
+		}
+
+	}
+
+	// if transferring from visitor to user, delete the record in visitor table
+	if ($from == "Visitor" && $to == "User")
+	{
+		$sql = "DELETE FROM Visitor WHERE VisitorID=" . $VisitorID;
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+		
+		// trasfer all Sales Rep notes from visitor to new user
+		$sql = "UPDATE Note SET CustomerID=$UserID, CustomerType='user' 
+				WHERE CustomerID=$VisitorID AND CustomerType='visitor'";
+		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	}
+	
+}
+
+	quit();
+
+?>

@@ -1,0 +1,78 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for additional purchaser
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ 
+ class AddressModel extends EntityModel {
+ 	function AddressModel() {}
+ 	 	
+	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT Address " .
+ 				" SET CreatedDate=NOW() ";
+		 
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+ 		
+ 		$id = mysql_insert_id();
+ 		return $id; 	
+ 	}
+ 	
+
+
+ 	function update($arguments){ 		
+ 		$sql =  " UPDATE Address " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE AddressID = " . $arguments['AddressID'];
+ 		
+ 		$result = executeSql($sql);
+// print "Address Update SQL=$sql<BR>";
+		return $arguments['AddressID']; 				
+ 	}
+
+	/**
+	 * Delete Address
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete($arguments){
+ 		
+ 		if ($arguments['AddressID'] > 0){
+ 			$sql 	= " DELETE FROM Address " .
+ 				  		" WHERE AddressID = " . $arguments['AddressID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql($arguments){
+		$sql =  "AddressType=\"" . $arguments['AddressType'] . "\"" .
+ 				" , Unit=\"" .  $arguments['Unit'] . "\"" .
+ 				" , Street =\"" .  $arguments['Street'] . "\"" .
+ 				" , City  =\"" .  $arguments['City'] . "\"" .
+ 				" , Province =\"" .  $arguments['Province'] . "\"" .
+ 				" , Country =\"" .  $arguments['Country'] . "\"" .
+ 				" , PostalCode  =\"" .  $arguments['PostalCode'] . "\"" . 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 				
+		return $sql;  				
+	}
+ 	
+ }
+?>

@@ -1,0 +1,376 @@
+<?
+define ("LOCAL_CONFIG_FOLDER", "homeOptionsConfig");
+include LOCAL_CONFIG_FOLDER . "/config.phtml";
+
+if (session_id() == ""){
+	session_start();
+	session_register("sesUserID");
+	session_register("sesUnitNumber");
+	session_register("sesIsAdmin");
+}
+
+include SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/main_include.phtml";
+
+
+define (OPTION_IS_NOT_AVAILABLE, 				-9999);
+define (OPTION_IS_A_STANDARD, 					-9998);
+define (OPTION_IS_ZERO_AMOUNT, 					-9997);
+define (OPTION_IS_FOR_INFO, 					-9996);
+define (OPTION_IS_INCENTIVE, 					-9995);
+define (OPTION_IS_NOT_REQUIRED, 				"NOT REQUIRED");
+
+define (DEFAULT_ITEM_OPTION_IMAGE, 				"images/item-option-default.jpg");
+define (DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH, 		40);
+define (DEFAULT_ITEM_OPTION_THUMBNAIL_HEIGHT, 		40);
+
+define (MAX_ITEM_OPTION_IMAGE_WIDTH, 		400);
+define (MAX_ITEM_OPTION_IMAGE_HEIGHT, 		400);
+
+// this item image magic number is used for default
+// image when option of this item has not been choosen
+define ("ITEM_IMAGE_MAGIC_NUMBER", 	-9999);
+
+global $not_include_javascript;
+
+//--------------------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------------------
+$no_of_contractor = 40;
+
+//--------------------------------------------------------------------------------------
+// Utilities
+//--------------------------------------------------------------------------------------
+// A global key to use for encrypting/decrypting data
+//$key = "adfASDFsDF32asdf1tsddf";
+
+//--------------------------------------------------------------------------------------
+// Check password By Using Session
+//--------------------------------------------------------------------------------------
+//start a session cookie with PHP's session tracking
+
+// Set the session var with userID if the login and password are 
+// correct
+// Data stored in session will be encrypted for security reason
+// Return user ID when password is correct, -1 otherwise
+function loginSession($loginName, $password)
+{
+	global $sesUserID;
+
+	if (!isset($loginName) || $loginName == "") { return -1;}
+	
+	$sql = "SELECT * " .
+			"FROM User " .
+			"WHERE Login='" . strtolower($loginName) . "'AND BINARY Passwd='$password' AND User.DealStatus <> 'Rescinded';";
+	$result = mysql_query($sql) or log_err_die(mysql_error(). "\nFull SQL : \n$sql");
+
+	if (mysql_num_rows($result) <= 0)
+	{
+		// No match, invalid password
+		$sesUserID = -1;
+		return -1;	
+	}
+	$row = mysql_fetch_array($result);
+	setUnitNumber($row['UnitNumber']);
+	return $row['UserID'];
+}
+
+//function setUserID($userID){
+//	global $sesUserID;
+//	if ($userID <= 0){
+//		// No match, invalid password
+//		$sesUserID = -1;
+//		return -1;			
+//	} else {
+//		$sesUserID = encrypt_data($userID);
+//		return $userID;		
+//	}	
+//}
+
+// Return the user ID from session.
+// Decrypt the data stored in session
+// Return user ID when user has been logged in, -1 otherwise
+//function getUserID()
+//{
+//	global $sesUserID;
+//	if (isSet($sesUserID) && $sesUserID != -1)
+//	{
+//		return trim(decrypt_data($sesUserID));
+//	}
+//	else return -1;
+//}
+
+// Set unit number into session vars
+function setUnitNumber($unitNumber){
+	global $sesUnitNumber;
+	if ((isNumeric($unitNumber) && $unitNumber <= 0) || $unitNumber == ""){
+		// No match, invalid password
+		$sesUnitNumber = -1;
+		return -1;			
+	} else {
+		$sesUnitNumber = encrypt_data($unitNumber);
+		return $unitNumber;
+	}	
+}
+
+// Return the user ID from session.
+// Decrypt the data stored in session
+// Return user ID when user has been logged in, -1 otherwise
+function getUnitNumber()
+{
+	global $sesUnitNumber;
+	if (isSet($sesUnitNumber) && $sesUnitNumber != -1)
+	{
+		return trim(decrypt_data($sesUnitNumber));
+	}
+	else return -1;
+}
+
+// Since RealEsteateHomeOptions doesn't require .htaccess login,
+// so $PHP_AUTH_USER is empty in this case. In order words,
+// get_access_security_level or check_auth will not work 
+// in this section. Need a session var to identify the admin
+// privilege
+function setIdentity($accessLevel){
+	global $sesIsAdmin;
+
+	$sesIsAdmin = $accessLevel;	
+}
+
+// Check the priviliege of the user 
+function isAdmin(){
+	global $sesIsAdmin;
+
+	return $sesIsAdmin; 		
+}
+
+// get UserInfo
+function getUserID()
+{
+	$unitNumber = getUnitNumber();
+	
+	if ($unitNumber != -1)
+	{
+		$sql = "SELECT * " .
+				" FROM User " .
+				" WHERE UnitNumber = '". strval($unitNumber) . "'";
+
+		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysql_fetch_array($result);
+
+		return $row['UserID'];
+	}
+	else return -1;
+}
+
+// Return UnitType ID when user has been logged in, -1 otherwise
+function getUnitType()
+{
+	$unitNumber = getUnitNumber();
+	
+	if ($unitNumber != -1)
+	{
+		$sql = "SELECT Model " .
+				" FROM Unit " .
+				" WHERE UnitNumber = '" . strval($unitNumber) . "'";
+		
+		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysql_fetch_array($result);
+		return $row['Model'];
+	}
+	else return -1;
+}
+
+// Return array contains UnitType, UnitNumber
+function getUnitInfo()
+{
+	$unitNumber = getUnitNumber();
+	
+	if ($unitNumber != -1)
+	{
+		$sql = "SELECT Model, UnitNumber " .
+				" FROM Unit " .
+				" WHERE UnitNumber = '" . strval($unitNumber) . "'";
+
+		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysql_fetch_array($result);
+		$resultArray = array("UnitType"=>$row['Model'], "UnitNumber"=>$row['UnitNumber']);
+		return $resultArray;
+	}
+	else return -1;
+}
+
+// Used to check if user has made their commitment to their changes
+// Return Commit (either 1 or 0) when user has been logged in, -1 otherwise
+function getCommit()
+{
+	$UnitNumber = getUnitNumber();
+
+	if ($UnitNumber != -1)
+	{
+		$sql	= "SELECT Commit " .
+					"FROM UserUpgradeOptionStatus " .
+					"WHERE UnitNumber = '" . strval($UnitNumber) . "'";
+
+		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysql_fetch_array($result);
+		return $row['Commit'];
+	}
+	else return -1;
+}
+
+/**
+ * Check the unit has committed before. Check the CommitDate field
+ */
+function isCommittedBefore($UnitNumber)
+{
+	if ($UnitNumber != -1)
+	{
+		$sql	= "SELECT Commit, CommitDate " .
+					"FROM UserUpgradeOptionStatus " .
+					"WHERE UnitNumber = '" . strval($UnitNumber) ."'";
+		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+		// if no row in db, then return false
+		if (mysql_num_rows($result) <= 0){
+			return 0;
+		}
+		$row = mysql_fetch_array($result);
+		return $row['CommitDate'] > 0; 
+	}
+	else return -1;	
+}
+
+// Check if the section in this unit type has been disabled
+// Input : UnitType, SectionID
+function section_disabled($UnitType, $SectionID)
+{
+	// Exclude disabled sections from being displayed, which are stored in Disable_Section_by_Unittype
+	$sql_disabled = "SELECT SectionID " .
+			"FROM Disable_Section_By_Unittype " .
+			"WHERE UnitType = '" . $UnitType . "' " .
+			"AND SectionID = " . $SectionID;
+	$result_disabled = mysql_query($sql_disabled) or die("ERROR : $sql_disabled <br>" . mysql_error());
+	$row_disabled = mysql_fetch_array($result_disabled);
+
+	if ($row_disabled['SectionID'] == $SectionID)
+		return 1;
+	else
+		return 0;
+}
+
+// Logout session, destroy the session data in the server
+function logoutSession()
+{
+	global $sesUserID;
+
+	session_destroy();
+}
+
+/**
+ * Convert constant string to a constant number for Price field
+ */
+function convertPriceConstantToNum($constantString){
+	if ($constantString == "INFO"){
+		return OPTION_IS_FOR_INFO;
+	} else if ($constantString == "STANDARD"){
+		return OPTION_IS_A_STANDARD;
+	} else if ($constantString == "UNAVAILABLE"){
+		return OPTION_IS_NOT_AVAILABLE;
+	}  else if ($constantString == "ZERO"){
+		return OPTION_IS_ZERO_AMOUNT;
+	}  else if ($constantString == "INCENTIVE"){
+		return OPTION_IS_INCENTIVE;		
+	} else {
+		return intval($constantString);
+	}
+}
+
+/**
+ * Convert a given number to a valid price/cost
+ * This is needed for calculating total 
+ */
+function convertPriceConstantToValidNumber($num){
+	if ($num == OPTION_IS_A_STANDARD){
+		return 0;
+	} else if ($num == OPTION_IS_ZERO_AMOUNT){
+		return 0;
+	} else if ($num == OPTION_IS_NOT_AVAILABLE){
+		return 0;
+	} else if ($num == OPTION_IS_FOR_INFO){
+		return 0;
+	} else if ($num == OPTION_IS_INCENTIVE){
+		return 0;		
+	} else {
+		return intval($num);	
+	}
+}
+
+/**
+ * Convert a given number to a constant string for Price field
+ */
+function convertPriceConstantToString($num){
+	if ($num == OPTION_IS_A_STANDARD){
+		return "STANDARD";
+	} else if ($num == OPTION_IS_ZERO_AMOUNT){
+		return "ZERO";
+	} else if ($num == OPTION_IS_NOT_AVAILABLE){
+		return "UNAVAILABLE";
+	} else if ($num == OPTION_IS_FOR_INFO){
+		return "INFO";
+	} else if ($num == OPTION_IS_INCENTIVE){
+		return "INCENTIVE";		
+	} else {
+		return intval($num);	
+	}
+}
+
+/**
+ * Return option price. It can be a number, 
+ * a String like 'Standard', or empty
+ * Return string contains price
+ */
+function displayOptionPrice($Price){
+	if ($Price >= 0)
+		return "$ ". number_format($Price);
+	else if ($Price == OPTION_IS_A_STANDARD)
+		return "Standard";
+	else if ($Price == OPTION_IS_INCENTIVE)
+		return "Incentive";
+	else if ($Price != OPTION_IS_NOT_AVAILABLE && $Price < 0)
+//		return "$ " . number_format($Price)." (Credit)";
+		return "Credit";
+	
+}
+
+/**
+ * Return Upgrade/Downgrade depends on the given price
+ */
+function displayOptionUpgradeDowngrade($Price){
+	if ($Price > 0) {
+		return " (Upgrade)";
+	} else {
+		if ($Price != OPTION_IS_A_STANDARD && $Price != OPTION_IS_NOT_AVAILABLE 
+			&& $Price != OPTION_IS_INCENTIVE && $Price < 0)
+			return " ";					 
+	}
+}
+	
+/**
+ * Return true if price is not required
+ */	
+function optionIsStandard($Price) {
+//	return false;
+	return $Price == OPTION_IS_A_STANDARD;
+}
+
+/**
+ * Return true if price is equals to OPTION_IS_A_STANDARD constant
+ */	
+function optionIsNotRequired($Price) {
+//	return false;
+	return $Price == 0;	
+}	
+	
+//--------------------------------------------------------------------------------------
+// Check password By Using Session
+//--------------------------------------------------------------------------------------
+

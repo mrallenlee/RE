@@ -1,0 +1,172 @@
+<?
+include_once "config.phtml";
+include_once CRM_INVERT_RELATIVE_PATH . "main_include.phtml";
+include_once "updateNoteAction.phtml";
+
+// Required:
+// $action : add/edit/delete
+// $noteID : for edit/delete
+//
+
+/**
+ * Do clean up before leaving this page
+ */
+function quit(){
+	global $HTTP_REFERER;
+	global $forward;
+	global $jsAfterDone;
+	global $CustomerType, $CustomerID, $SalesRepID, $firstName;
+	
+	
+	if (isset($jsAfterDone) && $jsAfterDone != ""){
+?>
+		<script language="JavaScript">
+<?= $jsAfterDone; ?>
+		</script>
+<?		
+	}	
+		
+	if (isset($forward) && $forward != ""){
+		goto_url(decodeURL($forward));	
+	}
+	$from_listNote = strpos($HTTP_REFERER, "listNote.phtml");
+	if ($from_listNote !== false || $forward == "listNote")
+	{
+		goto_url("./listNote.phtml?CustomerType=$CustomerType&CustomerID=$CustomerID&SalesRepID=$SalesRepID");
+	}
+
+	$from_salesRepDetail = strpos($HTTP_REFERER, "salesRepDetail.phtml");
+	if ($from_salesRepDetail !== false || $forward == "salesRepDetail")
+	{		
+		goto_url("./salesRepDetail.phtml?firstName=$firstName");
+	}	
+	
+	back();
+	die("unknown referer" . $HTTP_REFERER);
+} // quit
+
+
+// called by "listNote.phtml" & "SalesRepDetail.phtml" to add, delete, update note info for customers
+
+// expect: action (add, delete, update)
+if ($action == "add")
+{
+	$RemindMe = (isSet($RemindMe) ? 1 : 0);
+	$Note = addslashes($Note);
+	
+	$sql = "INSERT INTO Note (CustomerID, CustomerType,";
+	if ($SalesRepID > 0){
+	 	$sql .= "WrittenBySalesRepID,";
+	}
+	if (strlen($WrittenBy) > 0){
+	 	$sql .= "WrittenBy,";
+	}
+	$sql .= "CreateDate, DueDate,
+			ContactVia, RemindMe, Note)
+		VALUES ('$CustomerID', '" . $CustomerType .
+			"', ";
+	if ($SalesRepID > 0){
+	 	$sql .= "$SalesRepID,";
+	}
+	if (strlen($WrittenBy) > 0){
+	 	$sql .= "'$WrittenBy',";		
+	}
+	$sql .= "'$CreateDate', '$DueDate', '$ContactVia', $RemindMe, '$Note')";
+			
+// print $sql;
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+	
+	quit();
+}
+else if ($action == "delete")
+{
+	delete($NoteID);
+	quit();
+	
+//	// delete the note
+//	$sql = "DELETE FROM Note WHERE NoteID=$NoteID";
+//	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+////	print ("sql=$sql");
+//
+//	quit();
+}
+else if ($action == "edit")
+{
+	$RemindMe = (isSet($RemindMe) ? 1 : 0);
+	$Note = addslashes($Note);
+	
+	$sql = "Update Note SET" .
+			" CustomerID=$CustomerID," .
+			" CustomerType='$CustomerType',";
+	if ($SalesRepID > 0){
+	 	$sql .= "WrittenBySalesRepID=$SalesRepID,";
+	}
+	if (strlen($WrittenBy) > 0){
+	 	$sql .= "WrittenBy='$WrittenBy',";
+	}			
+	$sql .=	" CreateDate='$CreateDate'," .
+			" DueDate='$DueDate'," .
+			" ContactVia='$ContactVia'," . 
+			" RemindMe=$RemindMe," .
+			" Note='$Note' " .
+			" WHERE NoteID=$NoteID"; 
+			
+ //print $sql;
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>$sql<BR>",$PHP_SELF);
+	
+	quit();	
+}
+else if ($action == "editGroup")
+{
+	$prevNoteID = -1;
+	$Note = "";
+	$ContactVia = "";
+	$DueDate = "";
+	$RemindMe = 0;
+
+	while (list($key, $value) = each ($_POST))
+	{
+//print ("key=$key value=$value<BR>");		
+		if (strpos($key, "_") === false) continue;
+		
+		list($name, $NoteID) = explode("_", $key);
+
+		if ($NoteID != $prevNoteID)
+		{
+			if ($prevNoteID != -1)
+			{
+				//print $prevSalesRepID;
+				// update the previous record
+				$sql = "UPDATE Note
+					SET Note='$Note',
+					ContactVia='$ContactVia',
+					RemindMe=$RemindMe,
+					DueDate='$DueDate'
+					WHERE NoteID=$prevNoteID";
+//print "sql=$sql<BR>";
+				$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+				
+				$Note = "";
+				$ContactVia = "";
+				$RemindMe = 0;
+				$DueDate = "";
+			}
+			$prevNoteID = $NoteID;
+		}
+
+		${$name} = $value;		
+	}
+	$sql = "UPDATE Note
+		SET Note='$Note',
+		ContactVia='$ContactVia',
+		RemindMe=$RemindMe,
+		DueDate='$DueDate'
+		WHERE NoteID=$prevNoteID";
+//print "sql=$sql<BR>";
+	
+	$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+	
+	quit();
+}
+
+?>

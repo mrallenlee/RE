@@ -1,0 +1,317 @@
+<?
+include_once "main_include.phtml";
+include_once "upgradeOptionAction.phtml";
+
+
+
+// global var 
+$commit = 1;
+$gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'] : getGSTRate();
+
+?>
+<body>
+<table border=1>
+	<tr>
+		<td>UnitNumber</td>	
+		<td>Section</td>
+		<td>SubSection</td>
+		<td>Item</td>
+		<td>Option</td>
+		<td>Price</td>
+		<td>Total Cost</td>
+	</tr>
+<?
+
+
+// Start the unit loop
+// Includes both sold and unsold unit
+$unitSql = "SELECT * FROM Unit ORDER BY UnitNumber";
+$unitResult = mysql_query($unitSql,$db) or handleError("", "SQL=$unitSql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+while ($unitRow = mysql_fetch_array($unitResult))
+{
+
+// Set default values
+$UnitNumber 	= 0;
+$total 		= 0;
+$credit 	= 0;
+$outstandingAmt = 0;
+
+$userID 	= -1;
+$cashPayment 	= 0;
+$payByMortgage 	= 0;
+$outstandingAmt = 0;
+
+$UnitNumber = $unitRow['UnitNumber'];
+$sql = "SELECT User.UserID, FirstName, LastName, CashPayment, PayByMortgage, OutstandingAmt, UnitType
+		FROM Unit
+		LEFT JOIN User
+		ON User.UnitNumber=Unit.UnitNumber
+		AND User.DealStatus IN (" . DEAL_STATUS_PURCHASE_INCLUDE_LIST . ") 
+		WHERE Unit.UnitNumber = '" . $UnitNumber ."'";
+$result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+if (mysql_num_rows($result) > 0)
+{
+	$row = mysql_fetch_array($result);
+	$userID = $row['UserID'];
+	$cashPayment = $row['CashPayment'];
+	$payByMortgage = $row['PayByMortgage'];
+	$outstandingAmt = $row['OutstandingAmt'];
+} 
+
+?>
+
+<?
+// get the name of the current section
+$sql = "SELECT Name, Description, SectionID
+		FROM Section ORDER BY Name";
+$section_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+while ($section_row = mysql_fetch_array($section_result))
+{
+	if (section_disabled($UnitType, $section_row['SectionID']))
+		continue;
+	else
+		$sectionID = $section_row['SectionID'];
+		
+	// cache the html code for section, subsection title. The code
+	// will be printed if item-option is available
+	$htmlCacheHeader = "<tr><td colspan=\"4\" ><font size=\"4\"><b>&nbsp;<br>&nbsp;<br>" . $section_row['Name'] . "</b></font></td></tr>";
+
+	$sql = "SELECT Name, Description, SubsectionID
+			FROM Subsection
+			WHERE SectionID = '$sectionID' ORDER BY Name";
+	$subsection_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+	while ($subsection_row = mysql_fetch_array($subsection_result))
+	{
+		$subsectionID = $subsection_row['SubsectionID'];
+		
+
+		// Since UserSave table may not have the options if user
+		// has not saved the options they choose, so standard will
+		// be display if no optionID in UserSave table. 
+		$sql = "SELECT Item.ItemID AS ItemID, Item.Name AS ItemName,
+				Options.Name AS OptionsName, Options.Choice AS OptionsChoice,
+				Choice.Name AS ChoiceName, UserSave.Price AS Price, 
+				(CASE WHEN contractor0 < -9995 THEN 0 ELSE contractor0 END +
+				CASE WHEN contractor1 < -9995 THEN 0 ELSE contractor1 END +
+				CASE WHEN contractor2 < -9995 THEN 0 ELSE contractor2 END +
+				CASE WHEN contractor3 < -9995 THEN 0 ELSE contractor3 END +
+				CASE WHEN contractor4 < -9995 THEN 0 ELSE contractor4 END +
+				CASE WHEN contractor5 < -9995 THEN 0 ELSE contractor5 END +
+				CASE WHEN contractor6 < -9995 THEN 0 ELSE contractor6 END +
+				CASE WHEN contractor7 < -9995 THEN 0 ELSE contractor7 END +
+				CASE WHEN contractor8 < -9995 THEN 0 ELSE contractor8 END +
+				CASE WHEN contractor9 < -9995 THEN 0 ELSE contractor9 END +
+				CASE WHEN contractor10 < -9995 THEN 0 ELSE contractor10 END +
+				CASE WHEN contractor11 < -9995 THEN 0 ELSE contractor11 END +
+				CASE WHEN contractor12 < -9995 THEN 0 ELSE contractor12 END +
+				CASE WHEN contractor13 < -9995 THEN 0 ELSE contractor13 END +
+				CASE WHEN contractor14 < -9995 THEN 0 ELSE contractor14 END +
+				CASE WHEN contractor15 < -9995 THEN 0 ELSE contractor15 END +
+				CASE WHEN contractor16 < -9995 THEN 0 ELSE contractor16 END +
+				CASE WHEN contractor17 < -9995 THEN 0 ELSE contractor17 END +
+				CASE WHEN contractor18 < -9995 THEN 0 ELSE contractor18 END +
+				CASE WHEN contractor19 < -9995 THEN 0 ELSE contractor19 END +
+				CASE WHEN contractor20 < -9995 THEN 0 ELSE contractor20 END +
+				CASE WHEN contractor21 < -9995 THEN 0 ELSE contractor21 END +
+				CASE WHEN contractor22 < -9995 THEN 0 ELSE contractor22 END +
+				CASE WHEN contractor23 < -9995 THEN 0 ELSE contractor23 END +
+				CASE WHEN contractor24 < -9995 THEN 0 ELSE contractor24 END +
+				CASE WHEN contractor25 < -9995 THEN 0 ELSE contractor25 END +
+				CASE WHEN contractor26 < -9995 THEN 0 ELSE contractor26 END +
+				CASE WHEN contractor27 < -9995 THEN 0 ELSE contractor27 END +
+				CASE WHEN contractor28 < -9995 THEN 0 ELSE contractor28 END +
+				CASE WHEN contractor29 < -9995 THEN 0 ELSE contractor29 END +
+				CASE WHEN contractor30 < -9995 THEN 0 ELSE contractor30 END +
+				CASE WHEN contractor31 < -9995 THEN 0 ELSE contractor31 END +
+				CASE WHEN contractor32 < -9995 THEN 0 ELSE contractor32 END +
+				CASE WHEN contractor33 < -9995 THEN 0 ELSE contractor33 END +
+				CASE WHEN contractor34 < -9995 THEN 0 ELSE contractor34 END +
+				CASE WHEN contractor35 < -9995 THEN 0 ELSE contractor35 END +
+				CASE WHEN contractor36 < -9995 THEN 0 ELSE contractor36 END +
+				CASE WHEN contractor37 < -9995 THEN 0 ELSE contractor37 END +
+				CASE WHEN contractor38 < -9995 THEN 0 ELSE contractor38 END +
+				CASE WHEN contractor39 < -9995 THEN 0 ELSE contractor39 END ) as Cost
+				FROM Item
+				LEFT JOIN UserSave 
+				ON Item.ItemID = UserSave.ItemID
+				AND UserSave.UnitNumber = '$UnitNumber'
+				LEFT JOIN Options 
+				ON UserSave.OptionID = Options.OptionID
+				LEFT JOIN Choice
+				ON UserSave.ChoiceID = Choice.ChoiceID
+				WHERE Item.SubsectionID = $subsectionID
+				ORDER BY Item.Name, Options.Name, Choice.Name";
+
+		$userSave_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+		while ($userSave_row = mysql_fetch_array($userSave_result))
+		{
+			$ItemID = $userSave_row['ItemID'];
+			// Check all the options for ItemName is -9999 or not. 
+			// If all of the price in the options are -9999, don't show this item
+/*			No need to show all the options details for summary
+
+			// get all options for this item first, then check the price for the options
+			$sql_Option = "SELECT Options.OptionID, Name FROM Item_Options, Options " .
+							"WHERE ItemID=$ItemID " .
+							"AND Item_Options.OptionID = Options.OptionID" 
+							;
+			$result_Option = mysql_query($sql_Option,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+			// init the flag to be false
+			$show = "false";
+			// check all the prices of the options, if all of them are not OPTION_IS_NOT_UNAVAILABLE, 
+			// set show to be "true", which means show the item
+
+			while ($row_Option = mysql_fetch_array($result_Option))
+			{
+				$OptionID = $row_Option['OptionID'];
+				$sql_Price = "SELECT Price.Price as Price 
+							FROM Price
+							WHERE ItemID = $ItemID
+							AND OptionID = $OptionID
+							AND UnitType = '$UnitType'";
+
+				$result_Price = mysql_query($sql_Price,$db) or handleError("", "SQL=$sql_Price <br>Error=" . mysql_error(), SQL_ERROR, true);	
+				$row_Price = mysql_fetch_array($result_Price);
+				if ($row_Price['Price'] != OPTION_IS_NOT_AVAILABLE)
+				{
+					$show = "true";
+				}
+			} // end of row_Option while
+*/
+
+
+			// if show equals to false, don't show this item, and continue the loop
+			if ($show == "false")
+			{
+				continue;
+			}
+			
+			// if user saved option name is not required, do not display this item
+			if (trim($userSave_row['OptionsName']) == OPTION_IS_NOT_REQUIRED ){
+				continue;
+			}
+			
+	
+			if ($userSave_row['Price'] == "" || $userSave_row['Price'] == 0)
+			{ 
+				// do nothing or print NA on screen
+				$a = 1;
+			}
+			else {
+				if ($userSave_row['Price'] != OPTION_IS_NOT_AVAILABLE
+					&& $userSave_row['Price'] != OPTION_IS_A_STANDARD
+					&& $userSave_row['Price'] != OPTION_IS_INCENTIVE)
+				{		
+					if ($userSave_row['Price'] > 0){		
+?>
+				<tr>
+					<td><?= $UnitNumber; ?></td>	
+					<td><?= $section_row['Name']; ?></td>
+					<td><?= $subsection_row['Name']; ?></td>
+					<td><?= $userSave_row['ItemName']; ?></td>
+					<td><?= $userSave_row['OptionsName']; ?></td>
+					<td><?= $userSave_row['Price']; ?></td>
+					<td><?= $userSave_row['Cost']; ?></td>
+				</tr>
+<?
+	//print ("UnitNumber=$UnitNumber Options Name=" . trim($userSave_row['OptionsName']) . " total=$total price=" . $userSave_row['Price']);
+						$total += $userSave_row['Price'];
+					} else {
+?>
+				<tr>
+					<td><?= $UnitNumber; ?></td>	
+					<td><?= $section_row['Name']; ?></td>
+					<td><?= $subsection_row['Name']; ?></td>
+					<td><?= $userSave_row['ItemName']; ?></td>
+					<td><?= $userSave_row['OptionsName']; ?></td>
+					<td><?= $userSave_row['Price']; ?></td>
+				</tr>
+<?
+	//print ("UnitNumber=$UnitNumber Options Name=" . trim($userSave_row['OptionsName']) . " credit=$credit price=" . $userSave_row['Price']);
+						$credit += $userSave_row['Price'];	
+					}
+				}
+			}
+
+			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
+		}// end of userSave loop
+	}// end of subsection loop
+}// end of section loop
+	
+$sql = "SELECT Description, Price
+		FROM UserOption
+		WHERE UnitNumber = '$UnitNumber'";
+$useroption_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+$numOfAddChange = 0;
+
+if (mysql_num_rows($useroption_result) > 0)
+{
+	for ($i=0;$useroption_row = mysql_fetch_array($useroption_result);$i++)
+	{
+		if ($useroption_row['Price'] < 0){
+			$credit += $useroption_row['Price'];
+				?>
+				<tr>	
+					<td><?= $UnitNumber; ?></td>
+                                        <td>Incentive</td>
+                                        <td colspan=3><?= $useroption_row['Description']; ?></td>
+                                        <td><?= $useroption_row['Price']; ?></td>
+                                        <td></td>
+				</tr>
+				<?
+		}
+		else{
+			$total += $useroption_row['Price'];
+				?>
+				<tr>	
+					<td><?= $UnitNumber; ?></td>
+                                        <td>Incentive</td>
+                                        <td colspan=3><?= $useroption_row['Description']; ?></td>
+                                        <td><?= $useroption_row['Price']; ?></td>
+                                        <td></td>
+				</tr>
+				<?
+		}
+	} // end of useroption loop
+	$numOfAddChange = $i;
+	
+}
+
+$total_sales = $total + $credit;
+$gstAmount = $total_sales * $gstRate;
+$total_with_tax = $total_sales + $gstAmount;
+
+
+if ( $total_sales < 0 ) // Don't tax -ve values
+{
+	$gstAmount = 0;
+	$total_with_tax = $total_sales;
+}
+
+$projectTotal += $total;
+$projectTotalGST += $gstAmount;
+$projectTotalCredit += $credit;
+$projectTotalSales += $total_sales;
+
+$outstandingAmt_to_display = $total_with_tax;// - $cashPayment - $payByMortgage;
+
+$projectTotalOutstandingAmt += $outstandingAmt_to_display;
+$projectTotalOutAmtWithTax = $projectTotalOutstandingAmt - $projectTotalCredit;
+
+	}
+
+
+?>
+	<tr>
+		<td>Total</td>
+		<td><?= number_format($projectTotal, 2)?></td>
+		<td><?= number_format($projectTotalCredit, 2)?></td>
+		<td><?= number_format($projectTotalSales, 2)?></td>
+		<td><?= number_format($projectTotalGST, 2)?></td>
+		<td><?= number_format($projectTotalOutstandingAmt, 2)?></td>
+		<td></td>
+	</tr>
+
+</table>

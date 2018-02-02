@@ -1,0 +1,73 @@
+<?
+header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");		// Date in the past
+header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");//always modified
+header ("Cache-Control: no-cache, must-revalidate");	// HTTP/1.1
+header ("Pragma: no-cache");							// HTTP/1.0
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2);
+
+$sql = "SELECT * FROM Package ORDER BY PackageID";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<H3><?= get_project_name($PHP_SELF); ?> -- Package Information</H3>
+
+	<FORM METHOD="POST" ACTION="./updatePackageInfo.phtml">
+		<INPUT TYPE="HIDDEN" NAME="action" VALUE="<?= $action; ?>">
+		<TABLE>
+			<TR>
+				<TD  CLASS="head" ALIGN="CENTER" WIDTH="400">Package Name</TD>
+				<TD  CLASS="head" ALIGN="CENTER">Sales Incentive Category</TD>
+				<TD  CLASS="head" ALIGN="CENTER">Action</TD>
+			</TR>
+<?
+	while ($row = mysql_fetch_array($result)) 
+	{		
+		displayMouseOverTR();
+?>
+				<TD ALIGN="CENTER"><? display_text("PackageName","", FALSE,50,FALSE,"","",FALSE, 50,$row['PackageID']); ?></TD>
+				<TD ALIGN="CENTER"><? display_generic_table_list("SalesIncentiveCategory", "SalesIncentiveCategory", "", $row['PackageID']); ?></TD>
+				<TD ALIGN="CENTER"><INPUT TYPE=BUTTON CLASS="blank" VALUE="Delete" onClick="javascript:window.location='./updatePackageInfo.phtml?action=delete&PackageID=<?= $row['PackageID']; ?>'"></TD>
+			</TR>
+<?
+	}
+	
+	if ($action == "display")
+	{
+?>
+			<TR>
+				<TD CLASS="blank" ><BR><INPUT CLASS="blank" TYPE=BUTTON VALUE="Edit" onClick="javascript:window.location='./packageInfo.phtml?action=edit'"></TD>
+			</TR>			
+<?
+	}
+	else
+	{
+?>
+			<TR>
+				<TD CLASS="blank" ><BR><INPUT CLASS="blank" TYPE=SUBMIT VALUE="Submit"></TD>
+			</TR>			
+<?
+	}
+?>				
+	</FORM>
+
+			<TR>
+				<TD CLASS="blank"><BR><BR><H4>Insert new package</H4></TD>
+			</TR>
+	<FORM NAME="addForm" METHOD="POST" ACTION="./updatePackageInfo.phtml">
+		<INPUT TYPE="HIDDEN" NAME="action" VALUE="add">
+			<TR>
+				<TD CLASS="blank" ALIGN="CENTER">Package Name</TD>
+				<TD CLASS="blank" ALIGN="CENTER">Sales Incentive Category</TD>
+			</TR>					
+			<TR>
+				<TD CLASS="blank" ALIGN="CENTER"><INPUT TYPE="TEXT" SIZE="50" NAME="PackageName"></TD>
+				<TD CLASS="blank" ALIGN="CENTER"><? $action="add"; display_generic_table_list("SalesIncentiveCategory", "SalesIncentiveCategory"); ?></TD>
+				<TD CLASS="blank" ><INPUT CLASS="blank" TYPE=SUBMIT VALUE="Add"></TD>
+			</TR>		
+	</FORM>
+	</TABLE>
+</BODY>
+</HTML>

@@ -1,0 +1,40 @@
+<?
+include "main_include.phtml";
+
+// called by "salesRepSummary.phtml" to update sales reps' commission
+
+$prevSalesRepID = -1;
+$SalesRepCommission = 0;
+
+while (list($key, $value) = each ($_POST))
+{
+	list($SalesRepID, $name) = explode("_", $key);
+
+	if ($SalesRepID != $prevSalesRepID)
+	{
+		if ($prevSalesRepID != -1)
+		{
+			//print $prevSalesRepID;
+			// update the previous record
+			$sql = "UPDATE SalesRep
+				SET Commission=$Commission
+				WHERE SalesRepID=$prevSalesRepID";
+
+			$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+			$SalesRepCommission = 0;
+		}
+		$prevSalesRepID = $SalesRepID;	
+	}
+
+	${$name} = $value;		
+}
+
+$sql = "UPDATE SalesRep
+	SET Commission=$Commission
+	WHERE SalesRepID=$prevSalesRepID";
+
+$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+
+goto_url("./salesRepSummary.phtml");
+
+?>

@@ -1,0 +1,110 @@
+<?
+$errmsg = "";
+
+if (!isset($_SESSION)) session_start(); 
+
+// set your default page here
+if (!isset($_SESSION['PAGE.NEXT'])) $_SESSION['PAGE.NEXT'] = "../index.phtml";
+
+if (isset($_REQUEST['login_name']) && $_REQUEST['login_name'] != "") {
+	$login_name = $_REQUEST["login_name"];
+	$login_password = $_REQUEST["login_password"];
+	
+	include('DO_class.phtml');
+	
+	$users = DOFactory::find("LoginUser", array("condition"=>"UserName='". $login_name . "' and Passwd='" . $login_password ."'"));
+	
+	
+	if(count($users) == 0) {
+		$errmsg = "Login Failed!";
+	} else {
+		$user = $users[0];
+		$_SESSION["USER.NAME"] = $user->getField("UserName");
+		$_SESSION["USER.ROLE"] = $user->getField("GroupName");
+		
+		$groups = DOFactory::find("LoginGroup", array("condition"=>"GroupName='". $user->getField("GroupName") . "'"));
+		if (count($groups) > 0) {
+			$_SESSION["USER.ROLE.LVL"] = $groups[0]->getField("GroupLevel");
+		} else {
+			$_SESSION["USER.ROLE.LVL"] = 0;
+		}
+		
+		//print_r($_SESSION);
+		header( 'Location: ' . $_SESSION['PAGE.NEXT']) ;
+		unset($_SESSION['PAGE.NEXT']);
+		exit;
+	}
+}
+
+?>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<title>Login</title>
+
+<script type="text/javascript">
+	var djConfig = {isDebug: true};
+</script>
+<script type="text/javascript" src="../framework/dojo/dojo.js"></script>
+<style type="text/css">
+.copyright {
+	font-family: sans-serif;
+	font-size: 12px;
+	color: "#3A6DA5";
+	position: absolute;
+	bottom: 5px;
+	left: 5px;
+}
+
+.button_login {
+	height: 25px;
+	width: 80px;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 12px;
+}
+
+.label_login {
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+</style>
+</head>
+<body background="../images/project-background-big.jpg">
+
+<span class="label_login" style="color: red;">
+<? print($errmsg); ?>
+</span>
+
+<div dojoType="FloatingPane"
+	title="Login"
+	constrainToContainer="1"
+	hasShadow="true"
+	resizable="false"
+	style="width: 320px; height: 220px; left: 260px; top: 200px; position: absolute;"
+>
+	<form method="post" action="login.phtml" >
+		<table>
+			<tr>
+				<td style="width: 100px;"><span class="label_login">User Name:</span>
+				<td style="width: 150px;"><input name="login_name" type="text">
+			<tr>
+				<td><span class="label_login">Password:</span>
+				<td><input name="login_password" type="password">
+			<tr>
+				<td>&nbsp;
+				<td>&nbsp;
+			<tr>
+				<td colspan="2" align="center">
+					<input id="Submit" type="submit" class="button_login" value="OK">
+					<input type="button" class="button_login" value="Cancel" onClick="history.back()"> 
+	  </table>
+  </form>
+</div>
+
+<span class="copyright">Copyright 2006 ISAT Solution. All rights reserved. </span>
+</body>
+</html>
+

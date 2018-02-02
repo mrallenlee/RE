@@ -1,0 +1,914 @@
+<?
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/UserPackageHandler.phtml";
+
+$UnitNumber = getUnitNumber();
+//die ("$UnitNumber");
+if ($UnitNumber == -1) {
+	handleError ("", "", SESSION_EXPIRED);
+}
+//
+// ALLEN Continue to display even COMMITTED, but redirect to preview.phtml
+if (getCommit() == 1) {
+	//handleError ("", "", COMMIT_ALREADY);
+	goto_url("preview.phtml");
+}
+
+// If our SectionID isn't set then set it to be the first one 
+//$UnitType = getUnitType();
+$unitInfoArray = getUnitInfo();
+$UnitType = $unitInfoArray['UnitType'];
+$UnitNumber = $unitInfoArray['UnitNumber'];
+
+if ($SectionID == "") {
+	$sql = "SELECT SectionID
+					FROM Section ORDER BY Name";
+	$result = mysql_query($sql);
+	if (mysql_num_rows($result) == 0) {
+		handleError("No Options available", "SQL=$sql", SQL_ERROR, true);			
+	}
+
+	while ($row = mysql_fetch_array($result)) {
+		if (!section_disabled($UnitType, $row['SectionID'])) {
+			$SectionID = $row['SectionID'];
+			break;
+		}
+	}
+}
+
+// This file display all the Options and Upgrades available
+// under the requested Section.
+
+// var to store no of var need to update to DB
+// this var will increment for each radio group
+$noOfInput = 0;
+
+function generate_navigation($showComboBox = true) {
+	global $PHP_SELF;
+	global $SectionID;
+
+	
+	$UnitType = getUnitType();
+
+	$sql_nav = "SELECT * FROM Section ORDER BY Name";
+
+	$result_nav = mysql_query($sql_nav) or 	handleError ("", "$sql_nav <br>".mysql_error(), SQL_ERROR, true);
+?>	
+	<form method="get" action="<?= $PHP_SELF ?>">
+	<table width="100%" >
+	<tr>
+<?		if ($showComboBox){ ?>
+		<td align="left">Please choose a section:</td>
+<?		} ?>		
+	</tr>
+	<tr>
+		<td>		
+<?		if ($showComboBox){ ?>
+			<select name="SectionID" id="SectionID" onChange='form.submit();'>
+<?
+
+
+	while ($row = mysql_fetch_array($result_nav)) {
+		if (!section_disabled($UnitType, $row['SectionID'])) {
+?>					<option value='<?= $row['SectionID'];?>' <?
+
+
+			if ($row['SectionID'] == $SectionID) {
+				print " SELECTED ";
+			}
+?>			><?= $row['Name']; ?></option>
+<?
+
+		}
+	}
+?>			</select>
+<?		} ?>
+		</td>
+		<td colspan="100" align="right">
+			<input type="button" value="Save" onClick="javascript:save()">
+			<input type="button" align = "right" onClick="javascript:location.href='preview.phtml'" value="Preview My Selections">
+<?		if (isAdmin()){
+?>			<input type="button" align = "right" onClick="window.location='admin/homeOptionsUserList.phtml?mode=purchaser&listall=1'" value="Back to Purchaser List">
+				<input type="button" align = "right" onClick="window.location='admin/homeOptionsVacantUnitList.phtml?listall=1'" value="Back to Vacant Unit List">
+<?		} else { 			
+?>			<input type="button" align = "right" onClick="javascript:logout()" value="Logout">
+<?		}			
+?>		</td>
+	</tr>
+	</table>
+	</form>
+	<?
+
+
+}
+//<div align="right">
+//
+//<input type="button" onClick="javascript:location.href='preview.phtml'" value="Preview My Selections">
+//
+//</div>
+?>
+<html>
+<? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", true, false); ?>
+
+<head>
+<title>Options and Upgrades - Price List</title>
+
+
+<script language="javascript">
+
+var price = new Array();
+var Option_array = new Array();
+var Image_array = new Array();
+var ImageWidth_array = new Array();
+var ImageHeight_array = new Array();
+
+</script>
+<?
+
+$userPackage = new UserPackageHandler($db, getUserID());
+// store the matched package, in order to disable the whole raiod group
+// at the end of file
+$matchPackageRadioName = array();		
+$numOfUserPackage = $userPackage->getNumOfPackage();
+
+
+// drop the temporary table
+$sql_droptbl = "DROP TABLE IF EXISTS Item_Options_UnitType";
+$result = mysql_query($sql_droptbl, $db) or handleError("", "SQL=$sql_droptbl<br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+// create temporary table
+$sql_temp = "CREATE TEMPORARY TABLE Item_Options_UnitType
+		SELECT	Item_Options.ItemID,
+			Item_Options.OptionID,
+			UnitType.Type
+		FROM Item_Options, UnitType, Subsection, Item
+		WHERE UnitType.Type = '$UnitType'
+		AND Subsection.SectionID = $SectionID
+		AND Subsection.SubsectionID = Item.SubsectionID
+		AND Item_Options.ItemID = Item.ItemID
+		ORDER BY Subsection.SubsectionID";
+$result = mysql_query($sql_temp, $db) or handleError("", "SQL=$sql_temp <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+// left join Price with temporary table
+$sql_pricelist = "SELECT	Item_Options_UnitType.ItemID as ItemID,
+				Item_Options_UnitType.OptionID as OptionID,
+				Item_Options_UnitType.Type as UnitType,
+				Price.Price as Price,
+				Price.PackageID as PackageID
+		FROM Item_Options_UnitType
+		LEFT JOIN Price
+		ON Item_Options_UnitType.OptionID = Price.OptionID
+		AND Item_Options_UnitType.ItemID = Price.ItemID
+		AND Item_Options_UnitType.Type = Price.UnitType
+		ORDER BY Item_Options_UnitType.ItemID, Price.Price";
+$result = mysql_query($sql_pricelist, $db) or handleError("", "SQL=$sql_pricelist <br>Error=" . mysql_error(), SQL_ERROR, true);	
+//echo "// price list for the entire section (entire page)\n";
+
+// check if any records were retrieved
+if ($row = mysql_fetch_array($result)) {
+	do {
+		if ($row['Price']) {
+			$Price = $row['Price'];
+		} else {
+			$Price = 0;
+		}
+		//echo "price[\"Item_array[".$row['ItemID']."]_".$row['OptionID']."\"] = ".$Price.";\n";
+	} while ($row = mysql_fetch_array($result));
+} else {
+	$sql_select = "SELECT count(*) num FROM UnitType WHERE Type = '$UnitType'";
+//die ("sl_select=$sql_select");
+	$result_select = mysql_query($sql_select, $db) or handleError("", "SQL=$sql_select <br>Error=" . mysql_error(), SQL_ERROR, true);	
+	$row_select = mysql_fetch_array($result_select);
+
+	if ($row_select['num'] == 0) {
+		handleError("Sorry, your unit type \"$UnitType\" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.",
+		 "SQL=$sql_select", GENERAL_ERROR, true);			
+	}
+
+	$sql_select = "SELECT count(*) num FROM Item_Options, Subsection, Item
+				WHERE Subsection.SectionID = $SectionID
+				AND Subsection.SubsectionID = Item.SubsectionID
+				AND Item_Options.ItemID = Item.ItemID";
+	$result_select = mysql_query($sql_select, $db) or handleError("", "SQL=$sql_select <br>Error=" . mysql_error(), SQL_ERROR, true);	
+	$row_select = mysql_fetch_array($result_select);
+
+	if ($row_select['num'] == 0) {
+		handleError("Sorry, there are no options/items listed for your unit.<br>Try logging in later.",
+		 	"SQL=$sql_select", GENERAL_ERROR, true);			
+	}
+
+	handleError("Sorry, no data was found!<br>Try closing this window and logging in again and clicking on the <i>Options and Upgrades</i> button.<br>If you still receive this message then please contact the administrator of this website.",
+	 	"", GENERAL_ERROR, true);			
+}
+
+// drop the temporary table
+$sql_droptbl = "DROP TABLE IF EXISTS Item_Options_UnitType";
+$result = mysql_query($sql_droptbl, $db) or handleError("", "SQL=$sql_droptbl <br>Error=" . mysql_error(), SQL_ERROR, true);	
+
+// get the name of the current section
+$sql = "SELECT Name, Description
+		FROM Section
+		WHERE SectionID = $SectionID";
+$result = mysql_query($sql, $db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+$row = mysql_fetch_array($result);
+$SectionName = $row['Name'];
+$SectionDesc = $row['Description'];
+?>
+
+<script language="javascript">
+
+// calculates the total for an item (radio group) in a
+// subsection group
+function item_total(itemGroup)
+{
+	var itemTotal = 0;
+	
+	// finds the selected radio button and adds it price value to the itemTotal
+	for (var i = 0; i < document.forms['user_save'].elements[itemGroup].length; i++)
+	{
+		if (document.forms['user_save'].elements[itemGroup][i].checked == true)
+		{
+			itemTotal = price[itemGroup + '_' + document.forms['user_save'].elements[itemGroup][i].value];
+			if (itemTotal == <?= OPTION_IS_A_STANDARD; ?> || itemTotal == <?= OPTION_IS_NOT_AVAILABLE; ?>
+				|| itemTotal == <?= OPTION_IS_INCENTIVE; ?> ){
+				itemTotal = 0;
+			}
+		}
+	}	
+	return itemTotal;
+}
+// Format given number to currency. For example: convert 12345 to 12,345
+function formatCurrency(num) { 
+	var sign, cents; 
+
+	num = num.toString().replace(/\$|\,/g,''); 
+	
+	if(isNaN(num)) 
+		num = "0"; 
+	
+	sign = (num == (num = Math.abs(num))); 
+	num = Math.floor(num*100+0.50000000001); 
+	cents = num%100; 
+	
+	num = Math.floor(num/100).toString(); 
+	
+	if(cents<10) 
+		cents = "0" + cents; 
+
+	for (var i = 0; i < Math.floor((num.length-(1+i))/3); i++) 
+		num = num.substring(0,num.length-(4*i+3))+','+ 
+
+	num.substring(num.length-(4*i+3)); 
+	
+//	return (((sign)?'':'-') + num + '.' + cents); 
+	return (((sign)?'':'-') + num); 
+}
+
+// displays the total for each subsection
+//   accepts any number of arguments (the first argument
+//   being the subsection name and the rest being the
+//   names of all items (radio groups) under that
+//   subsection)
+function subsection_total()
+{
+	var subsectionTotal = 0;
+	var subsectionName;
+	
+	subsectionName = arguments[0];
+
+	for (var j = 1; j < arguments.length; j++)
+	{
+		subsectionTotal = subsectionTotal + item_total(arguments[j]);
+	}
+	
+	// changes the value of the subsection text box to the new total
+	if (subsectionTotal < 0){
+		document.forms['user_save'].elements[subsectionName].value = "Credit";
+	} else {
+		document.forms['user_save'].elements[subsectionName].value = formatCurrency(subsectionTotal);
+	}
+}
+
+// Change preview images according to the choice
+function change_preview_image(ItemID, OptionID, ChoiceID)
+{
+	var optionImageObj = document.getElementById('OptionImage' + OptionID )
+//	alert('src=' + optionImageObj.src)
+	optionImageObj.src = Image_array[ OptionID + "_" + ChoiceID]
+	optionImageObj.width = ImageWidth_array[OptionID + "_" + ChoiceID ]
+	optionImageObj.height = ImageHeight_array[OptionID + "_" + ChoiceID]
+	eval("document.forms['user_save'].elements['Option_array[" + ItemID + "][" + OptionID + "]'].value = " + ChoiceID);
+}
+
+
+</script>
+<script language="javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH . "/javascript/dynamicWindow.js"; ?>" type="text/javascript"></script>
+
+<script language="JavaScript">
+// dispaly edit note div layer 
+function chooseOptionsPhotoDIV(imageObjName, optionID, itemID){
+	var divLayerIndex = 2
+	
+	var imageObj = document.getElementById(imageObjName)
+	var imageName = ''
+	if (imageObj == null){
+		// sometimes javascript evaluate the imageObjName, so 
+		// the imageObjNAme is not a name, it is an object
+		imageName = imageObjName.src
+	} else{
+		imageName = imageObj.src	
+	}
+	
+	newHTML = '<DIV class="popupDiv">';
+	newHTML = newHTML + '<IFRAME FRAMEBORDER=0 SRC="./photo.phtml?img=' + imageName + '&OptionID=' + optionID + '&ItemID=' + itemID + '" WIDTH=370 HEIGHT=370></IFRAME>'; 
+	newHTML = newHTML + '</div>';
+	getFloatingDivNoStyle(divLayerIndex).innerHTML = newHTML;
+
+	getFloatingDiv(divLayerIndex).position="absolute";
+	getFloatingDiv(divLayerIndex).width="390px";	
+	getFloatingDiv(divLayerIndex).height="400px";
+	// put it at the center of browser	
+	centerDIV(getFloatingDivNoStyle(divLayerIndex));
+	// display it
+	getFloatingDiv(divLayerIndex).visibility="visible";	
+}
+
+/**
+* This function is used to close the DIV layer after editing note,
+* and refresh current page to display modified note
+*/
+function chooseOptionsPhotoDone(){
+	var divLayerIndex = 2
+	hideFloatingDiv(divLayerIndex);
+}
+
+// width is image width
+// hegith is image height
+function displayOptionsPhotoDIV(imageObjName, optionID, itemID, width, height){
+	var divLayerIndex = 1
+	var imageName = document.getElementById(imageObjName).src
+	
+	var imageWidth 	= width > 0 ? width : 370;
+	var imageHeight = height > 0 ? height : 370;
+	
+	var size = calculateScaleImageSize(imageWidth, imageHeight, <?= MAX_ITEM_OPTION_IMAGE_WIDTH; ?>,
+										<?= MAX_ITEM_OPTION_IMAGE_WIDTH; ?>, true)
+	imageWidth = size['width']
+	imageHeight = size['height']	
+	
+	// set the maximum value of width and height
+	var divWidth 	= imageWidth ;
+	var divHeight 	= imageHeight ;
+	
+	// if imageName is the default itme option image,
+	// do not display default image in DIV
+	if (imageName.indexOf('<?= DEFAULT_ITEM_OPTION_IMAGE; ?>') > 0 ){
+		return
+	}
+	
+	var imgHTML = '<center><IMG border=0 SRC="'+ imageName + '" WIDTH=' + imageWidth + ' HEIGHT=' + imageHeight + ' onClick="chooseOptionsPhotoDIV(' + imageObjName + ', ' + itemID + ')"></center>' 
+	showNote(divLayerIndex, '',imgHTML,imageWidth,imageHeight, divWidth, divHeight, '')	
+}
+
+// close optionsPhotoDIV
+function hideOptionsPhotoDIV(){
+	var divLayerIndex = 1
+	hideFloatingDiv(divLayerIndex)	
+}
+</script>
+</head>
+
+<body onLoad="calc_total();">
+
+<center>
+<table cellspacing="0" cellpadding="0" border="0" width="90%">
+  <tr>
+      <td>
+          <table width="100%" border="0" cellspacing="0" cellpadding="5" >
+			<tr>
+			<td colspan=100 align="left"><img src="./images/project-logo-small.jpg"></td>
+			</tr>
+          
+            <tr>
+<!--            <th class="big-head"><?echo $SectionName;?>&nbsp;&nbsp;&nbsp;&nbsp;<?if ($SectionDesc != "") echo "(" . $SectionDesc . ")";?></th> //-->
+              <td class="big-head">Options and Upgrades for Unit <?= $UnitNumber;?></td>
+            </tr>
+<!--
+<tr>
+	<td colspan="2"><font size="1" face="Verdana, Arial, Helvetica, sans-serif"><b><img src="black.gif" width="100%" height="1" alt="" border="0"></b></font></td>
+</tr>
+            -->
+          </table>
+
+<?
+
+
+// display navigation
+generate_navigation();
+?>
+
+<?
+
+
+if (isSet ($errMsg)) {
+?>
+	<table>
+	<tr>
+	<td>
+	<font face="Arial,Verdana,Helvetica" size="3" color="red"><?= $errMsg?></font>
+	</td>
+	</tr>
+</table>
+<?
+
+
+}
+
+if (isSet ($msg)) {
+?>
+	<table>
+	<tr>
+	<td>
+	<font face="Arial,Verdana,Helvetica" size="3" color=" bgcolor="#009900"><?= $msg?></font>
+	</td>
+	</tr>
+	</table>
+<?
+
+
+}
+?>
+<!--
+        <table width="100%" border="0" cellspacing="0" cellpadding="5" >
+          <tr> 
+            <th class="head-left"><?echo $SectionName;?>&nbsp;&nbsp;&nbsp;&nbsp;<?if ($SectionDesc != "") echo "(" . $SectionDesc . ")";?></th>
+          </tr>
+        </table>
+//-->
+
+<form name="user_save" action="user_save.phtml" method="post">
+
+<input type="hidden" name="SectionID" value="<?echo $SectionID;?>">
+
+<?
+
+
+// used to generate the javascript function at the bottom of the page
+$jsfunc_Section = "";
+
+$sql_Subsection = "SELECT SubsectionID, Name, Description
+			FROM Subsection
+			WHERE SectionID = $SectionID
+			ORDER BY Name";
+$result_Subsection = mysql_query($sql_Subsection, $db);
+
+// while (for Subsection)
+while ($row = mysql_fetch_array($result_Subsection)) {
+	$SubsectionID = $row['SubsectionID'];
+	$SubsectionName = $row['Name'];
+	$SubsectionDesc = $row['Description'];
+?>
+	<tr>
+		<td align=right>
+			<table cellspacing="5" border="0"  bordercolor="#00000" width="98%">
+	<tr>
+		<td class="head" border="0" align=right>
+<?
+
+
+	echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\" color=\"#000000\"><b>$SubsectionName</b></font>";
+	if ($SubsectionDesc != "") {
+		echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\" color=\"#000000\"> - $SubsectionDesc</font><br>";
+	}
+?>		
+		</td>
+	</tr>
+	<tr>
+		<td align=right>
+
+<?
+
+
+	// arguments that will be used when calling a javascript function that
+	// calculates total for the prices selected for the current subsection.
+	// this variable concatenates at the end of the Item while loop
+	$jsfuncarg_Subsection = "\"Subsection_".$SubsectionID."\"";
+
+	$sql_Item = "SELECT ItemID, Name, Description
+						FROM Item
+						WHERE SubsectionID = $SubsectionID
+						ORDER BY Name";
+	$result_Item = mysql_query($sql_Item, $db);
+
+	// while (for Item)
+	while ($row = mysql_fetch_array($result_Item)) {
+		$ItemID = $row['ItemID'];
+		$ItemName = $row['Name'];
+		$ItemDesc = $row['Description'];
+?>
+		<table cellspacing="2" border="0" bordercolor="red" width="98%" >
+				<td class="tail-left" colspan="100">
+				<b><?echo $ItemName;?></u></b>&nbsp;&nbsp;&nbsp;&nbsp;<?if ($ItemDesc != "") echo "(" . $ItemDesc . ")";?>
+				</td>
+			</tr>
+<?
+
+
+		$sql_Option = "SELECT Item_Options.OptionID OptionID, Name, Choice, Price, PackageID, NoDisplayIfNoPackage
+									FROM Item_Options, 
+									Options LEFT JOIN Price
+									ON Price.ItemID = $ItemID 
+									AND Price.OptionID = Options.OptionID 
+									AND Price.UnitType = '$UnitType'					
+									WHERE Item_Options.OptionID = Options.OptionID
+									AND Item_Options.ItemID = $ItemID
+									ORDER BY Options.Name";
+
+		$result_Option = mysql_query($sql_Option, $db);
+
+		if (mysql_num_rows($result_Option) <= 0) {
+			$not_set_jsfuncarg = "true";
+		}
+
+		// used to determine which radio button should be selected by default
+		$optcount = 0;
+		$noOfOption = 0;
+		// retrieve data for ItemID from userSave table
+		$sql_UserSave = "SELECT *
+									FROM UserSave
+									WHERE UnitNumber = '$UnitNumber'
+									AND ItemID = '$ItemID'";
+
+		$result_UserSave = mysql_query($sql_UserSave, $db);
+		$choosedOptionID = 0;
+		$choosedChoiceID = 0;
+		if (mysql_num_rows($result_UserSave) > 0) {
+			$row = mysql_fetch_array($result_UserSave);
+			$choosedOptionID = $row['OptionID'];
+			$choosedChoiceID = $row['ChoiceID'];
+		}
+
+		if ($choosedOptionID == 0) {
+			$fillFirstOption = 1;
+		} else {
+			$fillFirstOption = 0;
+		}
+		// while (for Options)
+		while ($row = mysql_fetch_array($result_Option)) {
+			$OptionID = $row['OptionID'];
+			$OptionName = $row['Name'];
+			$OptionChoice = $row['Choice'];
+			$optionHasImage = false;
+			if ($row['Price']) {
+				$Price = $row['Price'];
+			} else {
+				$Price = 0;
+			}
+			$PackageID = $row['PackageID'];
+//print "option id=" . $OptionID . " name=" . $OptionName . " package ID=" . $PackageID . "<BR>";
+			// if this option is one of the incentive package,
+			// and the user has this incentive, display it
+			// If userd doens't have this incentive package and NoDisplayIfNoPackage is set to true, don't display it
+			$hasMatchPackage = false;
+			if ($PackageID > 0){
+				// check user has this packageID or not.
+				$hasMatchPackage  = $userPackage->containsPackage($PackageID);
+				if (!$hasMatchPackage && $row['NoDisplayIfNoPackage']){
+					// if user doesn't have this package, 
+					// don't dispaly this incentive package 
+					continue;
+				}
+			}
+
+			// Options with special price(constant OPTION_IS_NOT_AVAILABLE) should not be displayed
+			if ($Price != OPTION_IS_NOT_AVAILABLE) {
+				// increment the no of option
+				$noOfOption ++;
+				if ($choosedOptionID == 0) {
+					$optcount ++;
+				}
+?>
+<?			displayMouseOverTR(); ?>			
+				<td>
+				
+				<input type="radio" name="<?= "Item_array[" . $ItemID . "]";?>" value="<?echo $OptionID;?>" onClick="calc_total_<?echo $SubsectionID;?>();" <?
+
+
+				if ($OptionID == $choosedOptionID 
+					|| ($fillFirstOption > 0 && (optionIsStandard($Price) || optionIsNotRequired($Price))) 
+					|| $hasMatchPackage) {
+					echo "checked";
+					$fillFirstOption = 0;
+				}
+				
+?> >
+<?
+				// add incentive package radio group to the array 
+				// in order to have javascript to disable the whole 
+				// group at the end
+				if ($hasMatchPackage){
+				 	array_push($matchPackageRadioName, "Item_array[" . $ItemID . "]");
+			
+
+?>				<input type="hidden" name="<?= "Item_array[" . $ItemID . "]"; ?>" value="<?= $OptionID; ?>">
+	
+				<script>
+<?				// if this is incentive, change the price to OPTION_IS_INCENTIVE constant				
+				echo "price[\"Item_array[" . $ItemID . "]_" . $OptionID . "\"] = " . OPTION_IS_INCENTIVE;
+?>				</script>	
+<?				}
+
+
+				echo $OptionName;
+
+				echo displayOptionUpgradeDowngrade($Price);
+				echo "<br>\n";
+
+				// added by Cindy 1/21/2002 - javascript to set default image of "choose option"; 
+				// if no picture available for this option, set default image of "choose option" to nopicavailable.gif
+				$imageOfOption = "images/".$OptionID."_".ITEM_IMAGE_MAGIC_NUMBER;
+				
+				if (!file_exists($imageOfOption)) {
+					$imageOfOption = "images/nopicavailable.gif";
+					$imageForDisplayWidth = 0;
+					$imageForDisplayHeight = 0;
+				} else {
+					$optionHasImage = true;
+					$imageForDisplayWidth = DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH;
+					$imageForDisplayHeight = DEFAULT_ITEM_OPTION_THUMBNAIL_HEIGHT;
+				}
+				$imageForDisplay = $imageOfOption;
+
+				echo "\t\t\t\t\t<script>\n";
+
+				echo "\t\t\t\t\t\tImage_array[\"".$OptionID."_".ITEM_IMAGE_MAGIC_NUMBER."\"] = \"".$imageOfOption."\";\n";
+				echo "\t\t\t\t\t\tImageWidth_array[\"".$OptionID."_".ITEM_IMAGE_MAGIC_NUMBER."\"] = \"".$imageForDisplayWidth."\";\n";
+				echo "\t\t\t\t\t\tImageHeight_array[\"".$OptionID."_".ITEM_IMAGE_MAGIC_NUMBER."\"] = \"".$imageForDisplayHeight."\";\n";
+				echo "\t\t\t\t\t</script>\n";
+				// end by cindy
+
+
+					// flag indicates one of the choice has image
+				$choiceHasImage = false;
+
+				// if $OptionChoice has a value then display the available
+				// choice for that $OptionID
+				if ($OptionChoice != "") {
+
+					echo "\t\t\t\t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$OptionChoice.":\n\n";
+
+					$sql_Choice = "SELECT ChoiceID, Name, ImageName
+									FROM Choice
+									WHERE OptionID = $OptionID
+									ORDER BY Choice.Name";
+					$result_Choice = mysql_query($sql_Choice, $db);
+
+					// Comment & modified by Cindy 1/21/2003
+					echo "\t\t\t\t<select name=\"Option_array[".$ItemID."][".$OptionID."]\" onchange=\"change_preview_image(".$ItemID.", ".$OptionID.", this.value)\">\n";
+					// end by Cindy
+
+					echo "\t\t\t\t\t<option value=\"".ITEM_IMAGE_MAGIC_NUMBER."\">Choose Option\n";
+
+					// flag indicates showing selected choice image
+					$showSelectedChoiceImage = false;
+					// while (for Choice)
+					while ($row = mysql_fetch_array($result_Choice)) {
+						$ChoiceID = $row['ChoiceID'];
+						$ChoiceName = $row['Name'];
+						// if image name is not empty, change choiceHasImage to true
+						if ($row['ImageName'] != ""){
+							$choiceHasImage = true;
+						}
+						// Added by Cindy 1/21/2002
+						echo "\t\t\t\t\t<script>\n";
+
+						$imageOfChoice = "images/".$OptionID."_".$ChoiceID;
+						if (!file_exists($imageOfChoice)) {
+							$imageOfChoice = "../images/nopicavailable.gif";
+							$imageOfChoiceWidth = 0;
+							$imageOfChoiceHeight = 0;
+						} else {
+							$imageOfChoiceWidth = DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH;
+							$imageOfChoiceHeight = DEFAULT_ITEM_OPTION_THUMBNAIL_HEIGHT;
+						}
+
+						echo "\t\t\t\t\t\tImage_array[\"".$OptionID."_".$ChoiceID."\"] = \"".$imageOfChoice."\";\n";
+						echo "\t\t\t\t\t\tImageWidth_array[\"".$OptionID."_".$ChoiceID."\"] = \"".$imageOfChoiceWidth."\";\n";
+						echo "\t\t\t\t\t\tImageHeight_array[\"".$OptionID."_".$ChoiceID."\"] = \"".$imageOfChoiceHeight."\";\n";
+						echo "\t\t\t\t\t</script>\n";
+						// End by Cindy
+
+						//retrieve choiceID from database and show it on the page
+						//if the user has select the choice before
+						echo "\t\t\t\t\t<option value=\"$ChoiceID\"";
+						if ($choosedChoiceID != 0 && $choosedChoiceID == $ChoiceID) {
+							echo " selected";
+							// check the choice has image or not
+							if ($row['ImageName'] != ""){
+								$showSelectedChoiceImage = true;
+								$imageForDisplay = $imageOfChoice;
+								$imageForDisplayWidth = $imageOfChoiceWidth;
+								$imageForDisplayHeight = $imageOfChoiceHeight;
+							}
+						}
+						echo ">$ChoiceName\n";
+
+					} // end while (for Choice)
+
+					echo "\t\t\t\t</select>\n\n";
+
+				} // end if (for Choice)
+?>
+				</td>
+					
+				<td align="right" valign="middle" width="15%">
+
+<?
+
+
+				// Check the size of image for display
+				// if size is 250*250, pop up small window
+				// if size is 640*480, pop up large window
+				$size = getimagesize($imageForDisplay);
+//print "choiceHasImage=$choiceHasImage optionHasImage=$optionHasImage<BR>";
+				if ($showSelectedChoiceImage){
+?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left" 
+					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>,  <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
+					onMouseOut="hideOptionsPhotoDIV()" 
+					valign="center" border=0 src="<?= $imageForDisplay;?>" width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
+					onClick="chooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)">
+<?				}
+				// if choice doesn't have image, and option has image, 
+				// display this single image 
+				else if ($optionHasImage) {
+?>					 
+					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" 
+					align="left" valign="center" border=0 src="<?= $imageForDisplay;?>" 
+					width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
+					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
+					onMouseOut="hideOptionsPhotoDIV()" >
+<?				}
+ 				else if ($choiceHasImage){
+					// if option doesn't have image, and one of the choice has image,
+					// use the default option image to ask user to click 
+?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left"
+ 					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, -1, -1)"
+					onMouseOut="hideOptionsPhotoDIV()" valign="center" border=0 
+					width="<?= DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH ;?>" 
+					height="<?= DEFAULT_ITEM_OPTION_THUMBNAIL_HEIGHT; ?>"				
+					onClick="chooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)"					
+					src="<?= DEFAULT_ITEM_OPTION_IMAGE; ?>" >
+<?				} 
+
+				if ($hasMatchPackage){
+					echo "Incentive";
+				} else{
+					echo displayOptionPrice($Price);
+				}
+?>
+				</font>
+				</td>
+			</tr>
+			
+			<tr>
+				<td colspan="2" height="1"><b><img src="white.gif" width="100%" height="1" alt="" border="0"></b></td>
+			</tr>
+<?
+
+
+			} // end if (checks $Price)
+
+		} // end while (for Options)
+
+		if ($noOfOption <= 0) {
+			$not_set_jsfuncarg = "true";
+?>
+				<input type="hidden" name="item_omit[]" value="<?= $ItemID;?>">
+<?
+
+
+		} else {
+			// increments noOfInput for a new radio group
+			$noOfInput ++;
+		}
+?>
+
+</tr>
+</table>
+
+<?
+
+
+		if ($not_set_jsfuncarg != "true") {
+			$jsfuncarg_Subsection .= ",\"Item_array[".$ItemID."]\"";
+		} else {
+			$not_set_jsfuncarg = "false";
+		}
+	} // end while (for Item)
+?>
+
+</td>
+</tr>
+<tr>
+<td>
+
+<table cellspacing="0" cellpadding="0" border="0" align=right width="95%">
+<tr>
+	<td colspan="2"><font size="1" face="Verdana, Arial, Helvetica, sans-serif"><b><img src="black.gif" width="100%" height="1" alt="" border="0"></b></font></td>
+</tr>
+<tr>
+<td><font face="Arial,Verdana,Helvetica" size="2"><b> Subtotal:</b> (for <?echo $SubsectionName;?>)</font></td>
+<td align="right"><font face="Arial,Verdana,Helvetica" size="1">$ <input type="text" align=right readonly=true name="<?echo "Subsection_" . $SubsectionID?>" value=0 size="5" readonly></font></td>
+</tr>
+<tr>
+<td colspan="2"><img src="spacer.gif" width="1" height="1" alt="" border="0"></td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table><br>
+<br>
+
+<script language="javascript">
+<!--
+
+function calc_total_<?echo $SubsectionID;?>()
+{
+	subsection_total(<?echo $jsfuncarg_Subsection;?>);
+}
+
+//-->
+</script>
+
+
+<?
+
+
+	$jsfunc_Section .= "	calc_total_".$SubsectionID."();\n";
+
+} // end while (for Subsection)
+?>
+
+<script language="javascript">
+<!--
+
+function calc_total()
+{
+<?echo $jsfunc_Section;?>
+}
+
+function save()
+{
+	document.forms['user_save'].submit();
+}
+
+function logout()
+{
+var result = confirm("Are you sure you want to logout?")
+
+if (result){
+	location.href='logout.phtml?url=index.phtml';
+}
+}
+//-->
+</script>
+
+
+<?
+
+
+// send $noOfInput to save database page
+generate_navigation(false);
+?>
+<input type="hidden" name="noOfInput" value="<?= $noOfInput;?>">
+</form>
+
+</td>
+</tr>
+<tr>
+<td colspan=100 align="right"><img width=200 src="./images/company-logo-small.jpg"></td>
+</tr>
+</table>
+  <br>
+  <br>
+</center>
+
+<script>
+<?
+
+// disalbe any incentive package radio group 
+// PROBLEM: value is not submitted if radio button is disabled. 
+// Temporaily comment out the radio disable feature
+while ($radioGroupName = array_pop($matchPackageRadioName)){
+?>	
+	disableRadioGroup(document.user_save['<?= $radioGroupName; ?>']);	
+<?		
+}
+?>
+</script>
+</body>
+
+</html>
+
+

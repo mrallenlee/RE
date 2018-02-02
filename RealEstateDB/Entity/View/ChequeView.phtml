@@ -1,0 +1,96 @@
+<?php
+
+include_once "Entity/View/EntityView.phtml";
+include_once "guiUtil.phtml";
+/*
+ * Created on 27-Dec-2006
+ *
+ */
+class ChequeView extends EntityView{
+	
+	function ChequeView(){}
+	
+	 function getNewHTMLForm($arguments){
+	 	$arguments['Mode'] = "add";
+	 	$html = $this->getExistingHTMLForm($arguments);
+	 	return $html;
+	 }	
+	
+ 	/* html form for new Cheque
+	 * This function is not for AJAX call because of the arguments param
+	 * This html form contains information for Person
+	 */
+	function getExistingHTMLForm($arguments){
+	
+		$mode 								= checkValue($arguments['Mode'], "display");
+		$index 								= checkValue($arguments['Index'], "");
+		$arguments['ChequeFromEnabled'] 	= checkValue($arguments['ChequeFromEnabled'], FALSE);
+		$arguments['ChequeToEnabled'] 		= checkValue($arguments['ChequeToEnabled'], FALSE);
+		
+		
+		if ($this->inputPrefix != ""){
+			$prefix = $this->inputPrefix . "_Cheque_" . $index ;	
+		} else {
+			$prefix = "Cheque_" . $index ;	
+		}
+				
+		if ($this->inputSuffix != ""){
+			$suffix = "_" . $this->inputSuffix;	
+		} else {
+			$suffix = "";	
+		}
+
+		$action = $mode;
+		$html = "	<input type=\"hidden\" name=\"" . $prefix . "_ChequeID" . $suffix . "\" value=\"" . 
+						$arguments['ChequeID'] ."\">" .
+				"	<input type=\"hidden\" name=\"" .  $prefix . "_Action" . $suffix . "\" id=\"" .  $prefix . "_Action" . $suffix . "\" value=\"$mode\">" .		
+				"	<tr>\n" .
+				"		<td>Financial Institute:</td><td colspan=3>" . displayText(array ("value" => $arguments['FinancialInstitue'], "source" => "FinancialInstitue", "action" => $mode, "inputPrefix" => $prefix, "size" => 50 )) . "</td>\n" .
+				"	</tr>\n" ;
+				
+		if ($arguments['ChequeFromEnabled'] != 0 || $arguments['ChequeToEnabled'] != 0){
+			$html .=	"	<tr>\n" ;
+			if ($arguments['ChequeFromEnabled'] == TRUE) {
+				$html .= "		<td>From:</td><td>" . displayDate(array( "value" => $arguments['ChequeFrom'], "source" => "ChequeFrom", "action" => $mode, "inputPrefix" =>$prefix)) . "</td>\n" .
+				"		</td>\n" ;
+			}
+
+			if ($arguments['ChequeToEnabled'] == TRUE) {			
+				$html .= "		<td>To:</td><td>" . displayText(array ("value" => $arguments['ChequeTo'], "source" => "ChequeTo", "action" => $mode, "inputPrefix" => $prefix) ). "</td>\n" . 
+				"	</tr>\n";
+			}
+		}
+		
+		$html .="	<tr>\n" .
+				"		<td>Date:</td><td>" . displayDate(array( "value" => $arguments['ChequeDate'], "source" => "ChequeDate", "action" => $mode, "inputPrefix" =>$prefix)) . "</td>\n" .
+				"		</td>\n" .
+				"		<td>Cheque Number:</td><td>" . displayText(array ("value" => $arguments['ChequeNumber'], "source" => "ChequeNumber", "action" => $mode, "inputPrefix" => $prefix) ). "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Amount:</td><td>" . displayText(array ("value" => $arguments['ChequeAmount'], "source" => "ChequeAmount", "action" => $mode, "inputPrefix" => $prefix, "dollarValue"=>TRUE, "decimal"=>2) ). "</td>\n" . 
+				"		<td>Cheque Type:</td><td>" .  displayGenericTableList(
+								array("table"=> "ChequeType", "value"=>$arguments['ChequeType'],
+								"source"=>"ChequeType", "action"=>$mode, "inputPrefix"=> $prefix)) . "</td>\n" .
+				"	</tr>\n" .
+				"	<tr>\n" .				 
+				"		<td>Status:</td><td>" .  displayGenericTableList(
+								array("table"=> "ChequeStatus", "value"=>$arguments['ChequeStatus'],
+								"source"=>"ChequeStatus", "action"=>$mode, "inputPrefix"=> $prefix)) . "</td>\n" .
+				"		<td>Note:</td><td>" . displayText(array ("value" => $arguments['ChequeNote'], "source" => "ChequeNote",
+												 "action" => $mode, "inputPrefix" => $prefix,
+												 "size" => 50) ). "</td>\n" . 
+								 
+				"	</tr>\n";
+		if ($mode != "display") {
+			$html .= "	<tr>";
+			$html .= "		<td colspan=4 align=right><input type=button value=\"Delete Cheque\" onClick=\"deleteCheque('" . $prefix . "')\"</td>";
+			$html .= "	</tr>";
+		}
+		
+				
+		return $html;
+		
+	}	
+
+} // ChequeView 
+?>

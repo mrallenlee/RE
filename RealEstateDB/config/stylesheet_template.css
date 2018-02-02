@@ -1,0 +1,130 @@
+.head 	{ 	height: 20; 
+			font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: center;
+			background: #8CBB76 url(/Development/Commercial/REalEstateDB/images/title-background.jpg) repeat-x; color: #000000;  }
+
+.head-left 	{ 	height: 20; 
+			font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: left;
+			background: #8CBB76 url(/Development/Commercial/REalEstateDB/images/title-background.jpg) repeat-x; color: #000000;  }
+
+.head-right 	{ 	height: 20; 
+			font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: right;
+			background: #8CBB76 url(/development/residential/admin/images/title-background.jpg) repeat-x; color: #0;  }
+
+.big-head 	{ 	height: 20; 
+			font-family: Verdana, Arial, sans-serif; font-size: 15pt; font-weight: bold; text-align: center;
+			color: #656565;  }
+
+.subhead 	{ 	height: 20; 
+			font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: center;
+			background: #F7D642 url(/Development/Commercial/REalEstateDB/images/subtitle-background.jpg) repeat-x; color: #000000;  }
+
+.subhead-left 	{ 	height: 20; 
+			font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: left;
+			background: #F7D642 url(/Development/Commercial/REalEstateDB/images/subtitle-background.jpg) repeat-x; color: #000000;  }
+
+.subhead-left-med 	{ height: 20; 
+				font-family: tahoma; font-size: 14pt; font-weight: bold; 
+				background: #F7D642 url(/Development/Commercial/REalEstateDB/images/subtitle-background.jpg) repeat-x; 
+				color: #000000;  text-align: left}
+
+.subhead-right 	{ 	height: 20; 
+			font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: right;
+			background: #F7D642 url(/Development/Commercial/REalEstateDB/images/subtitle-background.jpg) repeat-x; color: #0;  }
+
+
+
+.body 				{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; 
+						background-color: #FFFFFF; color: #000000; }
+						
+.body-right			{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: right;
+						background-color: #FFFFFF; color: #0; }
+
+
+.body-highlight 	{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; 
+						color: #000000; background:  #F7F224 url(/Development/Commercial/REalEstateDB/images/highlight-background.jpg) repeat-x; }
+
+.body-green 		{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; color: #A7B518;
+						background-color: #FFFFFF; }
+
+.body-blue			{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; color: #70B7C9;
+						background-color: #FFFFFF; }
+
+.body-yellow		{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; color: #FED82F;
+						background-color: #FFFFFF;  }
+
+.tail 	{ height: 20; font-family: tahoma; font-size: 8pt; font-weight: bold; background: #A2ADF0 url(/Development/Commercial/REalEstateDB/images/tail-background.jpg) repeat-x; color: #000000;  text-align: center}
+.tail-left 	{ height: 20; font-family: tahoma; font-size: 8pt; font-weight: bold; background: #A2ADF0 url(/Development/Commercial/REalEstateDB/images/tail-background.jpg) repeat-x; color: #000000;  text-align: left}
+.tail-left-med 	{ height: 20; font-family: tahoma; font-size: 14pt; font-weight: bold; background: #A2ADF0 url(/Development/Commercial/REalEstateDB/images/tail-background.jpg) repeat-x; color: #000000;  text-align: left}
+.tail-right 	{ height: 20; font-family: tahoma; font-size: 8pt; font-weight: bold; background: #A2ADF0 url(/Development/Commercial/REalEstateDB/images/tail-background.jpg) repeat-x; color: #0;  text-align: right}
+.error 	{ font-family: tahoma; font-size: 8pt; font-weight: bold; color: #ff0000; }
+.blank 	{ font-family: tahoma; font-size: 8pt; font-weight: bold; }
+.blank-highlight {  font-family: tahoma; font-size: 8pt; font-weight: bold; color: #000000;  background: #F7F224 url(/Development/Commercial/REalEstateDB/images/highlight-background.jpg) repeat-x; }
+.blank-right		{ 	font-family: tahoma; font-size: 8pt;
+						font-weight: bold; text-align: right; }
+.blankL { font-family: tahoma; font-size: 8pt; font-weight: bold; text-align: left}
+.open 	{ font-family: tahoma; font-size: 8pt; color: #ff0000; background-color: #FFFFCC }
+.closed { font-family: tahoma; font-size: 8pt; color: #999999; background-color: #FFFFCC }
+.btn 	{ font-family: tahoma; font-size: 8pt; font-weight: bold; height: 26px; width: 80px;}
+
+
+.font-highlight		{ 	font-family: tahoma; font-size: 8pt; font-weight: bold; color: #DF5337; }
+
+.tab-table  { border-color: #FF0000 }
+
+.largetitle {	font-family: tahoma; font-size: 12pt; color: #000000;	font-weight: bold;	margin-top: 11px;	margin-bottom: 4px;	}
+.smalltitle {	margin-top: 6px;	font-family: tahoma; font-size: 10pt; font-weight: bold;	color: #000000;	}
+
+.borderbot { height: 1px; line-height: 1px; font-size: 1px; margin: 0px; padding: 0px; background: url(/images/dots.gif) repeat-x; }
+.borderbotlight { height: 1px; margin: 0px; padding: 0px; background: url(/images/dots_light.gif) repeat-x; }
+
+.popupDiv 		{ padding: 5px; background-color: #FFFFFF; border: 5px solid #F7D642; }
+.popupDivTitle 	{ font-family: tahoma; color: #E6ECC0; }
+
+a 		{ font-family: tahoma; font-size: 8pt; font-weight: bold; text-decoration:none}
+a:visited { color:#000000 }
+a:link 		{ color:#000000 }
+a:hover 	{color: #F2862F }
+
+
+.header3 { font-family: tahoma; font-size: 12pt; font-weight: bolder; color: #000000}
+
+.tr-header { font-family: tahoma; font-size: 12pt; font-weight: bolder; color: #000000; background-color: #F7D642; }
+
+.calendar-div { font-family: tahoma; font-size: 8pt;  background-color: #FFFFFF; }
+.image-link { text-decoration:none; border:none; }
+.image-link:visited { color:#000000 }
+.image-link:link 		{ color:#000000 }
+.image-link:hover 	{color: #F2862F }
+.image-link IMG {border:none; }
+
+.image 		{ border: 2px; border-color: #A7B518; }
+
+
+.print-tr, .print-td, .print-hr, .print-div {
+	display: none;
+}
+
+
+body { background-color: #FFFFFF }
+span { font-family: tahoma; font-size: 8pt; font-weight: bold; color: #000000}
+.td-upper { font-family: tahoma; font-size: 8pt; font-weight: bold; color: #000000; text-transform: uppercase}
+td { font-family: tahoma; font-size: 8pt; font-weight: bold; color: #000000}
+th { font-family: tahoma; font-size: 8pt; font-weight: bold; color: #000000}
+h1 { font-family: tahoma; color: #000000}
+h2 { font-family: tahoma; color: #000000}
+h3 { font-family: tahoma; color: #000000}
+h4 { font-family: tahoma; color: #000000}
+h5 { font-family: tahoma; color: #000000}
+
+input 		{ font-family: tahoma; font-size: 8pt; }
+select 		{ font-family: tahoma; font-size: 8pt; }
+textarea 	{ font-family: tahoma; font-size: 8pt; }
+error		{ font-family: tahoma; font-size: 8pt; color: red}
+
+.dojoDialog {
+	background : #eee;
+	border : 1px solid #999;
+	-moz-border-radius : 5px;
+	padding : 4px;
+}
+

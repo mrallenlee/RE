@@ -1,0 +1,58 @@
+<?php
+/*
+ * Created on 9-Feb-2006
+ *
+ * Help functions for user package
+ */
+ 
+Class UserPackageHandler{
+	var $userID;
+	// array to store package information
+	var $userPackageIDArray;
+	var $userPackageNameArray;
+	// number of packages for this user
+	var $numOfUserPackage;
+	
+	function UserPackageHandler($db, $userID){
+		$this->userID = $userID;
+		// get user incentive package
+		$user_package_sql = "SELECT Package.PackageID, Package.PackageName FROM UserPackage, Package " .
+							" WHERE UserID=" . getUserID() .
+							" AND UserPackage.PackageID = Package.PackageID";
+		$user_package_result = mysql_query($user_package_sql, $db); //or handleError("", "SQL=$user_package_sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
+		
+		$this->userPackageIDArray = array();
+		$this->userPackageNameArray = array();
+		
+		$i = 0;
+		while ($row_package_result = mysql_fetch_array($user_package_result)){
+			$this->userPackageIDArray[$i] = $row_package_result['PackageID'];
+			$this->userPackageNameArray[$i++] = $row_package_result['PackageName'];
+		}
+		
+		$this->numOfUserPackage = count($this->userPackageIDArray);
+		
+	}
+	
+	/**
+	 * Get number of packages for this user
+	 */
+	function getNumOfPackage(){
+		return $this->numOfUserPackage ;
+	}
+	
+	/**
+	 * Search user has given package
+	 * @param packageID package ID
+	 * @return true if user has this package, false otherwise
+	 */
+	function containsPackage($packageID){
+		for ($i = 0; $i < $this->numOfUserPackage; $i++	){
+			if ($packageID == $this->userPackageIDArray[$i]){
+				return true; 
+			}	
+		}
+		return false;		
+	}			
+} // UserPackageHandler
+?>

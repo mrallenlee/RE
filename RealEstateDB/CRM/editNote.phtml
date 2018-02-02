@@ -1,0 +1,145 @@
+<?
+/*
+ * Created on 22-Oct-2005
+ * Add/Edit single note
+ * Required: 
+ * $action : add/edit
+ * $SalesRepID
+ * $WrittenBy
+ * $customerType
+ * $customerID
+ * $noteID : only for edit action
+ */
+include "config.phtml";
+include CRM_INVERT_RELATIVE_PATH . "main_include.phtml";
+ 
+ print_top_frame($PHP_SELF, CRM_INVERT_RELATIVE_PATH, false, false);
+ 
+ // retrieve note info from DB
+ if ($action=="edit" && isset($noteID) && isset($customerID) ){//&& $noteID != ""){
+ 	$sql = "SELECT FirstName, LastName, Note.* " .
+ 			"FROM Note ";
+
+ 	$sql .= " LEFT JOIN ";
+
+	if ($customerType == "user"){
+		$sql .= " User ON Note.CustomerID=User.UserID ";
+	} else {
+		$sql .= " Visitor ON Note.CustomerID=Visitor.VisitorID " ;
+	} 			
+	$sql .=	" WHERE NoteID=$noteID";
+//	echo "SQL=$sql<BR>";
+	$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql<BR>", $PHP_SELF);
+	$row = mysql_fetch_array($result);
+ 			
+ }
+
+// prepare data for creating list of ContactVia
+$sql_ContactVia = "SELECT ContactVia from ContactVia_list";
+$result_ContactVia = mysql_query($sql_ContactVia) or log_err_die(mysql_error(),$PHP_SELF);
+
+// create calendar popup div object
+createCalendarPopupDiv();
+?>
+<script type="text/javascript" src="<?= CRM_INVERT_RELATIVE_PATH; ?>/framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+    dojo.require("dojo.widget.DatePicker");
+    dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+
+<script type="text/javascript">
+function set_date_values()
+{
+	document.allNote.CreateDate.value = dojo.widget.byId("CreateDate").getValue();
+	document.allNote.DueDate.value = dojo.widget.byId("DueDate").getValue();
+	return true;
+}
+</script>
+
+	<TABLE>
+	<TR>
+		<TD COLSPAN="5"><H2 CLASS="popupDivTitle"><?= $action=="add" ? "Add" : "Edit"; ?> Note <?= $row['FirstName'] . " " . $row['LastName']; ?></H2></TD>
+	</TR>
+
+  <FORM NAME="allNote" METHOD="POST" ACTION="./updateNote.phtml?action=<?= $action; ?>&jsAfterDone=<?
+  	if ($action == "add"){
+  		print "window.parent.addNoteDone()";
+  	} else if ($action == "edit"){  		
+  		print "window.parent.editNoteDone()";
+  	}
+  
+  ?>;" onsubmit="set_date_values();">
+  <INPUT TYPE="HIDDEN" NAME="WrittenBy" VALUE="<?= $writtenBy ?>">
+  <INPUT TYPE="HIDDEN" NAME="SalesRepID" VALUE="<?= $salesRepID ?>">
+  <INPUT TYPE="HIDDEN" NAME="CustomerType" VALUE="<?= $customerType ?>">
+  <INPUT TYPE="HIDDEN" NAME="CustomerID" VALUE="<?= $customerID ?>">
+  <INPUT TYPE="HIDDEN" NAME="NoteID" VALUE="<?= $noteID ?>">
+  <INPUT TYPE="HIDDEN" NAME="CreateDate">
+  <INPUT TYPE="HIDDEN" NAME="DueDate">
+
+  <TR CLASS="blank">
+    <TD>Contact Via: </TD>
+    <TD>
+      <SELECT NAME="ContactVia">
+        <OPTION VALUE="">Choose one</OPTION>
+<?
+	// reset mysql pointer to reselect from 1st record
+	mysql_data_seek($result_ContactVia, 0);
+	
+	while ($row_ContactVia = mysql_fetch_array($result_ContactVia)) 
+	{
+?>
+          <OPTION VALUE='<?= $row_ContactVia["ContactVia"]; ?>' 
+          <? if ($row_ContactVia["ContactVia"] == $row["ContactVia"]) print " SELECTED"; ?>
+          ><?= $row_ContactVia["ContactVia"]; ?></OPTION>
+<?
+	}
+?>
+      </SELECT>
+    </TD>
+  </TR>
+  <TR CLASS="blank">
+    <TD>Contact Date (YYYY-MM-DD): </TD>
+    <TD><? display_date("CreateDate", "", "", true); ?></TD>
+  </TR>
+  <TR CLASS="blank">
+    <TD>Due Date (YYYY-MM-DD): </TD>
+<?   $nextWeek = time() + (7 * 24 * 60 * 60); ?>
+    <TD><? display_date("DueDate", "", "", false, date('Y-m-d', $nextWeek)); ?></TD>
+    
+  </TR>
+  <TR CLASS="blank">
+    <TD>Remind Me: </TD>
+    <TD><? display_check_box("RemindMe", "", 1); ?></TD>
+  </TR>
+  <TR>
+  	<TD>Note:</TD>
+    <TD COLSPAN=5 ><? display_text_area("Note", "", 100, 10); ?></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="RIGHT" COLSPAN="5">
+<?	if ($action=="edit"){ ?>
+    <INPUT TYPE="SUBMIT" VALUE="Edit">
+<? 	} else { ?>  			    
+    <INPUT TYPE="SUBMIT" VALUE="Add">
+<?	} ?>    
+	&nbsp;<INPUT TYPE="Button" VALUE="Cancel" onClick="cancel();"></TD>	
+  </TR>
+  
+  </FORM>
+  
+</TABLE>
+<SCRIPT LANGUAGE="JavaScript">
+/** 
+* Cancel current edit/add operation. 
+* If this page is displayed in DIV, it should close the DIV.
+* If this page is displayed in a page, then it should go to previous page 
+*/  
+function cancel(){
+	
+	window.parent.hideFloatingDiv(1);
+}
+</SCRIPT>
+</BODY
+</HTML>

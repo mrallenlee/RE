@@ -1,0 +1,128 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for additional purchaser
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ include_once "Entity/Model/PersonModel.phtml";
+ 
+ class AdditionalPurchaserModel extends EntityModel {
+ 	function AdditionalPurchaserModel() {}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT AdditionalPurchaser " .
+ 				" SET PersonID=" . $arguments['PersonID'] . 
+ 				" , CreatedDate=NOW()";
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+		return "sql=$sql<BR>"; 				
+ 	
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+ 		//print "in AdditionalPurchaserModel updateAll";
+ 	
+ 		$personArguments = $this->retrieveArguments("Person", $arguments); 		
+ 		if (sizeof($personArguments) > 0){	 	
+	 		$personModel = new PersonModel();
+	 		$personID = $personModel->addAll($personArguments);
+ 			$arguments['PersonID'] = $personID;
+ 		} else {
+ 			$arguments['PersonID'] = -1; 			
+ 		}
+ 	 		
+ 		return $this->add($arguments);	
+ 	}
+
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE AdditionalPurchaser " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE AdditionalPurchaserID = " . $arguments['AdditionalPurchaserID'];
+ 		$result = executeSql($sql);
+		return "sql=$sql<BR>"; 				
+ 	}
+	
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){
+// 		print "in AdditionalPurchaserModel updateAll";
+ 		$result = $this->update($arguments);
+ 		 		
+ 		$personArguments = $this->retrieveArguments("Person", $arguments);
+ 		$personModel = new PersonModel();
+ 		$result .= "<BR>PersonModel::updateAll " . $personModel->updateAll($personArguments);
+ 		return $result;
+ 	}
+ 	
+	/**
+	 * Delete Record
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		if ($arguments['AdditionalPurchaserID'] > 0){
+ 			$sql 	= " DELETE FROM AdditionalPurchaser " .
+ 				  		" WHERE AdditionalPurchaserID = " . $arguments['AdditionalPurchaserID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	
+ 	}
+
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+ 	function deleteAll(&$arguments){
+		$result = true;
+		
+ 		$personArguments = $this->retrieveArguments("Person", $arguments); 		
+ 		if (isSet($addressArguments['PersonID'])){
+ 			// deal with address
+ 			$personModel = new PersonModel();
+ 			$result = $result && $personModel->deleteAll($personArguments);
+ 		}
+ 		
+ 		if ($result){
+	 		$result = $this->delete($arguments); 		
+ 		}
+ 		
+ 		return $result; 	 	
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql(&$arguments){
+		// handle check box special case
+		if (isset($arguments['IDProvided'])){
+			$arguments['IDProvided'] = 1;
+		}
+		$sql =  "CompanyName=\"" . $arguments['CompanyName'] . "\"" .
+ 				" , UserID =\"" .  $arguments['UserID'] . "\"". 
+ 				" , IDProvided  =\"" .  $arguments['IDProvided'] . "\"" . 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 						
+		return $sql;  				
+	}
+ 	
+ }
+?>

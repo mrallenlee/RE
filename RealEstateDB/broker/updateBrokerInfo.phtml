@@ -1,0 +1,66 @@
+<?
+include_once "Entity/Model/BrokerModel.phtml";
+
+/**
+ * Update broker information sent from broker info
+ */
+function updateBroker(){
+	// handle broker
+		
+		$brokerArguments = array(); 		
+		
+		$brokerArguments['SubAction'] 	= "All";
+		$brokerArguments['Action'] 		= $_REQUEST['Broker_Action'];
+		$brokerArguments['Person_Company_Action'] = $_REQUEST['Broker_Person_Company_Action'];
+		if ($brokerArguments['Person_Company_Action'] == ""){
+			$brokerArguments['Person_Company_Action'] = $brokerArguments['Action'];
+		}
+		
+		// retreive PersonID for the broker
+		if ((!isset($_REQUEST['Broker_Person_PersonID']) || $_REQUEST['Broker_Person_PersonID'] == "")
+			&& $_REQUEST['Broker_BrokerID'] > 0){
+			$sql = "select PersonID From Broker where BrokerID = " . $_REQUEST['Broker_BrokerID'];
+			$result = executeSql($sql);
+			$row = mysql_fetch_array($result);
+			$brokerArguments['Person_PersonID'] = $row[0];
+		}
+		
+		foreach ($_REQUEST as $key => $value){
+			if (preg_match("/Broker_/", $key)){
+				$data = explode('_', $key, 2);
+				$varName = $data[1];
+//				print "key=$key index=$index varName=$varName value=$value<BR>";
+				$brokerArguments[$varName] = $value;
+			}	
+		}
+
+//		print "brokerArguments=" ;
+//		print_r($brokerArguments);
+
+		// handle each additional purchaser
+		$brokerModel = new BrokerModel();
+		$brokerID = $brokerModel->handle($brokerArguments);
+		// finish handling Broker					
+		return $brokerID;
+
+}
+
+function quit($brokerID){
+//	echo "inside quit js=" . $_REQUEST['jsAfterDone'];
+	if ($_REQUEST['jsAfterDone'] != ""){
+		
+?>
+	<script language="javascript">
+	<? if ($brokerID != "") { ?>
+		var brokerID = <?= $brokerID; ?>;
+	<? } ?>		
+		
+<?= stripslashes($_REQUEST['jsAfterDone']); ?>;
+	</script> 			
+<?		
+	}	
+}
+
+$brokerID = updateBroker();
+quit($brokerID);
+?>

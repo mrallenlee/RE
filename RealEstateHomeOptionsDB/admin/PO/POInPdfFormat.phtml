@@ -1,0 +1,175 @@
+<?php
+include_once "../main_include.phtml";
+include_once "POListFormat.phtml";
+// due to the path problem, include these 2 files in the class includes thie POInPdfFormat.phtml
+//include_once SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/framework/PDF/PDFMaker.phtml";
+//include_once SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/framework/PDF/PDFMakerA4Config.phtml";
+include_once "POPdfInvoiceTemplate.phtml";
+
+class POListPdfFormat extends POListFormat {
+	var $debugLevel = 5;
+	
+	// flag to dispaly REVISED word in the pdf file
+	var $markRevised = 0;
+	var $currentUnitNumber = -1;
+	var $currentContractorName = "";
+	var $currentTotal = -1;
+	
+	// var for PO's 
+	var $cost, $unitNumber, $issuedDate;
+	var $contractorName, $contractorContactName, $contractorAddress, $contractorPhone, $contractorFax; 
+	var $description;
+
+
+	function unhtmlentity($string){
+
+		   $string = preg_replace('~&#x0*([0-9a-f]+);~ei', 'chr(hexdec("\\1"))', $string);
+		   $string = preg_replace('~&#0*([0-9]+);~e', 'chr(\\1)', $string);
+		return $string;
+	}		
+
+	/**
+	 * PO List PDF format
+	 */
+	function POListPdfFormat($sql, $debugLevel = 0, $markRevised = 0){
+		$this->debugLevel = $debugLevel;
+		$this->description = array();
+		$this->markRevised = $markRevised;
+		$this->sql = $sql;
+		$this->retrieveResult();							
+	}
+	
+	
+	
+	/**
+	 * Print a PO page
+	 * $PODataRow: is the data row from mysql_fetch_array
+	 */
+	function printPOPage($pdfMaker, $PODataRow){
+		// if this is the first row, init all the variables
+		if ($this->currentUnitNumber == -1){
+			$this->currentUnitNumber = $PODataRow['UnitNumber'];
+			$this->currentContractorName = $PODataRow['ContractorName'];
+		}
+		
+		if ($this->currentUnitNumber != $PODataRow['UnitNumber'] ||
+			$this->currentContractorName != $PODataRow['ContractorName']){
+				// print the invoice
+//print "calling PDFInvoice $cost $unitNumber $issuedDAte $description $invoiceID $POType $debugLevel<BR>";		 
+			printPDFInvoice($pdfMaker, $this->description, "cost=" . $this->cost, $this->unitNumber, 
+							$this->issuedDate, $this->PONumber, $this->contractorName,
+							$this->contractorContactName, $this->contractorPhone,
+							$this->contractorAddress, $this->contractorCity,
+							$this->contractorCountry, $this->contractorPostalCode,
+							"markRevised=" . $this->markRevised);		
+			// reset global var							
+			$this->resetVar();							
+			$this->currentUnitNumber = $PODataRow['UnitNumber'];		
+			$this->currentContractorName = $PODataRow['ContractorName'];
+		 } 
+		 
+ 		// store information
+		$this->unitNumber 	= "unitNumber=" . $PODataRow['UnitNumber'];
+		$this->issuedDate 	= "issuedDate=" . $PODataRow['IssuedDate'];
+		$this->contractorName 	= "contractorName=" . $PODataRow['ContractorName'];
+		$this->contractorContactName 	= "contractorContactName=" . $PODataRow['ContractorPerson'];
+		$this->contractorPhone	= "contractorPhone=" . $PODataRow['ContractorPhone'];
+		$this->contractorAddress 	= "contractorAddress=" . $PODataRow['ContractorAddress'];
+		$this->contractorCity		= "contractorCity=" . $PODataRow['ContractorCity'];
+		$this->contractorCountry 	= "contractorCountry=" . $PODataRow['ContractorCountry'];
+		$this->contractorPostalCode 	= "contractorPostalCode=" . $PODataRow['ContractorPostalCode'];
+		
+		$this->PONumber 		= "PONumber=" . $PODataRow['PONumber'];
+		$displayCost 		= convertPriceConstantToValidNumber($PODataRow['Cost']);
+		$this->cost			+= $displayCost;
+		if ($PODataRow['POType'] == "StandardPO"){
+			$description = array("description"=>$this->unhtmlentity($PODataRow['SectionName']) ."\n".$this->unhtmlentity($PODataRow['SubsectionName']),
+							"subDescription"=>$this->unhtmlentity($PODataRow['OptionName']) . " " . $this->unhtmlentity($PODataRow['ChoiceName']),
+							"cost"=>$displayCost);
+		} else {
+			$description = array("description"=>$this->unhtmlentity($PODataRow['SectionName']) ."\n".$this->unhtmlentity($PODataRow['SubsectionName']),
+							"subDescription"=>$this->unhtmlentity($PODataRow['Description']),
+							"cost"=>$displayCost);
+		}
+		array_push($this->description, $description);								 	
+				
+	}
+	
+	/**
+	 * Reset all global var
+	 */	
+	function resetVar(){
+		$this->cost 		= 0;
+		$this->unitNumber 	= "";
+		$this->issuedDate 	= "";
+		$this->contractorName 	= "";
+		$this->contractorContactName 	= "";
+		$this->contractorPhone	= "";
+		$this->contractorAddress 	= "";
+		$this->contractorCity		= "";
+		$this->contractorCountry 	= "";
+		$this->contractorPostalCode 	= "";
+		$this->description = array();		
+		
+		$this->currentUnitNumber = "";		
+		$this->currentContractorName = "";
+		
+		
+	}
+		
+	/**
+	 * Initialize pdf page
+	 * Return PDFMaker object
+	 */	
+	function openPDF($fileName = ""){
+		$pdfMaker = new PDFMaker($fileName);
+		return $pdfMaker;
+	}
+	
+	/**
+	 * Close the document
+	 */
+	function closePDF($pdfMaker){
+		$pdfMaker->close();	
+	}
+	
+	/**
+	 * Print PO in div
+	 */		
+	function printPO($POViewOrder){
+		$pdfMaker = $this->openPDF();
+		
+		if ($this->debugLevel > 0){
+			$pdfMaker->setDebugLevel($this->debugLevel);	
+		}
+		$POIssuedID = "";
+		
+		$succeeded = ($PODataRow = mysql_fetch_array($this->sqlResult));
+		$POIssuedID = $PODataRow['POIssuedID'];
+		
+		if ($succeeded){
+			do {
+				$POIssuedID = $PODataRow['POIssuedID'];
+				$this->printPOPage($pdfMaker, $PODataRow);
+			} 	while ($PODataRow = mysql_fetch_array($this->sqlResult));
+		}
+		// call it one more time with empty array
+		// in order to print the last page		
+		$this->printPOPage($pdfMaker, "");
+		
+		$this->closePDF($pdfMaker);
+
+		
+		$buf = $pdfMaker->getContent();
+		$len = strlen($buf);
+		
+		// if not in debug mode
+//		if ($this->debugLevel  <= 0){
+			header("Content-type: application/pdf");
+			header("Content-Length: $len");
+			header("Content-Disposition: inline; filename=PO-$POIssuedID.pdf");	
+			print $buf;	
+//		}
+	}
+}
+?>

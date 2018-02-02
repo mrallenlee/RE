@@ -1,0 +1,178 @@
+<?
+include "../config/config.phtml";
+include "../main_include.phtml";
+?>
+
+<html>
+<? 
+print_top_frame($PHP_SELF, "../"); 
+?>
+
+<script type="text/javascript" src="../framework/dojo/dojo.js"></script>
+<script type="text/javascript" src="proj_closing.js"></script>
+<body>
+<h2 align="center">Generic Closing Information</h2>
+<form name="proj_closing_form" action="proj_closing_act.phtml" method="post">
+<table width="100%" >
+  <tr>
+    <td><strong>Taxes</strong></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>1st year Tax Rate </td>
+    <td>
+      <input type="text" name="TaxRateYear1">
+    </td>
+    <td>&nbsp;</td>
+    <td>2nd year Tax Rate </td>
+    <td><input type="text" name="TaxRateYear2"></td>
+  </tr>
+  <tr>
+    <td>1st year Land Tax </td>
+    <td><input type="text" name="LandTaxYear1"></td>
+    <td>&nbsp;</td>
+    <td>2nd year Land Tax </td>
+    <td><input type="text" name="LandTaxYear2"></td>
+  </tr>
+  <tr>
+    <td>Estimated Realty Tax </td>
+    <td><input type="text" name="EstimatedRealtyTax"></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>Law society levy </td>
+    <td><input type="text" name="LawSocietyLevy"></td>
+    <td>&nbsp;</td>
+    <td>Discharge Fee </td>
+    <td><input type="text" name="DischargeFee"></td>
+  </tr>
+</table>
+<hr>
+<table width="100%" >
+  <tr>
+    <td><strong>Clause SIX Fees: </strong></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>Provincial sales tax on chattels </td>
+    <td><input type="text" name="SixFeeProvTax"></td>
+    <td>
+      <select name="SixFeeProvTaxFlg">
+        <option value="0">Use Number of Unit
+        <option value="1">Use Number of Combined Unit
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>Water and Sewer Connection Charges</td>
+    <td><input type="text" name="SixFeeConnCharge"></td>
+    <td>
+      <select name="SixFeeConnChargeFlg">
+        <option value="0">Use Number of Unit
+        <option value="1">Use Number of Combined Unit
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>Water Meter </td>
+    <td><input type="text" name="SixFeeWaterMeter"></td>
+    <td>
+      <select name="SixFeeWaterMeterFlg">
+        <option value="0">Use Number of Unit
+        <option value="1">Use Number of Combined Unit
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>Hydro meter and installation Charges </td>
+    <td><input type="text" name="SixFeeHydroCharge"></td>
+    <td>
+      <select name="SixFeeHydroChargeFlg">
+        <option value="0">Use Number of Unit
+        <option value="1">Use Number of Combined Unit
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td>Development Charge</td>
+    <td><input type="text" name="SixFeeDevCharge"></td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>Tarion</td>
+    <td><input type="text" name="SixFeeTarion"></td>
+    <td>&nbsp;</td>
+  </tr>
+</table>
+<hr>
+<table width="100%" >
+  <tr>
+    <td><strong>Project Information : </strong></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>Number of Unit</td>
+    <td><input type="text" name="NumOfUnit"></td>
+    <td>&nbsp;</td>
+    <td>Number of Combined Unit </td>
+    <td><input type="text" name="NumOfCombinedUnit"></td>
+  </tr>
+  <tr>
+    <td>Total Residential Area</td>
+    <td><input type="text" name="TotalArea"></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+</table>
+<hr>
+<table width="100%" >
+  <tr>
+    <td><strong>CAM Fees: </strong></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+  <tr>
+    <td>The Cam Rate Per sf </td>
+    <td><input type="text" name="CamFeeRatePerSf"></td>
+    <td>&nbsp;</td>
+    <td>Parking Stall CAM </td>
+    <td><input type="text" name="CamFeeParkingStall"></td>
+  </tr>
+  <tr>
+    <td>Tandem Parking CAM </td>
+    <td><input type="text" name="CamFeeTandemParking"></td>
+    <td>&nbsp;</td>
+    <td>Parking Storage Units CAM </td>
+    <td><input type="text" name="CamFeeParkingStorage"></td>
+  </tr>
+  <tr>
+    <td>Locker CAM </td>
+    <td><input type="text" name="CamFeeLocker"></td>
+    <td>&nbsp;</td>
+    <td>Bike Rack CAM </td>
+    <td><input type="text" name="CamFeeBikeRack"></td>
+  </tr>
+  <tr>
+    <td colspan="4">Standard Monthly Tax Recovery Date During Occupancy </td>
+    <td><input type="text" name="CamFeeMthTaxRecovery"></td>
+  </tr>
+</table>
+<p>
+  <input type="submit" id="btnUpdate" value="Update" onClick="return false;">
+  <input type="button" id="btnCalculate" value="Generate User Closing Data" onClick="return false;">
+</p>
+</form>
+</body>
+</html>

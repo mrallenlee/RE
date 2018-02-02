@@ -1,0 +1,700 @@
+<?
+include "main_include.phtml";
+include "multiPageNavigation.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+?>
+
+<script type="text/javascript" src="framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+	dojo.require("dojo.widget.DatePicker");
+  dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+
+<?
+
+// expect
+// mode : visitor, purchaser
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+// MultiPageNavigationResultsPerPage : for multi page navigation
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+// init var
+
+$searchFor = "";
+
+
+
+$sql = "SELECT ";
+
+if (CRM_ENABLED){
+	$sql .= " ContactVia, CreateDate, ";	
+}
+
+
+
+if ($mode == "visitor")
+
+{
+
+	$sql .= " VisitorID, RegistrationNumber, Source, ";
+
+}
+
+else if ($mode == "purchaser")
+
+{
+
+	$sql .= " User.UserID, User.Company, ";
+
+}
+
+
+
+$sql .= " FirstName, LastName,RegistrationDate, ";
+
+if ($mode == "purchaser"){
+	$sql .= "AgreementDepositDate, BrokerName, CompanyName, DealStatus, ";
+}
+$sql .= "UnitTypeDesired, PriceRange, PhoneNumber, City, PostalCode, BrokerAgentName";
+
+
+
+if ($mode == "visitor")
+
+{
+
+	$sql .= " FROM Visitor ";
+	if (CRM_ENABLED){
+		$sql .= " LEFT JOIN " .
+				" (SELECT * FROM " .
+					" (SELECT CustomerType, CustomerID," .
+					" ContactVia, CreateDate FROM Note  " .
+					" ORDER BY CreateDate DESC) AS temp1" .
+					" GROUP BY CustomerID) as temp2" .
+				" ON temp2.CustomerID=Visitor.VisitorID" .
+				" AND temp2.CustomerType=\"" . get_internal_customer_type($mode) . "\" ";
+	}	
+}
+
+else if ($mode == "purchaser")
+
+{
+
+	$sql .= ", UnitNumber, Price, ContractorReport, UserReport FROM User " .
+					" LEFT JOIN (SELECT * FROM (SELECT BrokerID, CONCAT(FirstName, CONCAT(' ', LastName)) AS BrokerName ,CompanyName ".
+					" FROM Broker, Person LEFT JOIN Company " .
+					" ON Person.CompanyID = Company.CompanyID " .
+					" WHERE Broker.PersonID = Person.PersonID) AS BrokerInfo1) as BrokerInfo ".
+					" ON User.BrokerID = BrokerInfo.BrokerID ";
+
+	if (CRM_ENABLED){
+		$sql .= " LEFT JOIN " .
+				" (SELECT * FROM " .
+					" (SELECT CustomerType, CustomerID," .
+					" ContactVia, CreateDate FROM Note  " .
+					" ORDER BY CreateDate DESC) AS temp1" .
+					" GROUP BY CustomerID) as temp2" .
+				" ON temp2.CustomerID=User.UserID" .
+				" AND temp2.CustomerType=\"" . get_internal_customer_type($mode) . "\" ";
+	}
+}
+$sql .= " WHERE 1=1 ";
+
+
+
+if ($mode == "purchaser")
+
+{
+
+	$sql .= " AND DealStatus != \"Rescinded\" ";
+
+}
+
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+
+		{
+
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+
+				if ($mode == "purchaser" && ($search_field == "FirstName" || $search_field == "LastName"))
+
+					$sql_cond = " AND (" . $search_field . " LIKE '" . $val . "' OR AdditionalPurchaser1" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser2" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser3" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser4" . 
+
+					$search_field . " LIKE '" . $val . "')";
+
+//				else if ($search_field == "UnitNumber")
+//					$sql_cond .= " AND User.UnitNumber LIKE '" . $val . "'";
+				else if ($search_field == "UnitNumber")
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"User.UnitNumber", "csvValue"=>$val)) . ") ";
+				else if ($search_field == "RegistrationDateFrom")
+					$sql_cond .= " AND RegistrationDate >= '" . $val . "'";
+
+				else if ($search_field == "RegistrationDateTo")
+					$sql_cond .= " AND RegistrationDate <= '" . $val . "'";
+					
+				else if ($search_field == "PhoneNumber"){
+					$val = convertPhoneNumberFormat($val);
+					$sql_cond .= " AND (PhoneNumber  LIKE '" . $val . "'" .
+								"  OR CellPhone LIKE '" . $val . "'" .
+								"  OR BusinessPhone LIKE '" . $val . "'" .
+								"  OR FaxNumber LIKE '" . $val . "')";
+				}					 
+				else
+
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+
+				$sql .= $sql_cond;
+				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+
+		}
+
+	}
+
+	if ($dumpdata == 1)
+	{
+		$dumpCSVLocation = "./dumpCSV.phtml?";
+
+		if ($mode == "visitor")
+		{
+			$dumpCSVLocation .= "table=Visitor&include_purchaser=" . $withPurchaser;
+		}
+
+		else if ($mode == "purchaser")
+		{
+			$dumpCSVLocation .= "table=User&rescission=0";
+		}
+		
+		$dumpCSVLocation .= "&sql_cond=" . $sql_cond;
+
+		goto_url($dumpCSVLocation);
+	}
+
+
+}
+
+else
+
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+
+}
+
+
+if ($type == "web")
+{
+	$sql .= " AND DealStatus='WebReserved'";
+	$search_criterion .= "&type=web";
+
+}
+
+if ($orderby != "")
+
+{
+
+	$sql .= " ORDER BY $orderby";
+
+}
+
+else
+
+{
+
+	$sql .= " ORDER BY LastName, FirstName";
+
+}
+
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+//echo "<br><br>pageSql=$pageSql<BR>";  	
+//die();
+$result = mysql_query($pageSql) or log_err_die(mysql_error() . "<BR>SQL=$pageSql", $PHP_SELF);	
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+<? createCalendarPopupDiv(); ?>
+
+<script language="JavaScript">
+<!--
+function dump_data()
+{
+	window.location='dumpCSV.phtml?table=<?
+		if ($mode == "visitor" || $mode == "Visitor"){
+			print "Visitor";	
+		} else if ($mode == "purchaser" || $mode == "Purchaser"){
+			print "User";
+		} else { 	
+			print $mode	;
+		}
+	
+	?>&rescission=0&sql_cond=<?= urlencode($sql_cond); ?>&includeAvailableUnit=0'
+}
+
+function dump_all_data(){
+	window.location='dumpCSV.phtml?table=<?
+		if ($mode == "visitor" || $mode == "Visitor"){
+			print "Visitor";	
+		} else if ($mode == "purchaser" || $mode == "Purchaser"){
+			print "User";	
+		} else {
+			print $mode	;
+		}
+	
+	?>&rescission=0&sql_cond=&includeAvailableUnit=1'
+}
+
+function listall(){
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&mode=<?= $mode;?>&orderby=<?= $orderby; ?>&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+
+function listAllWebPurchaser(){
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&type=web&mode=<?= $mode;?>&orderby=<?= $orderby; ?>&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+//-->
+</script>
+
+	<TITLE><?= get_project_name($PHP_SELF); ?> - <?= $mode=="purchaser" ? "Purchaser" : "Visitor"; ?> List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_purchaser" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+		<TABLE>
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+		<INPUT TYPE="HIDDEN" NAME="mode" VALUE="<?= $mode;?>">
+
+		<TR CLASS="blank">
+			<TD>First Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+			<TD>Last Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Register Date From :<BR>(YYYY-MM-DD) </TD>
+			<!--TD><? display_date("RegistrationDateFrom", "", "search", "", false, $search_RegistrationDateFrom, true, "", "debugger;document.search_purchaser.search_RegistrationDateTo.value=document.search_purchaser.search_RegistrationDateFrom.value"); ?>
+				</TD//-->
+			<TD><? display_date("RegistrationDateFrom", "search", "", false, $search_RegistrationDateFrom); ?>
+				</TD>
+			<TD>Register Date To :<BR>(YYYY-MM-DD) </TD>
+			<!--TD><? display_date("RegistrationDateTo", "", "search", "", false, $search_RegistrationDateTo); ?></TD//-->
+			<TD><? display_date("RegistrationDateTo", "search", "", false, $search_RegistrationDateTo); ?></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Type : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitTypeDesired" VALUE="<?= $search_UnitTypeDesired; ?>"></TD>
+			<TD>Phone  : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_PhoneNumber" VALUE="<?= $search_PhoneNumber; ?>" onChange="this.value=tool.string.ReformatPhoneNumber(this.value);"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Broker Agent : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_BrokerName" VALUE="<?= $search_BrokerName; ?>"></TD>
+<?
+
+		if ($mode=="purchaser")
+		{
+?>
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+<?
+		}
+
+		if ($mode=="visitor")
+		{
+?>
+			<TD COLSPAN="2"><INPUT TYPE="CHECKBOX" NAME="withPurchaser" VALUE="1"> Include Purchaser Info (Only for dumping data) </TD>
+<?
+		}
+?>
+		</TR>
+		<TR CLASS="blank">
+<?
+		if ($mode=="purchaser")
+		{
+?>
+			<TD>Deal Status : </TD>
+			<TD><? display_generic_table_list("DealStatus", "DealStatus", "", "search", ""); ?></TD>
+<?
+		}
+?>
+			<TD>Company : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+		</TR>
+		<tr class="blank">
+			<td>Results per Page : </td>
+			<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+		<TR CLASS="blank">
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+		</TR>
+		<TR>
+			<TD COLSPAN="5" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listall()">
+<?
+		if ($mode=="purchaser")
+		{
+?>
+				<INPUT TYPE="BUTTON" VALUE="List All Web Purchasers" onClick="listAllWebPurchaser()">
+<?
+}
+?>
+<?		// only certain level can do the dump data
+		if (get_access_security_level() > SALES) {	
+?>				<INPUT TYPE="BUTTON" VALUE="Dump Data" onClick="dump_data()">
+<?
+		if ($mode == "purchaser"){ ?>
+				<INPUT TYPE="BUTTON" VALUE="Dump All Unit Data" onClick="dump_all_data()">
+<?		} ?>								
+				<INPUT TYPE="HIDDEN" NAME="dumpdata" VALUE="0">
+<?		} ?>
+			</TD>
+		</TR>
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+	
+<?
+		if ($mode == "purchaser"){ 
+?>
+<script language="JavaScript">
+	document.search_purchaser.search_DealStatus.value = "<?= $search_DealStatus; ?>";
+</script>
+<?		} ?>
+
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+
+	{
+		die("");
+	}
+?>	
+
+	<H4>List <?= $mode;?>s</H4>
+<center>
+<TABLE >
+  <TR>
+  <? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&mode=" . $mode . "&orderby=" . $orderby; ?>
+    <TD align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?></td>
+    <td  align="center" ><?= $multiPageNavigation->getAllPageButtons($linkCreterion);?></td>
+    <td  align="center" valign="center" ><?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  </TR>
+</TABLE>  
+</center>
+	<TABLE BORDER=0>
+
+<?
+
+		if ($searchFor != "")
+
+		{
+
+?>
+
+		<TR CLASS="blank">
+
+			<TD COLSPAN="10">Search for <?= $searchFor; ?><BR><BR></TD>
+
+		</TR>
+
+<?
+
+		}
+
+?>
+		<form name="update_purchaser" action="update_purchaser.phtml" method="post">
+
+<?
+		$totalSoldPrice = 0;
+		while ($row = mysql_fetch_array($result))
+		{
+			$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&mode=$mode&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
+
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Company,FirstName,LastName">Company</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=FirstName,LastName">FirstName</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=LastName,FirstName">LastName</A></TD>
+<?
+				if ($mode == "visitor")
+				{
+?>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=RegistrationDate,LastName,FirstName">RegisterDate</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=RegistrationNumber,LastName,FirstName">Register Number</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=UnitTypeDesired,LastName,FirstName">Type</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=PriceRange,LastName,FirstName">Price Range</A></TD>			
+<?
+				}
+				else
+				{
+?>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=AgreementDepositDate,LastName,FirstName">Sold Date</A></TD>			
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>,LastName,FirstName">Suite Number</A></TD>			
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Price,LastName,FirstName">Price</A></TD>			
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Price,LastName,FirstName">Deal Status</A></TD>			
+<?
+				}
+?>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=PhoneNumber,LastName,FirstName">Phone</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=PostalCode,LastName,FirstName">Postal Code</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=City,LastName,FirstName">City</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=BrokerAgentName,LastName,FirstName">Broker Agent</A></TD>
+<?
+				if ($mode == "visitor")
+				{
+?>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Source,LastName,FirstName">Source</A></TD>
+<?			}		
+				
+				if (CRM_ENABLED){
+?>			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=ContactVia DESC,CreateDate DESC,LastName,FirstName">Contact Via</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=CreateDate DESC,ContactVia DESC,LastName,FirstName">Contact Date</A></TD>
+<?			} 
+				
+				if (ONLINE_RESERVATION_ENABLED){
+?>			<TD>Actions</TD>
+<?			} ?>
+		</TR>
+<?
+			}
+			
+			$url = "./userListing.phtml?action=display&mode=$mode&";
+
+			if ($mode == "visitor")
+			{
+				$url .= "VisitorID=" . $row['VisitorID'];
+			}
+
+			else if ($mode == "purchaser")
+			{				
+			 	$url .= "UserID=" . $row['UserID'];
+				$totalSoldPrice += $row['Price'];		
+			}
+			
+
+			displayMouseOverTR("blank", "body");
+?>			
+				<TD><A HREF="<?= $url; ?>"><?= $row['Company']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['FirstName']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['LastName']; ?></A></TD>
+
+
+<?
+
+			if ($mode == "visitor")
+
+			{
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= convert_date($row['RegistrationDate']); ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['VisitorID']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitTypeDesired']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['PriceRange']; ?></A></TD>
+
+<?
+
+			}
+
+			else
+
+			{
+
+?>
+
+				<TD nowrap><A HREF="<?= $url; ?>"><?= convert_date($row['AgreementDepositDate']); ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber']; ?></A></TD>
+				<TD align="right"><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['Price'], "decimals"=>0, "isDollarValue"=>TRUE)) ; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['DealStatus']; ?></A></TD>
+
+<?
+
+			}
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['PhoneNumber']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['PostalCode']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['City']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['BrokerName']; ?></A></TD>
+
+<?
+
+			if ($mode == "visitor")
+
+			{
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['Source']; ?></A></TD>
+
+<?
+		if (CRM_ENABLED){
+?>				<TD><A HREF="<?= $url; ?>"><?= $row['ContactVia']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['CreateDate']; ?></A></TD>
+<?		} 			
+
+			}
+
+			else
+
+			{
+
+				if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF)){
+
+?>
+
+				<TD>|&nbsp<A HREF="unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=0">Report</A></TD>
+
+				<TD>|&nbsp<A HREF="unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=1"><nobr>Report w/prices</nobr></A></TD>
+<?				}				
+		if (CRM_ENABLED){
+?>				<TD><A HREF="<?= $url; ?>"><?= $row['ContactVia']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['CreateDate']; ?></A></TD>
+<?		} 			
+		if (ONLINE_RESERVATION_ENABLED){
+?>				<TD>&nbsp<A HREF="display_reserver.phtml?UserID=<?= $row['UserID'] ?>"><nobr>Web Reservation</nobr></A></TD>
+<?		}	?>
+<?
+
+			}
+
+?>
+
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UserID']?>" VALUE="<?= $row['UserID']?>"></TD>
+
+			</TR>
+
+<?
+
+		}
+
+
+
+		if ($mode == "purchaser" && ((is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF))))	
+		{
+
+?>
+
+			<tr><td colspan="10"><BR><BR><a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_contractor_report=1"><b>Select all locked Units for Contractor Report</b></a>
+
+			| <a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_contractor_report=0"><b>Uselect all locked Units for Contractor Report</b></a>
+
+			</td></tr>
+
+
+
+			<tr><td colspan="10"><a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_user_report=1"><b>Select all locked Units for User Report</b></a>
+
+			| <a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_user_report=0"><b>Uselect all locked Units for User Report</b></a>
+
+			</td></tr>
+
+	
+
+			<tr><td colspan="10"><a href="display_selected_user_report.phtml"><b>Display selected user report</b></a>
+
+			| <a href="javascript:document.forms['update_purchaser'].submit()"><b>Update</b></a>
+
+			</td></tr>
+
+<?
+
+		}
+
+?>
+
+	
+
+	</FORM>
+<? if ($mode == "purchaser"){ ?>
+		<tr class=tail>
+			<td colspan=4 align=left>Total:</td>
+			<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+			<td><?= numberFormat(array("value"=>$totalSoldPrice, "isDollarValue"=>TRUE)); ?></td>
+			<td colspan=7>&nbsp;</td>
+		</tr>
+<?	} ?>		
+	</TABLE>
+
+<?
+
+	if (isSet($err))
+
+	{
+
+?>
+
+<script language="JavaScript">
+
+<!--
+
+	alert('<?= $err; ?>');
+
+//-->
+
+</SCRIPT>
+
+<?	
+
+	}
+
+?>
+
+</BODY>
+
+</HTML>
+

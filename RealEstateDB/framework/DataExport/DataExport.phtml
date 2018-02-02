@@ -1,0 +1,34 @@
+<?php
+/*
+ * Created on 9-Oct-2006
+ *
+ * Abstract base class on exporting data
+ */
+ class DataExport{
+ 	
+	 function export(){}
+	 
+	 /**
+	  * Return header information for the page
+	  * Default is CSV file displayed by Excel 
+	  */
+	 function exportHeader($filename){
+	 	
+	    header('Content-type: application/excel');  
+	    header('Content-Disposition: attachment; filename="' . $filename . '"'); 
+
+	    if(strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {                            
+	            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');              
+	            header('Pragma: public');              
+	    } 
+	}
+	
+	 
+	 
+	 /**
+	  * Export data from sql result var
+	  * Default is CSV file format
+	  */
+	 function exportData(){}
+ }
+?>

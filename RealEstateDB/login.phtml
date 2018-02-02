@@ -1,0 +1,128 @@
+<?
+include "main_include.phtml";
+
+$errmsg = "";
+
+// set your default page here
+if (!isset($_SESSION['PAGE.NEXT'])) $_SESSION['PAGE.NEXT'] = "index.phtml";
+
+// if already login, then directly go to PAGE.NEXT
+if (get_access_security_level() != ''){
+	goto_url($_SESSION['PAGE.NEXT']);
+	unset($_SESSION['PAGE.NEXT']);	
+}
+
+if (isset($_REQUEST['login_name']) && $_REQUEST['login_name'] != "") {
+	$login_name = $_REQUEST["login_name"];
+	$login_password = $_REQUEST["login_password"];
+	
+	include('user_admin/DO_class.phtml'); 
+	
+	$users = DOFactory::find("LoginUser", array("condition"=>"UserName='". $login_name . "' and Passwd='" . $login_password ."'"));
+	
+	
+	if(count($users) == 0) {
+		$errmsg = "Login Failed!";
+	} else {
+		$user = $users[0];
+		$expiryDate = $user->getField("ExpiryDate");
+		$currentDate = date("Y-m-d");
+		if ($currentDate > $expiryDate){
+			$errmsg = "Login Failed! Account is expired at $expiryDate. <BR>Please contact system administrator to renew the account.";
+		} else {
+		
+			$_SESSION["USER.NAME"] = $user->getField("UserName");
+			$_SESSION["USER.ID"] = $user->getField("LoginUserID");
+			$_SESSION["USER.ROLE"] = $user->getField("GroupName");
+			
+			$groups = DOFactory::find("LoginGroup", array("condition"=>"GroupName='". $user->getField("GroupName") . "'"));
+			if (count($groups) > 0) {
+				$_SESSION["USER.ROLE.LVL"] = $groups[0]->getField("GroupLevel");
+			} else {
+				$_SESSION["USER.ROLE.LVL"] = 0;
+			}
+			
+			goto_url($_SESSION['PAGE.NEXT']);
+			unset($_SESSION['PAGE.NEXT']);
+			exit;
+		}
+	}
+}
+?>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<title>Login</title>
+
+<script type="text/javascript" src="framework/dojo/dojo.js"></script>
+
+</head>
+<? print_top_frame($PHP_SELF, "./", false, false); ?>	
+	<BODY class="body1">
+	<CENTER>	
+
+	<TABLE CELLPADDING=5 CELLSPACING=5>
+		<TR>
+			<TD CLASS="blank" ><H3><?= get_project_name($PHP_SELF); ?> Visitor and Purchaser Tracking System</H3></TD>
+		</TR>
+		<TR>
+			<TD class="invisible" ALIGN="CENTER">
+<? if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF) ) { ?>
+				<IMG SRC="images/project-image-1200.jpg" WIDTH="341" HEIGHT="640">
+<?	} else { ?>				
+				<IMG SRC="images/project-image-1200.jpg" width=400>				
+<? } ?>				
+				</TD>
+		</TR>
+		<TR><TD><BR></TD></TR>
+		<tr>
+			<td ALIGN="CENTER">
+				<table width=300>					
+					<form name="login_form" action="login.phtml" method="post">
+						<tr>
+							<td colspan=10 align="center">
+								<span style="color: red;">
+								<? print($errmsg); ?>
+								<? displayError(); ?>
+								</span>
+							</td>
+						</tr>
+		
+						<tr>
+							<td >User Name:</td>
+							<td align=right><input name="login_name" type="text"></td>
+						</tr>
+						<tr>
+							<td >Password:</td>
+							<td align=right><input name="login_password" type="password"></td>
+						</tr>							
+						<tr>
+							<td>&nbsp;</td>
+							<td>&nbsp;</td>
+						<tr>
+							<td colspan="2" align="right">
+								<input id="Submit" type="submit" value="Login">
+								</td>
+						</tr>
+					</form>
+				</table>
+			</td>
+		</tr>			
+<? if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF) ) { ?>
+		<TR>
+			<TD  class="invisible"  align=right><BR><BR><IMG SRC="images/company-logo-small.jpg" height="50"></TD>
+		</TR>
+<? } ?>		
+
+		<tr><td>
+		<span class="copyright">Copyright <?php echo date("Y"); ?> ISAT Solution. All rights reserved. </span>
+		</td></tr>
+
+	</TABLE>
+	</CENTER>
+	
+	</BODY>
+</html>
+

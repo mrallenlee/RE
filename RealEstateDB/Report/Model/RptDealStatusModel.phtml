@@ -1,0 +1,102 @@
+<?
+
+/**
+ * Model object for DealStatus Report
+ * Retrieve unit information with a specific deal status
+ */
+class RptDealStatusModel {
+
+	var $dealStatus = "";
+	
+	function RptDealStatusModel($dealStatus){
+		$this->dealStatus	= $dealStatus;
+		$this->init();
+	}
+	
+	/**
+	 * Retreive data from DB
+	 */
+	function init(){
+		$this->dataSql 		= $this->getSql();
+		$this->dataResult	= executeSql($this->dataSql);			
+	}
+	
+	
+	/**
+	 * Return fields required for specific deal status
+	 */
+	function getDealStatusSqlFields($dealStatus){
+		$selectClause = 'Unit.UnitNumber, Unit.Area, 
+						User.Price, User.OfferPrice, 
+						(SELECT SUM(Price)
+						   FROM InventoryItem
+						  WHERE User.UserID = InventoryItem.UserID
+						    AND InventoryItem.ItemType in (' . PARKING_INCLUDE_LIST .')) ParkingSpaceCharge, 
+						(SELECT SUM(Price)
+						   FROM InventoryItem
+						  WHERE User.UserID = InventoryItem.UserID
+						    AND InventoryItem.ItemType in (' . LOCKER_INCLUDE_LIST .')) LockerCharge, 
+						User.UnitAllowance,
+						(SELECT SUM(Note) 
+							FROM UserPackage, Package 
+							WHERE User.UserID = UserPackage.UserID 
+							AND UserPackage.PackageID = Package.PackageID
+							AND Package.SalesIncentiveCategory = \'' . INCENTIVE_CATEGORY_CASH . '\') CashIncentive ';
+
+		
+		return $selectClause ;
+		
+	}
+	
+	function getSql(){
+		if ($this->dealStatus != DEAL_STATUS_AVAILABLE){
+			$sql	= "SELECT " . $this->getDealStatusSqlFields($this->dealStatus ) . "
+						FROM Unit, User
+						WHERE 	User.UnitNumber		= Unit.UnitNumber 
+						AND		User.UserID			= Unit.UserID
+						AND		User.DealStatus		= '" . $this->dealStatus . "' ";
+			
+			// special handling for unit that is for color selections
+			$sql 	.= ' AND (User.FirstName <> "Colour" OR User.LastName <> "Selections") ';
+			$sql 		.= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . " ASC ";
+			
+		} else {
+			$sql	= "(SELECT Unit.UnitNumber, Unit.Area, Unit.Price,
+ 						Unit.Price AS OfferPrice
+						FROM Unit
+						WHERE	(ISNULL(Unit.UserID) 
+								OR Unit.UserID = ''))";
+			
+			$sql 	.= " UNION 
+						(SELECT User.UnitNumber, Unit.Area, Unit.Price, Unit.Price AS OfferPrice
+						FROM Unit, User
+						WHERE 	User.UnitNumber		= Unit.UnitNumber 
+						AND		User.UserID			= Unit.UserID
+						AND (User.FirstName = \"Colour\" OR User.LastName = \"Selections\")) ";
+			
+			$sql 		.= " ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . " ASC ";
+		}
+		return $sql;
+	}
+	
+	/**
+	 * Get next unit associated array
+	 */
+	function getNextRecord(){
+		$row = mysql_fetch_array($this->dataResult);
+		return $row;		
+	}	
+	
+	function getHeaderRecord(){
+		
+	}
+	
+	function getLastRecord(){
+		
+	}
+	
+	function finalize(){
+		// Free result set
+		mysql_free_result($this->dataResult);		
+	}
+} // RptDealStatusModel

@@ -1,0 +1,17 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+$sql 	= "SELECT UserID, UnitNumber FROM User";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+while ($row = mysql_fetch_array($result))
+{
+	if ($row['UnitNumber'] != "")
+	{
+		$sql = "UPDATE Unit SET UserID=" . $row['UserID'] . " WHERE UnitNumber=" . $row['UnitNumber'];
+		$resultUnit = mysql_query($sql) or log_err_die(mysql_error() . "<BR>sql=$sql",$PHP_SELF);	
+	}
+}
+?>

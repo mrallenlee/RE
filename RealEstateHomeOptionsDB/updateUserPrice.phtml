@@ -1,0 +1,16 @@
+<?
+$not_include_javascript = 1;
+include_once "main_include.phtml";
+
+//echo "new Price: ".$newPrice. "; user id: ". $userID. "; price type: ". $priceType;
+
+if (!is_numeric($newPrice)) {
+	echo "Update failed: The input price is not a numeric number.";
+}
+$sql = "UPDATE User
+		SET ". $priceType. " = " .$newPrice." WHERE UserID = " . $userID;
+			
+executeSql($sql);
+echo "Update succeeded.";
+
+?>

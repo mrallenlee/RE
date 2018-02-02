@@ -1,0 +1,109 @@
+<?
+$not_include_javascript = 1;
+
+include "main_include.phtml";
+
+check_auth(2, "sales");
+
+if ($rpttype == "")
+{
+	die("Error: Report type is not specified");
+}
+
+if ($rpttype == "deposit") {
+$sql = "SELECT 	UserID, 
+				UnitNumber, 
+				Company,
+				FirstName, 
+				LastName, 
+				Price,
+				Status, 
+				DealStatus,
+				AgreementDepositDate,
+				AgreementDepositAmount,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = AgreementDepositTransactionsRecordID 
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) AgreementDepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = AgreementDepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) AgreementDepositReceivedDate, 
+				Day30DepositAmount,
+				Day30DepositDate,
+				(select sum(ChequeAmount) from Cheque
+					WHERE TransactionsRecordID = Day30DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day30DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day30DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day30DepositReceivedDate, 
+				Day90DepositAmount,
+				Day90DepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = Day90DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day90DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day90DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day90DepositReceivedDate, 
+				Day150DepositAmount,
+				Day150DepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = Day150DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day150DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day150DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day150DepositReceivedDate,
+				Day210DepositAmount,
+				Day210DepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = Day210DepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) Day210DepositChequeAmount, 
+				(select ChequeDate from Cheque WHERE TransactionsRecordID = Day210DepositTransactionsRecordID ORDER BY ChequeDate DESC LIMIT 1) Day210DepositReceivedDate,
+				OccupancyDepositAmount,
+				OccupancyDepositDate,
+				(select sum(ChequeAmount) from Cheque 
+					WHERE TransactionsRecordID = OccupancyDepositTransactionsRecordID
+					AND ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . " )) OccupancyDepositChequeAmount,
+				OccupancyDepositReceivedDate,
+				MortgageCommitment,
+				MortgageCommitmentAmount,
+				VTB
+				FROM User 
+				WHERE 1=1 
+				AND DealStatus != 'Rescinded'";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+	// create output file name and open it
+	$filename = $rpttype . "Rpt.csv";
+	$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+	$no = mysql_num_fields($result);
+	
+	// report header (the first line)
+	for ($i=0; $i < $no; $i++)
+	{
+		$field_name = mysql_field_name($result, $i);
+		
+		// Rename output field name "UnitNumber" to "SuiteNumber"
+		if ($field_name == "UnitNumber")
+		{
+			$field_name = "SuiteNumber";
+			$pos_SuiteNumber = $i;		// record the position of column "SuiteNumber"
+										// used to append Level# & Unit# after this col
+		}
+		
+		fputs ($out, "$field_name,");
+	}
+	fputs ($out, "\n");
+
+	// report content
+	while ($row = mysql_fetch_array($result))
+	{	
+		for ($i=0; $i < sizeof($row); $i++)
+		{
+			fputs ($out, "\"" . $row[$i] . "\",");
+		}
+		fputs ($out, "\n");
+	}
+	fclose($out);
+}
+header('Content-type: application/excel');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+if(strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE'))
+{
+	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	header('Pragma: public');
+} 
+
+readfile($filename);
+?>

@@ -1,0 +1,257 @@
+<html>
+<head>
+	<title>User Admin</title>
+	<script type="text/javascript">
+		djConfig = { isDebug: true };
+	</script>
+	<script type="text/javascript" src="../framework/dojo/dojo.js"></script>
+	
+	<script type="text/javascript" src="ajax.js"></script>
+	<script type="text/javascript" src="DO_stub.js"></script>
+	<script type="text/javascript" src="user_admin.js"></script>
+	
+	<style type="text/css">
+		button {width: 100px;}
+
+		#pane_grid {
+			overflow: auto;
+		}
+		
+		#pane_grid table {
+			font-family:Lucida Grande, Verdana;
+			font-size:0.8em;
+			width:100%;
+			border:1px solid #ccc;
+			border-collapse:collapse;
+			cursor:default;
+			position: absolute; 
+			left: 0; 
+			top: 0;
+		}
+		#pane_grid table td,
+		#pane_grid table th{
+			padding:2px;
+			font-weight:normal;
+		}
+		
+		#pane_grid table thead td, table thead th {
+			background-image:url(images/ft-head.gif);
+			background-repeat:no-repeat;
+			background-position:top right;
+		}
+		#pane_grid table thead td.selectedUp, table thead th.selectedUp {
+			background-image:url(images/ft-headup.gif);
+		}
+		#pane_grid table thead td.selectedDown, table thead th.selectedDown {
+			background-image:url(images/ft-headdown.gif);
+		}
+		
+		#pane_grid table tbody tr td{
+			border-bottom:1px solid #ddd;
+		}
+		#pane_grid table tbody tr.alt td{
+			background: #e3edfa;
+		}
+		#pane_grid table tbody tr.selected td{
+			background: yellow;
+		}
+		#pane_grid table tbody tr:hover td{
+			background: #a6c2e7;
+		}
+		#pane_grid table tbody tr.selected:hover td{
+			background:#ff9;
+		}
+
+		/* group multiple buttons in a row */
+		.box {
+			display: block;
+			float: right;
+		}
+		.box .dojoButton {
+			float: left;
+			margin-left: 10px;
+		}	
+	</style>
+</head>
+
+<body>
+<div dojoType="LayoutContainer" style="width: 100%; height: 100%; overflow: hidden">
+	<!-- footer -->
+	<div dojoType="ContentPane"  id="pageFooter" layoutAlign="bottom" style="border: solid #f2f2f2 1px;">
+	</div>
+
+	<div dojoType="SplitContainer"
+		orientation="horizontal"
+		sizerWidth="1"
+		activeSizing="0"
+		layoutAlign="client"
+		style=" border: solid #f2f2f2 1px;">
+		
+		<!-- left -->
+		<div dojoType="ContentPane" sizeShare="20" style="padding-top: 5px; overflow: auto; border: solid #f2f2f2 1px;">
+			<div>&nbsp;</div>
+			<div id="menu_user"><img src="images/user.gif" height=32 width=32>User</div>
+			<div>&nbsp;</div>
+			<div id="menu_group"><img src="images/usersgroup.gif" height=32 width=32>Group</div>
+		</div>		
+	
+		<!-- center -->
+		<div dojoType="SplitContainer" sizeShare="80" layoutAlign="client" orientation="vertical"
+			sizerWidth="1"
+			activeSizing="0"
+			style=" border: solid #f2f2f2 1px;">
+		
+			<div id="pane_grid" dojoType="ContentPane" sizeShare="50" style="border: solid #f2f2f2 1px;" >
+					<table dojoType="filteringTable" id="table_user" 
+						multiple="false" alternateRows="true" maxSortable="1"
+						cellpadding="0" cellspacing="0" border="1" style="visibility: visible">
+					<thead>
+						<tr>
+							<th field="id" dataType="number">ID</th>
+							<th field="name" dataType="String">User Name</th>
+							<th field="active" dataType="String">Is Active</th>
+							<th field="expiry"  dataType="String">Expiry Date</th>
+							<th field="description"  dataType="String">Description</th>
+							<th field="group"  dataType="String">Group</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>					
+					</table>
+					<table dojoType="filteringTable" id="table_group" 
+						multiple="false" alternateRows="true" maxSortable="1"
+						cellpadding="0" cellspacing="0" border="1" style="visibility: hidden">
+					<thead>
+						<tr>
+							<th field="id" dataType="Number">ID</th>
+							<th field="name" dataType="String">Group Name</th>
+							<th field="fullName" dataType="String">Full Name</th>
+							<th field="level" dataType="String">Group Level</th>
+							<th field="description"  dataType="String">Description</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>					
+					</table>
+			</div>
+			<div dojoType="ContentPane" sizeShare="50" style="border: solid #f2f2f2 1px;" >
+	      		<div id="form_user" style="visibility: visible; position: absolute; height: 100%; width: 100%; padding: 1em;">
+	      			<form name="user_form" onsubmit="return false;">
+	      				<table>
+							<tr>
+								<td>User Name:</td>
+								<td style="width: 120px;"><input type="text" id="UserName" style="width: 100%;"></td>
+								<td width="30px">&nbsp;</td>
+								<td>Group:</td>
+								<td style="width: 120px;">
+									<select id='userGroup' style="width: 100%;">
+										<option value='superuser'>superuser
+										<option value='management'>management
+										<option value='admin'>admin
+										<option value='sales'>sales
+										<option value='receptionist'>receptionist
+									</select>
+								</td>
+								<td width="30px">&nbsp;</td>
+								<td><button id='btnUserNew'>New</button></td>
+							</tr>
+							<tr>
+								<td>Expiry Date (YYYY-MM-DD):</td>
+								<td><div id="expiryDate" dojoType="dropdowndatepicker"></div></td>
+								<td>&nbsp;</td>
+								<td>Active:</td>
+								<td>
+									<input type="radio" name="isActive" value='Y' checked>Yes
+									<input type="radio" name="isActive" Value='N'>No
+								</td>
+								<td>&nbsp;</td>
+								<td><button id="btnUserUpdate">Update</button></td>
+							</tr>
+							<tr>
+								<td>Description:</td>
+								<td colspan="4"><input id='userDescription' type="text" style="width: 100%;" name="Description"></td>
+								<td>&nbsp;</td>
+								<td><button id="btnUserDelete">Delete</button></td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td><button id="btnUserPassword">Password</button></td>
+							</tr>
+	      				</table>
+	      			</form>
+				</div>
+	      		<div id="form_group" style="visibility: hidden; position: absolute; height: 100%; width: 100%; padding: 1em;">
+	      			<form name="group_form" onsubmit="return false;">
+	      				<table>
+							<tr>
+								<td style="width: 200px;">Group Name/Level:</td>
+								<td style="width: 250px;"><input type="text" id="GroupName" style="width: 50%;">&nbsp;&nbsp;<input type="text" id="GroupLevel" style="width: 30%;"></td>
+								<td width="30px">&nbsp;</td>
+								<td><button id="btnGroupNew">New</button></td>
+							</tr>
+							<tr>
+								<td>Group Full Name:</td>
+								<td><input type="text" id="GroupFullName" style="width: 100%;"></td>
+								<td>&nbsp;</td>
+								<td><button id="btnGroupUpdate">Update</button></td>
+							</tr>
+							<tr>
+								<td>Description:</td>
+								<td><input type="text" style="width: 100%;" id="GroupDescription"></td>
+								<td>&nbsp;</td>
+								<td><button id="btnGroupDelete">Delete</button></td>
+							</tr>
+	      				</table>
+	      			</form>
+	    		</div>
+			</div>	
+		</div>
+	</div>
+</div>	
+
+<div id="pane_password" 
+	dojoType="FloatingPane" 
+	title="Set Password"
+	constrainToContainer="1"
+	hasShadow="true"
+	resizable="false"
+	style="width: 400px; height: 150px; left: 300px; top: 100px; display: none;"
+>
+	
+	<form name="passwd_form" onsubmit="return false;">
+	<div dojoType="ContentPane" layoutAlign="client">
+		<table>
+			<tr>
+				<td style="width: 200px;">New Password:</td>
+				<td width="30px">&nbsp;</td>
+				<td width="150px"><input type="password" id="newPassword" style="width: 100%;"></td>
+			</tr>
+			<tr>
+				<td>Confirm Password:</td>
+				<td>&nbsp;</td>
+				<td><input type="password" id="confirmPassword" style="width: 100%;"></td>
+			</tr>
+		</table>
+	</div>
+	<div dojoType="ContentPane" layoutAlign="bottom" style="height: 25px; padding-top: 5px; ">
+		<div class="box">
+			<button id="btnPasswdOK" dojoType="Button">
+				<img src="images/ok.gif" height=18>
+				OK
+			</button>
+			<button id="btnPasswdCancel" dojoType="Button">
+				<img src="images/cancel.gif" height=18>
+				Cancel
+			</button>
+		</div>
+	</div>
+	</form>
+</div>
+
+</body>
+</html> 

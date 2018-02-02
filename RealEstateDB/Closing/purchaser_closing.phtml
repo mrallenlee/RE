@@ -1,0 +1,198 @@
+<?
+include "../config/config.phtml";
+include "../main_include.phtml";
+
+// expect
+// UnitNumber : UnitNumber to display
+// max: maxium number of additional purchasers
+
+?>
+<style type="text/css">
+table.nobold td { font-family: tahoma; font-size: 8pt; font-weight: normal; color: #000000}
+</style>
+
+<html>
+<? 
+print_top_frame($PHP_SELF, "../", true, false); 
+?>
+
+<body>
+<center>
+
+<h3 align="center"><U>INTERIM STATEMENT OF ADJUSTMENTS</U></h3>
+
+<?
+$sql_main = "SELECT * FROM UserClosingInterimStatement WHERE UnitNumber = ".$UnitNumber;
+$result = executeSql($sql_main);
+$row = mysql_fetch_array($result);
+
+$sql_purchasers = "SELECT * FROM temp_purchasers WHERE UnitNumber=" . $UnitNumber;
+$result_purchasers = executeSql($sql_purchasers);
+$row_purchasers = mysql_fetch_array($result_purchasers);
+
+$UserID = $row_purchasers['UserID'];
+
+// find all units belonging to this purchaser
+$sql_units = 
+   "SELECT UnitNumber 
+      FROM temp_purchasers
+     WHERE FirstName = '" . $row_purchasers['FirstName'] . "'
+       AND LastName = '" . $row_purchasers['LastName'] . "' ";
+?>
+
+  <TABLE class="nobold">
+  	<TR>
+  		<TD>RE:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+  		<TD><?= get_project_name(); ?> Ltd. sale to <?= $row_purchasers['LastName'] . ", " . $row_purchasers['FirstName']; ?>
+<? 
+for ($i = 1; $i <= $max; $i++)
+	if ($row_purchasers["AdditionalPurchaser" . $i . "LastName"] <> '' || $row_purchasers["AdditionalPurchaser" . $i . "FirstName"] <> '')
+	{
+		print " and " . $row_purchasers["AdditionalPurchaser" . $i . "LastName"] . ", " . $row_purchasers["AdditionalPurchaser" . $i . "FirstName"];
+		
+		$sql_units .= " AND AdditionalPurchaser" . $i . "LastName = '" . $row_purchasers["AdditionalPurchaser" . $i . "LastName"] . "'" .
+		              " AND AdditionalPurchaser" . $i . "FirstName = '" . $row_purchasers["AdditionalPurchaser" . $i . "FirstName"] . "'";
+	}
+?>
+  		</TD>
+    </TR>
+<? 
+$sql_units .= " ORDER BY UnitNumber";
+$result_units = executeSql($sql_units);
+
+while ($row_units = mysql_fetch_array($result_units))
+{
+?>
+  	<TR>
+  		<TD></TD>
+  		<TD>Unit <?= substr($row_units["UnitNumber"], -2); ?>, Level <?= get_unit_level($row_units["UnitNumber"]); ?></TD>
+    </TR>
+<? 
+}
+?>
+  	<TR>
+  		<TD></TD>
+  		<TD>of Peel Condominium Plan No.</TD>
+    </TR>
+  	<TR>
+  		<TD></TD>
+  		<TD>Suite <?= $UnitNumber; ?>, 220 Burnhamthorpe Road West, Mississauga, Ontario L5B 4N4</TD>
+    </TR>
+  	<TR>
+  		<TD></TD>
+  		<TD><br><br>Ontario New Home Warranty Program Builder Registration Number: </TD>
+    </TR>
+  	<TR>
+  		<TD></TD>
+  		<TD>Unit Enrolment Number: <?= $row["TarionNumber"]; ?></TD>
+    </TR>
+  	<TR>
+  		<TD></TD>
+  		<TD align="center"><br><br><b>Closing Date:</b> <?= date("F j, Y", strtotime($row["OccupancyDate"])); ?></TD>
+    </TR>
+  </TABLE>
+
+  <TABLE class="nobold" cellpadding="8">
+  	<TR>
+  		<TD><br></TD>
+  	</TR>
+  	<TR>
+  		<TD><b>SALE PRICE</b></TD>
+  		<TD></TD>
+  		<TD align="right"><?= numberFormat(array("value"=>$row["OfferPrice"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+    </TR>
+  	<TR>
+  		<TD><b>DEPOSIT(S)</b></TD>
+  		<TD align="right"><?= numberFormat(array("value"=>$row["TotalDeposit"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+  		<TD></TD>
+    </TR>
+  	<TR>
+  		<TD><b>BALANCE DUE</b> on the Unit Transfer Date</TD>
+  		<TD align="right"><?= numberFormat(array("value"=>$row["BalanceDueOnFinalClosing"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+  		<TD></TD>
+    </TR>
+  	<TR>
+  		<TD><b>UNADJUSTED BALANCE DUE ON POSSESSION CLOSING</b> payable<br>by <b>CERTIFIED CHEQUE</b> to <b>HARRIS, SHEAFFER LLP,</b> In Trust, as per<br>direction</TD>
+  		<TD align="right"><?= numberFormat(array("value"=>$row["UnadjustedBalance"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+  		<TD></TD>
+    </TR>
+  	<TR>
+  		<TD>E. & O. E.</TD>
+  		<TD>_____________</TD>
+  		<TD>_____________</TD>
+    </TR>
+  	<TR>
+  		<TD></TD>
+  		<TD align="right"><?= numberFormat(array("value"=>$row["UnadjustedBalance"] + $row["BalanceDueOnFinalClosing"] + $row["TotalDeposit"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+  		<TD align="right"><?= numberFormat(array("value"=>$row["OfferPrice"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+    </TR>
+  </TABLE>
+
+  <TABLE class="nobold">
+  	<TR>
+  		<TD><br><B>NOTE:</B></TD>
+  		<TD><br>In addition to the unadjusted balance due on closing, if any, the Purchasers must deliver the following cheques:</TD>
+    </TR>
+  	<TR>
+  		<TD><br>(i)</TD>
+  		<TD><br><b>Certified Cheque</b> payable to <b>Harris, Sheaffer LLP</b> in the sum of 
+  			<?= numberFormat(array("value"=>$row["ProRatedOccupancyFee"], "isDollarValue"=>TRUE, "decimals"=>2)); ?> 
+  			being the pro-rated amount of monthly<br>
+  		  Occupancy Fee from September 27, 2005 to the day prior to the first day of the 
+  		  following month.
+  		</TD>
+    </TR>
+    <TR>
+  		<TD><br>(ii)</TD>
+  		<TD><br>Eleven post-dated cheques each dated the 1st of the month in the sum of
+  			<?= numberFormat(array("value"=>$row["OccupancyFee"], "isDollarValue"=>TRUE, "decimals"=>2)); ?>
+  			commencing <b><?= date("F j, Y", strtotime($row["OccupancyDate"])); ?></b> payable<br> to <b><?= get_project_name(); ?> Ltd.</b>
+  		</TD>
+    </TR>
+    <TR>
+  		<TD></TD>
+  		<TD><br>In accordance with the <u>Condominium Act</u> and the Agreement of Purchase
+  			and Sale the Occupancy Fee comprises<br> the following:
+  		</TD>
+    </TR>
+    <TR>
+  		<TD></TD>
+  		<TD>
+  			<TABLE class="nobold" align="center">
+  				<TR>
+  					<TD><BR></TD>
+	  			</TR>
+  				<TR>
+  					<TD>Estimated Total Common Expenses: </TD>
+  					<TD align="right"><?= numberFormat(array("value"=>$row["TotalCommonExpenses"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+	  			</TR>
+  				<TR>
+  					<TD>Estimated Realty Taxes: </TD>
+  					<TD align="right"><?= numberFormat(array("value"=>$row["RealtyTaxes"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+	  			</TR>
+  				<TR>
+  					<TD>Interest on Balance due on the<br>Unit Transfer Date: </TD>
+  					<TD align="right"><?= numberFormat(array("value"=>$row["InterestOnBalance"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+	  			</TR>
+  				<TR>
+  					<TD></TD>
+  					<TD>___________________</TD>
+	  			</TR>
+  				<TR>
+  					<TD>TOTAL</TD>
+  					<TD align="right"><?= numberFormat(array("value"=>$row["InterestOnBalance"]+$row["RealtyTaxes"]+$row["TotalCommonExpenses"], "isDollarValue"=>TRUE, "decimals"=>2)); ?></TD>
+	  			</TR>
+  		  </TABLE>
+  		</TD>
+    </TR>
+    <TR>
+  		<TD><br><b>NOTE1:</b></TD>
+  		<TD><br>All calculations with respect to Goods and Services Tax will be addressed on the Final Statement of Adustments.</TD>
+    </TR>
+    <TR>
+  		<TD>E. & O. E.</TD>
+    </TR>
+  </TABLE>
+</center>
+</body>
+</html>

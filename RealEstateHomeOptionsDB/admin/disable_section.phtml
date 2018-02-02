@@ -1,0 +1,95 @@
+<?
+include "main_include.phtml";
+
+// This program is to disable the section by unit type
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); 
+
+?>
+
+<head>
+	<title>Admin</title>
+</head>
+
+
+<table cellspacing="0" cellpadding="0" border="0">
+<tr><font face="Verdana,Arial,Helvetica" size="2">
+	<b><a href="disable_section.phtml">Disable Section by Unit Type</a><br></b>
+</font></tr>
+<br>
+
+<TR>
+	<TD colspan="10" align="left">Turning on the checkbox will <b>DISABLE</b> the according section from being 
+	displayed for that unit type at the page for customer to select upgrades option.</TD>
+</TR>
+
+<TR><TD>&nbsp;</TD></TR>
+
+<form action="row_add_disable_section.phtml" name="disable_section_form" method="post">
+<table>
+
+<tr class="head">
+	<th><b>Unit Type</b></th>
+
+<?
+
+// Display form header with Section name, and store according section id in an array
+
+$sql_section = "SELECT SectionID, Name
+		FROM Section
+		ORDER BY Name";
+$result_section = mysql_query($sql_section,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_section . $PHP_SELF);
+
+$number_of_section = 0;
+
+while ($row_section = mysql_fetch_array($result_section))
+{
+	echo "<th ><b>" . 
+		$row_section['Name'] . "</b></th>\n";
+	
+	$section[$number_of_section] = $row_section['SectionID'];
+	$number_of_section++;
+}
+
+echo "</tr>";
+
+// Display form body
+$sql_unittype = "SELECT Type 
+		FROM UnitType 
+		ORDER BY type";
+$result_unittype = mysql_query($sql_unittype,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_unittype . $PHP_SELF);
+
+while ($row_unittype = mysql_fetch_array($result_unittype))
+{
+	displayMouseOverTR();
+?>
+		<TD ><font face="Arial,Verdana,Helvetica" size="2"><b><?= $row_unittype['Type'] ?></b></FONT></TD>
+<?
+	for($i=0; $i<$number_of_section; $i++)
+	{
+?>
+		<TD><INPUT TYPE="CHECKBOX" NAME="disable_<?= urlencode($row_unittype['Type']); ?>_<?= $section[$i] ?>" VALUE="1"
+		<?
+			if (section_disabled($row_unittype['Type'], $section[$i]))
+			{
+				echo " CHECKED ";
+			}				
+		?>></TD>
+<?
+	}
+	echo "</TR>";
+}
+?>
+
+<TR>
+	<TD></TD>
+	<TD><font face="Arial,Verdana,Helvetica" size="2"><input type="submit" name="submit" value="Update"></font></TD>
+</TR>
+
+</table>
+</form>
+
+</table>
+
+</body>
+
+</html>

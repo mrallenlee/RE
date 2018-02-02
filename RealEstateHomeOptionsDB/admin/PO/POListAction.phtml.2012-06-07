@@ -1,0 +1,301 @@
+<?php
+/*
+ * Created on 19-Mar-2006
+ *
+ * List PO utilities
+ */
+include_once "../main_include.phtml" ;
+
+
+
+//-------------------------------------------------------------------------
+// GUI Helper Functions
+//------------------------------------------------------------------------- 
+/**
+ * Display combo box to choose view type of the PO
+ * value are trade;unit;rooms or unit;rooms;trade
+ */
+function display_PO_view_list($inputName, $currentValue){
+	global $action;
+	
+	if ($action == "edit"){
+		echo "<select name=\"$inputName\">\n";
+			echo "<option value=\"trade;unit;rooms\" " . printSelected("trade;unit;rooms", $currentValue) . ">Trade-Unit-Rooms</option>\n";			
+			echo "<option value=\"unit;rooms;trade\" " . printSelected("unit;rooms;trade", $currentValue) . ">Unit-Rooms-Trade</option>\n";			
+			echo "<option value=\"trade;option;choice\" " . printSelected("trade;option;choice", $currentValue) . ">Trade-Option-Choice</option>\n";			
+		echo "</select>\n";			
+	} else {
+		echo $currentValue;	
+	}		
+}
+
+//-------------------------------------------------------------------------
+// Database Helper Functions
+//-------------------------------------------------------------------------
+ /**
+  * Get list PO sql with search criteria appends to the end 
+  * of the sql
+  */
+ function getPOSql($displayPOType){
+	if ($displayPOType == "standardPO"){
+		$unionSQL = getStandardPOSql();	
+	} else if ($displayPOType == "nonStandardPO"){
+		$unionSQL = getNonStandardPOSql();	
+	} else {
+		$unionSQL = "(" . getStandardPOSql() . " ) UNION (" . getNonStandardPOSql() .
+				" ) ";		
+	}
+		return $unionSQL; 	  		
+}
+
+/**
+ * Parse value separated by , and substitute value between
+ * '-'. 
+ * e.g. original string "2,3,6-10" return "2,3,6,7,8,9,10"
+ */
+function parseCSV($CsvValue){
+	$firstValue = true;
+	$resultValue = "";
+	$value = explode(",", $CsvValue);
+	foreach ($value AS $individualValue ){
+		if (strpos($individualValue, "-") > 0){
+			list($from, $to) = explode("-", $individualValue);
+			for ($i=$from; $i <= $to; $i++){
+				if ($firstValue){
+					$resultValue .= "$i"; 	
+					$firstValue = false;
+				} else {
+					$resultValue .= ",$i";
+				} 	
+			}
+		} else {
+			if ($firstValue){
+				$resultValue .= "$individualValue"; 	
+				$firstValue = false;
+			} else {
+				$resultValue .= ",$individualValue";
+			}	
+		}
+	}
+	return $resultValue;
+}
+
+/**
+ * Append search criteria to the given sql statement
+ */
+function appendSearchCriteria($sql, $POTable){
+
+//	if ($_REQUEST['floorFrom'] != ""){
+//		$sql .= " AND  substring(UnitNumber, 1, (LENGTH(UnitNumber)-2) ) >= " . $_REQUEST['floorFrom'] . " ";	
+//	} 
+//	if ($_REQUEST['floorTo'] != ""){
+//		$sql .= " AND  substring(UnitNumber, 1, (LENGTH(UnitNumber)-2) ) <= " . $_REQUEST['floorTo'] . " ";	
+//	}
+	if ($_REQUEST['floor'] != ""){
+		
+		$parsedFloorValue = parseCSV($_REQUEST['floor']);
+		$sql .= " AND  substring(Unit.UnitNumber, 1, (LENGTH(Unit.UnitNumber)-2) ) IN ($parsedFloorValue) ";
+	} 
+//	if ($_REQUEST['floorTo'] != ""){
+//		$sql .= " AND  substring(Unit.UnitNumber, 1, (LENGTH(Unit.UnitNumber)-2) ) <= " . $_REQUEST['floorTo'] . " ";	
+//	}
+	if ($_REQUEST['trade'] != "" && $_REQUEST['trade'] != "-1"){
+		$sql .= " AND Contractor.ContractorID=\"" . $_REQUEST['trade'] . "\""; 	
+	} 
+	if ($_REQUEST['createDateFrom'] != "" ){
+		$sql .= " AND $POTable.CreateDate >=\"" . $_REQUEST['createDateFrom'] . "\""; 	
+	} 
+	if ($_REQUEST['createDateTo'] != "" ){
+		$sql .= " AND $POTable.CreateDate <=\"" . $_REQUEST['createDateTo'] . "\""; 	
+	} 
+	if ($_REQUEST['poIssuedDateFrom'] != "" ){
+		$sql .= " AND $POTable.IssuedDate >=\"" . $_REQUEST['poIssuedDateFrom'] . "\""; 	
+	} 
+	if ($_REQUEST['poIssuedDateTo'] != "" ){
+		$sql .= " AND $POTable.IssuedDate <=\"" . $_REQUEST['poIssuedDateTo'] . "\""; 	
+	} 
+	if ($_REQUEST['displayIssuedPO'] != "" && $_REQUEST['displayIssuedPO'] != "all" ){
+		$value = $_REQUEST['displayIssuedPO'] == "issued" ? 1 : 0;
+		$sql .= " AND $POTable.Issued =" . $value . " "; 	
+	} 
+	if ($_REQUEST['PONumber'] != ""  ){
+//		$sql .= " AND $POTable.PONumber ='" . $_REQUEST['PONumber'] . "' "; 	
+		$sql .= " AND (" . expandSearchCriteria(array("columnName"=>$POTable.".PONumber", "csvValue"=>$_REQUEST['PONumber'],
+												"valuePrefix"=>get_project_short_name() . "-", "intervalDelimiter"=>'@')) . ") ";
+		
+	} 
+	if ($_REQUEST['POIssuedID'] != ""  ){
+		$sql .= " AND $POTable.POIssuedID =" . $_REQUEST['POIssuedID'] . " "; 	
+	} 
+	
+	if ($_REQUEST['unitNumber'] != ""  ){
+		$sql .= " AND Unit.UnitNumber =" . $_REQUEST['unitNumber'] . " "; 	
+	} 	
+
+	if ($_REQUEST['POZeroCostFiltration'] == "Yes"  ){
+		$sql .= " AND $POTable.Cost > -9990 "; 	
+	} 	
+	
+	if ($_REQUEST["markInvoiced"] == "Yes"  ){
+		$sql .= " AND $POTable.Invoiced=1 "; 	
+	} 	
+
+	if ($_REQUEST["markInvoiced"] == "No"  ){
+		$sql .= " AND $POTable.Invoiced=0 "; 	
+	} 	
+
+//	print "sql=$sql<BR>";
+	return $sql;
+	
+}
+
+/**
+ * Construct query string for given var
+ */
+function constructQueryStringForVariable($varName){
+	if ($_REQUEST[$varName] != ""  ){
+		$queryString .= "&$varName=" .  $_REQUEST[$varName];
+		return $queryString;
+	} 	
+}
+	
+/**
+ * Get query string
+ * Return query string starts with &
+ */
+function getQueryString(){
+	$queryString = "";
+	if ($_REQUEST['floorFrom'] != ""){
+		$queryString.= "&floorFrom=" . $_REQUEST['floorFrom'];	
+	} 
+	if ($_REQUEST['floorTo'] != ""){
+		$queryString.= "&floorTo=" . $_REQUEST['floorTo'];	
+	}
+	if ($_REQUEST['floor'] != ""){
+		$queryString.= "&floor=" . urlencode($_REQUEST['floor']);	
+	} 	
+	if ($_REQUEST['trade'] != "" && $_REQUEST['trade'] != "-1"){
+		$queryString.= "&trade=" . $_REQUEST['trade'];	
+	} 
+	if ($_REQUEST['createDateFrom'] != "" ){
+		$queryString.= "&createDateFrom=" . $_REQUEST['createDateFrom'];	
+	} 
+	if ($_REQUEST['createDateTo'] != "" ){
+		$queryString.= "&createDateTo=" . $_REQUEST['createDateTo'];	
+	} 
+	if ($_REQUEST['poIssuedDateFrom'] != "" ){
+		$queryString.= "&poIssuedDateFrom=" . $_REQUEST['poIssuedDateFrom'];	
+	} 
+	if ($_REQUEST['poIssuedDateTo'] != "" ){
+		$queryString.= "&poIssuedDateTo=" . $_REQUEST['poIssuedDateTo'];	
+	} 
+	if ($_REQUEST['displayIssuedPO'] != "" && $_REQUEST['displayIssuedPO'] != "all" ){
+		$queryString.= "&displayIssuedPO=" . $_REQUEST['displayIssuedPO'];	
+	} 
+	if ($_REQUEST['PONumber'] != ""  ){
+		$queryString .= "&PONumber=" .  $_REQUEST['PONumber'];
+	} 
+	if ($_REQUEST['POIssuedID'] != ""  ){
+		$queryString .= "&POIssuedID=" .  $_REQUEST['POIssuedID'];
+	} 
+	if ($_REQUEST['unitNumber'] != ""  ){
+		$queryString .= "&unitNumber=" .  $_REQUEST['unitNumber'];
+	} 
+	if ($_REQUEST['markRevised'] != ""  ){
+		$queryString .= "&markRevised=" .  $_REQUEST['markRevised'];
+	} 
+	if ($_REQUEST['POView'] != ""  ){
+		$queryString .= "&POView=" .  $_REQUEST['POView'];
+	} 
+	$queryString .= getColumnSelectorQueryString(); 
+	return $queryString;		
+}
+
+// return column selector's query string
+function getColumnSelectorQueryString(){
+	$queryString = "";
+	$queryString .= constructQueryStringForVariable("showSelection");
+	$queryString .= constructQueryStringForVariable("showIssued");
+	$queryString .= constructQueryStringForVariable("showIssuedDate");
+	$queryString .= constructQueryStringForVariable("showPOIssuedNumber");
+	$queryString .= constructQueryStringForVariable("showPONumber");
+	$queryString .= constructQueryStringForVariable("showSection");
+	$queryString .= constructQueryStringForVariable("showSubsection");
+	$queryString .= constructQueryStringForVariable("showOption");
+	$queryString .= constructQueryStringForVariable("showChoice");
+	$queryString .= constructQueryStringForVariable("showCost");
+	
+	return $queryString;
+}
+
+/**
+ * Decide to show the column or not
+ */
+function showColumn($argument){
+	$queryVar = $argument['queryVar'];
+	$data = $argument['data'];
+	
+	if ($_REQUEST[$queryVar]){
+		return $data;	
+	}
+}
+
+function getStandardPOSql(){
+// use StandardPO table instead of UserSave table
+	$sql			= " SELECT StandardPO.POID, StandardPO.UnitNumber, StandardPO.ItemID," .
+						" StandardPO.OptionID, StandardPO.ChoiceID, StandardPO.ContractorID," .
+						" Section.SectionID As SectionID, Subsection.SubsectionID, " .
+						" '' AS Description, " .
+						" StandardPO.Cost, StandardPO.Issued, StandardPO.Invoiced, " .
+						" StandardPO.PONumber, StandardPO.IssuedDate, " .
+						" StandardPO.POIssuedID, Section.Name As SectionName, Subsection.Name As SubsectionName, " .
+						" Options.Name As OptionName, Choice.Name As ChoiceName, " .
+						" Item.Name As ItemName, Contractor.ContractorName," .
+						" Contractor.Person AS ContractorPerson, Contractor.Address AS ContractorAddress," .
+						" Contractor.City AS ContractorCity, Contractor.Country AS ContractorCountry," .
+						" Contractor.PostalCode AS ContractorPostalCode, Contractor.Phone AS ContractorPhone," .
+						" 'StandardPO' AS POType" .
+						" FROM Options, Contractor, Unit, UserUpgradeOptionStatus, Item, Subsection, Section, StandardPO " .
+						" LEFT JOIN Choice
+						ON StandardPO.ChoiceID = Choice.ChoiceID
+						AND StandardPO.OptionID = Choice.OptionID" .
+						" WHERE StandardPO.ContractorID = Contractor.ContractorID
+						AND Unit.unitNumber = StandardPO.unitNumber
+						AND StandardPO.ItemID = Item.ItemID
+						AND Item.SubsectionID = Subsection.SubsectionID
+						AND Subsection.SectionID = Section.SectionID
+						AND StandardPO.OptionID = Options.OptionID " .
+						" AND Unit.UnitNumber = UserUpgradeOptionStatus.UnitNumber" .
+						" AND UserUpgradeOptionStatus.Commit = 1";
+						
+	$sql 			= appendSearchCriteria($sql, "StandardPO");					
+ 	 return $sql;
+}
+
+function getNonStandardPOSql(){
+	$nonStandardSql = 	" SELECT NonStandardPO.POID, NonStandardPO.UnitNumber, -1 AS ItemID," .
+						" -1 AS OptionID, -1 AS ChoiceID, NonStandardPO.ContractorID, " .
+						" NonStandardPO.SectionID, NonStandardPO.SubsectionID," .
+						" NonStandardPO.Description," .
+						" NonStandardPO.Cost, NonStandardPO.Issued,  NonStandardPO.Invoiced, " . 
+						" NonStandardPO.PONumber, NonStandardPO.IssuedDate," .
+						" NonStandardPO.POIssuedID, Section.Name AS SectionName, Subsection.Name AS SubsectionName, " .
+						" '' AS OptionName, '' AS ChoiceName, " .
+						" '' AS ItemName, Contractor.ContractorName, " .
+						" Contractor.Person AS ContractorPerson, Contractor.Address AS ContractorAddress," .
+						" Contractor.City AS ContractorCity, Contractor.Country AS ContractorCountry," .
+						" Contractor.PostalCode AS ContractorPostalCode, Contractor.Phone AS ContractorPhone," .
+						" 'NonStandardPO' AS POType" .
+						" FROM NonStandardPO, Contractor, Section, Subsection, Unit, UserUpgradeOptionStatus" .
+						" WHERE NonStandardPO.SectionID = Section.SectionID " .
+						" AND NonStandardPO.ContractorID = Contractor.ContractorID " .
+						" AND NonStandardPO.SubsectionID = Subsection.SubsectionID " .
+						" AND Unit.UnitNumber = NonStandardPO.UnitNumber " .
+						" AND Unit.UnitNumber = UserUpgradeOptionStatus.UnitNumber" .
+						" AND UserUpgradeOptionStatus.Commit = 1";
+			
+	$nonStandardSql	= appendSearchCriteria($nonStandardSql, "NonStandardPO");
+	return $nonStandardSql; 					
+}
+
+?>

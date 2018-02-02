@@ -1,0 +1,48 @@
+<?php
+/*
+ * Created on 19-Mar-2006
+ * Issues PO, and let the user download the PO list in specific format
+ * QueryString: Expect the same query string as in POList.phtml
+ */
+include_once "main_include.phtml";
+
+?>
+<html>
+	<br>	 
+	<script>
+		// generate invoice for currently displayed POs
+		function generateInvoice(){
+			var url = 'POList.phtml?printMode=PDF&POIssuedID=<?= $POIssuedID; ?><?
+				if ($markRevised == 1){
+					print "&markRevised=1";	
+				}
+			?>'; 
+			window.open(url, "PDF_WIN");					
+		}
+		
+		// display POs in the invoice
+		function displayInvoice(){
+			var listPOInInvoiceURL = 'POList.phtml?POIssuedID=<?= $POIssuedID;?>&showDefaultCol=1'
+			window.location = listPOInInvoiceURL; 	
+		}
+	</script>
+
+<? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/", true, false); ?>
+<table>
+	<tr>
+		<td Colspan=100>The invoice has been created successfully.</td>
+	</tr>
+	<tr>
+		<td>Invoice ID:</td>
+		<td><?= $invoiceID; ?></td>
+	</tr>
+	<tr>
+		<td><input type="button" value="View the PO" onClick="displayInvoice()"></td>
+		<td><input type="button" value="Download the PO PDF" onClick="generateInvoice()"></td>
+	</tr>
+</table>
+<script>
+	generateInvoice();
+</script>		
+		
+</html>

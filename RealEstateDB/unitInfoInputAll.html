@@ -1,0 +1,33 @@
+<HTML>
+	<BODY BGCOLOR="#FFFFAF">
+		<H3>CityGate -- Insert unit information</H3>
+
+		<FORM NAME="SingleUnitInfoForm" METHOD=POST ACTION="./updateUnitInfo.phtml">
+			<TABLE>
+				<TR>
+					<TD>Suite Number</TD>
+					<TD>Unit Type</TD>
+					<TD>Unit Type Description</TD>
+					<TD>Price</TD>
+				</TR>
+				<TR>
+					<TD><? display_text("UnitNumber","", FALSE,50,FALSE,"","",TRUE,20,"0000"); ?></TD>
+					<TD><? display_text("UnitType","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+					<TD><? display_text("UnitTypeDescription","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+					<TD><? display_text("Price","", FALSE,50,FALSE,"","",FALSE,20,"0000"); ?></TD>
+				</TR>
+				<TR>
+					<TD><BR><BR><INPUT TYPE=SUBMIT VALUE="Submit"></TD>
+				</TR>
+			</TABLE>
+		</FORM>
+
+		<FORM NAME="UnitInfoForm" METHOD=POST ACTION="./unitInfo.phtml">
+			<INPUT TYPE="hidden" NAME="action" VALUE="edit">
+			<INPUT TYPE="hidden" NAME="source" VALUE="query">
+			<TEXTAREA NAME="multiUnitInfo" ROWS="30" COLS="60"></TEXTAREA>
+			<BR><BR>
+			<INPUT TYPE=SUBMIT VALUE="Edit & Submit">
+		</FORM>
+	</BODY>
+</HTML>

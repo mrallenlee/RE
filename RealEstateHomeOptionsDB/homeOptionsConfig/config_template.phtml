@@ -1,0 +1,35 @@
+<?
+/*
+ * Created on 25-Oct-2005
+ *
+ * Configuration file for Home options web page 
+ */
+ // relative path from Home Options folder back to main Sales folder which contain db info
+define("HOME_OPTIONS_INVERT_RELATIVE_PATH", "../admin");
+ 
+
+define ("SUB_FOLDER_INVERT_RELATIVE_PATH", "."); 
+
+// since web resource may not be accessible for customers,
+// this is the folder to store all the web resources for customers
+define ("WEB_RESOURCE_INVERT_RELATIVE_PATH", 	SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH);
+
+// log folder
+define ("ERROR_LOG_FILE", SUB_FOLDER_INVERT_RELATIVE_PATH . "/log/error.log");
+define ("ERROR_CONFIG_FILE", SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . LOCAL_CONFIG_FOLDER . "/errorConfig.phtml");
+ 
+// Error constants
+define("SESSION_EXPIRED", 	"REAL_ESTATE_HOME_OPTIONS_DB_SESSION_EXPIRED");
+define("LOGIN_INVALID", 	"REAL_ESTATE_HOME_OPTIONS_DB_LOGIN_INVALID");
+define("COMMIT_ALREADY",	"REAL_ESTATE_HOME_OPTIONS_DB_COMMIT_ALREADY");
+define("SQL_ERROR",			"REAL_ESTATE_HOME_OPTIONS_DB_SQL_ERROR");
+define("GENERAL_ERROR",		"REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR");
+
+define("PO_SYSTEM_ENABLED",		true);
+
+// Define search creiteria to find upgrade related incentive
+// It may need to fine tune for different project.
+// Eventually, additional column should be added to table to categorize incentives
+define("UPGRADE_INCENTIVE_WHERE_CLAUSE", "upper(PackageName) LIKE '%UPGRADE%' OR upper(PackageName) LIKE '%TV%' OR upper(PackageName) LIKE '%WOOD%'")
+
+?>

@@ -1,0 +1,36 @@
+<?php
+/*
+ * Created on 5-Nov-2007
+ *
+ * Export GST rebate data
+ */
+ 
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExportMysqlWrapper.phtml";
+
+check_auth(2, "sales");
+ 
+$sql = "SELECT UserID,
+               UnitNumber,
+               CASE WHEN OfferPrice > 0 
+                    THEN OfferPrice
+                    ELSE Price end Price,
+               AdjustedSalesPrice,
+               CASE WHEN QualifyGSTRebate = 1 
+                    THEN 'Y'
+                    ELSE 'N' end QualifiedForGSTRebate,
+               GSTRebate, 
+               ASPNetGST
+          FROM User
+         WHERE DealStatus != 'Rescinded' 
+         ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+ 		
+$result = executeSql($sql);
+
+$exporter = new DataExportMysqlWrapper($result);
+$exporter->exportHeader("GSTRebate.csv");
+$exporter->exportData();
+
+?>

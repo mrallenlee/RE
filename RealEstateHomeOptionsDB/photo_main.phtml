@@ -1,0 +1,56 @@
+<? include "main_include.phtml"; ?>
+<html>
+<head>
+<style TYPE="text/css">
+  TD.NON {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#C0C0C0; font-weight :normal;}
+  TD.TOP {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#0000FF; font-weight :bold;}
+  TD.Some {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#000000; font-weight :normal;}
+
+  A.NOEVENT:Link {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#000000; font-weight :normal; text-decoration: none;}
+  A.NOEVENT:Visited {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#000000; font-weight :normal; text-decoration: none;}
+
+  A.EVENT:Link {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#000000; font-weight :bold; text-decoration: none;}
+  A.EVENT:Visited {font-family :Tahoma, Verdana, Arial; font-size :12px; color :#000000; font-weight :bold; text-decoration: none;}
+
+  A.NORMAL:Link {font-family :Verdana, Arial; font-size :12px; color :#0000FF; font-weight :normal; text-decoration: none;}
+  A.NORMAL:Visited {font-family :Verdana, Arial; font-size :12px; color :#0000FF; font-weight :normal; text-decoration: none;}
+</style>
+</head>
+
+<script language="JavaScript" type="text/JavaScript">
+function apply_selection(current_selection, $ItemID)
+{
+	var match = /.*\/(.*)_(.*)/.exec(current_selection);
+	parent.parent.change_preview_image($ItemID, match[1], match[2]);
+	parent.parent.chooseOptionsPhotoDone()
+}
+</script>
+
+<body background="images/blank.gif" bgcolor="#FFFFFF" text="#0000FF" link="#000000" vlink="#000000" leftmargin=0 rightmargin=0 topmargin=0 bottommargin=0 marginwidth=0 marginheight=0>
+
+<table width="100%" border="0" cellspacing="1" cellpadding="1" height="270">
+  <tr > 
+    <td >
+      <table border="0" cellspacing="2" cellpadding="1" width="100%">
+        <tr > 
+          <td align="right" valign="top"><input type="button" value="Apply Selection" onClick="javascript:apply_selection(main_photo.src, <?= $_REQUEST['ItemID'] ?>);"></td>
+          <td width="10%" align="right" valign="top"><input type="button" value="Cancel" onClick="javascript:parent.parent.chooseOptionsPhotoDone();"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr> 
+    <td width="100%" align="center"><img src="<?
+    // only display image if it is not a default item image    
+    if (strpos($_REQUEST["img"], "-9999") > 0 || strpos($_REQUEST["img"], DEFAULT_ITEM_OPTION_IMAGE) > 0){
+		print "images/blank.jpg";    	
+    } else {
+    	print $_REQUEST["img"]; 
+    }     
+    
+     ?>" name="main_photo" width="250" height="250" class="image"></td>
+  </tr>
+</table>
+
+</body>
+</html>

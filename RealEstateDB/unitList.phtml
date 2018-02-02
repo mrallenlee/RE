@@ -1,0 +1,307 @@
+<?
+include "main_include.phtml";
+include "multiPageNavigation.phtml";
+// set the security level to be 2 for this page
+check_auth(MANAGEMENT);
+?>
+
+<?
+
+// expect
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+// MultiPageNavigationResultsPerPage : for multi page navigation
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+if (!isSet($numOfUnitPriceHistory) || $numOfUnitPriceHistory == "")
+{
+	$numOfUnitPriceHistory = 2;
+}
+
+$sql = "SELECT Unit.UnitNumber, User.Company, Unit.CondoNumber, Unit.ColorZone, 
+				Unit.Width, Unit.Length, Unit.Frontage, 
+				Unit.Area, Unit.NetArea, Unit.Price, 
+				Unit.UnitType, Unit.Zone, Unit.Level, 
+				Unit.Status, User.DealStatus
+				FROM Unit
+				LEFT JOIN User 
+				ON Unit.UserID = User.UserID 
+				WHERE 1=1 ";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+
+				if ($key == "search_Company")
+				{
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"User.".$search_field, "csvValue"=>$val)) . ") ";
+					
+				}
+				else
+				{
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"Unit.".$search_field, "csvValue"=>$val)) . ") ";
+				}
+
+				$sql .= $sql_cond;
+				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+}
+
+// list all
+else
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby, " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+//die($sql);
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+//echo "<br><br>pageSql=$pageSql<BR>";
+//die();
+$result = executeSql($pageSql);
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+<script language="JavaScript">
+<!--
+
+function listall(){
+	var numOfHistory = document.getElementById('numOfUnitPriceHistory').value;
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>&numOfUnitPriceHistory=' + numOfHistory + '&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+
+//-->
+</script>
+
+	<TITLE>Unit List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_unit" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+
+		<TABLE>
+	
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+	
+		<TR CLASS="blank">
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+			<TD>Unit Type : </TD>
+			<TD><? display_generic_table_list("UnitType", "UnitType", "", "search", ""); ?></TD>
+			<TD>Status : </TD>
+			<TD>
+				<SELECT id="search_Status" name="search_Status" VALUE="<?= $search_Status; ?>">
+					<OPTION VALUE="">Choose one</OPTION>
+<?
+// prepare unit status data
+$UnitStatus_sql = "SELECT * FROM UnitStatus";
+$UnitStatus_result = executeSql($UnitStatus_sql);
+
+while ($UnitStatus_row = mysql_fetch_array($UnitStatus_result)) 
+{
+	echo "					<OPTION VALUE=\"" . $UnitStatus_row["UnitStatus"] . "\">" . $UnitStatus_row["UnitStatus"] . "</OPTION>\n";		
+}
+?>
+			</SELECT>
+			</TD>
+		</TR>
+
+		<TR CLASS="blank">
+			<TD>Area : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Area" VALUE="<?= $search_Area; ?>"></TD>
+			<TD>Price : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Price" VALUE="<?= $search_Price; ?>"></TD>
+			<TD>Company: </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+		</TR>
+
+		<TR CLASS="blank">
+			<td>Results per Page : </td>
+			<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+			<TD>Number of Price <br>History to display: </TD>
+			<TD>
+				<SELECT ID="numOfUnitPriceHistory" NAME="numOfUnitPriceHistory">
+					<OPTION>1</OPTION>
+					<OPTION>2</OPTION>
+					<OPTION>3</OPTION>
+					<OPTION>4</OPTION>
+					<OPTION>5</OPTION>
+					<OPTION>6</OPTION>
+					<OPTION>7</OPTION>
+					<OPTION>8</OPTION>
+					<OPTION>9</OPTION>
+					<OPTION>10</OPTION>
+				</SELECT>
+			</TD>
+		</TR>
+
+		<TR CLASS="blank">
+			<TD COLSPAN="6" ALIGN="LEFT">Note : Use % as a wildcard character; Use - as range separator, for example, 1-5</TD>
+		</TR>
+
+		<TR>
+			<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listall()">
+				<INPUT TYPE="BUTTON" VALUE="Dump Data" onClick="window.location='./dumpCSVUnit.phtml'">
+		</TR>
+
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+	
+<script language="JavaScript">
+	document.search_unit.search_Status.value = "<?= $search_Status; ?>";
+	document.search_unit.search_UnitType.value = "<?= $search_UnitType; ?>";
+	document.search_unit.numOfUnitPriceHistory.value = "<?= $numOfUnitPriceHistory; ?>";
+</script>
+
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+
+	{
+		die("");
+	}
+?>	
+
+	<H4>List Units</H4>
+	<TABLE BORDER=0>
+
+  	<TR>
+  	<? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&mode=" . $mode . "&orderby=" . $orderby . "&numOfUnitPriceHistory=" . $numOfUnitPriceHistory; ?>
+    	<TD colspan="18" align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?>
+    	<?= $multiPageNavigation->getAllPageButtons($linkCreterion);?>
+    	<?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  	</TR>
+
+<?
+
+		$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&numOfUnitPriceHistory=$numOfUnitPriceHistory&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
+
+		$totalPrice = 0;
+		$PricePerSF = 0;
+		$totalPricePerSF = 0;
+		$totalArea = 0;
+		$totalNetArea = 0;
+		$num_of_rows = 0;
+
+		while ($row = mysql_fetch_array($result))
+		{				
+			$totalPrice += $row['Price'];
+			$PricePerSF = round($row['Price']/$row['Area'], 2);
+			$totalPricePerSF += $PricePerSF;
+			$totalArea += $row['Area'];
+			$totalNetArea += $row['NetArea'];
+
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=">Suite Number</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=User.Company">Company</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.UnitType">Unit Type</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.Model">Model</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.UnitTypeDescription">Unit Type Description</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.Area">Area</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=User.DealStatus">Deal Status</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.Price">Price</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.Price/Unit.Area">Price per SF</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Unit.Status">Unit Status</A></TD>
+		</TR>
+<?
+			}
+			
+			displayMouseOverTR("blank", "body");
+?>			
+				<TD><?= $row['UnitNumber']; ?></TD>
+				<TD><?= $row['Company']; ?></TD>
+				<TD><?= $row['UnitType']; ?></TD>
+				<TD><?= $row['Model']; ?></TD>
+				<TD><?= $row['UnitTypeDescription']; ?></TD>
+				<TD><?= $row['Area']; ?></TD>
+				<TD><?= $row['DealStatus']; ?></TD>
+				<TD><?= numberFormat(array("value"=>$row['Price'], "decimals"=>0, "isDollarValue"=>TRUE)) ; ?></TD>
+				<TD><?= numberFormat(array("value"=>$PricePerSF, "decimals"=>0, "isDollarValue"=>TRUE)) ; ?></TD>
+				<TD><?= $row['Status']; ?></TD>
+			</TR>
+<?
+		}
+?>
+		<tr class=tail>
+			<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+			<td colspan="4">&nbsp;</td>
+			<td align="right"><?= numberFormat(array("value"=>$totalArea)); ?></td>
+			<td colspan="1">&nbsp;</td>
+			<td align="right"><?= numberFormat(array("value"=>$totalPrice, "isDollarValue"=>TRUE)); ?></td>
+			<td align="right"><?= numberFormat(array("value"=>$totalPricePerSF, "isDollarValue"=>TRUE)); ?></td>
+			<td colspan="4">&nbsp;</td>
+		</tr>
+
+	</TABLE>
+
+<?
+	if (isSet($err))
+	{
+?>
+
+<script language="JavaScript">
+
+<!--
+	alert('<?= $err; ?>');
+//-->
+
+</SCRIPT>
+
+<?	
+	}
+?>
+
+</BODY>
+</HTML>

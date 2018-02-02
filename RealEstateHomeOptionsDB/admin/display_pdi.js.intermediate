@@ -1,0 +1,96 @@
+function confirm_delete(url)
+{
+	var msg =	"WARNING: If this record is deleted, then other records\n" +
+			"in the database linked to it could or will be deleted.\n" +
+			"\n" +
+			"Would you like to delete this record?";
+	
+	if (confirm(msg))
+	{
+		location.href = url;
+	}
+}
+
+function set_fixeddate(type, i)
+{
+	if (eval("document.frm_add_pdidefect." + type + "Fixed_new_" + i + ".checked") == true)
+	{
+		var today = new Date();
+		var today_mth = today.getMonth() + 1;
+		eval("document.frm_add_pdidefect." + type + "FixedDate_" + i + ".value = today.getFullYear() + '-' + today_mth + '-' + today.getDate()");
+	}
+	else
+	{
+		eval("document.frm_add_pdidefect." + type + "FixedDate_" + i + ".value = ''");
+	}
+}
+
+function change_link(type)
+{
+	var selected_list;
+
+	if (type == "trade_unit")
+	{
+		selected_list = document.frm_links.trade_unit_contractor_selector;
+	}
+	else if (type == "trade_floor")
+	{
+		selected_list = document.frm_links.trade_floor_contractor_selector;
+	}
+	else if (type == "trade_allfloors")
+	{
+		selected_list = document.frm_links.trade_allfloors_contractor_selector;
+	}
+
+	if (selected_list.options[selected_list.selectedIndex].value == 0)
+	{
+		alert("Please choose a contractor.");
+	}
+	else
+	{
+		if (type == "trade_unit")
+			location.href = "report_pdi_others.phtml?unit=<?= $unit ?>&trade=" + selected_list.options[selected_list.selectedIndex].value;
+		else if (type == "trade_floor")
+			location.href = "report_pdi_others.phtml?floor="+ document.frm_links.floor.value + "&trade=" + selected_list.options[selected_list.selectedIndex].value;
+		else if (type == "trade_allfloors")
+			location.href = "report_pdi_others.phtml?floor=all&trade=" + selected_list.options[selected_list.selectedIndex].value;
+	}
+
+}
+
+var generate_defect_form = function (num_of_rows, QAFixedDate, PDIFixedDate, day30FixedDate, month11FixedDate) {
+	return PDI_TABLE_TEMPLATE.replace(/\{1\}/g, num_of_rows)
+	                         .replace(/\{QAFixedDate\}/g, QAFixedDate)
+	                         .replace(/\{PDIFixedDate\}/g, PDIFixedDate)
+	                         .replace(/\{day30FixedDate\}/g, day30FixedDate)
+	                         .replace(/\{month11FixedDate\}/g, month11FixedDate);
+};
+
+var set_checkbox_status = function (name, id, value) {
+	var element = $("#" + name + "_new_" + id);
+	
+	if (value === 1) {
+		element.attr("checked", "checked");
+	} else {
+		element.removeAttr("checked");
+	}
+};
+
+$(document).ready( function () {
+	$("#add").bind("click", function () {
+		one_defect_html = generate_defect_form(num_of_rows, 
+				"",
+				"",
+				"",
+				"");
+
+		$("#defect_table").append(one_defect_html);
+		
+		num_of_rows++;
+	});
+	
+	// initialize the first row
+	if (!num_of_rows) {
+		$("#add").click();
+	}
+});

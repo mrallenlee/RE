@@ -1,0 +1,28 @@
+<?
+include "main_include.phtml";
+//phpinfo();
+function retrieve_data($key)
+{
+	return explode("_", $key);
+}
+
+// delete all data in table "FakeUnit"
+$sql_delete .= "DELETE FROM FakeUnit";
+$result_delete = mysql_query($sql_delete) or log_err_die(mysql_error(),$PHP_SELF);
+
+while (list($key, $value) = each ($_POST))
+{
+	list($UnitNumber, $restOfLine) = retrieve_data($key);
+
+	print "in while, $UnitNumber <br>";
+
+	$sql_insert = "INSERT INTO FakeUnit(UnitNumber) values($UnitNumber)";
+	$result_insert = mysql_query($sql_insert) or log_err_die(mysql_error(),$PHP_SELF);
+}
+
+?>
+<script language="JavaScript">
+<!--
+	history.go(-1);
+//-->
+</script>

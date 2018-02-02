@@ -1,0 +1,110 @@
+<?
+include "main_include.phtml";
+
+// require UserID
+if (isSet($UserID) && $UserID > 0)
+{
+	// get purchaser info
+	$sql_purchaser = "SELECT FirstName, LastName
+		FROM User
+		WHERE User.UserID=$UserID";
+	
+	$result_purchaser = mysql_query($sql_purchaser,$db) or die("Select failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql_purchaser . $PHP_SELF);
+	$row_purchaser = mysql_fetch_array($result_purchaser);
+
+	// get reservation info
+	$sql = "SELECT User.Reserver1FirstName, User.Reserver1LastName, 
+		User.Reserver2FirstName, User.Reserver2LastName, OnlinePayment.PNREF, OnlinePayment.Amount,
+		OnlinePayment.Result, OnlinePayment.Authcode, OnlinePayment.Respmsg, OnlinePayment.CreateDate,
+		OnlinePayment.PayThru, OnlinePayment.Description
+		FROM User, OnlinePayment
+		WHERE User.UserID=$UserID
+		AND User.PNREF=OnlinePayment.PNREF";
+	
+	$result = mysql_query($sql,$db) or die("Select failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	$row = mysql_fetch_array($result);
+}
+?>
+
+<html>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+<H3>Web Reservation Detail</H3>
+
+<font face="Arial,Verdana,Helvetica" size="3" color="black"><b>Purchaser : <?= $row_purchaser['FirstName'] . " " . $row_purchaser['LastName'];?></b></font><BR><BR>
+
+<?
+if ($row['Reserver1FirstName'] == '' && $row['Reserver1LastName'] == '' && $row['Reserver2FirstName'] == '' && $row['Reserver2LastName'] == '')
+{
+	die("<br><font face=\"Arial,Verdana,Helvetica\" size=\"3\" color=\"green\"><b>No web reservation information.</b></font>");
+}
+?>
+
+<table>
+
+<?
+if ($row['Reserver1FirstName'] == '' || $row['Reserver1LastName'] == '')
+{
+?>
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Reserver1: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Reserver1FirstName'] . " " . $row['Reserver1LastName']; ?></font></td>
+  </tr>
+<?
+}
+?>
+
+<?
+if ($row['Reserver2FirstName'] == '' || $row['Reserver2LastName'] == '')
+{
+?>
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Reserver2: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Reserver2FirstName'] . " " . $row['Reserver2LastName']; ?></font></td>
+  </tr>
+<?
+}
+?>
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Deposit Amount: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Amount'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Payment Ref #: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['PNREF'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Pay Through: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['PayThru'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Result Code: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Result'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Authorization Code: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Authcode'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Response Message: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Respmsg'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Date: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['CreateDate'] ?></font></td>
+  </tr>
+
+  <tr>
+    <td><font face="Arial,Verdana,Helvetica" size="2">Description: </font></td>
+    <td><font face="Arial,Verdana,Helvetica" size="2"><?= $row['Description'] ?></font></td>
+  </tr>
+
+</table>
+
+</html>

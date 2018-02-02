@@ -1,0 +1,143 @@
+<?php
+/*
+ * Created on 21-Jan-2006
+ *
+ * A Class to handle error in the PHP
+ * Takes error contstant to display error properly  
+ */
+ 
+ 
+ Class ErrorHandler{
+ 	// relative path to log file
+ 	var $logFilePath = "";
+ 	var $errorMap = array();
+ 	
+ 	
+ 	function ErrorHandler($pathToLogFile = ""){
+ 		$this->logFilePath = $pathToLogFile;
+ 	}
+ 	
+ 	/**
+ 	 * Handler error
+ 	 */
+ 	function handleError($errorMsg, $internalErrorMsg, $errorType = -1, $appendToLog){		
+ 		// reset var
+ 		$urlContent = "";
+ 			
+ 		if ($errorType == -1){
+			die($errorMsg);			 			
+ 		}
+ 		else {
+ 			// find errorType in the Error Map
+ 			$errorData = $this->errorMap[$errorType];
+ 			// if no errorData found
+ 			if ($errorData == ""){
+ 				die( $errorMsg);	
+ 			}
+
+			$id = date("YmdHis");
+			if ($appendToLog){
+				$this->appendToLog($id, $errorMsg, $internalErrorMsg, $errorType);	
+			}			
+// 			print $errorData->errorURL;
+			$queryJoinChar = "?";
+			if (strpos($errorData->errorURL , "?") > 0){
+				$queryJoinChar = "&";
+			}
+			$url = $errorData->errorURL . $queryJoinChar  . "ErrorHandlerErrorMsg=";
+			
+			
+			if ($errorData->errorMsg != ""){
+				$urlContent = $errorData->errorMsg . " ";
+			}
+			if ($errorMsg != ""){
+				$urlContent .= $errorMsg; 	
+			}
+			
+			if ($appendToLog){
+				$urlContent .= " Reference Number: $id";	
+			}
+			$url .= base64_encode($urlContent);
+			$this->gotoURL($url); 				
+ 		}
+ 	}
+ 	
+ 	/**
+ 	 * Load the error config file which calss registerErrorData method 
+ 	 */
+	function loadErrorDataFile($configFilePath){
+		if (file_exists($configFilePath)){
+			require "$configFilePath";				
+		} else {
+			throw new Exception("Error: ErrorHandler.loadErrorDataFile cannot find $configFilePath");
+		} 
+	}
+ 	
+ 	/**
+ 	 * errorType - Error Constant
+ 	 * errorURL - URL to display the error
+ 	 * errorMsg - Default error msg 
+ 	 */
+ 	function registerErrorData($errorType, $errorURL, $errorMsg){
+// 		print ("register $errorType $errorURL $errorMsg<BR>");
+ 		$data = new ErrorData($errorType, $errorURL, $errorMsg);
+ 		$this->errorMap[$errorType] = $data;
+ 	}
+ 	
+ 	
+ 	/**
+ 	 * Log error to file
+ 	 */
+ 	function appendToLog($id, $externalErrorMsg, $internalErrorMsg, $errorType){
+ 		global $_SERVER;
+ 		
+ 		$logFile = fopen($this->logFilePath, 'a');
+ 		$errorMsg = $this->br2nl($errorMsg);
+ 		$error = date("Y/m/d H:i:s") . ": ID:$id\nFILE:" . $_SERVER['PHP_SELF'] . 
+				"\nError Type:$errorType\nError Message(External):$externalErrorMsg\nError Message(Internal):$internalErrorMsg\n";
+ 		fwrite($logFile, $error);
+ 		fclose($logFile); 		
+ 	}
+ 	
+	//Function contains javascript to go to another page
+	function gotoURL($url){
+	?>
+		<script language="JavaScript">
+		<!--
+			window.location = "<?echo $url;?>"
+		//-->
+		</script>
+	<?
+	}
+	
+	/**
+	 * Convert br to nl
+	 */
+	function br2nl($str) {
+	   return preg_replace("=<br */?>=i", "\n", $str);
+	}	
+	
+	/**
+	 * A method to handle error msg passed by handleError
+	 */
+	function displayError(){
+		// display error passed in from $_REQUEST
+		global $ErrorHandlerErrorMsg;
+	?>
+		<DIV class="error" name="ErrorHandlerErrorDIV" id="ErrorHandlerErrorDIV">
+		
+		<?= base64_decode($ErrorHandlerErrorMsg); ?>
+		</DIV>
+	<?	
+	}
+} // ErrorHandler
+ 
+ Class ErrorData {
+ 	var $errorType, $errorURL, $errorMsg;
+ 	function ErrorData($errorType, $errorURL, $errorMsg){
+ 		$this->errorType 	= $errorType;
+ 		$this->errorURL 	= $errorURL;
+ 		$this->errorMsg		= $errorMsg; 
+ 	}	
+ }
+?>

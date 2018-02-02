@@ -1,0 +1,79 @@
+<?
+
+include_once "main_include.phtml";
+require_once "user_closing_act.phtml";
+/**
+ * Use for first time setup.
+ */
+function genInventoryItem($UnitNumber){
+	$prjClosingSQL = "SELECT * FROM ProjectClosing";
+	$prjClosingResult = executeSql($prjClosingSQL);
+	$prjClosingData	= mysql_fetch_array($prjClosingResult);
+	
+	$sql = "SELECT UnitNumber, UserID, ParkingSpace,
+			ParkingExtended, ParkingTandemUnit, 
+			ParkingIncludedInPrice FROM User WHERE DealStatus IN (" . DEAL_STATUS_PURCHASE_INCLUDE_LIST . ") ";
+	
+	if ($UnitNumber != "ALL"){
+		$sql .= " AND UnitNumber='$UnitNumber'";		
+	}
+	
+//	echo "sql=" . $sql;
+	$result = executeSql($sql);
+	while ($row=mysql_fetch_array($result)){
+//		echo '<BR>In ' . $row['UnitNumber'];
+		if ($row['ParkingSpace'] > 0){
+			$data = array();
+			$type = 'REG_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['ParkingSpaceCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeePackingStall'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['ParkingIncludedInPrice'] > 0){
+			$data = array();
+			$type = 'REG_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = "0";
+			$data[$type."CAM"] = $prjClosingData['CamFeePackingStall'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['ParkingExtended'] > 0){
+			$data = array();
+			$type = 'REG_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['ParkingSpaceCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeTandemPacking'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['ParkingTandemUnit'] > 0){
+			$data = array();
+			$type = 'TANDEM_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['ParkingSpaceCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeTandemPacking'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['Locker'] > 0){
+			$data = array();
+			$type = 'REG_LOCKER';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['LockerCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeLocker'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['BicycleRack'] > 0){
+			$data = array();
+			$type = 'BIKE_RACKER';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['BicycleRackCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeBikeRack'];			
+			updateInventoryItem($data,$type);
+		}
+	}
+}
+
+if ($isDebug==1){
+	genInventoryItem('ALL');	
+}
+?>

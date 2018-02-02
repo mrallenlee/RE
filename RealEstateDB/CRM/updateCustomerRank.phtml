@@ -1,0 +1,86 @@
+<?
+include "config.phtml";
+include CRM_INVERT_RELATIVE_PATH . "main_include.phtml";
+
+// called by "listNote.phtml" & "SalesRepDetail.phtml" to add, delete, update note info for customers
+
+// expect: none
+$prevCustomerID = -1;
+$CustomerType = "";
+$Priority = "";
+$Rank = "";
+$IsImportant = 0;
+
+while (list($key, $value) = each ($_POST))
+{
+	if (strpos($key, "_") === false) continue;
+	
+	list($CustomerID, $name) = explode("_", $key);
+	if ($CustomerID != $prevCustomerID)
+	{
+		if ($prevCustomerID != -1)
+		{
+			//print $prevSalesRepID;
+			// update the previous record
+			if ($CustomerType == "user")
+			{
+				$sql = "UPDATE User
+					SET Priority='$Priority',
+					Rank='$Rank',
+					IsImportant=$IsImportant
+					WHERE UserID=$prevCustomerID";
+			}
+
+			if ($CustomerType == "visitor")
+			{
+				$sql = "UPDATE Visitor
+					SET Priority='$Priority',
+					Rank='$Rank',
+					IsImportant=$IsImportant
+					WHERE VisitorID=$prevCustomerID";
+			}
+			$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+			
+			$CustomerType = "";
+			$Priority = "";
+			$Rank = "";
+			$IsImportant = 0;
+		}
+		$prevCustomerID = $CustomerID;
+	}
+	${$name} = $value;		
+}
+if ($CustomerType == "user")
+{
+	$sql = "UPDATE User
+		SET Priority='$Priority',
+		Rank='$Rank',
+		IsImportant=$IsImportant
+		WHERE UserID=$prevCustomerID";
+}
+
+else if ($CustomerType == "visitor")
+{
+	$sql = "UPDATE Visitor
+		SET Priority='$Priority',
+		Rank='$Rank',
+		IsImportant=$IsImportant
+		WHERE VisitorID=$prevCustomerID";
+}
+
+$result = mysql_query($sql,$db) or die ("Error : " . mysql_error() . "<BR>" . $sql);			
+
+if (isSet($forward))
+{
+	if (isSet($back))
+	{
+		$back--;
+		$forward . "&back=" . $back;
+	}
+	goto_url($forward);
+	die();
+} else {
+	goto_url("./listCustomer.phtml?firstName=$firstName&currSalesRepID=$currSalesRepID");
+}	
+
+?>

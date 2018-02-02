@@ -1,0 +1,54 @@
+<?php
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/framework/DataExport/DataExportMysqlWrapper.phtml";
+
+// use StandardPO table instead of UserSave table
+$sql			= " SELECT StandardPO.POID, StandardPO.UnitNumber, StandardPO.ItemID," .
+					" StandardPO.OptionID, StandardPO.ChoiceID, StandardPO.ContractorID," .
+					" Section.SectionID As SectionID, Subsection.SubsectionID, " .
+					" '' AS Description, " .
+					" StandardPO.Cost, StandardPO.Issued, StandardPO.IssuedDate, " .
+					" Section.Name As SectionName, Subsection.Name As SubsectionName, " .
+					" Options.Name As OptionName, Choice.Name As ChoiceName, " .
+					" Item.Name As ItemName, Contractor.ContractorName," .
+					" 'StandardPO' AS POType" .
+					" FROM Contractor, Price, Item, Subsection, Section, Options, StandardPO " .
+					" LEFT JOIN Choice
+					ON StandardPO.ChoiceID = Choice.ChoiceID
+					AND StandardPO.OptionID = Choice.OptionID
+					WHERE StandardPO.ContractorID = Contractor.ContractorID
+					AND StandardPO.ItemID = Price.ItemID
+					AND StandardPO.OptionID = Price.OptionID
+					AND StandardPO.ItemID = Item.ItemID
+					AND Item.SubsectionID = Subsection.SubsectionID
+					AND Subsection.SectionID = Section.SectionID
+					AND StandardPO.OptionID = Options.OptionID
+					AND StandardPO.Cost > -9995";
+ 	 
+$nonStandardSql = 	" SELECT NonStandardPO.POID, NonStandardPO.UnitNumber, -1 AS ItemID," .
+					" -1 AS OptionID, -1 AS ChoiceID, NonStandardPO.ContractorID, " .
+					" NonStandardPO.SectionID, NonStandardPO.SubsectionID," .
+					" NonStandardPO.Description," .
+					" NonStandardPO.Cost, NonStandardPO.Issued, NonStandardPO.IssuedDate," .
+					" Section.Name AS SectionName, Subsection.Name AS SubsectionName, " .
+					" '' AS OptionName, '' AS ChoiceName, " .
+					" '' AS ItemName, Contractor.ContractorName, " .
+					" 'NonStandardPO' AS POType" .
+					" FROM NonStandardPO, Contractor, Section, Subsection " .
+					" WHERE NonStandardPO.SectionID = Section.SectionID " .
+					" AND NonStandardPO.ContractorID = Contractor.ContractorID " .
+					" AND NonStandardPO.SubsectionID = Subsection.SubsectionID 
+					AND NonStandardPO.Cost > -9995 ";
+					
+$unionSQL = "(" . $sql . " ) UNION (" . $nonStandardSql .
+			" ) ORDER BY ContractorID, SectionID, SubsectionID, ItemID";		 		
+
+$price_result = mysql_query($unionSQL,$db) or 
+					 die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $unionSQL . $PHP_SELF);
+
+$exporter = new DataExportMysqlWrapper($price_result, '|');
+$exporter->exportHeader("PO.csv");
+$exporter->exportData();
+?>

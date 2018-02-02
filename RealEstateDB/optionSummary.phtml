@@ -1,0 +1,132 @@
+<?
+include "main_include.phtml";
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<link href="stylesheet.css" rel="styleSheet" type="text/css">
+	<BODY BGCOLOR="#FFFFAF">
+<?
+
+$sql = "SELECT 	User.LastName,
+		User.FirstName,
+		User.UserID,
+		User.UnitNumber As UnitNo";
+		
+if ($PackageID != "")
+{
+
+	$packageNamesql = "SELECT PackageName FROM Package WHERE PackageID=" . $PackageID;
+	$result = mysql_query($packageNamesql) or log_err_die(mysql_error(),$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	
+	?>
+		<h4><?= $row['PackageName']; ?> Summary</h4>
+	<?	
+
+	$sql .= ", 1 As Quantity,
+		UserPackage.Note As Charge 
+		From User, UserPackage
+		WHERE User.UserID = UserPackage.UserID
+		AND UserPackage.PackageID = $PackageID
+		AND (User.DealStatus=\"FIRM\"
+		OR User.DealStatus=\"PENDING\")";
+}
+else if ($Option != "")
+{
+	switch ($Option) {
+		case "ParkingIncludedInPrice":
+			$header = "Regular Parking Unit Included in Price Summary";
+			$ItemType = "'" . REG_PARKING ."'";
+			$more_where_clause = " AND InventoryItem.Price = 0";
+			break;
+		case "ParkingSpace":
+			$header = "Extra Regular Parking Summary";
+			$ItemType = "'" . REG_PARKING . "'";
+			$more_where_clause = " AND InventoryItem.Price > 0";
+			break;
+		case "ParkingExtended":
+			$header = "Extended Parking Summary";
+			$ItemType = "'" . EXTENDED_PARKING . "'";
+			break;
+		case "ParkingTandemUnit":
+			$header = "Tandem Parking Summary";
+			$ItemType = "'" . TANDEM_PARKING . "'";
+			break;
+		case "ParkingSpaceCharge":
+			$header = "Total Parking Units Sold Summary";
+			$ItemType = PARKING_INCLUDE_LIST;
+			$more_where_clause = " AND InventoryItem.Price > 0";
+			break;
+		case "Locker":
+			$header = "Extra Locker Summary";
+			$ItemType = LOCKER_INCLUDE_LIST;
+			break;
+		case "BicycleRack":
+			$header = "Bicycle Rack Summary";
+			$ItemType = "'" . BIKE_RAC . "'";
+			break;
+		case "RoofDeck":
+			$header = "Roof Deck Summary";
+			$ItemType = "'" . ROOF_DECK . "'";
+			break;
+			
+	}
+	
+	$sql .= ",count(*) As Quantity, 
+	          sum(InventoryItem.Price) As Charge 
+	     FROM User, InventoryItem
+		  WHERE User.UserID = InventoryItem.UserID
+		    AND User.DealStatus not in (" . DEAL_STATUS_PURCHASE_EXCLUDE_LIST . ")
+				AND InventoryItem.ItemType in (" . $ItemType . ")" . $more_where_clause . 
+		" GROUP BY User.UserID";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY User.UnitNumber, LastName, FirstName";
+}
+
+$result = mysql_query($sql) or log_err_die(mysql_error()  . "\nsql=" . $sql ,$PHP_SELF);
+?>
+
+<h4><?= $header ?></h4>
+
+<table>
+	<tr CLASS="head">
+		<td><A HREF ="<?= $PHP_SELF;?>?PackageID=<?= $PackageID; ?>&Option=<?= $Option;?>&orderby=UnitNumber, LastName, FirstName">Suite Number</a></td>
+		<td><A HREF ="<?= $PHP_SELF;?>?PackageID=<?= $PackageID; ?>&Option=<?= $Option;?>&orderby=FirstName, LastName, UnitNumber">First Name</a></td>
+		<td><A HREF ="<?= $PHP_SELF;?>?PackageID=<?= $PackageID; ?>&Option=<?= $Option;?>&orderby=LastName, FirstName, UnitNumber">Last Name</a></td>
+		<td>Quantity</td>
+		<td>Total Charge</td>
+	</tr>
+<?	
+while ($row = mysql_fetch_array($result))
+{
+	if ($class == "body" || $class == "")
+	{
+		$class = "blank";
+	}
+	else
+	{
+		$class = "body";
+	}
+	$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];			
+	
+?>
+	<tr CLASS="<?= $class; ?>">
+		<td><a href="<?= $url; ?>"><?= $row['UnitNo']; ?></a></td>
+		<td><a href="<?= $url; ?>"><?= $row['FirstName']; ?></a></td>
+		<td><a href="<?= $url; ?>"><?= $row['LastName']; ?></a></td>
+		<td><?= $row['Quantity']; ?></td>
+		<td><?= display_dollar_format($row['Charge']); ?></td>
+	</tr>
+
+<?
+}
+?>
+</table>
+</html>

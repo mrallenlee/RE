@@ -1,0 +1,176 @@
+<?php
+/*
+ * Created on 10-Jan-2006
+ * A class to handle multi-page navigation. 
+ */
+class MultiPageNavigation {
+
+ // sql use to get number of results
+var $countSql;
+// sql to retrieve data
+var $sql;
+
+var $numOfResult;
+var $startIndex;
+var $endIndex;
+// url to current page except no page information
+var $url;
+var $resultsPerPage;
+// starts at 0
+var $currentPage; 
+
+
+
+// Constructor
+// $currentPage : starts at 0
+function MultiPageNavigation($sql, $resultsPerPage, $currentPage ) {
+
+	$this->sql 				= $sql;
+	$this->countSql 		= $sql;
+	$this->resultsPerPage 	= $resultsPerPage;
+	if ($currentPage == ""){
+		$currentPage = 0;	
+	}
+	$this->currentPage		= $currentPage;
+	$this->init();
+}
+
+function init(){
+	// get total number of result
+	$result = mysql_query($this->countSql) or die("SQL error: $sql<BR> Error:" . mysql_error());
+	$this->numOfResult = mysql_num_rows($result);
+}
+
+
+// get sql for current page
+// Return SQL appended with limit startIndex, endIndex if succeeded. 
+// Return -1 if there's no result for current page
+function getSQLForCurrentPage(){
+	$this->startIndex = $this->resultsPerPage * $this->currentPage;
+	$this->endIndex = $this->startIndex + $this->resultsPerPage;
+//	print ("start=" . $this->startIndex  . " numOfResult=" . $this->numOfResult );	
+	if ($this->startIndex > $this->numOfResult){
+		return "-1";	
+	}
+	$resultSql = $this->sql . " LIMIT " . $this->startIndex . " ," . $this->resultsPerPage;
+	return $resultSql;
+}	
+
+// $url is the url of the actual page. This function
+// appends query string for page navigation
+// return a input button for next page
+function getNextButton($url){
+
+	$resultURL = $url; 	
+	$buttonStatus = "";
+
+	// if no result, return
+	if ($this->numOfResult == 0){
+		return "";	
+	} 
+
+	if (strpos($url, "?") < 0){
+		$resultURL .= "?";	
+	} 
+	
+	$nextStartIndex = $this->resultsPerPage * ($this->currentPage + 1);
+
+	// if this is the end, don't display anything
+	if ($nextStartIndex > $this->numOfResult){
+		$buttonStatus = " DISABLED ";	
+	}
+	
+	$nextPage = $this->currentPage + 1;		
+	$resultURL .= "&MultiPageNavigationResultsPerPage=" . $this->resultsPerPage . "&MultiPageNavigationPage=$nextPage";
+	$button = "<input $buttonStatus type=\"button\" value=\"Next >\" onClick=\"window.location='" . $resultURL . "'\">";
+	return $button;	
+}
+
+// $url is the url of the actual page. This function
+// appends query string for page navigation
+// return a input button for previous page
+function getPrevButton($url){
+
+	$buttonStatus = "";
+	$resultURL = $url; 	
+	
+	if (strpos($url, "?") < 0){
+		$resultURL .= "?";	
+	} 
+	
+	// if no result, return
+	if ($this->numOfResult == 0){
+		return "";	
+	} 
+	
+	$nextStartIndex = $this->resultsPerPage * ($this->currentPage - 1);
+	// if this is the end, don't display anything
+	if ($nextStartIndex < 0) {
+		$buttonStatus = " DISABLED ";	
+	}
+	
+	$prevPage = $this->currentPage - 1;
+	$resultURL .= "&MultiPageNavigationResultsPerPage=" . $this->resultsPerPage . "&MultiPageNavigationPage=$prevPage";
+	$button = "<input $buttonStatus type=\"button\" value=\"< Prev\" onClick=\"window.location='" . $resultURL . "'\">";
+	return $button;	
+}
+
+function getAllPageButtons($url){
+	$resultURL = $url; 	
+	$buttonStatus = "";
+
+	if (strpos($url, "?") < 0){
+		$resultURL .= "?";	
+	} 
+	
+	// if no result, return
+	if ($this->numOfResult <= 0){
+		return "";	
+	} 
+	
+	$totalNumOfPages = ceil($this->numOfResult / $this->resultsPerPage) ;
+	$resultURL .= "&MultiPageNavigationResultsPerPage=" . $this->resultsPerPage . "&MultiPageNavigationPage=";
+	$resultHtml = "";
+	for ($i = 0; $i < $totalNumOfPages; $i++){
+		// display page 0 as page 1 
+		$displayPageNum = $i + 1;
+		if (fmod($i, 40) == 0 && $i != 0){
+			$resultHtml .=  "<BR>";
+		}
+		if ($i == $this->currentPage){
+			$resultHtml .= "<b class=\"font-highlight\">$displayPageNum</b>&nbsp;";
+		} else {
+			$resultHtml .= "<A HREF=\"" . $resultURL . $i . "\">$displayPageNum</a>&nbsp;";
+		}
+	}
+	return $resultHtml;		
+}
+
+// dispplay combo box for selecting rows per page
+// the name of the combo box is MultiPageNavigationResultsPerPage
+// this is accessible by via following javascript
+// document.getElementById('MultiPageNavigationResultsPerPage').value;
+function getRowsPerPageComboBox($valueArray = array(50, 75, 100, 150, 200, 300, -1) ){
+	global $MultiPageNavigationResultsPerPage;
+
+	if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+		$MultiPageNavigationResultsPerPage = 75;	
+	}
+?>	
+	<select id="MultiPageNavigationResultsPerPage" name="MultiPageNavigationResultsPerPage">
+<?
+	foreach ($valueArray as $value){	
+		if ($value == -1){
+			$value = 9999999999;
+		}
+?>		<option value="<?= $value; ?>" 
+<?			if ($value == $MultiPageNavigationResultsPerPage){
+				print " SELECTED ";	
+			}
+?>><?= ($value < 9999999999) ? $value : "All"; ?>
+		</option>
+<?	} ?>			
+	</select>	
+<?	} 
+
+}

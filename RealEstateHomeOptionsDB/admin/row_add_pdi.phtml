@@ -1,0 +1,95 @@
+<?
+include "main_include.phtml";
+
+// This file adds records to the database. It is called when
+// the PDI admin user clicks on the Add button.
+?>
+<html>
+
+<head>
+  <title>Admin</title>
+
+<script language="javascript">
+
+function redirect_url(url)
+{
+	location.href=url;
+}
+
+</script>
+
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+  <font face="Arial,Verdana,Helvetica" size="3">
+
+<?
+//phpinfo();
+//$user_message = "[ <font color=#CC0000><b>Error:</b> ";
+
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+if ($table_name == "Unit")
+{
+	$sql_unit = "SELECT UnitNumber from $table_name";
+	
+	$result_unit = mysql_query($sql_unit) or die("Error : $sql_unit<br>" . mysql_error());
+	
+	while ($row_unit = mysql_fetch_array($result_unit))
+	{
+		$var = $row_unit['UnitNumber'] . "_QADone";
+		
+		if ($$var)	$QADone = 1;
+		else $QADone = 0;
+	
+		$var = $row_unit['UnitNumber'] . "_PDIDone";
+		
+		if ($$var)	$PDIDone = 1;
+		else $PDIDone = 0;
+	
+		$var = $row_unit['UnitNumber'] . "_PDISignOff";
+		
+		if ($$var)	$PDISignOff = 1;
+		else $PDISignOff = 0;
+	
+		$var = $row_unit['UnitNumber'] . "_OccupancyNotified";
+		
+		if ($$var)	$OccupancyNotified = 1;
+		else $OccupancyNotified = 0;
+
+		$sql = "UPDATE $table_name 
+				SET QADone = '$QADone', PDIDone='$PDIDone', PDISignOff='$PDISignOff', OccupancyNotified='$OccupancyNotified'
+				WHERE UnitNumber='". $row_unit['UnitNumber'] ."'";
+// echo $sql . "<br><br>\n";
+		$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+	}
+	
+	$user_message = "[ <font color=#009900><b>Records updated successfully.</b></font> ]<br>\n<br>";
+
+	$goto = "display_pdi.phtml";
+	$query_s = "table_name=$table_name";
+	
+} // end of if ($table_name == "Unit")
+
+?>
+<script language="javascript">
+
+	redirect_url("<?echo $goto;?>?<?echo $query_s;?>");
+
+</script>
+
+  </font>
+</body>
+
+</html>

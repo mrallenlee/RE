@@ -1,0 +1,39 @@
+<?php
+/*
+ * Created on 6-Feb-2007
+ *
+ * Export sales status data
+ */
+ 
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once "framework/DataExport/DataExportMysqlWrapper.phtml";
+
+check_auth(2, "sales");
+ 
+	$sql = "SELECT UnitNumber,
+				Company,
+				concat(FirstName, ' ', LastName) Purchaser,
+				Price SalePrice, 
+				ChequeNumber,
+				ChequeAmount,
+				ChequeStatus,
+				ChequeType,
+				ChequeDate ReceivedDate
+				FROM Cheque, User
+				WHERE DealStatus != 'Rescinded'
+				AND (TransactionsRecordID = AgreementDepositTransactionsRecordID
+				OR TransactionsRecordID = Day30DepositTransactionsRecordID
+				OR TransactionsRecordID = Day90DepositTransactionsRecordID
+				OR TransactionsRecordID = Day150DepositTransactionsRecordID
+				OR TransactionsRecordID = Day210DepositTransactionsRecordID
+				OR TransactionsRecordID = OccupancyDepositTransactionsRecordID)
+				ORDER BY UnitNumber, TransactionsRecordID";
+ 		
+$result = executeSql($sql);
+
+$exporter = new DataExportMysqlWrapper($result);
+$exporter->exportHeader("NSFChequeList.csv");
+$exporter->exportData();
+?>

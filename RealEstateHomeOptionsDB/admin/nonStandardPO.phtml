@@ -1,0 +1,105 @@
+<?php
+/*
+ * Created on 18-Jan-2006
+ *
+ * Add/Edit Non Standard PO
+ * $action - add/edit
+ * $POID - for edit only
+ * $UnitNumber - identify unit to update
+ * 
+ */
+
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/javascript/MultiLevelSelector.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/URL/LinkGenerator.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/URL/LinkHandler.phtml";
+
+
+// retrieve data if action is edit
+if ($action != "add"){
+	$sql = "SELECT * " .
+			" FROM NonStandardPO " .
+			" WHERE POID=$POID";
+
+	$result = mysql_query($sql,$db) or die("Select failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	$row = mysql_fetch_array($result);				
+}
+
+// init var
+$displayAction = "Add";
+if ($action == "edit"){
+	$displayAction = "Update";	
+}
+
+// set up multi level selector for adding non standard POs
+
+$section_sql =  " SELECT Section.Name as Level1Name, " .
+				" Subsection.Name as Level2Name, " .
+				" Section.SectionID as Level1ID, Subsection.SubsectionID as Level2ID" .
+				" FROM Section, Subsection " .
+				" WHERE Section.SectionID = Subsection.SectionID " .
+				" ORDER BY Section.Name, Subsection.Name ";
+				
+$selectorGenerator = new MultiLevelSelector();
+$selectorGenerator->generateData($section_sql, $db, 2);
+?>
+
+<html>
+<? print_top_frame($selfPath, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/", false, false); ?>
+  <script type="text/javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH; ?>/javascript/miscLib.js"></script>
+  <script type="text/javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH; ?>/javascript/formFieldSelect.js"></script>
+  <script type="text/javascript" src="<?= WEB_RESOURCE_INVERT_RELATIVE_PATH; ?>/javascript/multiLevelSelector.js"></script>
+
+<?
+$linkHandler = new LinkHandler($PHP_SELF, $_POST, $_GET);
+$linkGenerator = new LinkGenerator($PHP_SELF, "updatePO.phtml",
+									$linkHandler->getForwardLink(), 
+									$linkHandler->getJavascriptAction());
+?>
+<form method="post" action="updatePO.phtml">
+<INPUT type="hidden" name="poType" value="nonStandard">
+<INPUT type="hidden" name="action" value="<?= $action; ?>">
+<INPUT type="hidden" name="UnitNumber" value="<?= $UnitNumber; ?>">
+<?= $linkGenerator->getForwardLinkHiddenInput() ; ?>
+<?= $linkGenerator->getJavascriptActionHiddenInput() ; ?>
+<? if (isset($POID) || $POID != ""){?>	
+<INPUT type="hidden" name="POID" value="<?= $POID; ?>">
+<?}?>
+
+<table width="100%">
+	<tr class="tail-left">
+		<td colspan=100>Add Non-Standard PO</td>
+	</tr>
+	<tr class="blank">
+		<td >Trade</td>
+		<td><? display_contractor_list("ContractorID"); ?>
+	</tr>		
+	<tr class="blank">
+		<td>Cost</td>
+		<td><INPUT type="text" name="cost" size="10" value="<?= convertPriceConstantToString($row['Cost']); ?>"></td>
+	</td>	
+	<tr class="blank">
+		<td >Section</td>
+		<td><?= $selectorGenerator->generateLevelSelector(1, "sectionID", 1, 370); ?></td>
+	</tr>		
+	<tr class="blank">
+		<td>Subsection</td>
+		<td><?= $selectorGenerator->generateLevelSelector(2, "subsectionID", 1, 350); ?></td>
+	</tr>
+	<tr class="blank">
+		<td>Work Description</td>
+		<td><TEXTAREA rows=5 cols=70 name="description"><?= $row['Description'];?></textarea></td>
+	</tr>
+	<tr>
+		<td colspan=2 align="right"><INPUT type="submit" value="       <?= $displayAction;?>      "></td>
+	</tr>
+</table>
+</form>
+
+<? 	$selectorGenerator->initMultiLevelSelector(); 
+	if ($action != "add"){
+		$selectorGenerator->setSelectorDefaultValue(1, $row['SectionID']);
+		$selectorGenerator->setSelectorDefaultValue(2, $row['SubsectionID']);
+	}
+?>
+</html>

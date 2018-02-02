@@ -1,0 +1,81 @@
+<?php
+
+include_once "Entity/View/EntityView.phtml";
+include_once "guiUtil.phtml";
+/*
+ * Created on 2007-11-19 
+ *
+ */
+class InventoryItemView extends EntityView{
+	
+	function InventoryItemView(){}
+	
+	 function getNewHTMLForm($arguments){
+	 	$arguments['Mode'] = "add";
+	 	$html = $this->getExistingHTMLForm($arguments);
+	 	return $html;
+	 }	
+	
+ 	/* html form for new InventoryItem
+	 * This function is not for AJAX call because of the arguments param
+	 * This html form contains information for Person
+	 */
+	function getExistingHTMLForm($arguments){
+//print("InventoryITemView arguments=")	;
+//print_r($arguments);
+		$mode 								= checkValue($arguments['Mode'], "display");
+		$index 								= checkValue($arguments['Index'], "");
+		$arguments['InventoryItemCAMEnabled'] 	= checkValue($arguments['InventoryItemCAMmEnabled'], FALSE);
+		
+		
+		if ($this->inputPrefix != ""){
+			$prefix = $this->inputPrefix . "_InventoryItem_" . $index ;	
+		} else {
+			$prefix = "InventoryItem_" . $index ;	
+		}
+				
+		if ($this->inputSuffix != ""){
+			$suffix = "_" . $this->inputSuffix;	
+		} else {
+			$suffix = "";	
+		}
+
+		$action = $mode;
+		$html = "	<input type=\"hidden\" name=\"" . $prefix . "_RID" . $suffix . "\" value=\"" . 
+						$arguments['RID'] ."\">" .
+				"	<input type=\"hidden\" name=\"" .  $prefix . "_Action" . $suffix . "\" id=\"" .  $prefix . "_Action" . $suffix . "\" value=\"$mode\">" .		
+				"	<tr>\n" .
+				"		<td>Inventory Item $index:</td><td colspan=3>" . displayGenericTableList(
+								array("table"=> "InventoryItem", "value"=>$arguments['ItemType'],
+								"source"=>"ItemType", "action"=>$mode, "inputPrefix"=> $prefix)) . "</td>\n" .
+				"		<td>Price:</td><td>" . displayText(array ("value" => $arguments['Price'], "source" => "Price", "action" => $mode, "inputPrefix" => $prefix, "size" => 10 )) . "</td>\n";
+		if ($mode != "display" && 
+			($arguments['InventoryItemCAMEnabled'] == "" || $arguments['InventoryItemCAMEnabled'] == 0)){
+			$html .= "		<td ><input type=button value=\"Delete InventoryItem\" onClick=\"deleteInventoryItem('" . $index . "')\"</td>";			
+		}
+				
+		$html .=	"	</tr>\n" ;
+							
+		if ($arguments['InventoryItemCAMEnabled'] != 0){
+			$html .=	"	<tr>\n" ;
+			if ($arguments['InventoryItemCAMEnabled'] == TRUE) {
+				$html .= "		<td>Level:</td><td>" . displayText(array ("value" => $arguments['Level'], "source" => "Price", "action" => $mode, "inputPrefix" => $prefix, "size" => 50 )) . "</td>\n";
+				$html .= "		<td>Number:</td><td>" . displayText(array ("value" => $arguments['Number'], "source" => "Price", "action" => $mode, "inputPrefix" => $prefix, "size" => 50 )) . "</td>\n";
+				$html .= "		<td>CAM:</td><td>" . displayText(array ("value" => $arguments['CAM'], "source" => "Price", "action" => $mode, "inputPrefix" => $prefix, "size" => 50 )) . "</td>\n";
+				"		</tr>\n" ;
+			}
+			if ($mode != "display") {
+				$html .= "	<tr>";
+				$html .= "		<td colspan=4 align=right><input type=button value=\"Delete InventoryItem\" onClick=\"deleteInventoryItem('" . $index . "')\"</td>";
+				$html .= "	</tr>";
+			}
+		}
+		
+		
+				
+		return $html;
+		
+	}	
+
+} // InventoryItemView 
+?>

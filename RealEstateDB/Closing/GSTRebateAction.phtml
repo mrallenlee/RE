@@ -1,0 +1,58 @@
+
+<?
+/**
+ * Calculate GST Rebate
+ */
+include_once "main_include.phtml";
+/**
+ * Calculate GST rebate value
+ * Description:
+ * GST = offer price * gst rate
+ * Adjusted Sales Price(ASP) = Offer Price - Incentive
+ * 		In this function, offer price is the ASP
+ * ASP Net GST 	= ASP - (GST - GST Rebate)
+ * 				= ASP - GST + GST Rebate
+ * $arguments takes following areguments
+ * offerPrice 
+ * purchaseDate - Optional if gstRate is provided
+ * gstRate - Optional if purchaseDate is provided. Possible values 0.06/0.07 
+ */
+function calGSTRebateValue($arguments){
+	$offerPrice 		= $arguments['offerPrice'];
+	$purchaseDate 		= checkValue($arguments['purchaseDate'], 0);
+	$gstRate	 		= checkValue($arguments['GSTRate'], CURRENT_GST_RATE);
+
+	$gstRate = getGSTRate($purchaseDate);
+	
+	$result = 0;
+	if ($gstRate == 0.07){
+		if ($offerPrice > 481500) {
+			$result = $offerPrice/1.07;
+		} else if ($offerPrice > 365750){
+			$result = sqrt(($offerPrice / 0.000000252) + 
+						pow(GST_REBATE_7_PERCENT_MAGIC_NUMBER, 2)
+						 - GST_REBATE_7_PERCENT_MAGIC_NUMBER) - GST_REBATE_7_PERCENT_MAGIC_NUMBER;
+		} else {
+			$result = $offerPrice / 1.0448;
+		}
+	} else if ($gstRate == 0.06){
+		if ($offerPrice > 477000) {
+			$result = $offerPrice/1.06;
+		} else if ($offerPrice > 363440){
+			$result = 	sqrt(($offerPrice / 0.000000216) + 
+						pow(GST_REBATE_6_PERCENT_MAGIC_NUMBER, 2)
+						 - GST_REBATE_6_PERCENT_MAGIC_NUMBER) - GST_REBATE_6_PERCENT_MAGIC_NUMBER;
+		} else {
+			$result = $offerPrice / 1.0384;
+		}
+		
+	}
+	// The above formula calculates the net price after GST.
+	// Need to work it back in order to get the GST Rebate value.
+	$netGST = $offerPrice - $result;
+	$gst	= $offerPrice * $gstRate;
+	$gstRebate = $gst - $netGST;
+
+	return round($gstRebate,2);
+} // calGSTRebateValue
+?>

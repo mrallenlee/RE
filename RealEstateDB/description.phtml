@@ -1,0 +1,31 @@
+<?
+$not_include_javascript=1;
+include_once "main_include.phtml";
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./", false); ?>	
+	<BODY class="body1">	
+	<link href="stylesheet.css" rel="styleSheet" type="text/css">
+
+	<TABLE CELLPADDING=5 CELLSPACING=5>
+		<TR>
+			<TD CLASS="blank" ><H3><?= get_project_name($PHP_SELF); ?> Visitor and Purchaser Tracking System</H3></TD>
+		</TR>
+		<TR>
+			<TD class="invisible" ALIGN="CENTER">
+<? if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF) ) { ?>
+				<IMG SRC="images/project-image-1200.jpg" WIDTH="341" HEIGHT="640">
+<?	} else { ?>				
+				<IMG SRC="images/project-image-1200.jpg" WIDTH="400">				
+<? } ?>				
+				</TD>
+		</TR>
+<? if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF) ) { ?>
+		<TR>
+			<TD  class="invisible"  align=right><BR><BR><IMG SRC="images/company-logo-small.jpg" height="50"></TD>
+		</TR>
+<? } ?>		
+	</TABLE>
+	</BODY>
+</HTML>

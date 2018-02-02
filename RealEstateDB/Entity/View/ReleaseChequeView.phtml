@@ -1,0 +1,65 @@
+<?php
+
+include_once "guiUtil.phtml";
+include_once "Entity/View/ChequeView.phtml";
+include_once "main_include.phtml";
+/*
+ * Created on 2007-08-17
+ * 
+ */
+class ReleaseChequeView extends ChequeView{
+	
+	function ReleaseChequeView(){}
+
+	
+	/**
+	 * html form for new additional purchaser
+	 * This function is not for AJAX call because of the DBResultRow param
+	 * This html form contains information for Person
+	 */
+	function getExistingHTMLForm($arguments){
+	
+		$mode 								= checkValue($arguments['Mode'], "display");
+		$index 								= checkValue($arguments['Index'], "");
+		$arguments['ChequeFromEnabled'] 	= checkValue($arguments['ChequeFromEnabled'], FALSE);
+		$arguments['ChequeToEnabled'] 		= checkValue($arguments['ChequeToEnabled'], FALSE);
+	
+		if ($this->inputPrefix != ""){
+			$prefix = $this->inputPrefix . "_Cheque_" . $index ;	
+		} else {
+			$prefix = "Cheque_" . $index ;	
+		}
+				
+		if ($this->inputSuffix != ""){
+			$suffix = "_" . $this->inputSuffix;	
+		} else {
+			$suffix = "";	
+		}
+
+		$action = $mode;
+		$row = $arguments;
+		$html = "	<input type=\"hidden\" name=\"" . $prefix . "_ChequeID" . $suffix . "\" value=\"" . 
+						$row['ChequeID'] ."\">" .
+				"	<input type=\"hidden\" name=\"" .  $prefix . "_ChequeType" . $suffix . "\" value=\"CREDIT\">" .		
+				"	<input type=\"hidden\" name=\"" .  $prefix . "_Action" . $suffix . "\" id=\"" .  $prefix . "_Action" . $suffix . "\" value=\"$mode\">" .		
+				"	<input type=\"hidden\" name=\"" .  $prefix . "_ChequeStatus" . $suffix . "\" value=\"" . CHEQUE_STATUS_RELEASED_FROM_TRUST . "\">" .		
+				"	<tr>\n" .
+				"		<td>Date:</td><td>" . displayDate(array( "value" => $row['ChequeDate'], "source" => "ChequeDate", "action" => $mode, "inputPrefix" =>$prefix)) . "</td>\n" .
+				"		</td>\n" .
+				"		<td>Cheque Number:</td><td>" . displayText(array ("value" => $row['ChequeNumber'], "source" => "ChequeNumber", "action" => $mode, "inputPrefix" => $prefix) ). "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Amount:</td><td>" . displayText(array ("value" => $row['ChequeAmount'], "source" => "ChequeAmount", "action" => $mode, "inputPrefix" => $prefix, "dollarValue"=>TRUE, "decimal"=>2) ). "</td>\n" . 
+				"	</tr>\n";
+		if ($mode != "display") {
+			$html .= "	<tr>";
+			$html .= "		<td colspan=4 align=right><input type=button value=\"Delete Release Amount\" onClick=\"deleteReleaseCheque('" . $prefix . "')\"</td>";
+			$html .= "	</tr>";
+		}
+		
+				
+		return $html;
+		
+	}
+} // ReleaseChequeView 
+?>

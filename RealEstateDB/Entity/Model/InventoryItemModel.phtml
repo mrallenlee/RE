@@ -1,0 +1,76 @@
+<?php
+/*
+ * Created on 19-Nov-2007
+ * 
+ * Handle data for Inventory ITem7
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ 
+ class InventoryItemModel extends EntityModel {
+ 	function InventoryItemModel() {}
+ 	 	
+	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT InventoryItem " .
+ 				" SET 	CreatedDate=NOW(),
+						CreatedBy='" . get_user_name() . "' ";
+		 
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+ 		
+ 		$id = mysql_insert_id();
+ 		return $id;
+
+ 	
+ 	}
+
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE InventoryItem " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE RID = " . $arguments['RID'];
+ 				
+ 		$result = executeSql($sql);
+		return $arguments['RID'];
+ 	}
+
+	/**
+	 * Delete Inventory Item
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		
+ 		if ($arguments['RID'] > 0){
+ 			$sql 	= " DELETE FROM InventoryItem " .
+ 				  		" WHERE RID = " . $arguments['RID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql($arguments){
+		$sql =  " UserID =\"" .  $arguments['UserID'] . "\"" .
+ 				" , ItemType =\"" .  $arguments['ItemType'] . "\"" .
+ 				" , Price =\"" .  $arguments['Price'] . "\"" .
+ 				" , ItemNumber =\"" .  $arguments['ItemNumber'] . "\"" .
+ 				" , ItemLevel =\"" .  $arguments['ItemLevel'] . "\"" .
+ 				" , CAM =\"" .  $arguments['CAM'] . "\"" .
+ 				" , UpdatedBy =\"" .  get_user_name() . "\""; 
+ 				
+		return $sql;  				
+	} 	
+ }
+?>

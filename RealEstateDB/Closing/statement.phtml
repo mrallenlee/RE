@@ -1,0 +1,48 @@
+<?
+include "../config/config.phtml";
+include "../main_include.phtml";
+?>
+
+<html>
+<? 
+print_top_frame($PHP_SELF, "../"); 
+?>
+
+<script type="text/javascript" src="../framework/dojo/dojo.js"></script>
+<script type="text/javascript" src="statement.js"></script>
+<script type="text/javascript">
+var	HEADER_ROW=<?= DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER ?>;
+</script>
+<body>
+<h2 align="center">STATEMENT OF ADJUSTMENTS</h2>
+<form name="statement_form" action="statement_act.phtml" method="post">
+
+<table>
+	<tr>
+  <td>Select Statement: </td>
+  <td>
+  	<select name="statement">
+	  </select>
+	</td>
+  <td>&nbsp;&nbsp;</td>
+  <td>
+  	<input type="submit" id="btnGo" value="Go" onClick="return false;">
+  </td>
+  <td>
+	  <input type="button" id="btnDelete" value="Delete" onClick="return false;">
+	</td>
+  <td>
+	  <input type="button" id="btnDownload" value="Download" onClick="return false;">
+	</td>
+</p>
+</tr>
+</table>
+
+<hr>
+
+<div id="statment_table">
+</div>
+
+</form>
+</body>
+</html>

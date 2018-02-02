@@ -1,0 +1,29 @@
+.border-table {
+	border-width: 20px ;
+	border-spacing: 0px;
+	border-style: solid;
+	border-color: #3B1A13;
+	border-collapse: separate;
+	background-color: #C2E1F6;
+}
+
+.login-table, .data-table {
+	border-style: none;
+	background-color: #C2E1F6;
+}
+
+.title-font {
+	font-family: tahoma; font-size: 18pt; font-weight: bold; color: #3B1A13
+}
+
+.title-font1 {
+	font-family: tahoma; font-size: 18pt; font-weight: bold; color: #93B753
+}
+
+.subtitle-font {
+	font-family: tahoma; font-size: 8pt; font-weight: bold; color: #456C7D
+}
+
+.login-font {
+	font-family: tahoma; font-size: 8pt; font-weight: bold; color: #456C7D
+}

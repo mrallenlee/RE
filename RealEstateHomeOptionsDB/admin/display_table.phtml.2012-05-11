@@ -1,0 +1,1090 @@
+<?
+include "main_include.phtml";
+// This file displays all of the Options and Upgrades tables. The file
+// that displays the User table is called display_user.phtml
+
+define (PRINT_HEADER_REPEATLY_AT_ROW, 18);
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+
+function displayEmptyValueIfEqualsTo($value,$defaultValue){
+	if ($value != $defaultValue){
+		return $value;
+	} else {
+		return "";
+	}
+}
+
+?>
+
+<script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>javascript/dynamicWindow.js" type="text/javascript"></script>
+<script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>javascript/dynamicWindowUtils.js" type="text/javascript"></script>
+
+<script language="JavaScript">
+
+function displayWaitDialogAndSubmit($formObj){
+	displayWaitingDIV();		
+}
+
+// rnum is the number
+// rlength is the decimal place
+function roundNumber(rnum, rlength) {
+	var rlength = 2; // The number of decimal places to round to
+	if (rnum > 8191 && rnum < 10485) {
+		rnum = rnum-5000;
+		var newnumber = Math.round(rnum*Math.pow(10,rlength))/Math.pow(10,rlength);
+		newnumber = newnumber+5000;
+	} else {
+		var newnumber = Math.round(rnum*Math.pow(10,rlength))/Math.pow(10,rlength);
+	}
+	return newnumber;
+}
+
+/*************************************************************************\
+boolean isNum(String argvalue)
+return true if argvalue contains only numeric characters,
+else return false.
+\*************************************************************************/
+function isNum(argvalue) {
+argvalue = argvalue.toString();
+
+if (argvalue.length == 0)
+return false;
+
+for (var n = 0; n < argvalue.length; n++){
+	var c = argvalue.substring(n, n+1);
+	// allow negative number
+	if (n == 0 && c == "-"){
+		continue;
+	}
+	if (c < "0" || c > "9"){
+			return false;
+		
+	}
+}
+return true;
+}
+
+function popup_window(name, url, left, top, width, height, resizable)
+{
+  resizable_str = resizable ? 'yes' : 'no';
+  window.open(url, name, 'left='+left+',top='+top+',width='+width+',height='+height+',resizable='+resizable_str);
+}
+
+// dispaly edit note div layer 
+function displayDynamicDIV(name, url, left, top, imageWidth, imageHeight){
+	if (height > 0){
+		currentHeight = height;
+	}	
+	if (imageWidth > 370){
+		imageWidth = 370
+	}
+	
+	if (imageHeight > 370){
+		imageHeight = 370	
+	}
+	var width  = imageWidth + 20;
+	var height = imageHeight + 50;
+	
+	newHTML = '<DIV >';
+	newHTML = newHTML + '<CENTER><IMG SRC="' + url + '" HEIGHT=' + imageHeight + '></CENTER>';
+	newHTML = newHTML + '</div>';
+	getFloatingDivNoStyle(1).innerHTML = newHTML;
+
+	getFloatingDiv(1).position="absolute";
+	getFloatingDiv(1).width=width + "px";	
+	getFloatingDiv(1).height=height + "px";
+	document.onmousemove=followmouse;
+
+	// display it
+	getFloatingDiv(1).visibility="visible";	
+}
+
+</script>
+
+<html>
+<head>
+<title>Admin</title>
+
+<script>
+
+function confirm_delete(url)
+{
+	var msg =	"WARNING: If this record is deleted, then other records\n" +
+			"in the database linked to it could or will be deleted.\n" +
+			"\n" +
+			"Would you like to delete this record?";
+	
+	if (confirm(msg))
+	{
+		location.href = url;
+	}
+}
+
+</script>
+
+</head>
+
+
+<table cellspacing="0" cellpadding="0" border="0" >
+<tr>
+<td>
+
+<br>
+
+<?
+
+
+if (!$table_name) {
+	$table_name = "Section";
+}
+
+// print all section headers
+printSectionHeaders($SectionID, $SubsectionID, $ItemID, $OptionID, $ChoiceID, $mode);
+
+// title of the current sections
+?>
+
+<table cellspacing="0" cellpadding="5" border="0" width="100%">
+
+<tr class="head">
+	<td align="left">	
+<?
+// this image spacer indents the tables
+if ($table_name == "Section") {
+	echo "<img src=\"../spacer.gif\" width=\"15\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Subsection") {
+	echo "<img src=\"../spacer.gif\" width=\"30\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Item") {
+	echo "<img src=\"../spacer.gif\" width=\"45\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Item_Options") {
+	echo "<img src=\"../spacer.gif\" width=\"60\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Options") {
+	echo "<img src=\"../spacer.gif\" width=\"45\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Choice") {
+	echo "<img src=\"../spacer.gif\" width=\"75\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "Price") {
+	echo "<img src=\"../spacer.gif\" width=\"75\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "UnitType") {
+	echo "<img src=\"../spacer.gif\" width=\"5\" height=\"1\" border=\"0\">";
+}
+
+if ($table_name) {
+
+
+	if ($ItemID) {
+		if ($table_name == "Item_Options") {
+			echo "Options for: <font color=\"#FF0000\">$ItemName";
+		}
+		elseif ($table_name == "Choice") {
+			echo "Choices for Option: <font color=\"#FF0000\">$OptionName";
+		}
+		elseif ($table_name == "Price") {
+			echo "Prices for Option: <font color=\"#FF0000\">$OptionName";
+		}
+		elseif ($table_name == "Options") {
+			echo "Options for ALL Items (not limited to the current Item you are under)";
+		}
+		elseif ($table_name == "UnitType") {
+			echo "Unit Types";
+		}
+	}
+	elseif ($SubsectionID) {
+		echo $table_name."s for: ";
+		echo $SubsectionName."";
+	}
+	elseif ($SectionID) {
+		echo $table_name."s for: ";
+		echo $SectionName."";
+	} else {
+		echo $table_name;
+		if ($table_name != "Options") {
+			echo "s";
+		}
+	}
+
+	echo "";
+
+	if ($user_message) {
+		echo "<br>\n".$user_message;
+	}
+}
+?>
+	</td>	
+</tr>
+<tr><td><BR><BR></td></tr>
+<?
+// display table (Section, Subsection, or Item)
+if ($table_name == "Section" || $table_name == "Subsection" || $table_name == "Item") {
+	// $where are needed when calling a database table other than Section
+	$where = "";
+
+	if ($table_name == "Subsection") {
+		$where = "WHERE SectionID = $SectionID";
+	}
+	elseif ($table_name == "Item") {
+		$where = "WHERE SubsectionID = $SubsectionID";
+	}
+
+	$sql = "SELECT ".$table_name."ID, Name, Description
+				FROM $table_name
+				$where
+				ORDER BY Name";
+
+	$result = mysql_query($sql, $db) or die("<br>\nSQL failed:<br>\n".mysql_error()."<br>\nFull SQL:<br>\n".$sql.$PHP_SELF);
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr class=\"head\">\n";
+	echo "<th><b>Name</b></th>\n";
+	echo "<th><b>Description</b></th>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result)) {
+		$id_name = $table_name."ID";
+
+		if ($table_name == "Section") {
+			$SectionID = $row['SectionID'];
+		}
+		elseif ($table_name == "Subsection") {
+			$SubsectionID = $row['SubsectionID'];
+		}
+		elseif ($table_name == "Item") {
+			$ItemID = $row['ItemID'];
+		}
+
+		displayMouseOverTR();
+
+		if ($SectionID) {
+			$tbl_name = "Subsection";
+		}
+		if ($SubsectionID) {
+			$tbl_name = "Item";
+		}
+		if ($ItemID) {
+			$tbl_name = "Item_Options";
+		}
+		echo "<td ><a href=\"display_table.phtml?table_name=$tbl_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=".$row['ItemID']."\">".$row['Name']."</a></td>\n";
+		echo "<td>".$row['Description']."&nbsp;</td>\n";
+		echo "<td><input type=button value=\"Edit\" onClick=\"window.location='row_edit.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=".$row['ItemID'] . "'\">&nbsp;&nbsp;" .
+				"<INPUT type=button value=\"Delete\" onClick=\"confirm_delete('row_delete.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=".$row['ItemID']."')\">"; 
+		echo "</tr>\n";
+	}
+
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" method=\"get\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"UnitType\" value=\"$UnitType\">\n";
+	echo "<tr>\n";
+	echo "<td><input type=\"text\" name=\"Name\" size=\"45\" maxlength=\"100\"></td>\n";
+	echo "<td><input type=\"text\" name=\"Description\" size=\"20\" maxlength=\"200\"></td>\n";
+	echo "<td><input type=\"submit\" name=\"submit\" value=\"Add\"></td>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+
+// display table (Item_Options)
+elseif ($table_name == "Item_Options") {
+	$sql = "SELECT	Item.Name as ItemName,
+					Options.Name as OptionName,
+					Item_Options.ItemID as ItemID,
+					Item_Options.OptionID as OptionID,
+					Options.Choice as Choice
+				FROM Item, Item_Options, Options
+				WHERE Item.SubsectionID = $SubsectionID
+				AND Item_Options.ItemID = Item.ItemID
+				AND Item_Options.OptionID = Options.OptionID
+				AND Item.ItemID=$ItemID
+				ORDER BY Item.Name, Options.Name";
+
+	$result = mysql_query($sql, $db); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr class=\"head\">\n";
+	echo "<th><b>Name</b></th>\n";
+	echo "<td colspan=3></td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result)) {
+		displayMouseOverTR();
+		echo "<td>".$row['OptionName']."</td>";
+		if ($row['Choice']) {
+			echo "<TD><INPUT type=button value=\"Choices\" onClick=\"window.location='display_table.phtml?table_name=Choice&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."'\"></td>";
+		} else {
+			echo "<TD></TD>";	
+		}
+		echo "<TD><INPUT type=button value=\"Prices\" onClick=\"window.location='display_table.phtml?table_name=Price&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=".$row['ItemID']."&OptionID=".$row['OptionID']."'\"></td>";
+		echo "<td>" .
+				"<INPUT type=button value=\"Delete\" onClick=\"confirm_delete('row_delete.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=".$row['ItemID']."&OptionID=".$row['OptionID']."')\">" ;  
+		echo "</tr>\n";
+
+		$ItemName = $row['ItemName'];
+	}
+
+	// listbox on the 'Add' form is generated using this
+	$listbox_Options = "\n<select name=\"OptionID[]\" multiple=\"multiple\">\n";
+
+	// get all Options names
+	$sql = "SELECT OptionID, Name
+				FROM Options
+				ORDER BY Name";
+	$result = mysql_query($sql, $db);
+
+	while ($row = mysql_fetch_array($result)) {
+		$listbox_Options .= "<option value=\"".$row['OptionID']."\">".$row['Name']."\n";
+	}
+
+	$listbox_Options .= "</select>\n";
+
+	// this replaces the Item listbox with just the current item's name
+	if ($ItemID) {
+		$listbox_Item = $ItemName;
+	}
+
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" method=\"get\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"UnitType\" value=\"$UnitType\">\n";
+	echo "<tr>\n";
+	echo "<td>".$listbox_Options."</td>\n";
+	echo "<td><input type=\"submit\" name=\"submit\" value=\"Add\"></td>\n";
+	echo "</tr>\n";
+	echo "<tr>\n";
+	echo "<td>&lt;<a href=\"display_table.phtml?table_name=Options&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID\">add more Options to the list</a>&gt;&nbsp;&nbsp;</td>\n";
+	echo "<td>&nbsp;</td>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+
+// display table (Options)
+elseif ($table_name == "Options") {
+	$sql = "SELECT OptionID, Name, Choice
+				FROM Options
+				ORDER BY Name";
+
+	$result = mysql_query($sql, $db);
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr class=\"head\">\n";
+	echo "<th>Name</th>\n";
+	echo "<th>Choice</th>\n";
+	echo "<th>Image Loaded</th>\n";
+	echo "<th>Action</th>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result)) {
+		displayMouseOverTR();
+		echo "<td>".$row['Name']."</td>\n";
+		echo "<td><a href=\"display_table.phtml?table_name=Choice&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."\">".$row['Choice']."</a>&nbsp;</td>\n";
+		// Display if the image has been loaded
+		$image_file = "../images/".$row['OptionID']."_" . ITEM_IMAGE_MAGIC_NUMBER;
+		if (is_file($image_file)){
+			$size = getimagesize($image_file);
+			echo "<td align=\"center\">" .
+					" <img src=\"".$image_file."?".date("YmdHms")."\" width=\"" . DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH . "\" height=\"" . DEFAULT_ITEM_OPTION_THUMBNAIL_HEIGHT . "\" border=\"0\"" .
+					" onMouseOut=\"hideFloatingDiv(1);\" onMouseOver=\"displayDynamicDIV('win', '".$image_file."', 0, 0, $size[0], $size[1]);\"></a></td>\n";
+			}
+		else
+			echo "<td></td>";
+
+		echo "<td><nobr>" .
+				"<input type=button value=\"Edit\" onClick=\"window.location='row_edit.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."'\">&nbsp;&nbsp;" .				
+				"<input type=button value=\"Delete\" onClick=\"confirm_delete('row_delete.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."')\">&nbsp;&nbsp;" .
+				"<input type=button value=\"Upload Image\" onClick=\"window.location='file_management.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."'\">&nbsp;&nbsp;" .				
+				"<input type=button value=\"Delete Image\" onClick=\"confirm_delete('upload_file.phtml?table_name=$table_name&mode=$mode&OptionID=".$row['OptionID']."&action=delete-image')\">" .				
+				"</td>\n";
+		echo "</tr>\n";
+	}
+
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" method=\"get\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"UnitType\" value=\"$UnitType\">\n";
+	echo "<tr>\n";
+	echo "<td><input type=\"text\" name=\"Name\" size=\"45\" maxlength=\"100\"></td>\n";
+	echo "<td><input type=\"text\" name=\"Choice\"  size=\"20\" maxlength=\"100\"></td>\n";
+	echo "<td><input type=\"submit\" name=\"submit\" value=\"Add\"></td>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+
+// display table (Choice)
+elseif ($table_name == "Choice") {
+	$sql = "SELECT Choice.ChoiceID as ChoiceID, Options.Name as OptionName, Choice.Name as ChoiceName, Options.OptionID as OptionID
+				FROM Options, Choice
+				WHERE Options.OptionID = Choice.OptionID ";
+	if ($OptionID) {
+		$sql .= "AND Choice.OptionID = $OptionID ";
+	}
+	$sql .= "	ORDER BY Options.Name, Choice.Name";
+
+	$result = mysql_query($sql, $db);
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr class=\"head\">\n";
+	echo "<th>Name</th>\n";
+	echo "<th>Image Loaded</th>\n";
+	echo "<th>Action</th>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result)) {
+		displayMouseOverTR();
+		echo "<td>".$row['ChoiceName']."</td>\n";
+
+		// Display if the image is loaded
+		$image_file = "../images/".$row['OptionID']."_".$row['ChoiceID'];
+		if (is_file($image_file))
+			echo "<td  align=\"center\">" .
+							"<img src=\"".$image_file."?".date("YmdHms")."\" width=\"" . DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH . 
+							"\" height=\"" . DEFAULT_ITEM_OPTION_THUMBNAIL_HEIGHT . "\" border=\"0\"" .
+							" onMouseOut=\"hideFloatingDiv(1);\" onMouseOver=\"displayDynamicDIV('win', '".$image_file."', 0, 0, 400, 400);\" ></td>\n";
+		else
+			echo "<td></td>";
+		
+		echo "<td><nobr>" .
+				"<input type=button value=\"Edit\" onClick=\"window.location='row_edit.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."&ChoiceID=".$row['ChoiceID']."'\">&nbsp;&nbsp;" .				
+				"<input type=button value=\"Delete\" onClick=\"confirm_delete('row_delete.phtml?table_name=$table_name&mode=$mode&type=delete_row&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."&ChoiceID=".$row['ChoiceID']."')\">&nbsp;&nbsp;" .
+				"<input type=button value=\"Upload Image\" onClick=\"window.location='file_management.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."&ChoiceID=".$row['ChoiceID']."'\">&nbsp;&nbsp;" .				
+				"<input type=button value=\"Delete Image\" onClick=\"confirm_delete('row_delete.phtml?table_name=$table_name&mode=$mode&type=delete_image&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&OptionID=".$row['OptionID']."&ChoiceID=".$row['ChoiceID'] ."')\">" .				
+				"</td>\n";
+		echo "</tr>\n";
+		
+
+		$OptionName = $row['OptionName'];
+	}
+
+	// listbox on the 'Add' form is generated using this
+	$listbox_Options = "\n<select name=\"OptionID\">\n";
+
+	// get all Options names that have a choice
+	$sql = "SELECT OptionID, Name
+				FROM Options
+				WHERE Choice <> ''
+				ORDER BY Name";
+
+	$result = mysql_query($sql, $db);
+
+	while ($row = mysql_fetch_array($result)) {
+		$listbox_Options .= "<option value=\"".$row['OptionID']."\">".$row['Name']."\n";
+	}
+
+	$listbox_Options .= "</select>\n";
+
+	// this replaces the Options listbox with just the current option's name
+	if ($OptionID) {
+		$listbox_Options = $OptionName;
+	}
+
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" method=\"get\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"OptionID\" value=\"$OptionID\">\n";
+	echo "<tr>\n";
+	echo "<td><input type=\"text\" name=\"Name\" size=\"45\" maxlength=\"100\"></td>\n";
+	echo "<td><input type=\"submit\" name=\"submit\" value=\"Add\"></td>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+}
+// display table (Price)
+elseif ($table_name == "Price") {
+	// drop the temporary table
+	$sql_droptbl = "DROP TABLE IF EXISTS Item_Options_UnitType";
+	$result = mysql_query($sql_droptbl, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_droptbl.$PHP_SELF);
+
+	// create temporary table
+	$sql_temp = "CREATE TEMPORARY TABLE Item_Options_UnitType
+				SELECT Item_Options.ItemID,
+					Item_Options.OptionID,
+					UnitType.Type
+					FROM Item_Options, UnitType
+					WHERE Item_Options.ItemID = $ItemID
+					AND Item_Options.OptionID = $OptionID";
+	$result = mysql_query($sql_temp, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_temp.$PHP_SELF);
+	
+	$contractor_sql = "SELECT ContractorID, ContractorName, MarkUpPercentage 
+						FROM Contractor	";
+	
+	$contractor_result = mysql_query($contractor_sql, $db); //or die("Error : $sql<br>" . mysql_error());
+	// get actual number of contractor
+	// also set javascript array for global mark-up
+
+	$i = 0;
+?>
+<script language="JavaScript" type="text/javascript">
+globalMarkUpPercentage = new Array(<?= $no_of_contractor; ?>)
+<?  	
+	while ($contractor_row = mysql_fetch_array($contractor_result)) {
+?>
+		globalMarkUpPercentage[<?= $i; ?>] = <?= $contractor_row['MarkUpPercentage']; ?> 
+<?		
+		if ($contractor_row['ContractorName'] == ""){
+			break;
+		}
+		$i++;
+	}	
+	mysql_data_seek($contractor_result, 0);
+	$actualNumOfContractor = $i;	
+?>
+</script>
+<?
+	// left join Price with temporary table
+	$sql_pricelist = "SELECT Item_Options_UnitType.ItemID as ItemID,
+						Item_Options_UnitType.OptionID as OptionID,
+						Item_Options_UnitType.Type as UnitType,
+						Price.Price as Price,					
+						Price.PackageID as PackageID,			
+						Price.AverageMarkUpPercentage as AverageMarkUpPercentage, 
+						Price.TotalCost as TotalCost,
+						Price.CreditOfPurchaser as CreditOfPurchaser,
+						Price.CreditOfPurchaserMarkUpPercentage as CreditOfPurchaserMarkUpPercentage,
+						Price.CreditOfDevelopment as CreditOfDevelopment,   							
+						Price.contractor0 as contractor0,
+						Price.contractor1 as contractor1,
+						Price.contractor2 as contractor2,
+						Price.contractor3 as contractor3,
+						Price.contractor4 as contractor4,
+						Price.contractor5 as contractor5,
+						Price.contractor6 as contractor6,
+						Price.contractor7 as contractor7,
+						Price.contractor8 as contractor8,
+						Price.contractor9 as contractor9,
+						Price.contractor10 as contractor10,
+						Price.contractor11 as contractor11,
+						Price.contractor12 as contractor12,
+						Price.contractor13 as contractor13,
+						Price.contractor14 as contractor14,
+						Price.contractor15 as contractor15,
+						Price.contractor16 as contractor16,
+						Price.contractor17 as contractor17,
+						Price.contractor18 as contractor18,
+						Price.contractor19 as contractor19,
+						Price.contractor20 as contractor20,
+						Price.contractor21 as contractor21,
+						Price.contractor22 as contractor22,
+						Price.contractor23 as contractor23,
+						Price.contractor24 as contractor24,
+						Price.contractor25 as contractor25,
+						Price.contractor26 as contractor26,
+						Price.contractor27 as contractor27,
+						Price.contractor28 as contractor28,
+						Price.contractor29 as contractor29,
+						Price.contractor30 as contractor30,
+						Price.contractor31 as contractor31,
+						Price.contractor32 as contractor32,
+						Price.contractor33 as contractor33,
+						Price.contractor34 as contractor34,
+						Price.contractor35 as contractor35,
+						Price.contractor36 as contractor36,
+						Price.contractor37 as contractor37,
+						Price.contractor38 as contractor38,
+						Price.contractor39 as contractor39".		
+						" FROM Item_Options_UnitType " .
+// remove temporary table in the future. Need testing						 
+//						" FROM (SELECT Item_Options.ItemID,
+//									Item_Options.OptionID,
+//									UnitType.Type
+//									FROM Item_Options, UnitType
+//									WHERE Item_Options.ItemID = $ItemID
+//									AND Item_Options.OptionID = $OptionID) AS Item_Options_UnitType ". 
+						"LEFT JOIN Price
+						ON Item_Options_UnitType.OptionID = Price.OptionID
+						AND Item_Options_UnitType.ItemID = Price.ItemID
+						AND Item_Options_UnitType.Type = Price.UnitType
+						ORDER BY Item_Options_UnitType.Type";
+						
+	$result = mysql_query($sql_pricelist, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_pricelist.$PHP_SELF);
+	$row = mysql_fetch_array($result);
+	
+	$specialBugFixSql = " SELECT Price.* FROM Price " .
+						" WHERE ItemID = $ItemID" .
+						" AND OptionID = $OptionID";
+	$specialBugFixResult = mysql_query($specialBugFixSql, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$specialBugFixSql.$PHP_SELF);
+	$specialBugFixRow = mysql_fetch_array($specialBugFixResult);
+						
+	// start HTML table and column labels
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" name=\"price_form\" method=\"post\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"OptionID\" value=\"$OptionID\">\n";
+
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+
+	echo "<tr>\n";
+	echo "<td colspan=\"26\">\n";
+?>
+
+(You must still select the update button at the bottom of the page to save the values)<BR>
+Setting a price to "STANDARD" will display "Standard" at Price field in Contractor Report<BR>
+Setting a price to "UNAVAILABLE" will not display this option for that unit type<BR>
+Setting a price to "INFO" will display "For Info Only" at Price field in Contractor Report<BR>
+Setting a price to "ZERO" will display "$0" at Price field in Contractor Report<BR>
+<BR>
+	</td>
+	</tr>
+<?	if (PO_SYSTEM_ENABLED){
+?>	<tr>
+		<td colspan=2>Update setting:</td>
+		<td colspan=3><select name="POUpdateType">
+				<option value="updateNoPO">Normal</option>		
+				<option value="updateLockedPO">Update locked PO</option>		
+				<option value="updateSentPO">Update locked & sent PO</option>
+			</select></td>		
+<?		
+	}			
+?>	<tr>
+		<td colspan=2>Attach an incentive to this option:</td>
+<?		$originalRow = $row;
+		$row = $specialBugFixRow; 
+?>				
+		<td colspan=50><?= display_sales_incentives_list(); ?>
+		<input type="checkbox" name="NoDisplayIfNoPackage" <? if ($row['NoDisplayIfNoPackage'] > 0) print " CHECKED "; ?>>Do not display this options if purchaser doesn't have this incentive</td>
+<?		$row = $originalRow;
+?>		
+	
+	<script language="JavaScript">
+		function setall()
+		{				
+				for (i=0; i < <?= mysql_num_rows($result);?>; i++)
+				{
+					price_for_this_unit = 0;
+					total_cost = 0;
+					creditOfDevelopment = 0;
+					
+					total_mark_up_cost = 0;
+					// calculate all prices from contractor for this unit type
+					for (j=0; j < <?= $actualNumOfContractor?>; j++)
+					{
+						if (eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value") == '-9' ||
+							eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value") == '-99')
+							continue;
+						
+						if (eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value") == '')
+							eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value = 0");
+							
+						var cost = parseInt(eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value"));
+						if (!isNum(cost)){
+							// if this is not a number, skip this contractor
+							continue
+						}
+						// only cost positive number as a cost
+						if (cost > 0){
+							total_cost += cost;
+							var markUpPercentage = globalMarkUpPercentage[j];
+							// if custom markUp is defined, use custom mark up percentage
+							if (eval("document.forms['price_form'].elements['Contractor" + j + "MarkUpPercentage'].value") != ''){
+								markUpPercentage = eval("document.forms['price_form'].elements['Contractor" + j + "MarkUpPercentage'].value"); 								
+							}
+							markUpPercentage = 1 + (markUpPercentage / 100);
+							total_mark_up_cost += roundNumber((cost * markUpPercentage), 2); 
+						} else {
+							creditOfDevelopment += cost;	
+						}											
+					}
+	
+					var creditOfPurchaser = 0;
+					if (eval("document.forms['price_form'].elements['credit_of_purchaser_array[]'][i].value") != ''){
+						creditOfPurchaser  = eval("document.forms['price_form'].elements['credit_of_purchaser_array[]'][i].value");
+					}
+
+					// set credit of develoment value
+					document.forms['price_form'].elements['credit_of_development_array[]'][i].value = -creditOfDevelopment; 
+					
+//					if (eval("document.forms['price_form'].elements['credit_of_development_array[]'][i].value") != ''){
+//						creditOfDevelopment  = eval("document.forms['price_form'].elements['credit_of_development_array[]'][i].value");
+//					} 
+					 
+					 
+					total_cost = parseInt(total_cost + creditOfDevelopment);
+					total_mark_up_cost = parseInt(total_mark_up_cost - creditOfPurchaser);
+					if (total_cost <= 0){
+						document.forms['price_form'].elements['average_mark_up_array[]'][i].value = 0;
+					} else {
+						document.forms['price_form'].elements['average_mark_up_array[]'][i].value = parseInt(roundNumber(((total_mark_up_cost / total_cost ) - 1) * 100, 2))
+					} 
+					document.forms['price_form'].elements['total_cost_array[]'][i].value = total_cost; 
+					document.forms['price_form'].elements['Price_array[]'][i].value = total_mark_up_cost;
+				}
+			}		
+
+		/**
+		* This function calculates value of purchaser credit to 
+		* cancel the development credit. This is needed because
+		* purchaser credit is not the same as development credit
+		* due to different trade's mark-up percentage 
+		*/
+		function calculateCreditOfPurchaser()
+		{				
+				for (i=0; i < <?= mysql_num_rows($result);?>; i++)
+				{
+					price_for_this_unit = 0;
+					total_cost = 0;
+					creditOfDevelopment = 0;
+					
+					total_mark_up_cost = 0;
+					// calculate all prices from contractor for this unit type
+					for (j=0; j < <?= $actualNumOfContractor?>; j++)
+					{
+						if (eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value") == '-9' ||
+							eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value") == '-99')
+							continue;
+						
+						if (eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value") == '')
+							eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value = 0");
+							
+						var cost = parseInt(eval("document.forms['price_form'].elements['contractor_" + j + "_array[]'][i].value"));
+						if (!isNum(cost)){
+							// if this is not a number, skip this contractor
+							continue
+						}
+						// only cost positive number as a cost
+						if (cost < 0){
+							creditOfDevelopment += cost;	
+						}											
+					}
+					var percentage = document.forms['price_form'].elements['CreditOfPurchaserMarkUpPercentage'].value
+					
+					document.forms['price_form'].elements['credit_of_purchaser_array[]'][i].value = parseInt(roundNumber((creditOfDevelopment * (1 + (percentage / 100))))) * -1;
+				}
+			}		
+
+	function setValueArray(fieldName){
+		var promptString = "Please enter value a value for this field.\n It can be a number, or String \"INFO\", \"ZERO\"";
+		while(1){
+			var value = prompt(promptString, '')
+			if ( (value=='') || (value==null) ){
+				return;
+			} 
+			if (isNum(value) || value == "INFO" || value == "ZERO" ){
+			
+				// if the value looks ok, set them
+				for (i=0; i < <?= mysql_num_rows($result);?>; i++)
+				{
+					document.forms['price_form'].elements[fieldName][i].value = value;
+				}
+				return;
+			} else {
+				promptString = "Input Error. Please enter a value for this field.\n It can be a number, or String \"INFO\", \"ZERO\"";
+				// prompts again
+			}
+		}
+	}
+	
+	// accept special value
+	function setPriceValueArray(){
+		var fieldName = 'Price_array[]';
+		var promptString = 	"Please enter value all fields with this field.\n It can be a number, or String \"STANDARD\", \"UNAVAILABLE\" ."
+		 
+		while(1){
+			var value = prompt(promptString, '')
+			if ( (value=='') || (value==null) ){
+				return;
+			} 
+			if (isNum(value) || value == "STANDARD" || value == "UNAVAILABLE"){
+				// if the value looks ok, set them
+				for (i=0; i < <?= mysql_num_rows($result);?>; i++)
+				{
+					document.forms['price_form'].elements[fieldName][i].value = value;
+				}
+				return;
+			} else {
+				promptString = "Input Error. Please enter value for this field.\n It can be a number, or String \"STANDARD\", \"UNAVAILABLE\" ."
+				// prompt again
+			}	
+		}
+	}
+	
+	</script>
+<?
+function printHeader(){
+	global $contractor_result;
+	echo "<tr class=\"head\">\n";
+	echo "<th><b>Unit Type</b></th>\n";
+	echo "<th><b>Price</b></th>\n";
+	echo "<th><b>Average Mark-up %</b></th>\n";
+	echo "<th><b>Total Cost</b></th>\n";
+	echo "<th><b>Credit of Purchaser</b></th>\n";
+	echo "<th><b>Credit of Development</b></th>\n";
+
+	//	for ($i=0; $i < $actualNumOfContractor; $i++)	
+	$i = 0;
+	mysql_data_seek($contractor_result, 0);
+	while ($contractor_row = mysql_fetch_array($contractor_result)) {
+						
+		if ($contractor_row['ContractorName'] == ""){
+			break;
+		}
+		// skip col while displaying unit type
+		if ($i == 6 || $i == 17 || $i == 28 || $i == 39){
+			echo "<td>Unit Type</td>\n";		
+		}
+
+		echo "<th><b>".$contractor_row['ContractorName']."</b></th>\n";
+		$i++;
+	}
+	echo "</tr>\n";
+}
+	printHeader();
+?>
+	<tr>
+		<td nowrap>Global Mark-up %</td>
+		<td colspan=3></td>
+		<td><input type="button" value="Calculate Value" onClick="javascript:calculateCreditOfPurchaser()"></td>
+		<td colspan=1></td>
+		
+<?
+	// display global mark-up row
+	
+	// reset contractor_result pointer
+	mysql_data_seek($contractor_result, 0);
+	$i = 0;
+	while ($contractor_row = mysql_fetch_array($contractor_result)) {
+		if ($contractor_row['ContractorName'] == ""){
+			break;
+		}
+		// skip col while displaying unit type
+		if ($i == 6 || $i == 17 || $i == 28 || $i == 39){
+			echo "<td></td>\n";		
+		}
+		
+		echo "<td align=\"center\"><b>".$contractor_row['MarkUpPercentage'] . "%</td>\n";
+		$i++;
+	}
+?>
+	</tr>
+	<tr>
+		<td nowrap>Custom Mark-up %</td>
+		<td><input type="button" value="Calculate Price" onClick="javascript:setall()"></td>
+		<td colspan=2></td>
+		<td align="center"><input name="CreditOfPurchaserMarkUpPercentage" type=text maxlength=3 size=3 value="<?
+				print $row[CreditOfPurchaserMarkUpPercentage] ;
+		?>">%</td>		
+		<td ></td>
+<?	
+	//	custom mark-up
+	// need to run the sql again because there's a left join bug in MySql 4.0.20
+	$contractor_custom_mark_up_sql = " SELECT * " .
+									" FROM Price" .
+									" WHERE ItemID = $ItemID " .
+									" AND OptionID = $OptionID " .
+									" ORDER BY UnitType";
+									
+	$contractor_custom_mark_up_result = mysql_query($contractor_custom_mark_up_sql, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$contractor_custom_mark_up_sql.$PHP_SELF);
+																
+	$row = mysql_fetch_array($contractor_custom_mark_up_result);
+	for ( $i=0; $i < $actualNumOfContractor; $i++){
+		// skip col while displaying unit type
+		if ($i == 6 || $i == 17 || $i == 28 || $i == 39){
+			echo "<td></td>\n";		
+		}
+				
+		$varName = "Contractor" . $i . "MarkUpPercentage";
+?>		<td align="center"><input name="Contractor<?= $i; ?>MarkUpPercentage" type=text maxlength=3 size=3 value="<?
+			if ($row[$varName] != DEFAULT_CUSTOM_MARK_UP_VALUE){
+				print $row[$varName];
+			}  
+		?>">%</td>		
+<?
+	}
+?>
+	</tr>
+	<tr>
+	<td></td>
+	<td align="center"><input type="button" value="Set Value" onClick="javascript:setPriceValueArray()"></td>
+	<td colspan=2></td>
+	<td align="center"><input type="button" value="Set Value" onClick="javascript:setValueArray('credit_of_purchaser_array[]')"></td>	
+	<td></td>	
+<?
+
+	for ($i = 0; $i < $actualNumOfContractor; $i ++) {
+		// skip col for unit type 
+		if ($i == 6 || $i == 17 || $i == 28 || $i == 39){
+			echo "<td></td>\n";		
+		}
+		
+?>
+		<td><input type="button" value="Set Value" onClick="javascript:setValueArray('contractor_<?= $i;?>_array[]')"></td>	
+<?
+
+	}
+?>
+	</tr>	
+<?
+
+	// print out rows to the table
+	$tabindex = 0;
+	$num_of_loop = 0;
+	$num_of_unit_type = 0;
+
+	while ($row = mysql_fetch_array($result)) {
+		if (!section_disabled($row['UnitType'], $SectionID)) // skip the disabled unit type in this section
+			$num_of_unit_type ++;
+	}
+
+	$result = mysql_query($sql_pricelist, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_pricelist.$PHP_SELF);
+
+	while ($row = mysql_fetch_array($result)) {
+		if ($num_of_loop == PRINT_HEADER_REPEATLY_AT_ROW){
+			printHeader();	
+		}
+		if (section_disabled($row['UnitType'], $SectionID)){ // skip the disabled unit type in this section
+			$num_of_loop ++;
+			continue;
+		}
+
+		displayMouseOverTR();
+		
+		echo "<td><input type=\"hidden\" name=\"UnitType_array[]\" value=\"".urlencode($row['UnitType'])."\">".$row['UnitType']."</td>\n";
+		$Price = convertPriceConstantToString($row['Price']);
+
+		echo "<td align=\"center\"><font face=\"Arial,Verdana,Helvetica\" size=\"3\"><input type=\"text\" name=\"Price_array[]\" value=\"".$Price."\" maxlength=\"50\" size=\"6\"></td>\n";
+		echo "<td align=\"center\"><input readonly type=\"text\" name=\"average_mark_up_array[]\" size=\"5\" value=\"". displayEmptyValueIfEqualsTo($row['AverageMarkUpPercentage'],DEFAULT_EMPTY_VALUE) . "\"></td>\n";
+		echo "<td align=\"center\"><input readonly type=\"text\" name=\"total_cost_array[]\" size=\"5\" value=\"". displayEmptyValueIfEqualsTo($row['TotalCost'],DEFAULT_EMPTY_VALUE) . "\"></td>\n";
+		echo "<td align=\"center\"><input type=\"text\" name=\"credit_of_purchaser_array[]\" size=\"5\" value=\"". displayEmptyValueIfEqualsTo($row['CreditOfPurchaser'],DEFAULT_EMPTY_VALUE) . "\"></td>\n";
+		echo "<td align=\"center\"><input readonly type=\"text\" name=\"credit_of_development_array[]\" size=\"5\" value=\"". displayEmptyValueIfEqualsTo($row['CreditOfDevelopment'],DEFAULT_EMPTY_VALUE) . "\"></td>\n";
+		for ($i = 0; $i < $actualNumOfContractor; $i ++) {
+			// print unit type at every 11 column
+			if ($i == 6 || $i == 17 || $i == 28){
+				echo "<td>".$row['UnitType']."</td>\n";		
+			}
+			$tabindex = $i * $num_of_unit_type + $num_of_loop +1;
+			$contractor_price = convertPriceConstantToString($row['contractor'.$i]);
+			echo "<td align=\"right\"><font face=\"Arial,Verdana,Helvetica\" size=\"3\"><input type=\"text\" name=\"contractor_".$i."_array[]\" value=\"".$contractor_price."\" maxlength=\"50\" size=\"6\" TABINDEX=\"".$tabindex."\"></td>\n";
+			if (PO_SYSTEM_ENABLED){
+				// print out hidden input contains original value
+				echo "<input type=\"hidden\" name=\"contractor_".$i."_original_array[]\" value=\"".$contractor_price."\">";
+			}
+		}
+		
+		echo "</tr>\n";
+
+		$num_of_loop ++;
+	}
+
+	// drop the temporary table
+//	$sql_droptbl = "DROP TABLE IF EXISTS Item_Options_UnitType";
+//	$result = mysql_query($sql_droptbl, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_droptbl.$PHP_SELF);
+
+	echo "<tr>\n";
+	echo "<td>&nbsp;</td>\n";
+//	echo "<td><input type=\"submit\" name=\"submit\" value=\"Update\"></td>\n";	
+	echo "<td><input type=\"submit\" name=\"submit\" value=\"Update\" onClick=\"displayWaitDialogAndSubmit(document.forms['price_form'])\"></td>\n";
+	echo "</tr>\n";
+?>
+<tr>
+<td colspan=50><b>Note</b>
+<font color="red">Total Cost</font> = (Contractor Value 1) + (Contractor Value 2) + ... + (Contractor Value 40) - Credit Of Development<BR>
+<font color="red">Price</font> = (Contractor Value 1 * Mark-Up 1) + (Contractor Value 2 * Mark-Up 2) + ... + (Contractor Value 40 * Mark-Up 40) - Credit Of Purchaser<BR>
+<font color="red">Average Mark-Up</font> = Price / Total Cost 
+</td>
+</tr>
+
+<?	
+	// end HTML table
+	echo "</table>\n";
+	echo "</form>\n";
+} // end of if table_name == Price
+
+// display table (UnitType)
+elseif ($table_name == "UnitType") {
+	$sql = "SELECT Type
+				FROM UnitType
+				ORDER BY Type";
+
+	$result = mysql_query($sql, $db);
+
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr class=\"head\">\n";
+	echo "<th><b>Type</b></th>\n";
+	echo "<td>Action</td>\n";
+	echo "</tr>\n";
+
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result)) {
+		displayMouseOverTR();
+		echo "<td>".$row['Type']."</td>\n";
+		echo "<td><a href=\"row_delete.phtml?table_name=$table_name&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID&Type=".urlencode($row['Type'])."\">Delete</a></td>\n";
+		echo "</tr>\n";
+	}
+
+	// insert the 'Add' form
+	echo "<form action=\"row_add.phtml\" method=\"get\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"mode\" value=\"$mode\">\n";
+	echo "<input type=\"hidden\" name=\"SectionID\" value=\"$SectionID\">\n";
+	echo "<input type=\"hidden\" name=\"SubsectionID\" value=\"$SubsectionID\">\n";
+	echo "<input type=\"hidden\" name=\"ItemID\" value=\"$ItemID\">\n";
+	echo "<input type=\"hidden\" name=\"OptionID\" value=\"$OptionID\">\n";
+	echo "<tr>\n";
+	echo "<td><input type=\"text\" name=\"Type\" size=\"45\" maxlength=\"50\" size=\"4\"></td>\n";
+	echo "<td><input type=\"submit\" name=\"submit\" value=\"Add\"></td>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+
+	// end HTML table
+	echo "</table>\n";
+} else {
+	if ($table_name) {
+		echo "<font size=\"3\">Table \"<font color=\"#FF0000\">$table_name\" does not exist.<br>\n<br>\n";
+	}
+}
+?>
+
+
+</td>
+</tr>
+</table>
+</tr>
+</table>
+
+
+
+</body>
+
+</html>
+

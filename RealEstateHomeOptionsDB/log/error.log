@@ -1,0 +1,34 @@
+2015/01/10 14:58:47: ID:20150110145847
+FILE:/lmark/ljm/appleby/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, there are no options/items listed for your unit.<br>Try logging in later. ERROR_LOG_FILE={/usr/wwws/users/lmark/ljm/appleby/RealEstateHomeOptionsDB/log/error.log} appendToLog=1
+Error Message(Internal):SQL=SELECT count(*) num FROM Item_Options, Subsection, Item
+				WHERE Subsection.SectionID = 35
+				AND Subsection.SubsectionID = Item.SubsectionID
+				AND Item_Options.ItemID = Item.ItemID
+2015/01/10 15:00:16: ID:20150110150016
+FILE:/lmark/ljm/appleby/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, there are no options/items listed for your unit.<br>Try logging in later.
+Error Message(Internal):SQL=SELECT count(*) num FROM Item_Options, Subsection, Item
+				WHERE Subsection.SectionID = 33
+				AND Subsection.SubsectionID = Item.SubsectionID
+				AND Item_Options.ItemID = Item.ItemID
+2015/05/05 01:25:55: ID:20150505012555
+FILE:/lmark/ljm/appleby/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2015/05/05 01:26:21: ID:20150505012621
+FILE:/lmark/ljm/appleby/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, your unit type "" is not defined in the system.<br>Try closing this window and logging in later.<br>If you still receive this message, please contact the sales office.
+Error Message(Internal):SQL=SELECT count(*) num FROM UnitType WHERE Type = ''
+2017/05/19 15:10:11: ID:20170519151011
+FILE:/lmark/ljm/appleby/RealEstateHomeOptionsDB/display_upgrades.phtml
+Error Type:REAL_ESTATE_HOME_OPTIONS_DB_GENERAL_ERROR
+Error Message(External):Sorry, there are no options/items listed for your unit.<br>Try logging in later.
+Error Message(Internal):SQL=SELECT count(*) num FROM Item_Options, Subsection, Item
+				WHERE Subsection.SectionID = 36
+				AND Subsection.SubsectionID = Item.SubsectionID
+				AND Item_Options.ItemID = Item.ItemID

@@ -1,0 +1,36 @@
+<?
+include "main_include.phtml";
+
+# updateMode = "updateContact", "updateGeneralInfo"
+
+if (isset($updateMode) && $updateMode == "updateGeneralInfo" ){
+	$sql = "UPDATE Contractor SET 
+		MarkUpPercentage=$MarkUpPercentage
+		WHERE ContractorID='$ContractorID'";	
+}
+else {
+	// update contact information
+	$sql = "UPDATE Contractor SET 
+		ContractorName='$ContractorName',
+		Address='$Address',
+		PostalCode='$PostalCode',
+		City='$City',
+		Country='$Country',
+		Person='$Person',
+		Phone='$Phone',
+		Email='$Email',
+		Person2='$Person2',
+		Person2Phone='$Person2Phone',
+		Person2Email='$Person2Email'
+		WHERE ContractorID='$ContractorID'";
+}	
+//echo $sql;
+
+$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+
+?>
+<script language="JavaScript">
+<!--
+	history.back();
+//-->
+</script>

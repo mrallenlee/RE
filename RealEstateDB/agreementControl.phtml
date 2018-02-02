@@ -1,0 +1,199 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+// can only display agreement. Not for edit. 
+// expect
+// userID
+
+$action = display;
+$sql = "SELECT *
+			FROM User
+			WHERE UserID=$UserID";	
+
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+$row = mysql_fetch_array($result);
+?>
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+	<link href="stylesheet.css" rel="styleSheet" type="text/css">
+	<TABLE CELLSPACING=0 CELLPADDING=5>			
+			<TR>
+				<TD CLASS="blankL"  COLSPAN=10><BR><H3><?= get_project_name(); ?> - Agreement Control</H3></TD>
+			</TR>
+
+			<TR><TD><BR><H3>Purchaser Details</H3></TD></TR>
+			<TR>
+				<TD CLASS="blankL" >Salutation : </TD><TD CLASS="blankL" ><? display_salutation_list("Salutation"); ?></TD>
+				<TD CLASS="blankL" >First Name : </TD><TD CLASS="blankL" ><? display_text("FirstName"); ?></TD>
+				<TD CLASS="blankL" >Last Name : </TD><TD CLASS="blankL" ><? display_text("LastName"); ?></TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>S.I.N.</TD><TD><? display_text("SIN"); ?></TD>
+				<TD>Date of Birth (YYYY-MM-DD)</TD><TD><? display_text("DateOfBirth"); ?></TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>Address</TD><TD SPANCOL=10><? display_text("Address"); ?></TD>
+			</TR>			
+			<TR CLASS="blankL">
+				<TD>City</TD><TD><? display_text("City"); ?></TD>
+				<TD>Postal Code</TD><TD><? display_text("PostalCode"); ?></TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>Home Phone</TD><TD><? display_text("PhoneNumber"); ?></TD>
+				<TD>Business Phone</TD><TD><? display_text("BusinessPhone"); ?></TD>
+			</TR>			
+			<TR><TD><BR><H3>Purchase Details</H3></TD></TR>
+			<TR>
+				<TD>Purchased Unit</TD><TD><? display_text("UnitNumber"); ?></TD>			
+				<TD CLASS="blankL" >Price : </TD><TD CLASS="blankL" >$<? display_text("Price", "", TRUE, 50, FALSE, "", "", FALSE, 20, "", "", "priceChange"); ?></TD>
+			</TR>
+			<TR>
+<?
+			// if action is add, set the AgreementDepositDate to be today, and calculate other date such as 30 day deposit date
+			if ($action == "add")
+			{
+				$row['AgreementDepositDate']	= date("Y-m-d");
+				$currentTimeStamp 		= strtotime (date("Y-m-d"));
+				$timeStamp 			= strtotime("+14 day", $currentTimeStamp);
+				$row['RescissionDate']		= date("Y\-m\-d", $timeStamp);
+
+				$currentTimeStamp 		= strtotime (date("Y-m-d"));
+
+				if (is_citygate_1($PHP_SELF)) {
+					$timeStamp 			= strtotime("+30 day", $currentTimeStamp);
+					$row['Day30DepositDate']	= date("Y\-m\-d", $timeStamp);
+
+					$timeStamp 			= strtotime("+120 day", $currentTimeStamp);
+					$row['Day90DepositDate']	= date("Y\-m\-d", $timeStamp);
+
+					$timeStamp 			= strtotime("+180 day", $currentTimeStamp);
+					$row['Day150DepositDate']	= date("Y\-m\-d", $timeStamp);
+				}
+				elseif (is_citygate_2($PHP_SELF) || is_solstice_1($PHP_SELF)) {
+					$timeStamp 			= strtotime("+30 day", $currentTimeStamp);
+					$row['Day30DepositDate']	= date("Y\-m\-d", $timeStamp);
+
+					$timeStamp 			= strtotime("+90 day", $currentTimeStamp);
+					$row['Day90DepositDate']	= date("Y\-m\-d", $timeStamp);
+					//$row['Day90DepositDate']	= "Jun 30, 2004";
+
+					$timeStamp 			= strtotime("+180 day", $currentTimeStamp);
+					$row['Day150DepositDate']	= date("Y\-m\-d", $timeStamp);
+					//$row['Day150DepositDate']	= "Aug 30, 2004";
+				}
+			}
+?>
+			</TR>
+			<TR>
+				<TD CLASS="blankL" >Purchase Date (YYYY-MM-DD): </TD><TD CLASS="blankL" ><?= convert_date($row['AgreementDepositDate']); ?></TD>
+			</TR>
+			<TR>
+				<TD CLASS="blankL" >Rescission Date (YYYY-MM-DD): </TD><TD CLASS="blankL" ><?= convert_date($row['RescissionDate']); ?></TD>
+				<TD CLASS="blankL" >Conditional Date (YYYY-MM-DD): </TD><TD CLASS="blankL" ><?= convert_date($row['ConditionalDate']); ?></TD>
+			</TR>
+			<TR>
+				<TD CLASS="blankL" >Rescession Note : </TD><TD CLASS="blankL"  COLSPAN=3><? display_text("RescissionNote", "", FALSE, 50, FALSE, "", "", FALSE, 70); ?></TD>
+				<TD CLASS="blankL"  COLSPAN=2>Rescinded : <? display_check_box("RescissionFlag"); ?></TD>
+			</TR>
+			<TR>
+				<TD COLSPAN=10>
+					<BR><BR>
+					<TABLE CELLSPACING=15>
+						<TR>
+							<TD></TD>
+							<TD>Contractual Amount</TD>
+							<TD>Contractual Date (YYYY-MM-DD)</TD>
+							<TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+							<TD>Amount Received</TD>
+							<TD>Date Received (YYYY-MM-DD)</TD>
+							<TD>Cheque #</TD>
+						</TR>
+						<TR>
+							<TD>Deposit with Agreement</TD>
+							<TD><? display_dollar_value("AgreementDepositAmount"); ?></TD>
+							<TD><?= convert_date($row['AgreementDepositDate']); ?></TD>							
+							<TD></TD>
+							<TD><? display_dollar_value("AgreementDepositAmount"); ?></TD>
+							<TD><?= convert_date($row['AgreementDepositDate']); ?></TD>
+							<TD><? display_text("AgreementDepositChequeNumber"); ?></TD>
+						</TR>
+						<TR>
+							<TD>Deposit 2</TD>
+							<TD><? display_dollar_value("Day30DepositAmount"); ?></TD>
+							<TD><?= convert_date($row['Day30DepositDate']); ?></TD>							
+							<TD></TD>
+							<TD><? display_dollar_value("Day30DepositChequeAmount"); ?></TD>
+							<TD><?= convert_date($row['Day30DepositReceivedDate']); ?></TD>
+							<TD><? display_text("Day30DepositChequeNumber"); ?></TD>
+						</TR>
+						<TR>
+							<TD>Deposit 3</TD>
+							<TD><? display_dollar_value("Day90DepositAmount"); ?></TD>
+							<TD><?= convert_date($row['Day90DepositDate']); ?></TD>							
+							<TD></TD>
+							<TD><? display_dollar_value("Day90DepositChequeAmount"); ?></TD>
+							<TD><?= convert_date($row['Day90DepositReceivedDate']); ?></TD>
+							<TD><? display_text("Day90DepositChequeNumber"); ?></TD>
+						</TR>
+						<TR>
+							<TD>Deposit 4</TD>
+							<TD><? display_dollar_value("Day150DepositAmount"); ?></TD>
+							<TD><?= convert_date($row['Day150DepositDate']); ?></TD>							
+							<TD></TD>
+							<TD><? display_dollar_value("Day150DepositChequeAmount"); ?></TD>
+							<TD><?= convert_date($row['Day150DepositReceivedDate']); ?></TD>
+							<TD><? display_text("Day150DepositChequeNumber"); ?></TD>
+						</TR>
+						<TR>
+							<TD>Deposit 10% on Occupancy</TD>
+							<TD><? display_dollar_value("OccupancyDepositAmount"); ?></TD>
+							<TD><?= convert_date($row['OccupancyDepositDate']); ?></TD>							
+							<TD></TD>
+							<TD><? display_dollar_value("OccupancyDepositChequeAmount"); ?></TD>
+							<TD><?= convert_date($row['OccupancyDepositReceivedDate']); ?></TD>
+							<TD><? display_text("OccupancyDepositChequeNumber"); ?></TD>
+						</TR>
+
+					</TABLE>
+				<BR><BR>
+				</TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>Additional Purchaser #2</TD>
+			</TD>
+			<TR CLASS="blankL">
+				<TD>First Name</TD><TD><? display_text("AdditionalPurchaser1FirstName"); ?></TD>
+				<TD>Last Name</TD><TD><? display_text("AdditionalPurchaser1LastName"); ?></TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>S.I.N.</TD><TD><? display_text("AdditionalPurchaser1SIN"); ?></TD>
+				<TD>Date of Birth (YYYY-MM-DD)</TD><TD><? display_text("AdditionalPurchaser1DateOfBirth"); ?></TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>Additional Purchaser #3</TD>
+			</TD>
+			<TR CLASS="blankL">
+				<TD>First Name</TD><TD><? display_text("AdditionalPurchaser2FirstName"); ?></TD>
+				<TD>Last Name</TD><TD><? display_text("AdditionalPurchaser2LastName"); ?></TD>
+			</TR>
+			<TR CLASS="blankL">
+				<TD>S.I.N.</TD><TD><? display_text("AdditionalPurchaser2SIN"); ?></TD>
+				<TD>Date of Birth (YYYY-MM-DD)</TD><TD><? display_text("AdditionalPurchaser2DateOfBirth"); ?></TD>
+			</TR>
+			<TR><TD><BR></TD></TR>
+			<TR>
+				<TD CLASS="blankL" >Signed Date (YYYY-MM-DD): </TD><TD CLASS="blankL" ><?= convert_date($row['AgreementControlSignDate']); ?></TD>
+				<TD CLASS="blankL" >Signed By : </TD><TD CLASS="blankL" ><? display_text("AgreementControlSignedBy"); ?></TD>
+			</TR>
+<? 	// only above sales level can edit/delete
+	if (get_access_security_level() > SALES) {	
+?>				
+			<TR>
+				<TD CLASS="blankL" ><INPUT TYPE=BUTTON CLASS="blankL" NAME="EditButton" VALUE="Edit" onClick="javascript:window.location='./userListing.phtml?action=edit&mode=purchaser&UserID=<?= $UserID; ?>'"></TD>
+			</TR>
+<?	} ?>			
+	</TABLE>
+	</BODY>
+</HTML>	

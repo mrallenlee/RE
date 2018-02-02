@@ -1,0 +1,131 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for company
+ */
+
+include_once "Entity/Model/EntityModel.phtml";
+include_once "Entity/Model/AddressModel.phtml";
+include_once "Entity/Properties/CompanyProperties.phtml";
+
+class CompanyModel extends EntityModel {
+	function CompanyModel() {}
+	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT Company " .
+ 				" SET CreatedDate=NOW()";
+ 		$sql .= "," . $this->getColumnSql($arguments);
+//print "Insert Company=$sql<BR>" 		;
+ 		$result = executeSql($sql);
+		return mysql_insert_id();		
+ 	
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+ 			
+ 		$addressArguments = $this->retrieveArguments("Address", $arguments);
+ 		if (sizeof($addressArguments) > 0){
+ 			$addressModel = new AddressModel();
+ 			$addressID = $addressModel->addAll($addressArguments);
+ 			$arguments['AddressID'] = $addressID;
+ 		} else {
+ 			$arguments['AddressID'] = -1;
+ 		}
+ 		
+ 		return $this->add($arguments);
+ 	}
+
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE Company " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE CompanyID = " . $arguments['CompanyID'];
+ 		$result = executeSql($sql);
+		//print "Update Company=$sql<BR>"; 				
+		return $arguments['CompanyID'];
+ 	}
+ 	
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){
+
+ 		$addressArguments = $this->retrieveArguments("Address", $arguments);
+ 		if (isSet($addressArguments['AddressID']) && $arguments['AddressID'] > 0){
+ 			// deal with address
+ 			$addressModel = new AddressModel();
+ 			$result .= "<BR>AddressModel::updateAll " . $addressModel->updateAll($addressArguments);
+ 		}
+ 		
+ 		return $this->update($arguments);
+ 		
+ 	}
+ 	
+	/**
+	 * Delete Record
+	 * Return: 1 if success, 0 if failed 
+	 */
+	function delete(&$arguments){
+		if ($arguments['ComopanyID'] > 0){
+			$sql 	= " DELETE FROM Company " .
+ 				  		" WHERE CompanyID = " . $arguments['CompanyID'];
+ 				  		$result = executeSql($sql);
+ 				  		return mysql_affected_rows();
+		}
+		else {
+			return 0;
+		}
+		
+	}
+
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+	function deleteAll(&$arguments){
+		$result = true;
+
+		$addressArguments = $this->retrieveArguments("Address", $arguments);
+		if (isSet($addressArguments['AddressID']) && $arguments['AddressID'] > 0){
+			// deal with address
+			$addressModel = new AddressModel();
+			$result = $result && $addressModel->deleteAll($addressArguments);
+		}
+			
+		if ($result){
+			$result = $this->delete($arguments);
+		}
+			
+		return $result;
+	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql(&$arguments){
+		// handle check box special case
+		$sql =  "   CompanyType=\"" . $arguments['CompanyType'] . "\"" .
+ 				" , CompanyName =\"" .  $arguments['CompanyName'] . "\"". 
+ 				" , BranchName =\"" .  $arguments['BranchName'] . "\"". 
+ 				" , Phone =\"" .  $arguments['Phone'] . "\"". 
+				" , Fax =\"" .  $arguments['Fax'] . "\"". 
+				" , AddressID =\"" .  $arguments['AddressID'] . "\"". 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+
+ 				return $sql;
+	}
+}
+?>

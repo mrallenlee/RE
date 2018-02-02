@@ -1,0 +1,57 @@
+<?
+include "main_include.phtml";
+// expecting 
+// $action : add, edit
+// set the security level to be 2 for this page
+check_auth(2);
+if ($action == "delete")
+{
+	$sql = "DELETE FROM Package WHERE PackageID=" . $PackageID;
+	$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+}
+else
+{
+	if ($action == "add")
+	{
+		$sql = "INSERT INTO Package SET ";
+		$sql .= " PackageName=\"" . $PackageName . "\", SalesIncentiveCategory=\"" . $SalesIncentiveCategory . "\"";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+	}
+	else if ($action == "edit")
+	{
+		$sqlPrefix = "UPDATE Package SET ";
+		
+		$values=$_POST;
+		
+		//loop that adds the field names and values
+		foreach($values as $key=>$val)
+		{
+			list($packageID, $queryType)= explode("_", $key);
+						
+			if ($queryType == "PackageName" || $queryType == "SalesIncentiveCategory")
+			{
+				$sql = $sqlPrefix . " " . $queryType . "=\"" . $val . "\" WHERE PackageID=" . $packageID;
+				$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			}
+		}
+	}
+}
+
+if (isSet($forward))
+{
+	if (isSet($back))
+	{
+		$back--;
+		$forward . "&back=" . $back;
+	}
+	goto_url($forward);
+	die();
+}
+
+?>
+	<script language="JavaScript">
+	<!--
+		window.location = "./packageInfo.phtml?action=display";
+		//history.back(<?= $back; ?>);
+	//-->
+	</script>

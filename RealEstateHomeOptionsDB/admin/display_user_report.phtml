@@ -1,0 +1,38 @@
+<?
+include "main_include.phtml";
+	
+	$sql	= "SELECT	User.UserID AS UserID,
+				FirstName,
+				LastName,
+				Login,
+				Passwd,
+				User.UnitNumber AS UnitNumber,
+				Unit.UnitType AS UnitType,
+				Address,
+				PostalCode,
+				City,
+				Country,
+				PhoneNumber,
+				Email,
+				ContractorReport,
+				UserReport
+			FROM User
+			LEFT JOIN Unit
+			ON Unit.UserID=User.UserID
+			WHERE UserReport=1
+			ORDER BY User.UnitNumber";
+
+	$result = mysql_query($sql,$db) or die("Error : " . mysql_error() . " <BR>" . $sql);			
+?>
+<html>
+<table>	
+<?
+	while ($row = mysql_fetch_array($result))
+	{
+?>
+	<tr>
+		<td>First Name : </td>
+		<td><?=$row['FirstName']?></td>
+	</tr>
+<?	
+	}	

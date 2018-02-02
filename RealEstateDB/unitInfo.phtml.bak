@@ -1,0 +1,433 @@
+<?php
+include_once "main_include.phtml";
+include_once "framework/sajax/Sajax.php";
+
+/**
+ * Get unit info section html	
+ */
+function getUnitInfo($whereClause = "", $sortOrder = ""){
+	if ($sortOrder == ""){
+		$sortOrder = getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+	}
+	require_once("unitInfoAction.phtml");
+	return generateUnitInfo($whereClause, $sortOrder);
+}
+
+/**
+ * Delete a unit
+ */
+function deleteUnit($UnitNumber){
+	require_once("unitInfoAction.phtml");
+	$result = delete($UnitNumber);
+	return $result;
+}
+
+/**
+ * Add or update information of a unit. action = "add" or "edit"
+ */
+function updateUnit($action, 
+								$UnitNumber,
+								$UnitType,
+								$Model,
+								$UnitTypeDescription,
+								$Area,
+								$bedrooms,
+								$bathrooms,
+								$maintenance,
+								$Price,
+								$Status)
+{
+	require_once("unitInfoAction.phtml");
+	
+	$result = update($action, 
+								$UnitNumber,
+								urldecode($UnitType),
+								urldecode($Model),
+								urldecode($UnitTypeDescription),
+								$Area,
+								$bedrooms,
+								$bathrooms,
+								$maintenance,
+								$Price,
+								urldecode($Status));
+
+	return $result;
+}
+
+sajax_init();
+//$sajax_debug_mode = 1;
+sajax_export("getUnitInfo", "deleteUnit", "updateUnit");
+sajax_handle_client_request();
+
+// set the security level to be 2 for this page
+check_auth(MANAGEMENT);
+
+$whereClause = " 1=1 ";
+
+
+if ($UnitNumber != ""){
+//	$whereClause .= " AND Unit.UnitNumber IN (" . expandRange($UnitNumber) . ")";
+	$whereClause .= " AND (" . expandSearchCriteria(array("columnName"=>"Unit.UnitNumber", "csvValue"=>$UnitNumber)) . ") ";
+}
+
+if ($main_action == "updateMultiple")
+{
+	require "framework/DataImport/DataImportUnit.phtml";
+	
+	$dataImporter = new DataImportUnit();
+
+	if ($actionAU == "add")
+	{
+		$result = $dataImporter->importData(array("action"=>$actionAU, "table"=>"Unit", "data"=>$multiUnitInfo));
+	}
+	else if ($actionAU == "update")
+	{
+		$result = $dataImporter->importData(array("action"=>$actionAU, "table"=>"Unit", "primaryKey"=>"UnitNumber", "data"=>$multiUnitInfo));
+	}
+
+	if ($result == 1)
+	{
+		print "<table><tr class=error><td><br><br>The units are added/updated successfully!</td></tr></table>";
+	} 
+	else 
+	{
+		print "<table><tr class=error><td><br><br>Units insert/update failed! <br>Please make sure the following:<br>1. Columns are in right order<br>2. Date format is YYYY-MM-DD<br>3. Units are not inserted before when selecting Add New Units</td></tr></table>";
+	}
+}
+
+?>
+<HTML>
+<?php print_top_frame($PHP_SELF, "./"); ?>
+	<TITLE>Unit Information</TITLE>
+	<H3><?php print get_project_name($PHP_SELF); ?> -- Unit Information</H3>
+
+<script type="text/javascript"> djConfig = { isDebug: true }; </script>
+<script type="text/javascript" src="./framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+	dojo.require("dojo.widget.*");
+</script>
+
+<script type="text/javascript">
+var dlg;
+function init(e) {
+	dlg = dojo.widget.byId("DialogEditUnit");
+	var btn = document.getElementById("hider");
+	dlg.setCloseControl(btn);
+}
+dojo.addOnLoad(init);
+
+</script>
+
+<script language="javascript">
+<?php sajax_show_javascript(); ?>
+</script>
+
+<script language="javascript">
+// default sort order
+var currentSortOrder = 'UnitNumber';
+
+/**
+* Sort unit information section by given column
+*/
+function sortUnitInfo(whereClause, sortOrder)
+{
+	currentSortOrder = sortOrder;
+
+	x_getUnitInfo(whereClause, sortOrder, getUnitInfo_CallBack);
+}
+
+/**
+* refresh unit info section
+*/
+function refreshUnitInfo()
+{
+	x_getUnitInfo("<?= $whereClause; ?>", currentSortOrder, getUnitInfo_CallBack);	
+}
+
+/**
+* Clears all input value for all single unit text fields
+*/
+function clearSingleUnitInput(){
+	document.SingleUnitInfoForm.UnitNumber.value = '';
+	document.SingleUnitInfoForm.UnitType.value = '';
+	document.SingleUnitInfoForm.Model.value = '';
+	document.SingleUnitInfoForm.UnitTypeDescription.value = '';
+	document.SingleUnitInfoForm.Area.value = '';
+	document.SingleUnitInfoForm.bedrooms.value = '';
+	document.SingleUnitInfoForm.bathrooms.value = '';
+	document.SingleUnitInfoForm.maintenance.value = '';
+	document.SingleUnitInfoForm.Price.value = '';
+	document.SingleUnitInfoForm.Status.value = '';
+}
+
+/**
+* Add a specific unit
+*/
+function addSingleUnit()
+{
+	x_updateUnit("add",
+						document.SingleUnitInfoForm.UnitNumber.value,
+						encodeURIComponent(document.SingleUnitInfoForm.UnitType.value),
+						encodeURIComponent(document.SingleUnitInfoForm.Model.value),
+						encodeURIComponent(document.SingleUnitInfoForm.UnitTypeDescription.value),
+						document.SingleUnitInfoForm.Area.value,
+						document.SingleUnitInfoForm.bedrooms.value,
+						document.SingleUnitInfoForm.bathrooms.value,
+						document.SingleUnitInfoForm.maintenance.value,
+						document.SingleUnitInfoForm.Price.value,
+						encodeURIComponent(document.SingleUnitInfoForm.Status.value),
+						addSingleUnit_callback);	
+}
+
+function addSingleUnit_callback(result){
+	if (result == 1){
+		alert("The unit is inserted successfully!");
+		clearSingleUnitInput();
+		refreshUnitInfo();
+	} else {
+		alert("Unit insert failed! \nPlease make sure the following:\n\t1. Date format is YYYY-MM-DD\n\t2. Unit is not inserted before");		
+	}
+}
+
+/**
+* Update information of a specific unit
+*/
+function editUnit()
+{
+	x_updateUnit("edit",
+						document.form_edit.UnitNumber.value,
+						encodeURIComponent(document.form_edit.UnitType.value),
+						encodeURIComponent(document.form_edit.Model.value),
+						encodeURIComponent(document.form_edit.UnitTypeDescription.value),
+						document.form_edit.Area.value,
+						document.form_edit.bedrooms.value,
+						document.form_edit.bathrooms.value,
+						document.form_edit.Umaintenance.value,
+						document.form_edit.Price.value,
+						encodeURIComponent(document.form_edit.Ustatus.value),
+						refreshUnitInfo);
+
+	dlg.hide();
+}
+
+/**
+* Delete a specific unit
+*/
+function deleteUnit(UnitNumber)
+{
+	var answer = confirm('Are you sure you want to delete this unit?');
+	if (answer){
+		x_deleteUnit(UnitNumber, refreshUnitInfo);
+	}	
+}
+
+function showEditDialog(UnitNumber)
+{
+		document.form_edit.UnitNumber.value = document.getElementById(UnitNumber+"_UnitNumber").innerHTML;
+		document.form_edit.UnitType.value = document.getElementById(UnitNumber+"_UnitType").innerHTML;
+		document.form_edit.Model.value = document.getElementById(UnitNumber+"_Model").innerHTML;
+		document.form_edit.UnitTypeDescription.value = document.getElementById(UnitNumber+"_UnitTypeDescription").innerHTML;
+		document.form_edit.Area.value = document.getElementById(UnitNumber+"_Area").innerHTML;
+		document.form_edit.bedrooms.value = document.getElementById(UnitNumber+"_bedrooms").innerHTML;
+		document.form_edit.bathrooms.value = document.getElementById(UnitNumber+"_bathrooms").innerHTML;
+		document.form_edit.Umaintenance.value = document.getElementById(UnitNumber+"_maintenance").innerHTML;
+		document.form_edit.Price.value = document.getElementById(UnitNumber+"_Price").innerHTML;
+
+		// if unit status is "sold", disable status combo box
+		var current_status = document.getElementById(UnitNumber+"_Status").innerHTML;
+
+		document.form_edit.Ustatus.value = current_status;
+
+		if (current_status.toLowerCase() == "sold")
+		{
+			document.form_edit.Ustatus.disabled = true;
+		}
+		else
+		{
+			document.form_edit.Ustatus.disabled = false;
+		}
+			
+		dlg.show();
+}
+
+</script>
+
+<BODY>
+	<TABLE CELLSPACING=5>
+  <TR>
+    <TD><?php createCollapsibleDIVIcon("Search", "Search"); ?>
+    </TD>
+  </TR>
+  </TABLE>
+  <?php createCollapsibleDIV("Search"); ?>
+	<form method="get" action="unitInfo.phtml">
+	  	<TABLE>  	
+  			<TR>
+				<TD>Suite Number: </TD>
+  				<TD><INPUT size=50 name="UnitNumber" value="<?= $UnitNumber; ?>"></TD>  				
+  			</TR>
+  			<TR>
+  				<TD colspan=2>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+  			</TR>
+  			<TR>
+  				<TD><INPUT TYPE="SUBMIT" VALUE="SEARCH"></TD>
+			</TR>  			
+  		</TABLE>
+  		</form>
+	</DIV>	
+<TABLE CELLSPACING=5>
+  <TR>
+    <TD><?php createCollapsibleDIVIcon("Unit Information", "UnitInfo"); ?>
+    </TD>
+  </TR>
+  </TABLE>
+  
+<?php createCollapsibleDIV("UnitInfo"); 
+?>
+	</DIV>
+
+<script language="javascript" >
+
+function getUnitInfo_CallBack(html){
+	unitInfoTableDisplayStyle = tool.table.getTableDisplayStyle(document.getElementById('unitInfoList'));
+	UnitInfoDIVObj = document.getElementById("UnitInfoDIV");
+	UnitInfoDIVObj.innerHTML = html;
+	UnitInfoDIVObj.style.visibility="visible";
+	tool.table.setTableDisplayStyle(document.getElementById('unitInfoList'), unitInfoTableDisplayStyle);
+	}
+	
+x_getUnitInfo("<?= $whereClause; ?>", currentSortOrder, getUnitInfo_CallBack);
+
+</script>
+
+	<TABLE CELLSPACING=5>
+  <TR>
+    <TD><?php createCollapsibleDIVIcon("Insert single unit", "InsertSingleUnit"); ?>
+    </TD>
+  </TR>
+  </TABLE>
+<?php createCollapsibleDIV("InsertSingleUnit"); ?>
+  <TABLE Cellspacing=5>
+	<FORM NAME="SingleUnitInfoForm">
+  <TR CLASS="head">
+    <TD>Unit Number</TD>
+    <TD>Unit Type</TD>
+    <TD>Model</TD>
+    <TD>Unit Type Description</TD>
+    <TD>Area</TD>
+    <TD>Bedrooms</TD>
+    <TD>Bathrooms</TD>
+    <TD>Maintenance</TD>
+    <TD>Price</TD>
+    <TD>Status</TD>
+  </TR>
+  <TR>
+    <TD><?php display_text("UnitNumber","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("UnitType","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("Model","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("UnitTypeDescription","", FALSE,50,FALSE,"","",FALSE,15); ?></TD>
+    <TD><?php display_text("Area","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("bedrooms","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("bathrooms","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("maintenance","", FALSE,50,FALSE,"","",FALSE,12); ?></TD>
+    <TD><?php display_text("Price","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+    <TD><?php display_text("Status","", FALSE,50,FALSE,"","",FALSE,5); ?></TD>
+  </TR>
+	<TR>
+		<TD><INPUT TYPE="BUTTON" VALUE="Add" onClick="addSingleUnit()" ></TD>
+	</TR>
+	</FORM>
+	</DIV>
+
+	<TABLE CELLSPACING=5>
+  <TR>
+		<BR>
+	</TR>
+  <TR>
+    <TD><?php createCollapsibleDIVIcon("Insert multiple units (Tab seperated format)<BR>Note:Date Column must follow YYYY-MM-DD format.", "InsertMultipleUnit"); ?>
+    </TD>
+  </TR>
+  </TABLE>
+<?php createCollapsibleDIV("InsertMultipleUnit"); ?>
+  <TABLE Cellspacing=5>
+	<FORM NAME="MultipleUnitInfoForm" METHOD="POST" ACTION="<?= $PHP_SELF . '?main_action=updateMultiple'?>">
+		<!--TR>
+			<TD>
+			<SELECT id="actionAU" name="actionAU">
+				<OPTION VALUE="add">Add New Units</OPTION>
+				<OPTION VALUE="update">Update Price</OPTION>
+			</SELECT>
+		</TD>
+		</TR//-->
+		<TR>
+			<TD COLSPAN=10><TEXTAREA NAME="multiUnitInfo" ROWS="30" COLS="150"></TEXTAREA></TD>
+		</TR>
+		<TR>
+			<TD><INPUT TYPE="SUBMIT" VALUE="Submit"></TD>
+			<TD><INPUT TYPE="hidden" NAME="actionAU" VALUE="add"></TD>
+		</TR>				
+	</FORM>
+	</TABLE>
+
+</BODY>
+</HTML>
+
+</style>
+
+<div dojoType="dialog" id="DialogEditUnit" bgColor="white" bgOpacity="0.5" toggle="fade" toggleDuration="250">
+<form name="form_edit">
+<table>
+	<tr>
+    <TD>Unit Number</TD>
+		<td><input id="UnitNumber" type="text" style="background-color:gray" disabled="disabled"></td>
+    <TD>Unit Type</TD>
+		<td><? display_generic_table_list("UnitType", "UnitType"); ?></td>
+	</tr>
+	<tr>
+    <TD>Model</TD>
+		<td><input id="Model" type="text"></td>
+    <TD>Unit Type Description</TD>
+		<td><input id="UnitTypeDescription" type="text"></td>
+	</tr>
+	<tr>
+    <TD>Area</TD>
+		<td><input id="Area" type="text"></td>
+    <TD>Maintenance</TD>
+		<td><input id="Umaintenance" type="text"></td>
+	</tr>
+	<tr>
+    <TD>Bedrooms</TD>
+		<td><input id="bedrooms" type="text"></td>
+    <TD>Bathrooms</TD>
+		<td><input id="bathrooms" type="text"></td>
+	</tr>
+	<tr>
+    <TD>Price</TD>
+		<td><input id="Price" type="text"></td>
+    <TD>Status</TD>
+		<td>
+			<SELECT id="Ustatus">
+				<OPTION VALUE="">Choose one</OPTION>
+<?
+// prepare unit status data
+$UnitStatus_sql = "SELECT * FROM UnitStatus";
+$UnitStatus_result = executeSql($UnitStatus_sql);
+
+while ($UnitStatus_row = mysql_fetch_array($UnitStatus_result)) 
+{
+	echo "				<OPTION VALUE=\"" . $UnitStatus_row["UnitStatus"] . "\">" . $UnitStatus_row["UnitStatus"] . "</OPTION>\n";		
+}
+?>
+			</SELECT>
+		</td>
+</td>
+	</tr>
+	<tr>
+		<td colspan="2" align="center">
+			<input type="button" id="btn_edit" value="Submit" onClick="editUnit()"></td>
+		<td colspan="2" align="center">
+			<input type="button" id="hider" value="Cancel"></td>
+	</tr>
+</table>
+</form>
+</div>

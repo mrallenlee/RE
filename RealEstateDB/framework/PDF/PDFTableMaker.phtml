@@ -1,0 +1,228 @@
+<?
+/**
+* PDF Table Maker class creates table in a pdf file.
+* It uses basic functions in PDFMaker, like printText, addImage
+*/
+
+class PDFTableMaker {
+
+var $pdf = "";
+var $PDFMaker = "";
+
+// origin of the table
+var $originX = -1;
+var $originY = -1;
+
+// col width array
+var $colWidthArray = array();
+
+
+// var stores current row information
+// stores the max height of row among different cells
+var $currentColIndex = 0;
+var $rowHeight = 0;
+var $rowX = -1;
+var $rowY = -1;
+var $cellPadding = 5;
+var $borderColor = "";
+/**
+* Create PDFTableMaker obj
+*/
+function PDFTableMaker($pdf, $PDFMaker){
+	$this->pdf = $pdf;
+	$this->PDFMaker = $PDFMaker;
+	$textx = pdf_get_value($this->pdf, "textx", 0);
+    $texty = pdf_get_value($this->pdf, "texty", 0);
+	$this->setOrigin($textx, $texty);
+}
+
+/**
+* Set Cell padding
+*/
+function setCellPadding($pad){
+	$this->cellPadding = $pad;
+}
+
+
+/**
+* Set origin of the table
+*/
+function setOrigin($x, $y){
+	$this->PDFMaker->debug("setOrigin x=$x y=$y");
+	$this->originX = $x;
+	$this->originY = $y;
+	$this->rowX = $x;
+	$this->rowY = $y;
+}
+
+/**
+* Set border color of the table
+*/
+function setBorderColor($borderColor){
+	$this->borderColor = $borderColor;
+}
+
+/**
+* End the table
+*/
+function endTable(){
+	$this->drawBorder();
+	pdf_set_text_pos($this->pdf, $this->rowX, $this->rowY);
+}
+
+/**
+* Get x coordinate at the beginning of current row
+*/
+function getCurrentRowX(){
+	return $this->rowX;
+}
+
+/**
+* Get x coordinate at the beginning of current row
+*/
+function getCurrentRowY(){
+	return $this->rowY;
+}
+
+/**
+* Set column width
+*/
+function setColWidth($colIndex, $width){
+	$this->colWidthArray[$colIndex] = $width;
+}
+
+/**
+* Insert a row
+*/
+function insertRow(){}
+
+
+/**
+* End a row
+*/
+function endRow(){
+	$this->rowX = $this->originX;
+	$this->rowY = $this->rowY - $this->rowHeight - $this->cellPadding * 2;
+	$this->currentColIndex = 0;
+	// draw border if needed
+	$this->drawRowBorder();
+	$this->rowHeight = 0;
+}
+
+/**
+* Get X coordinate of the given column
+*/
+function getColX($colIndex){
+	$numOfCol = $this->getNumOfCol();
+	$x = $this->originX;
+
+	for ($i=0; $i < $numOfCol && $i < $colIndex; $i++){
+ 		$x += $this->getColWidth($i);		
+	}
+
+	return $x;
+}
+
+/**
+* Get number of column
+*/
+function getNumOfCol(){
+	return count($this->colWidthArray);
+}
+
+/**
+* Get width of the given column
+*/
+function getColWidth($colIndex, $colSpan = 1){
+	if ($colSpan == 1){
+		return $this->colWidthArray[$colIndex];
+	} else {
+		$numOfCol = $this->getNumOfCol();
+		$width = 0;
+		$colSpanIndex = 0;
+		for ($i = $colIndex; $i < $numOfCol && $colSpanIndex < $colSpan; $i++,$colSpanIndex++){
+			$width += $this->colWidthArray[$i];
+		}
+		return $width;
+	}
+}
+
+/**
+* Insert a cell
+* Arguments: text, colSpan, align, fontName, fontSize, fontColor
+* cellPadding
+*/
+function insertCell(){
+	$text 		= "";
+  	$align 		= "left";
+    $backgroundColor= "";
+    $underlineColor = "";
+    $fontColor 	= "";
+    $fontName 	= "";
+    $fontSize 	= "";
+    $colSpan	= 1;
+    $cellPadding = $this->cellPadding;
+
+    for ($i=0; $i < func_num_args(); $i++){
+    	$argument = func_get_arg($i);
+            list($key, $value) = explode("=", $argument);
+            ${$key} = $value;
+    }
+
+	if ($cellPadding < 0){
+    		$cellPadding = $this->cellPadding;
+	}
+	$width 	= $this->getColWidth($this->currentColIndex, $colSpan) - ($cellPadding * 2);
+	$colX 	= $this->getColX($this->currentColIndex) + $cellPadding;
+	$colY	= $this->rowY - $cellPadding;
+$this->PDFMaker->debug("colX=$colX colY=$colY width=$width");
+	$result = $this->PDFMaker->printText("text=$text", "align=$align",
+				"backgroundColor=$backgroundColor",
+				"underlineColor=$underlineColor",
+				"fontColor=$fontColor",
+				"fontName=$fontName",
+				"fontSize=$fontSize",
+				"textWidth=$width",
+				"textStartX=$colX",
+				"textStartY=$colY" );	
+	$this->currentColIndex++;
+$this->PDFMaker->debug("rowHeight=$this->rowHeight result height=" . $result['height']);
+	if ($this->rowHeight < $result['height']){
+		$this->rowHeight = $result['height'];
+	}
+}
+
+/**
+* Draw horizontal border for each row
+*/
+function drawRowBorder(){
+	if ($this->borderColor != ""){
+		$width = $this->getColWidth(0, $this->getNumOfCol());
+		//$this->PDFMaker->drawRect("", $this->borderColor, $this->originX, $this->rowY, $width, 1);
+		$y = $this->rowY;
+		$this->rowY = $y;
+		$this->PDFMaker->drawRect("", $this->borderColor, $this->originX, $y, $width, 0, 0);
+	}
+}
+
+/**
+* Draw border for the whole table
+*/
+function drawBorder(){
+	if ($this->borderColor != ""){
+		$width = $this->getColWidth(0, $this->getNumOfCol());
+		$height = $this->originY - $this->rowY;
+		$this->PDFMaker->drawRect("", $this->borderColor, $this->originX, $this->originY, $width, $height);
+
+		// draw vertical border line between cells
+		$numOfCol = $this->getNumOfCol();
+		if ($numOfCol > 1){
+			for ($i=1; $i < $numOfCol; $i++){
+				$x = $this->getColX($i);
+				$this->PDFMaker->drawRect("", $this->borderColor, $x, $this->originY, 0, $height);
+			}
+		}
+	}
+}
+}// End of PDFTableMaker
+?>

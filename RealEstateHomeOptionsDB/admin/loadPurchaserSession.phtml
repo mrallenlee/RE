@@ -1,0 +1,16 @@
+<?php
+/*
+ * Created on 19-Jul-2006
+ *
+ * Pretend Admin to be purchaser, so administrator can select upgrades
+ * without input purchaser's login
+ * var: UserID
+ */
+ 
+include_once "main_include.phtml";
+
+setUserID($UserID);
+setIdentity(ADMIN);
+
+goto_url("../display_upgrades.phtml");
+?>

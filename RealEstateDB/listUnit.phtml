@@ -1,0 +1,81 @@
+<?include "main_include.phtml";
+
+
+// expect
+// mode : all, available, sold for unit
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+
+// Initialize heading to display
+if (is_citygate_1($PHP_SELF))
+{
+	$citygate_phase = "CityGate Phase 1";
+}
+elseif (is_citygate_2($PHP_SELF))
+{
+	$citygate_phase = "CityGate Phase 2";
+}
+
+
+$sql = "SELECT * 
+				FROM Unit 
+				WHERE 1=1 ";
+
+if ($mode == "available"){
+	$sql .= " AND UserId = 0 ";
+	
+}
+else {
+	die("Mode not support yet");
+}
+
+$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . " ASC ";
+
+$result = mysql_query($sql) or log_err_die(mysql_error() . "SQL=$sql",$PHP_SELF);
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<h3><?= get_project_name($PHP_SELF); ?> -- Available Unit</h3>
+	<script language="JavaScript">
+	<!--
+		function purchaseUnit(unitNumber){
+			var firstName, lastName;
+			firstName = prompt("Please input purchaser's first name", "");
+
+			if (firstName == "" || firstName == null)
+				return false;
+				
+			lastName = prompt("Please input purchasser's last name", "");
+			
+			if (lastName == "" || lastName == null)
+				return false;
+				
+			window.location='updateUserInfo_audit.phtml?mode=purchaser&action=add&UnitNumber=' + unitNumber + '&FirstName=' + firstName + '&LastName=' + lastName;
+		}
+	//-->
+	</script>
+
+
+
+	<TABLE width=400>
+		<TR>
+			<TH>Unit</TH>
+			<TH>Unit Type</TH>
+			<TH>Price</TH>
+			<TH>Action</TH>
+		</TR>
+<?	while ($row = mysql_fetch_array($result)) { ?>
+		<TR>
+			<TD align="center"><?= $row['UnitNumber']; ?></TD>
+			<TD align="center"><?= $row['UnitType']; ?></TD>
+			<TD align="center"><?= $row['Price']; ?></TD>
+			<TD align="center"><INPUT TYPE=button value="Purchase" onClick="purchaseUnit('<?= $row['UnitNumber'] ;?>');"></TD
+		</TR>
+<?	}	?>		
+	</TABLe>
+</HTML>

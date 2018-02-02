@@ -1,0 +1,46 @@
+<?php
+/*
+ * Created on 27-Dec-2006
+ *
+ * Base class of entity view
+ */
+ 
+ class EntityView {
+  	var $inputPrefix = "";
+ 	var $inputSuffix = "";
+ 	
+ 	function EntityView(){}
+ 	
+
+	/**
+	 * Set input prefix
+	 */
+	function setInputPrefix($inputPrefix){
+		$this->inputPrefix = $inputPrefix	;
+	}	
+
+	/**
+	 * Set input prefix
+	 */
+	function setInputSuffix($inputSuffix){
+		$this->inputSuffix = $inputSuffix	;
+	}	
+	
+		
+	/**
+	 * html form for new additional purchaser
+	 */
+	function getNewHTMLForm($index){
+		$dummy = array();
+		$html = $this->getExistingHTMLForm($index, $dummy, "add");			
+		return $html;
+	}
+	
+	/**
+	 * html form for new additional purchaser
+	 * This function is not for AJAX call because of the DBResultRow param
+	 * This html form contains information for Person
+	 */
+	function getExistingHTMLForm($index, $DBResultRow, $mode = "display"){}
+ } 
+?>

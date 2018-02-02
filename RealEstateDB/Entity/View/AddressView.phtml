@@ -1,0 +1,69 @@
+<?php
+/*
+ * Created on 27-Dec-2006
+ *
+ */
+include_once "EntityView.phtml";
+include_once "../../guiUtil.phtml";
+
+ class AddressView extends EntityView{
+ 	 	
+ 	 function AddrewwView(){}
+ 	 
+	 /**
+	 * html form for new additional purchaser
+	 */
+	function getNewHTMLForm(){
+		$dummy = array();
+		$html = $this->getExistingHTMLForm($dummy, "add");			
+		return $html;
+	}
+	
+	/**
+	 * html form for new additional purchaser
+	 * This function is not for AJAX call because of the DBResultRow param
+	 */
+	function getExistingHTMLForm($DBResultRow, $mode = "display"){
+		
+		if ($this->inputPrefix != ""){
+			$prefix = $this->inputPrefix . "_";	
+		} else {
+			$prefix = "";	
+		}
+		
+		if ($this->inputSuffix != ""){
+			$suffix = "_" . $this->inputSuffix;	
+		} else {
+			$suffix = "";	
+		}
+		
+		$action = $mode;
+		$row = $DBResultRow;
+		$html = "	<input type=\"hidden\" name=\"" . $prefix . "AddressID" . $suffix . "\" value=\"" . 
+						$row['AddressID'] ."\">" .
+				"	<input type=\"hidden\" name=\"" .  $prefix . "AddressType" . $suffix . "\" value=\"" . 
+						$row['AddressType'] ."\">" .	
+				"	<input type=\"hidden\" name=\"" . $prefix . "Action" . $suffix . "\" value=\"$mode\">" .													
+				"	<input type=\"hidden\" name=\"" . $prefix . "SubAction" . $suffix . "\" value=\"All\">" .													
+				"	<tr>\n" .
+				"		<td>Unit:</td><td>" . displayText(array ("value" => $row['Unit'], "source" => "Unit", "action" => $mode, "inputPrefix" => $this->inputPrefix )) . "</td>\n" .
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Street:</td><td colspan=3>" . displayText(array ("value" => $row['Street'], "source" => "Street", "action" => $mode, "inputPrefix" => $this->inputPrefix, "size" => 50 )) . "</td>\n" .
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>City:</td><td>" . displayText(array ("value" => $row['City'], "source" => "City", "action" => $mode, "inputPrefix" => $this->inputPrefix) ). "</td>\n" . 
+				"		<td>Province:</td><td>" . displayGenericTableList(
+								array("table"=> "Province", "value"=>$row['Province'],
+								"source"=>"Province", "action"=>$mode, "inputPrefix"=> $this->inputPrefix)) . "</td>\n" . 
+				"	</tr>\n" .
+				"	<tr>\n" .
+				"		<td>Country:</td><td>" . displayText(array ("value" => $row['Country'], "source" => "Country", "action" => $mode, "inputPrefix" => $this->inputPrefix) ). "</td>\n" . 
+				"		<td>Postal Code:</td><td>" . displayText(array ("value" => $row['PostalCode'], "source" => "PostalCode", "action" => $mode, "inputPrefix" => $this->inputPrefix )) . "</td>\n" .
+				"	</tr>\n";
+		
+				
+		return $html;
+	}
+} // AddressView
+?>

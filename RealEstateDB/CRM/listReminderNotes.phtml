@@ -1,0 +1,134 @@
+<?php
+/*
+ * Created on 18-Feb-2006
+ *
+ * List reminder notes for a specific sales representive
+ * Part of salesRepDetail
+ * 
+ * Query Var: $currSalesRepID - Sales representive ID
+ */
+ 
+$not_include_javascript = 1; 
+include_once "main_include.phtml";
+
+/**
+ * Generate reminder note 
+ * return a String contains the table
+ * Note: ob_start is used to capture std output and 
+ * return std to a string
+ */ 
+function generateReminderNote($currSalesRepID, $sortOrder){
+	global $PHP_SELF;
+	
+ob_start();
+createCollapsibleDIV("ReminderNotesDIV"); 
+?>  
+  <TABLE Cellspacing=5>
+ <?
+// 2.1 display reminder notes for purchaser
+$sql = "(SELECT Note.*,  User.FirstName, User.LastName, User.UnitNumber, User.DealStatus 
+		FROM Note, User 
+		WHERE Note.RemindMe = 1
+		AND Note.WrittenBySalesRepID=$currSalesRepID
+		AND Note.CustomerType='user'
+		AND Note.CustomerID = User.UserID)
+		UNION ";
+
+$sql .= " (SELECT Note.*,  Visitor.FirstName, Visitor.LastName, ".DO_NOT_DISPLAY_UNIT_NUMBER." AS UnitNumber,  'N/A' AS DealStatus "." FROM Note, Visitor
+		WHERE Note.RemindMe = 1
+		AND WrittenBySalesRepID=$currSalesRepID
+		AND Note.CustomerType='visitor'
+		AND Note.CustomerID = Visitor.VisitorID)";
+
+
+if ($sortOrder == "customerType"){
+	$sql .= " ORDER BY CustomerType, FirstName, LastName, DueDate";	
+} else if ($sortOrder == "customerName"){
+	$sql .= " ORDER BY FirstName, LastName, DueDate DESC";	
+} else if ($sortOrder == "unitNumber"){
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", DueDate DESC";	
+} else if ($sortOrder == "dealStatus"){
+	$sql .= " ORDER BY DealStatus, FirstName, LastName, DueDate DESC";	
+} else if ($sortOrder == "createDate"){
+	$sql .= " ORDER BY CreateDate DESC, FirstName, LastName, DueDate DESC";	
+} else if ($sortOrder == "dueDate"){
+	$sql .= " ORDER BY DueDate DESC, CustomerType, FirstName, LastName";	
+} else if ($sortOrder == "contactVia"){
+	$sql .= " ORDER BY ContactVia, FirstName, LastName";	
+} 				
+
+$result = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $PHP_SELF);
+
+$num_of_rows = 0;
+while ($row = mysql_fetch_array($result)) {
+	if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+	{
+?>
+  <TR CLASS="head">
+    <TD><a href="javascript:sortReminderNote('customerType');">Customer Type</a></TD>
+    <TD><a href="javascript:sortReminderNote('customerName');">Customer Name</a></TD>
+    <TD><a href="javascript:sortReminderNote('unitNumber');">Suite Number</a></TD>
+    <TD><a href="javascript:sortReminderNote('dealStatus');">Deal Status</a></TD>
+    <TD><a href="javascript:sortReminderNote('createDate');">Create Date</a></TD>
+    <TD><a href="javascript:sortReminderNote('dueDate');">Due Date</a></TD>
+    <TD>Note</TD>
+    <TD><a href="javascript:sortReminderNote('contactVia');">Contact Via</a></TD>
+    <TD>Remind Me</TD>
+  </TR>
+<?
+	}
+	displayMouseOverTR();
+?>
+    <TD><?= get_customer_type($row['CustomerType']); ?></TD>
+    <?
+
+	$userListingLink = CRM_INVERT_RELATIVE_PATH."userListing.phtml?action=display&mode=".get_page_mode($row['CustomerType']);
+	if ($row['CustomerType'] == "user") {
+		$userListingLink .= "&UserID=";
+	} else {
+		$userListingLink .= "&VisitorID=";
+	}
+	$userListingLink .= $row['CustomerID'];
+?> 
+    <TD><A HREF="<?= $userListingLink; ?>"><?= $row["FirstName"] . " " . $row["LastName"] ?></A></TD>
+    <TD><A HREF="<?= $userListingLink; ?>"><?= $row["UnitNumber"] == DO_NOT_DISPLAY_UNIT_NUMBER? "" : $row["UnitNumber"]; ?></A></TD>
+    <TD><A HREF="<?= $userListingLink; ?>"><?= $row["DealStatus"]?></A></TD>
+    <TD><?= $row["CreateDate"]?></TD>
+    <TD><?= $row["DueDate"]?></TD>
+    <TD><DIV onMouseOver="showNote(1, 'Note', '<?= urlencode($row['Note']); ?>', 300, 250, 400, 400)" onMouseOut='hideFloatingDiv(1)' ><?
+
+	if (strlen($row['Note']) > 30) {
+		print substr($row['Note'], 0, 30);
+		print "...";
+	} else {
+		print $row['Note'];
+	}
+?></DIV></TD>
+    <TD><?= $row["ContactVia"]; ?><?
+
+?>
+
+</TD>
+    <TD><?= $row["RemindMe"]==1? "Yes" : "No"; ?></TD>
+	<TD><INPUT TYPE="BUTTON" VALUE="Edit" onClick=displayNoteEditDIV(<?= $row['NoteID'] . "," . $currSalesRepID . ",'" . $row['CustomerType'] . "'," . $row['CustomerID']; ?>)></TD>
+<? if (get_access_security_level() >= ADMIN){ ?>	
+	<TD><INPUT TYPE="BUTTON" VALUE="Delete" onClick=deleteNote(<?= $row['NoteID']; ?>) ></TD>
+<? } ?>	
+  </TR>  
+<?
+
+}
+?>
+  <TR>
+    <TD>&nbsp;</TD>
+  </TR>
+  </TABLE>
+  </DIV>
+<?
+   $output = ob_get_contents();
+   ob_end_clean();
+   return $output;
+}
+ ?>
+
+  

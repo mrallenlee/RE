@@ -1,0 +1,156 @@
+<?
+/**
+* Calculate Adjusted Sales Price by deducting incentives and GST Rebate. Vavlues are stored 
+* in User.ASPNetGST and User.GSTRebate0
+*/
+include_once "main_include.phtml";
+
+
+/**
+ * Calculate broker commission for the unit
+ * Assumption: User.ASPNetGST must be pre-calculated before running
+ * this function
+ * userID : userID or string "ALL"
+ */
+function calculateBrokerCommission($userID){
+	$sql = "SELECT * FROM 
+			(
+				(SELECT User.UserID, User.UnitNumber, OfferPrice, Price, ASPNetGST,
+				UnitAllowance, AgreementDepositAmount, User.BrokerID AS MappedBrokerID,
+				UserBroker.BrokerID AS UserBrokerID,
+				Commission1, Commission2, Commission3, Commission4,
+				Commission1Type, Commission2Type, Commission3Type, Commission4Type
+				FROM User LEFT JOIN UserBroker
+					ON UserBroker.BrokerID = User.BrokerID
+					AND UserBroker.UserID = User.UserID)
+				UNION
+				(SELECT User.UserID, User.UnitNumber, OfferPrice, Price, ASPNetGST,
+				UnitAllowance, AgreementDepositAmount, User.BrokerID2  AS MappedBrokerID,
+				UserBroker.BrokerID AS UserBrokerID,
+				Commission1, Commission2, Commission3, Commission4,
+				Commission1Type, Commission2Type, Commission3Type, Commission4Type
+				FROM User LEFT JOIN UserBroker
+					ON UserBroker.BrokerID = User.BrokerID2
+					AND UserBroker.UserID = User.UserID) 
+			) A";
+	
+	
+	if ($userID != "ALL"){
+		$sql .= " WHERE UserID=$userID";
+	}
+	//print "sql=$sql<BR>"	;
+	$result = executeSql($sql);
+	
+	
+	while ($row = mysql_fetch_array($result)){
+//		echo "UserBrokerID=" . $row['UserBrokerID'] . " MappedBrokerID=" . $row['MappedBrokerID'] . "<BR>";
+		// if UserBroker doesn't exist, use default commission rate from broker
+		if (!isSet($row['UserBrokerID']) || $row['UserBrokerID'] == ""){
+			// no UserBroker record
+			// check if MappedBrokerID contains a valid value, if not, return
+			if ($row['MappedBrokerID'] <= 0 || $row['MappedBrokerID'] == ""){
+				// if brokerID is null, skip this record
+				continue;
+			}
+			$defaultBrokerSql = "SELECT * FROM Broker WHERE BrokerID=" . $row['MappedBrokerID'];
+
+			$defaultBrokerResult = executeSql($defaultBrokerSql);
+			// if there is no Broker record, log error and exit
+			if (mysql_num_rows($defaultBrokerResult) <= 0){
+				// only display the following error if not in ALL mode, i
+				// since handleError causes the page to terminate
+				if ($userID != 'ALL'){
+					handleError ("Invalid broker. Please check the broker. If problem continues, please notify web master regarding the issue.",
+							"BrokerID " . $row['MappedBrokerID'] . " does not exist.", GENERAL_ERROR, true);
+				} else {
+					debug ("There is an error occured during commission calculation. Please notify web master regarding the issue." .
+							"BrokerID " . $row['MappedBrokerID'] . " does not exist.", 2);
+				}
+				continue;
+			}
+			$defaultBrokerRow = mysql_fetch_array($defaultBrokerResult);
+			$ASPNetGST = $row['ASPNetGST'];
+			
+			include_once "Entity/Model/TransactionsRecordModel.phtml";			
+			$arguments = array();
+			$arguments['Action'] = "add";
+			$transactionsRecordModel 		= new TransactionsRecordModel();
+			
+			for ($i = 1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+    			// Set default value if no broker information
+    			if ($defaultBrokerRow["DefaultCommission" . $i] == ''){
+	    			$defaultBrokerRow["DefaultCommission" . $i] = 0;
+    			}
+    			if ($defaultBrokerRow["DefaultCommission" . $i . 'Type'] == ''){
+	    			$defaultBrokerRow["DefaultCommission" . $i . 'Type'] = BROKER_COMMISSION_TYPE_FLAT_RATE;
+    			}
+    			
+				if ($defaultBrokerRow['DefaultCommission' . $i . 'Type'] == BROKER_COMMISSION_TYPE_PERCENTAGE){
+					${"commission$i"} = ($ASPNetGST * $defaultBrokerRow['DefaultCommission' . $i] / 100 );
+				} else if ($defaultBrokerRow['DefaultCommission' . $i . 'Type'] == BROKER_COMMISSION_TYPE_FLAT_RATE){
+					${"commission$i"} = $defaultBrokerRow['DefaultCommission' . $i];
+				} else {
+					${"commission$i"} = 0;
+				}
+				${"commission$i" . "Tax"} = ${"commission$i"} * GST_RATE;
+				${"commission$i" . "Total"} = ${"commission$i"} + ${"commission$i" . "Tax"} ;
+				${"commission$i" . "TransactionID"} = $transactionsRecordModel->add($arguments);
+			}
+			// Insert UserBroker record
+			$insertSql = "INSERT UserBroker 
+							SET BrokerID=" . $row['MappedBrokerID'] . "
+						,UserID=" . $row['UserID'] . "
+						,UnitNumber='" . $row['UnitNumber'] . "'
+						,CreatedDate=CURRENT_TIMESTAMP";
+			for ($i = 1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+				$insertSql .= ", Commission" . $i . "Amount=" . ${"commission" . $i};
+				$insertSql .= ", Commission" . $i . "Tax=" . ${"commission$i" . "Tax"};
+				$insertSql .= ", Commission" . $i . "Total=" . ${"commission$i" . "Total"};
+				$insertSql .= ", Commission" . $i . "=" . $defaultBrokerRow["DefaultCommission" . $i];
+				$insertSql .= ", Commission" . $i . "Type='" . $defaultBrokerRow["DefaultCommission" . $i. "Type"] . "'";
+				$insertSql .= ", Commission" . $i . "TransactionID='" . ${"commission$i" . "TransactionID"} . "'";
+			}
+			
+			debug("insertSql=" .  $insertSql);
+			$insertResult = executeSql($insertSql);			
+		} else {		
+			// if UserBroker exists, use commission rate from UserBroker record, and 
+			// recalculate the commissions			
+			$ASPNetGST = $row['ASPNetGST'];
+			for ($i = 1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+				if ($row['Commission' . $i . 'Type'] == BROKER_COMMISSION_TYPE_PERCENTAGE){
+					${"commission$i"} = ($ASPNetGST * $row['Commission' . $i] / 100);
+				} else if ($row['Commission' . $i . 'Type'] == BROKER_COMMISSION_TYPE_FLAT_RATE){
+					${"commission$i"} = $row['Commission' . $i];
+				} else {
+					debug("ERROR: Commission$i" . "Type=" . $row['Commission' . $i . 'Type'] . "<BR>", 1);
+				}
+//				debug("commission$i=" . ${"commission$i"}. "<BR>");
+				${"commission$i" . "Tax"} = ${"commission$i"} * GST_RATE;
+				${"commission$i" . "Total"} = ${"commission$i"} + ${"commission$i" . "Tax"} ;
+			}						
+			
+			// update UserBroker record
+			$updateSql = "UPDATE UserBroker 
+							SET ";
+			for ($i = 1; $i <= BROKER_COMMISSION_NUMBER; $i++){
+				if ($i > 1){
+					$updateSql .= ", ";
+				}
+				$updateSql .= "Commission" . $i . "Amount=" . ${"commission$i"};
+				$updateSql .= ", Commission" . $i . "Tax=" . ${"commission$i" . "Tax"};
+				$updateSql .= ", Commission" . $i . "Total=" . ${"commission$i" . "Total"};
+			}
+			$updateSql .= " WHERE BrokerID=" . $row['MappedBrokerID'] . " AND UserID=" . $row['UserID'];
+			
+			debug("updateSql=" . $updateSql);
+			$updateResult = executeSql($updateSql);						
+		}
+	}
+}
+
+if ($isDebug){	
+	calculateBrokerCommission("ALL");
+}
+
+?>

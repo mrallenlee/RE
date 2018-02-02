@@ -1,0 +1,393 @@
+<?
+
+include "../admin/main_include.phtml";
+?>
+
+<html>
+<head>
+  <title>PDI Form</title>
+  <META http-equiv="Content-Style-Type" content="text/css">
+  <link rel="stylesheet" href="./citygate.css" type="text/css">
+</head>
+
+<body>
+
+<?
+
+// get all data to be displayed in report header
+$sql = "SELECT Unit.UnitNumber UnitNumber, concat(FirstName, ' ', LastName) PurchaserName, 
+		DATE_FORMAT(PDIDate, '%W %M %e %Y') PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
+		DATE_FORMAT(OccupancyDate, '%W %M %e %Y') OccupancyDate, DATE_FORMAT(OccupancyDate, '%b %e %Y') OccupancyDate_nodayformat,
+		OccupancyTime, OccupancyNotified, OccupancyNotifiedDate
+		FROM Unit
+		LEFT JOIN User
+		ON (Unit.UserID = User.UserID)
+		WHERE Unit.UnitNumber = '$unit'";
+
+$result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
+$row = mysql_fetch_array($result);
+
+$OccupancyDate = $row['OccupancyDate_nodayformat'];
+?>
+<table align="center" width="670">
+<b>
+  <tr>
+    <td align="center">
+
+      <!-- header -->
+      <table width="100%">
+        <tr class="report_h1">
+          <td align="left" rowspan="6">
+            <img src="../images/tarion.jpg" width="100" height="27" border="0">
+          </td>
+        
+          <td align="center" colspan="4">
+
+          </td>
+
+          <td align="right" rowspan="6">
+            <img src="../images/project-logo-small.jpg" width="130" border="0">
+          </td>
+        </tr>
+
+        <tr class="report_h2">
+          <td align="center" colspan="4">Pre-Delivery Inspection Form</td>
+        </tr>
+
+        <tr class="report_h3">
+          <td align="left">UNIT:</td>
+          <td align="left"><?= $unit ?></td>
+          <td align="left">O.N.H.W.P.:</td>
+          <td align="left"><?= $row['ONHWPRegNumber'] ?></td>
+        </tr>
+
+        <tr class="report_h3">
+          <td align="left" colspan="2">PURCHASER:</td>
+          <td align="left" colspan="2"><?= $row['PurchaserName'] ?></td>
+        </tr>
+
+        <tr class="report_h3">
+          <td align="left" colspan="2">PDI Date:</td>
+          <td align="left" colspan="2"><?= $row['PDIDate'] ?></td>
+        </tr>
+
+        <tr class="report_h3">
+          <td align="left" colspan="2">OCCUPANCY Date:</td>
+          <td align="left" colspan="2"><?= $row['OccupancyDate'] ?></td>
+        </tr>
+      </table>
+      <!-- end of header -->
+
+    </td>
+  </tr>
+  
+  <tr>
+    <td>
+      <!-- 1st paragraph of comment-->
+      <table border="1" width="100%" class="report_h4">
+        <tr>
+          <td align="center">
+            Please list below any damaged, incomplete or missing items and anything that is not in good operating<br>
+            condition. Please also note any "substitutions" of items referred to in, or to be selected under, the<br>
+            Agreement of Purchase and Sale. All changes and deletions to this list must be initialled by the<br>
+            Purchaser and the Developer.
+          </td>
+        </tr>
+      </table>
+      <!-- end of 1st paragraph of comment-->
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <!--2nd part: tickboxes of "damaged or incomplete items" & "operating condition"-->
+      <table border="1" width="100%">
+        <tr class="report_part1_header">
+          <td align="center">DAMAGED OR INCOMPLETE ITEMS</td>
+          <td align="center">OPERATING CONDITION</td>
+        </tr>
+
+        <tr class="report_part1_content">
+          <td valign="center">
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Windows, side lights and other glazing<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Window and door screens<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Bathtubs, sinks, toilets and bathroom accessories<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Mirrors, countertops and cabinetry<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Floors - wood, vinyl, granite, marble, ceramic, carpet<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Interior finishes and trim carpentry<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Walls and Ceilings<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Appliances<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Options and Upgrades
+          </td>
+          <td class="report_part1_content" valign="top">
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Windows and doors - handles, locks, closets<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Faucets - kitchen, bathrooms, laundry<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Exhaust fans - kitchen, laundry, bathrooms<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Electrical outlets and light fixtures<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Fireplace and circulation fan (if applic.)<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;Heating and Cooling system<br>
+            &nbsp;&nbsp;&#149;&nbsp;&nbsp;&nbsp;In suite security system
+          </td>
+        </tr>
+      </table>
+      <!--end of 2nd part-->
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <!--3rd part: defect list-->
+      <table border="1" width="100%">
+        <tr class="report_part1_header">
+          <td colspan="5">LIST BELOW ANY DEFECTS IN YOUR UNIT AND ANYTHING THAT CANNOT BE INSPECTED BECAUSE IT IS DIRTY OR INACCESSIBLE</td>
+        </tr>
+
+        <tr class="defect_table_header">
+          <td>ITEM</td>
+          <td>LOCATION</td>
+          <td>DESCRIPTION</td>
+          <td>DONE?</td>
+          <td>PURCHASER.</td>
+        </tr>
+<?
+
+// find the unit type of this unit, to compute available sections in this unit
+$sql_UnitType = "SELECT UnitType from Unit WHERE UnitNumber = '$unit'";
+$result_UnitType = mysql_query($sql_UnitType, $db) or die("Error : $sql_UnitType<br>".mysql_error());
+$row_UnitType = mysql_fetch_array($result_UnitType);
+$UnitType = $row_UnitType["UnitType"];
+
+// get all sections except the section "Z. Suite Common elements"
+$sql_Section = "SELECT SectionID, Name FROM Section 
+	WHERE Name not like 'Z.%'
+	ORDER BY Name";
+$result_Section = mysql_query($sql_Section, $db) or die("Error : $sql_Section<br>".mysql_error());
+
+// get defect data
+$sql = "SELECT CONCAT ( PDICategory.Name, ' - ', PDIType.Name) AS DefectDesc, Section.Name, PDIDefect.PDIFixed
+		FROM PDICategory, PDIType, PDIDefect
+		LEFT JOIN Section
+		ON PDIDefect.SectionID = Section.SectionID
+		WHERE PDIDefect.UnitNumber = '$unit'
+		AND PDIDefect.PDIDefect = 1
+		AND PDIType.PDITypeID = PDIDefect.DefectDesc
+    AND PDICategory.PDICatID = PDIType.PDICatID
+		ORDER BY Section.Name";
+
+$result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
+
+// include all the locations on the PDI form and  for which there is  no defect, mark them as "Acceptable". 
+$item_num = 1;
+while ($row_Section = mysql_fetch_array($result_Section)) {
+	if (section_disabled($UnitType, $row_Section["SectionID"]))
+		continue;
+	else {
+		$found_defect_in_this_section = false; // if no defect found in certain section, mark this section as "Acceptable" in PDI form
+
+		mysql_data_seek($result, 0);
+
+		while ($row = mysql_fetch_array($result)) {
+			if ($row["Name"] == $row_Section["Name"]) {
+				$found_defect_in_this_section = true;
+
+				// print defect data
+				print "        <tr class=\"report_part1_content\">\n";
+				print "          <td align='center'>".$item_num ++."</td>\n";
+				print "          <td>".$row["Name"]."&nbsp;</td>\n";
+				print "          <td>".strtoupper($row["DefectDesc"])."&nbsp;</td>\n";
+				print "          <td align='center'><INPUT TYPE='checkbox' ";
+
+				if ($row["PDIFixed"] == 1)
+					print "CHECKED";
+
+				print "></td>\n";
+				print "          <td>&nbsp;</td>\n";
+				print "        </tr>\n";
+			}
+		}
+
+		// if no defect found in certain section, mark this section as "Acceptable" in PDI form
+		if (!$found_defect_in_this_section) {
+			print "        <tr class=\"report_part1_content\">\n";
+			print "          <td align='center'>".$item_num ++."</td>\n";
+			print "          <td>".$row_Section["Name"]."</td>\n";
+			print "          <td>ACCEPTABLE</td>\n";
+			print "          <td>&nbsp;</td>\n";
+			print "          <td>&nbsp;</td>\n";
+			print "        </tr>\n";
+		}
+	}
+}
+?>
+      </table>
+      <!--end of 3rd part: defect list-->
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <!--4th part: vender details & signatures-->
+      <table class="report_part1_content" width="100%">
+        <tr class="report_part1_header">
+          <td>VENDOR/BUILDER DETAILS AND ADDRESS INFORMATION</td>
+        </tr>
+
+        <tr>
+          <td>
+            OCCUPANCY DATE:
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <?= $OccupancyDate ?>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            VENDOR/BUILDER REGISTRATION NO: 38584
+            <br><img src="black.gif" width="660" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            CONDOMINIUM: AppleBy
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            LEVEL: <?= get_unit_level($unit); ?>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            UNIT: <?= substr($unit, -2); ?>
+            <br><img src="black.gif" width="660" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            STREET ADDRESS:
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            UNIT <?= $unit ?>, 5001 Corporate Drive
+            <br><img src="black.gif" width="660" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            Burlington, ONT. L7L 0A5
+            <br><img src="black.gif" width="660" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            VENDOR NAME:
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	    Jacan Investments Canada Inc.
+            <br><img src="black.gif" width="660" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            VENDOR REP.: 
+            ___________________________
+            SIGNATURE:
+            ____________________________
+          </td>
+        </tr>
+
+        <tr class="report_part1_header">
+          <td>
+            THIS SECTION SHOULD BE COMPLETED AND SIGNED BY ALL PERSONS WHO ARE SHOWN AS<br>
+            PURCHASERS ON THE AGREEMENT OF PURCHASE AND SALE FOR THIS CONDOMINIUM UNIT.
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            I/We have inspected this condominium and agree that the descriptions of the 
+            items listed on this form are accurate.
+          </td>
+        </tr>
+        
+      </table>
+      <!--end of 4th part-->
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      <!--5th part: signatures-->
+      <table class="report_part1_content" width="100%">
+        <tr>
+          <td align="left">
+            PURCHASER:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+          <td align="left">
+            SIGNATURE:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="left">
+            PURCHASER:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+          <td align="left">
+            SIGNATURE:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="left">
+            DESIGNATE*:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+          <td align="left">
+            SIGNATURE:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="left">
+            DATE:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+          <td></td>
+        </tr>
+
+        <tr>
+          <td align="left" colspan="2">
+            <i>* Purchasers or owners who intend to designate someone to conduct the PDI in their place should ensure that they<br>
+            provide written authority to the Vendor/Builder authorising the Designate to sign this form on their behalf.</i>
+          </td>
+        </tr>
+
+        <tr>
+          <td>&nbsp;</td>
+        </tr>
+
+        <tr>
+          <td class="report_h3" align="center" colspan="2">
+            THE COMPLETED PRE-DELIVERY INSPECTION FORM IS A FORMAL RECORD OF THE HOME'S<br>
+            CONDITION BEFORE THE PURCHASER TAKES POSSESSION. IT WILL BE USED AS A<br>
+            REFERENCE FOR FUTURE WARRANTY SERVICE REQUESTS.
+          </td>
+        </tr>
+      </table>
+      <!--end of 5th part-->
+    </td>
+  </tr>
+
+</b>
+</table>
+
+</body>
+</html>
+

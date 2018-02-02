@@ -1,0 +1,180 @@
+<?php
+/*
+ * Created on 28-Dec-2006
+ *
+ * Handle data for Transaction Records
+ */
+ 
+ include_once "Entity/Model/EntityModel.phtml";
+ include_once "Entity/Model/ChequeModel.phtml";
+ 
+ class TransactionsRecordModel extends EntityModel {
+ 	function TransactionsRecordModel() {}
+ 	 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function add(&$arguments){
+ 		$sql =  " INSERT TransactionsRecord " .
+ 				" SET CreatedDate=NOW()";
+ 		$sql .= "," . $this->getColumnSql($arguments);
+ 		$result = executeSql($sql);
+ 		$id = mysql_insert_id();
+ 		return $id; 	
+ 	}
+ 	
+ 	/**
+ 	 * Return new ID
+ 	 * If Primary key is constructed by multiple key, 
+ 	 * Primary key is returned as a CSV string 
+ 	 */
+ 	function addAll(&$arguments){
+// 		print "in TransactionsRecordModel updateAll";
+ 		
+ 		// handle cheques
+ 		$multiChequeArguments = $this->retrieveMultipleArguments("Cheque_", $arguments);
+ 		
+ 		foreach ($multiChequeArguments as $index=>$chequeArguments){
+			$chequeArguments['SubAction'] = "All";
+			$chequeArguments['TransactionsRecordID'] = $arguments['TransactionsRecordID'];
+			 			
+ 			$chequeModel = new ChequeModel();
+ 			$chequeID = $chequeModel->addAll($chequeArguments);
+ 		}
+
+ 		// since TransactionsRecord table doesn't have cheque ID,
+ 		// so there's no need to pass id to TransactionsRecord
+ 		return $this->add($arguments);	
+ 	}
+	
+ 	function update(&$arguments){
+ 		$sql =  " UPDATE TransactionsRecord " .
+ 				" SET ";
+ 		$sql .= $this->getColumnSql($arguments);
+ 		$sql .= " WHERE TransactionsRecordID = " . $arguments['TransactionsRecordID'];
+ 		$result = executeSql($sql);
+		return "sql=$sql<BR>"; 				
+ 	}
+	
+ 	/**
+ 	 * Update all related tables to this class
+ 	 */
+ 	function updateAll(&$arguments){
+// 		print "in TransactionsRecordModel updateAll";
+ 		$result = $this->update($arguments);
+ 		 		
+ 		$multiChequeArguments = $this->retrieveMultipleArguments("Cheque_", $arguments);
+ 		
+ 		foreach ($multiChequeArguments as $index=>$chequeArguments){
+			$chequeArguments['SubAction'] = "All";
+			$chequeArguments['TransactionsRecordID'] = $arguments['TransactionsRecordID'];
+			
+ 			$chequeModel = new ChequeModel();
+ 			// when updating a TransactionsRecord, the cheque can be in add/update/delete
+ 			// action
+ 			$result .= $chequeModel->handle($chequeArguments)	;
+ 		}
+ 		
+ 		return $result;
+ 	}
+ 	
+	/**
+	 * Delete Record
+	 * Return: 1 if success, 0 if failed 
+	 */
+ 	function delete(&$arguments){
+ 		if ($arguments['TransactionsRecordID'] > 0){
+ 			$sql 	= " DELETE FROM TransactionsRecord " .
+ 				  		" WHERE TransactionsRecordID = " . $arguments['TransactionsRecordID'];
+	 		$result = executeSql($sql);
+	 		return mysql_affected_rows();
+ 		}
+ 		else {
+ 			return 0;	
+ 		}
+ 	
+ 	}
+
+	/**
+ 	 * Delete all related tables to this class
+	 * Return: 1 if success, 0 if failed 
+ 	 */
+ 	function deleteAll(&$arguments){
+		$result = true;
+		
+ 		if (isSet($addressArguments['PersonID'])){
+ 			// deal with address
+ 			$personModel = new PersonModel();
+ 			$result = $result && $personModel->deleteAll($personArguments);
+ 		}
+
+ 		$multiChequeArguments = $this->retrieveMultipleArguments("Cheque_", $arguments);
+ 		
+ 		foreach ($multiChequeArguments as $index=>$chequeArguments){
+			$chequeArguments['SubAction'] = "All";
+			
+	 		if (isSet($chequeArguments['ChequeID'])){
+	 			// deal with address
+	 			$chequeModel = new ChequeModel();
+	 			$result = $result && $chequeModel->deleteAll($chequeArguments);
+	 		}			
+ 		}
+ 		
+ 		
+ 		if ($result){
+	 		$result = $this->delete($arguments); 		
+ 		}
+ 		
+ 		return $result; 	 	
+ 	}
+
+	/**
+	 * Return a string contains column information
+	 * for insert or update sql
+	 * e.g. return CompanyName="ABC", FirstName="Allen"
+	 */
+	function getColumnSql(&$arguments){
+		// handle check box special case
+		if (isset($arguments['IDProvided'])){
+			$arguments['IDProvided'] = 1;
+		}
+		$sql =  "TransactionsFrom=\"" . $arguments['TransactionsFrom'] . "\"" .
+ 				" , TransactionsTo =\"" .  $arguments['TransactionsTo'] . "\"". 
+ 				" , Date =\"" .  $arguments['Date'] . "\"". 
+ 				" , DueDate =\"" .  $arguments['DueDate'] . "\"". 
+ 				" , Amount =\"" .  $arguments['Amount'] . "\"". 
+	 			" , Type =\"" .  $arguments['Type'] . "\"". 
+ 				" , UpdatedBy =\"" .  $arguments['UpdatedBy'] . "\""; 
+ 						
+		return $sql;  				
+	}
+
+ 	/**
+ 	 * Return a 2D array contains array of cheque arguments
+ 	 * All cheque prefix 
+ 	 */
+	function &retrieveMultipleArguments($classPrefix, &$arguments){
+ 		$multiEntityArray = array(); 		
+		
+		foreach ($arguments as $key=>$value){
+			if (preg_match("/$classPrefix/", $key)){ 			
+				$data = explode('_', $key, 3);
+				$index = $data[1];
+				$varName = $data[2];
+//				print "key=$key index=$index varName=$varName value=$value<BR>";
+				if (!isSet($multiEntityArray[$index])){
+					// init the array if has not been defined
+					$chequeArray = array();
+					$multiEntityArray[$index] = $chequeArray ; 
+					$multiEntityArray[$index]['index'] = $index;
+				}
+				$multiEntityArray[$index][$varName] = $value;
+			}	
+		}			
+		
+		return $multiEntityArray;		
+	} // retrieveMultipleArguments	
+ }
+?>

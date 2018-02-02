@@ -1,0 +1,26 @@
+<?php
+/*
+ * Created on 18-Feb-2006
+ *
+ * Action for update note. This is needed because
+ * of setting up function for AJAX
+ */
+ 
+include_once "config.phtml";
+$not_include_javascript = 1;
+include_once CRM_INVERT_RELATIVE_PATH . "main_include.phtml";
+
+/**
+ * Return true if no sql error
+ */
+function delete($NoteID){
+	global $db;
+	global $_SERVER;
+	
+	// delete the note
+	$sql = "DELETE FROM Note WHERE NoteID=$NoteID";
+	$result = mysql_query($sql) or log_err_die(mysql_error(),$_SERVER['PHP_SELF']);
+	return 1;
+//	print ("sql=$sql");
+}
+?>

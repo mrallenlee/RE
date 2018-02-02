@@ -1,0 +1,103 @@
+<?
+include "main_include.phtml";
+
+
+// This file displays the Contractor table. The file that displays all of
+// the Options and Upgrades tables is called display_user.phtml
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); 
+
+?>
+
+
+<table cellspacing="0" cellpadding="0" border="0" width="700">
+<tr>
+<td>
+
+<br>
+
+<?
+
+if (!$table_name)
+{
+	$table_name = "Contractor";
+}
+
+?>
+
+<table cellpadding="5" border="0" width="100%">
+<tr class="head">
+<th>Contractor ID</th>
+<th>Contractor Name</th>
+<th>Address</th>
+<th>City</th>
+<th>Country</th>
+<th>Postal Code</th>
+<th>Contact Person</th>
+<th>Phone</th>
+</tr>
+
+<?
+
+
+	$sql	= "SELECT	*
+			FROM Contractor";
+	$result = mysql_query($sql,$db);
+	
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($row['Commit'])
+		{
+			$Commit = "Yes";
+		}
+		else
+		{
+			$Commit = "No";
+		}
+		
+		displayMouseOverTR();
+		echo "<form name=\"form_" . $row['ContractorID'] . "\" method=\"post\" action=\"contractor_edit.phtml\">";
+		echo "<input type=hidden name=ContractorID value=\"" . $row['ContractorID'] . "\">";
+		echo "<td>" . $row['ContractorID'] . "&nbsp;</td>\n";
+		echo "<td><input type=text name=ContractorName size=20 value=\"" . $row['ContractorName'] . "\"&nbsp;</td>\n";
+		echo "<td><input type=text name=Address size=25 value=\"" . $row['Address'] . "\"&nbsp;</td>\n";
+		echo "<td><input type=text name=City size=10 value=\"" . $row['City'] . "\"&nbsp;</td>\n";
+		echo "<td><input type=text name=Country size=10 value=\"" . $row['Country'] . "\"&nbsp;</td>\n";
+		echo "<td><input type=text name=PostalCode size=10 value=\"" . $row['PostalCode'] . "\"&nbsp;</td>\n";
+		echo "<td><input type=text name=Person size=15 value=\"" . $row['Person'] . "\"&nbsp;</td>\n";
+		echo "<td><input type=text name=Phone size=13 value=\"" . $row['Phone'] . "\"&nbsp;</td>\n";
+
+//		echo "<td><nobr><input type=submit value=Update>";
+		echo "<td><nobr><a href=\"javascript:document.forms['form_" . $row['ContractorID'] . "'].submit()\">Update</a></td>";
+//		echo "<td><a href=\"contractor_report.phtml?ContractorID=" . $row['ContractorID'] . "\">Report</a></td>";
+		echo "</form>";
+		echo "</tr>\n";
+	}
+	// end HTML table
+	echo "</table>\n";
+?>
+
+</td>
+</tr>
+
+<tr><td><br></td></tr>
+
+<tr>
+	<td><INPUT TYPE="BUTTON" VALUE="Dump TXT for All Contractor, All Locked Unit" onClick="window.location='./dumpContractorCSV.phtml'"></td>
+</tr>
+
+</table>
+</td>
+</tr>
+</table>
+
+
+
+
+</td>
+</tr>
+</table>
+
+</body>
+
+</html>

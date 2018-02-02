@@ -1,0 +1,117 @@
+<?
+include "main_include.phtml";
+
+?>
+<html>
+<? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", false, false); ?>
+
+<head>
+<title><?= get_project_name($PHP_SELF);?> - Login</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+<center>
+<table height="100%" width="100%">
+	<tr>
+		<td align="center" valign="center">
+			<table cellspacing="0" cellpadding="0" border="0" width="700" height="10">
+				<tr>
+					<td align="left" valign="bottom"><img src="images/project-logo-small.jpg"></td>
+					<td></td>
+				</tr>
+				<tr><td><br></td></tr>
+				<tr><td colspan=5 align="right"><img src="images/orange-bar.jpg"></td></tr>
+				<tr>
+					<td width=230 valign="top" align="right"><img width=230 src="images/project-building-side.jpg"></td>
+					<td valign="top"align="left" width=470>
+						<table cellspacing="0" cellpadding="0" border="0" width="100%" height="10">
+							<tr>
+								<td align="left" ><img src="images/blue-bar.jpg"></td>
+							</tr>
+							<tr><td><br></td></tr>
+							<tr>
+								<td align="center"><img width=150 src="images/home-options-logo-small.jpg"></td>
+							</tr>
+							<tr>
+							
+								<td class="blank">
+									<table cellpadding="2" width="100%">
+										<tr>
+											<td colspan=100 align="center" class="body-yellow">
+												<font size="4">INSTRUCTIONS</font>
+											</td>
+										</tr>
+										<tr>
+											<td class="body-green">
+	<br>
+	You are now in your own private corner of the Options and Upgrades Database - <font class="body-blue">No</font> other Purchasers have access to this information.
+	<br>
+	<br>
+	On the following screens, you will see all of the Options and Upgrades that <font class="body-blue">could</font> be incorporated into your unit, together with the prices.  These prices are valid only for your unit type - other unit types will have different prices.
+	<br>
+	<br>
+	Think of these screens as a <b><i>"Menu"</b></i> - they show you what each upgrade will cost 
+	<font class="body-blue">If you chose to include it - THE PRICES ARE SHOWN INCLUDES PST IF APPLICABLE. GST IS EXTRA.</font> 
+	<br>
+	<br>
+	<font size="3" color="#FED82F" ><b>How do you select?<b></font> Click on each main Section (Lobby, Dining Area, Main Bedroom etc…) - then work through each of the Sub Sections available (Floor, Walls Ceiling etc…). You will see a range of alternatives we are offering - click on each main Group (Hardwood, Tile …etc) and you will see the various stages of Upgrade. To select an Option, Click on the Button and, if you see a drop down box, click on the down arrow to see the range of colours or styles. Here is an example:
+											</td>
+										</tr>
+										<tr>
+											<td align="center">
+												<img border=0 src="instructions.gif">
+											</td>
+										</tr>
+										<tr>
+											<td class="body-green">
+	<br>
+	Work your way through each of the sections - you'll see we've included images wherever possible to help you visualise the materials. 
+	To view the image in a bigger size, simply <font class="body-blue">move mouse over</font> the image, a bigger image will be displayed. 
+	<font class="body-blue">Click on the image</font> brings a window that shows you the colours available for that option and a larger image of one of the colours.
+	<br>
+	<br>
+	When the window is displayed, if you run your mouse over the small colours, the larger image will change so you can get a better idea of the colour. 
+	When you have selected the colour you want, make sure it appears in the larger image and then press the "Apply Selection" Button - 
+	this will copy the information into your database. When you have finished making your selection, press the "Close" Button.	
+	<br>
+	<br>
+	Please be aware that the Internet runs at a very low graphics resolution. While we have taken every effort to show Options colours correctly, <font class="body-blue">they may not be exact</font>. 
+	<br>
+	<br>
+	We cannot be held responsible if the colours you select do not match your expectations.
+	<br>
+	<br>
+	<font class="body-blue">Once you have finished a section, press the "SAVE" button at the bottom of each screen to save your choices. DON'T WORRY - you can easily change your mind and select different Options later.</font> At any time, you can press the "Preview My Selections" Button to see what you have chosen and your running total costs.
+	<br>
+	<br>
+	Finally, <font class="body-blue">all</font> of these selections will be reviewed at a Final Meeting with an interior designer at H.O.M.E.(Home Options made Easy) Center,
+	who will check with you that you have really selected what you want. Then, you will be asked to sign off on your selections - <font class="body-blue">AFTER YOU SIGN OFF YOUR SELECTIONS, NO MORE CHANGES ARE POSSIBLE</font>.
+	<br>
+	<br>
+	We reserve the right to change the Options and Upgrades <font class="body-blue">prices at any time up to when you finally sign off - after you have signed off, we will Guarantee the Prices.</font>
+	<br>
+											</td>
+										</tr>
+										<tr>
+											<td align="center">
+												<form action="display_upgrades.phtml" method="post" name="OptionsUpgrades">
+												<input type="hidden" name="SectionID" value="<?echo $SectionID;?>">
+												<input type="submit" name="submit" value="Proceed to Options and Upgrades"><br>
+												</form>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+
+</body>
+
+</html>

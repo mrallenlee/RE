@@ -1,0 +1,693 @@
+<?
+include_once "main_include.phtml";
+
+if ($showTotalCost){
+	include_once "PO/POAction.phtml";	
+}
+// set the security level to be 2 for this page
+check_auth(HOMEOPTIONS);
+
+// expect
+// mode : visitor, purchaser
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
+
+<script language="JavaScript">
+<!--
+function dump_data()
+{
+	document.search_purchaser.dumpdata.value = 1;
+	document.search_purchaser.submit();
+}
+
+function listAll(){
+	var checkedValue = 0;
+	if (document.getElementById('ShowTotalCostCheckBox').checked == true){
+		checkedValue = 1;
+	}
+	window.location='<?= $PHP_SELF; ?>?listall=1&mode=<?= $mode;?>&orderby=<?= $orderby; ?>&showTotalCost=' + checkedValue; 
+}
+
+function listOrderBy(orderBy){
+	var checkedValue = 0;
+	if (document.getElementById('ShowTotalCostCheckBox').checked == true){
+		checkedValue = 1;
+	}
+	window.location='<?= $_SERVER['PHPSELF']; ?>?<?= $search_criterion; ?><?
+		if ($listall == 1){
+			print "&listall=1";	
+		}
+	?>&mode=<?= $mode;?>&orderby=' + orderBy + '&showTotalCost=' + checkedValue; 
+}
+//-->
+</script>
+
+	<H3><?= get_project_name($PHP_SELF); ?></H3>
+
+	<H4>Search <?= $mode=="purchaser" ? "Purchaser" : "Visitor"; ?></H4>
+
+	<FORM NAME="search_purchaser" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+
+		<TABLE>
+
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+
+		<INPUT TYPE="HIDDEN" NAME="mode" VALUE="<?= $mode;?>">
+
+		<TR CLASS="blank">
+
+			<TD>First Name : </TD>
+
+			<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+
+			<TD>Last Name : </TD>
+
+			<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+
+		</TR>
+
+	
+
+		<TR CLASS="blank">
+
+
+			<TD>Home Phone  : </TD>
+
+			<TD><INPUT TYPE="TEXT" NAME="search_PhoneNumber" VALUE="<?= $search_PhoneNumber; ?>"></TD>
+
+<?
+
+		if ($mode=="purchaser")
+
+		{
+
+?>
+
+			<TD>Unit Number  : </TD>
+
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>			
+<?
+
+		}
+
+		if ($mode=="visitor")
+
+		{
+
+?>
+			<TD COLSPAN="2"><INPUT TYPE="CHECKBOX" NAME="withPurchaser" VALUE="1"> Include Purchaser Info (Only for dumping data) </TD>
+<?
+		}
+?>
+
+		</TR>
+
+		<tr>
+			<td colspan=2><input id="ShowTotalCostCheckBox" type="CHECKBOX" name="showTotalCost" value="1" <? if ($showTotalCost == 1) print " CHECKED "; ?>>Show Total Cost</td>
+		</tr>
+		
+		<TR CLASS="blank">
+
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+
+		</TR>
+		<TR>
+
+			<TD COLSPAN="5" ALIGN="LEFT" CLASS="blank">
+
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listAll();">
+
+<?
+?>
+
+			</TD>
+
+		</TR>
+
+		</TABLE>
+
+	</FORM>
+
+<?
+
+// init var
+
+$searchFor = "";
+
+$sql = "SELECT ";
+
+if ($mode == "visitor")
+
+{
+
+	$sql .= " VisitorID, RegistrationNumber, Source, ";
+
+}
+
+else if ($mode == "purchaser")
+
+{
+
+	$sql .= " User.UserID, ";
+
+}
+
+
+
+$sql .= " FirstName, LastName,RegistrationDate, UnitTypeDesired, PriceRange, PhoneNumber, City, PostalCode, BrokerAgentName";
+
+
+
+if ($mode == "visitor")
+
+{
+
+	$sql .= " FROM Visitor ";
+
+}
+
+else if ($mode == "purchaser")
+
+{
+
+	$sql .= ", User.UnitNumber, Unit.Model, ContractorReport, UserReport, UserUpgradeOptionStatus.Commit " .
+			" FROM Unit, User LEFT JOIN UserUpgradeOptionStatus " .
+			" ON UserUpgradeOptionStatus.UnitNumber = User.UnitNumber ";
+
+}
+
+
+
+$sql .= " WHERE 1=1 ";
+
+
+
+if ($mode == "purchaser")
+
+{
+
+	$sql .= " AND DealStatus != \"Rescinded\" " . 
+		" AND User.UnitNumber = Unit.UnitNumber";
+
+}
+
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$HTTP_GET_VARS;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+
+		{
+
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+
+				if ($mode == "purchaser" && ($search_field == "FirstName" || $search_field == "LastName"))
+
+					$sql_cond = " AND (" . $search_field . " LIKE '" . $val . "' OR AdditionalPurchaser1" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser2" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser3" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser4" . 
+
+					$search_field . " LIKE '" . $val . "')";
+
+				else if ($search_field == "RegistrationDateFrom")
+					$sql_cond .= " AND RegistrationDate >= '" . $val . "'";
+
+				else if ($search_field == "RegistrationDateTo")
+					$sql_cond .= " AND RegistrationDate <= '" . $val . "'";
+
+				else if ($search_field == "UnitNumber")
+					$sql_cond .= " AND User.UnitNumber like '" . $val . "'";
+
+				else
+
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+
+				$sql .= $sql_cond;
+				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+
+		}
+
+	}
+
+	if ($dumpdata == 1)
+	{
+		$dumpCSVLocation = "./dumpCSV.phtml?";
+
+		if ($mode == "visitor")
+		{
+			$dumpCSVLocation .= "table=Visitor&include_purchaser=" . $withPurchaser;
+		}
+
+		else if ($mode == "purchaser")
+		{
+			$dumpCSVLocation .= "table=User&rescission=0";
+		}
+		
+		$dumpCSVLocation .= "&sql_cond=" . $sql_cond;
+
+		goto_url($dumpCSVLocation);
+	}
+
+	// if no search criteria, don't do any search
+
+	if ($hasSearchValue == false)
+
+	{
+
+		die();
+
+	}
+
+}
+
+else
+
+{
+
+	$search_criterion .= "&listall=1";
+
+}
+
+
+if ($type == "web")
+{
+	$sql .= " AND DealStatus='WebReserved'";
+	$search_criterion .= "&type=web";
+
+}
+
+if ($orderby != "")
+
+{
+
+	$sql .= " ORDER BY $orderby";
+
+}
+
+else
+
+{
+
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", LastName, FirstName";
+
+}
+
+
+
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+
+
+
+?>
+
+
+
+	<H4>List <?= $mode;?>s</H4>
+
+	<TABLE BORDER=0>
+
+<?
+
+		if ($searchFor != "")
+
+		{
+
+?>
+
+		<TR CLASS="blank">
+
+			<TD COLSPAN="10">Search for <?= $searchFor; ?><BR><BR></TD>
+
+		</TR>
+
+<?
+
+		}
+
+?>
+
+		<TR CLASS="head">
+
+<?
+
+		if ($mode == "purchaser")
+
+		{
+
+?>
+
+			<TD><A HREF ="javascript:listOrderBy('ContractorReport');">Contractor Report</A></TD>
+
+			<TD><A HREF ="javascript:listOrderBy('UserReport');">User Report</A></TD>
+
+			<TD><A HREF ="javascript:listOrderBy('Commit');">Locked?</A></TD>
+
+<?
+
+		}
+
+?>
+
+			<TD><A HREF ="javascript:listOrderBy('FirstName,LastName');">FirstName</A></TD>
+
+			<TD><A HREF ="javascript:listOrderBy('LastName,FirstName');">LastName</A></TD>
+
+<?
+
+		if ($mode == "visitor")
+
+		{
+
+?>
+
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&orderby=RegistrationNumber,LastName,FirstName">Register Number</A></TD>
+
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&orderby=UnitTypeDesired,LastName,FirstName">Type</A></TD>
+
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&orderby=PriceRange,LastName,FirstName">Price Range</A></TD>			
+
+<?
+
+		}
+
+		else
+
+		{
+
+?>
+
+			<TD><A HREF ="javascript:listOrderBy('<?= getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>,LastName,FirstName');">Unit Number</A></TD>			
+			<TD><A HREF ="javascript:listOrderBy('<?= getOrderClause(array("columnName"=>"User.UnitType", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>,LastName,FirstName');">Unit Type</A></TD>			
+
+<?
+
+		}
+
+?>
+
+			<TD><A HREF ="javascript:listOrderBy('PhoneNumber,LastName,FirstName');">Phone</A></TD>
+<?		if ($showTotalCost){
+?>			<TD>Total Cost</TD>
+<?		}		
+?>
+			<TD COLSPAN=4>Actions</TD>
+
+<?
+
+		if ($mode == "visitor")
+
+		{
+
+?>
+
+			<TD><A HREF ="<?= $PHP_SELF;?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&orderby=Source,LastName,FirstName">Source</A></TD>
+
+<?
+
+		}
+
+?>
+
+		</TR>
+
+		<form name="update_purchaser" action="update_purchaser.phtml" method="post">
+
+<?
+
+		while ($row = mysql_fetch_array($result))
+
+		{				
+			$url = SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/userListing.phtml?action=display&mode=$mode&";
+
+			if ($mode == "visitor")
+			{
+				$url .= "VisitorID=" . $row['VisitorID'];
+			}
+
+			else if ($mode == "purchaser")
+			{				
+			 	$url .= "UserID=" . $row['UserID'];
+			}
+			
+			if ($row['Commit'])
+			{
+				$Commit = "Yes";
+			}
+			else
+			{
+				$Commit = "No";
+			}
+
+			displayMouseOverTR();
+			if ($mode == "purchaser")
+			{
+?>
+				<TD><CENTER><INPUT TYPE="checkbox" name="<?= $row['UserID']?>_ContractorReport"
+<?
+
+				if ( ($row['ContractorReport'] == 1 && !isSet($select_locked_contractor_report) ) ||  
+
+					( ($row['ContractorReport'] == 1 || $row['Commit'] == 1) && $select_locked_contractor_report == 1)  ||
+
+					($row['ContractorReport'] == 1 && $row['Commit'] == 0 ) )			
+
+				{
+
+?>
+
+					 CHECKED
+
+<?
+
+				}
+
+?>
+
+				></CENTER></TD>
+
+				<TD><CENTER><INPUT TYPE="checkbox" name="<?= $row['UserID']?>_UserReport"
+
+<?
+
+				if ( ($row['UserReport'] == 1 && !isSet($select_locked_user_report) ) ||  
+
+					( ($row['UserReport'] == 1 || $row['Commit'] == 1) && $select_locked_user_report == 1)  ||
+
+					($row['UserReport'] == 1 && $row['Commit'] == 0 ) )		
+
+				{
+
+?>
+
+					 CHECKED
+
+<?
+
+				}
+
+?>
+
+				></CENTER></TD>
+
+				<TD><CENTER><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_Commit"
+
+<?
+
+				
+				if ($row['Commit'] == 1) 
+				{
+?>					 CHECKED
+<?				} else { 
+?>					DISABLED 
+<?				}	
+?>				></CENTER></TD>
+<?			}
+?>		
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['FirstName']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['LastName']; ?></A></TD>
+
+<?
+
+			if ($mode == "visitor")
+
+			{
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['VisitorID']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitTypeDesired']; ?></A></TD>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['PriceRange']; ?></A></TD>
+
+<?
+
+			}
+
+			else
+
+			{
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['Model']; ?></A></TD>
+
+<?
+
+			}
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['PhoneNumber']; ?></A></TD>
+
+<?
+			if ($showTotalCost > 0) {
+?>				<td align="right"><?= calculatePOCostForUser($row['UnitNumber']); ?></td>
+<?			}
+			if ($mode == "visitor")
+
+			{
+
+?>
+
+				<TD><A HREF="<?= $url; ?>"><?= $row['Source']; ?></A></TD>
+
+<?
+
+			}
+
+			else
+
+			{
+
+?>
+
+				<TD><INPUT TYPE="BUTTON" value="Report"
+				onClick="window.location='unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=0&mode=display'" ></TD>
+				<TD><INPUT TYPE="BUTTON" value="Report W/ Price"
+				onClick="window.location='unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=1&mode=edit'" ></TD>
+				<TD><INPUT TYPE="BUTTON" value="Select Upgrades"
+				onClick="window.location='loadUnitSession.phtml?UnitNumber=<?= $row['UnitNumber']; ?>'" ></TD>
+
+<?
+
+			}
+
+?>
+
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UserID']?>_UserID" VALUE="<?= $row['UserID']?>"></TD>
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UnitNumber']?>_UnitNumber" VALUE="<?= $row['UnitNumber']?>"></TD>
+
+			</TR>
+
+<?
+
+		}
+
+
+
+		if ($mode == "purchaser")
+
+		{
+
+?>
+
+			<tr><td colspan="10"><BR><BR><a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_contractor_report=1"><b>Select all locked Units for Contractor Report</b></a>
+
+			| <a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_contractor_report=0"><b>Uselect all locked Units for Contractor Report</b></a>
+
+			</td></tr>
+
+
+
+			<tr><td colspan="10"><a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_user_report=1"><b>Select all locked Units for User Report</b></a>
+
+			| <a href="<?= $PHP_SELF ?>?<?= $search_criterion; ?>&mode=<?= $mode; ?>&select_locked_user_report=0"><b>Uselect all locked Units for User Report</b></a>
+
+			</td></tr>
+
+	
+
+			<tr><td colspan="10"><a href="display_selected_user_report.phtml"><b>Display selected user report</b></a>
+
+			| <a href="javascript:document.forms['update_purchaser'].submit()"><b>Update</b></a>
+
+			</td></tr>
+
+<?
+
+		}
+
+?>
+
+	
+
+	</FORM>
+
+	</TABLE>
+
+<?
+
+	if (isSet($err))
+
+	{
+
+?>
+
+<script language="JavaScript">
+
+<!--
+
+	alert('<?= $err; ?>');
+
+//-->
+
+</SCRIPT>
+
+<?	
+
+	}
+
+?>
+
+</BODY>
+
+</HTML>
+

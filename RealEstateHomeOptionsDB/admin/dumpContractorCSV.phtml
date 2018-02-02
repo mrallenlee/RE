@@ -1,0 +1,221 @@
+<?
+$not_include_javascript = 1;
+include "main_include.phtml";
+
+# $mode : web/csv
+
+function printStandardPO($contractorName, $contractorID){
+	global $mode;
+	global $db;
+	
+	// change sql to use StandardPO table.
+	$sql = "SELECT Unit.UnitNumber AS UnitNumber, Unit.Model As UnitType, Section.SectionID As SectionID,
+			Section.Name As SectionName, Subsection.Name As SubsectionName,
+			Item.Name As ItemName, Options.Name As OptionName, Choice.Name As ChoiceName, 
+			StandardPO.Cost AS  ContractorPrice
+			FROM Unit, UserUpgradeOptionStatus, Section, Subsection, Item, Options, StandardPO
+			LEFT JOIN Choice
+			ON StandardPO.ChoiceID = Choice.ChoiceID
+			AND StandardPO.OptionID = Choice.OptionID
+			LEFT JOIN User
+			ON StandardPO.UnitNumber = User.UnitNumber
+			AND User.DealStatus <> 'Rescinded'
+			AND User.ContractorReport = 1
+			WHERE StandardPO.UnitNumber = Unit.UnitNumber
+			AND Unit.UnitNumber = UserUpgradeOptionStatus.UnitNumber
+			AND UserUpgradeOptionStatus.Commit = 1
+			AND Section.SectionID = Subsection.SectionID
+			AND Subsection.SubsectionID = Item.SubsectionID
+			AND StandardPO.ItemID = Item.ItemID 
+			AND StandardPO.OptionID = Options.OptionID
+			AND StandardPO.ContractorID = '" . $contractorID . "'" .  
+			" ORDER BY UnitNumber, Section.SectionID, Subsection.SubsectionID, Item.ItemID";
+				
+	$result_trades = executeSql($sql);
+	
+	while ($row_trades = mysql_fetch_array($result_trades))
+	{
+//		if (section_disabled($row_trades['UnitType'], $row_trades['SectionID']))
+//			continue;
+
+		$price = convertPriceConstantToString($row_trades['ContractorPrice']);
+
+		if (is_numeric($price))
+		{
+			$price = "$" . number_format($price);
+		}
+
+		if ($mode == "csv"){
+//			fputs ($out, $row_contractor['ContractorName'] . "\t" . $row_trades['UnitNumber'] . "\t" .$row_trades['UnitType'] . "\t" .
+//			$row_trades['SectionName'] . "\t" .$row_trades['SubsectionName'] . "\t" .$row_trades['OptionName'] . "\t" .
+//			$row_trades['ChoiceName'] . "\t" .$price. "\r\n");
+			print ("\"" . $contractorName . "\",\"" . $row_trades['UnitNumber'] . "\",\"" .$row_trades['UnitType'] . "\",\"" .
+			urldecode($row_trades['SectionName']) . "\",\"" . urldecode($row_trades['SubsectionName']) . "\",\"" . urldecode($row_trades['OptionName']) . "\",\"" .
+			urldecode($row_trades['ChoiceName']) . "\",\"" .$price. "\"\r\n");
+		}
+		else if ($mode == "web"){
+			displayMouseOverTR();
+?>
+			<td><?= $contractorName;?></td>
+			<td><?= $row_trades['UnitNumber'];?></td>
+			<td><?= $row_trades['UnitType'];?></td>
+			<td><?= $row_trades['SectionName'];?></td>
+			<td><?= $row_trades['SubsectionName'];?></td>
+			<td><?= $row_trades['OptionName'];?></td>
+			<td><?= $row_trades['ChoiceName'];?></td>
+			<td><?= $price;?></td>
+		</tr>
+<?			
+		}
+	}	
+} // printStandardPO
+
+function printNonStandardPO($contractorName, $contractorID){	// handle Non-Standard PO
+	global $mode;
+	
+	$sql = "SELECT Unit.UnitNumber AS UnitNumber, Unit.Model As UnitType, Section.SectionID As SectionID,
+			Section.Name As SectionName, Subsection.Name As SubsectionName,			
+			NonStandardPO.Cost AS  ContractorPrice, NonStandardPO.Description
+			FROM UserUpgradeOptionStatus, Section, Subsection, NonStandardPO, Unit
+			LEFT JOIN User
+			ON Unit.UnitNumber=User.UnitNumber
+			AND User.DealStatus <> 'Rescinded'
+			AND User.ContractorReport = 1
+			WHERE NonStandardPO.UnitNumber = Unit.UnitNumber
+			AND Unit.UnitNumber = UserUpgradeOptionStatus.UnitNumber
+			AND UserUpgradeOptionStatus.Commit = 1
+			AND Section.SectionID = Subsection.SectionID
+			AND Subsection.SubsectionID = NonStandardPO.SubsectionID
+			AND Section.SectionID = NonStandardPO.SectionID
+			AND NonStandardPO.ContractorID = '" . $contractorID . "'" .  
+			" ORDER BY UnitNumber, Section.SectionID, Subsection.SubsectionID";
+				
+	$result_trades = executeSql($sql);
+	
+	while ($row_trades = mysql_fetch_array($result_trades))
+	{
+		$price = convertPriceConstantToString($row_trades['ContractorPrice']);
+
+		if (is_numeric($price))
+		{
+			$price = "$" . number_format($price);
+		}
+
+		if ($mode == "csv"){
+//			fputs ($out, $row_contractor['ContractorName'] . "\t" . $row_trades['UnitNumber'] . "\t" .$row_trades['UnitType'] . "\t" .
+//			$row_trades['SectionName'] . "\t" .$row_trades['SubsectionName'] . "\t" .$row_trades['OptionName'] . "\t" .
+//			$row_trades['ChoiceName'] . "\t" .$price. "\r\n");
+			print ($contractorName. "," . $row_trades['UnitNumber'] . "," .$row_trades['UnitType'] . "," .
+			$row_trades['SectionName'] . "," .$row_trades['SubsectionName'] . "," .$row_trades['Description'] . "," .
+			"," .$price. "\r\n");
+		}
+		else if ($mode == "web"){
+			displayMouseOverTR();
+?>
+			<td><?= $contractorName;?></td>
+			<td><?= $row_trades['UnitNumber'];?></td>
+			<td><?= $row_trades['UnitType'];?></td>
+			<td><?= $row_trades['SectionName'];?></td>
+			<td><?= $row_trades['SubsectionName'];?></td>
+			<td colspan=2><?= $row_trades['Description'];?></td>
+			<td><?= $price;?></td>
+		</tr>
+<?			
+		}
+	}	
+} // printNonStandardPO
+
+//--------------------------------------------------------------------------------
+if (!isset($mode)){
+	$mode = "web";
+}
+
+if ($mode == "csv"){	
+	$filename = "ContractorDump.csv";
+	header('Content-type: application/excel');
+	header('Content-Disposition: attachment; filename="' . $filename . '"');
+	
+	//readfile($filename);
+	//	
+	//// create output file name and open it
+	//$out = fopen ("./" . $filename, "w+") or die("Error: Cannot open " . $filename . " to write");
+	}
+else if ($mode == "web" || $mode == "displayOptions"){
+	print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); 
+}
+
+		if ($mode == "displayOptions"){
+?>
+<tr>
+	<td><BR><BR><INPUT TYPE="BUTTON" VALUE="Dump TXT for All Contractor, All Locked Unit" onClick="window.location='./dumpContractorCSV.phtml?mode=csv'"></td>
+</tr>
+<?
+			return;
+		}
+
+
+$sql = "SELECT ContractorID, ContractorName FROM Contractor";
+$result_contractor = mysql_query($sql) or die("SQL ERROR :\n" . mysql_error() . "<BR>Full SQL:<BR>" . $sql . "<BR>" . $PHP_SELF);
+	
+// print column title
+if ($mode == "csv"){
+	print ("Contractor,Unit Number,Unit Type,Section,Subsection,Option,Choice,Price\r\n");
+}
+else if ($mode == "web"){
+	// Standard PO
+?>
+	<table>
+	<tr class="head">
+		<td>Contractor</td>
+		<td>Unit Number</td>
+		<td>Unit Type</td>
+		<td>Section</td>
+		<td>Subsection</td>
+		<td>Option</td>
+		<td>Choice</td>
+		<td>Price</td>
+	</tr>
+<?
+}
+while ($row_contractor = mysql_fetch_array($result_contractor))
+{
+	printStandardPO($row_contractor['ContractorName'], $row_contractor['ContractorID']);
+}
+// print Noin Standard column title
+if ($mode == "csv"){
+	print "\r\n\r\n";
+	print ("Contractor,Unit Number,Unit Type,Section,Subsection,Description,,Price\r\n");
+}
+else if ($mode == "web"){
+	// Standard PO
+?>
+	<table>
+	<tr class="head">
+		<td>Contractor</td>
+		<td>Unit Number</td>
+		<td>Unit Type</td>
+		<td>Section</td>
+		<td>Subsection</td>
+		<td colspan=2>Description</td>
+		<td>Price</td>
+	</tr>
+<?
+}
+mysql_data_seek($result_contractor, 0);
+while ($row_contractor = mysql_fetch_array($result_contractor))
+{
+	printNonStandardPO($row_contractor['ContractorName'], $row_contractor['ContractorID']);	
+}
+
+if ($mode == "web"){
+?>
+	</table>
+	
+<tr>
+	<td><BR><BR><INPUT TYPE="BUTTON" VALUE="Dump TXT for All Contractor, All Locked Unit" onClick="window.location='./dumpContractorCSV.phtml?mode=csv'"></td>
+</tr>
+	
+</html>	
+<?
+}
+?>

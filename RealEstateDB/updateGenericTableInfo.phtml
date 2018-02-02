@@ -1,0 +1,63 @@
+<?
+include "main_include.phtml";
+// expecting 
+// $action : add, edit, delete
+// $table : city, package
+// set the security level to be 2 for this page
+check_auth(2);
+
+if (!isSet($table))
+{
+	die("Invalid query. \"table\" is not defined");
+}
+
+if ($action == "delete")
+{
+	$sql = "DELETE FROM " . $table . "_list WHERE $table=\"" . decode_dot(urldecode($record)) . "\"";
+	$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+}
+else
+{
+	if ($action == "add")
+	{
+		$sql = "INSERT INTO " . $table . "_list SET ";
+		$sql .= " $table=\"" . $Data . "\"";
+		$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+	}
+	else if ($action == "edit")
+	{
+		$sqlPrefix = "UPDATE " . $table . "_list SET ";
+		
+		$values=$HTTP_POST_VARS;
+		//loop that adds the field names and values
+		foreach($values as $key=>$val)
+		{
+			$key = decode_dot($key); // becuase PHP doesn't var to have dot inside, so use encode_dot, and decode_dot to encode the dot
+			$pos = strpos($key, "_" . $table);
+			if ($pos > 0)
+			{
+				$sql = $sqlPrefix . " $table=\"" . $val . "\" WHERE $table=\"" . urldecode(substr($key, 0, $pos)) . "\""; 
+				$result = mysql_query($sql) or log_err_die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql, $PHP_SELF);
+			}
+		}
+	}
+}
+
+if (isSet($forward))
+{
+//die(urldecode($forward));
+	$forward = urldecode($forward);
+	if (isSet($back))
+	{
+		$back--;
+		$forward . "&back=" . $back;
+	}
+	goto_url($forward);
+	die();
+}
+?>
+	<script language="JavaScript">
+	<!--
+		history.back(<?= $back; ?>);
+	//-->
+	</script>

@@ -1,0 +1,251 @@
+<?
+include "main_include.phtml";
+
+
+// This file displays the User table. The file that displays all of
+// the Options and Upgrades tables is called display_user.phtml
+
+die("This page should not be displayed.");
+?>
+<html>
+
+<head>
+<title>Admin</title>
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+
+<table cellspacing="0" cellpadding="0" border="0" !width="700">
+<tr>
+<td>
+<font face="Verdana,Arial,Helvetica" size="1">
+
+
+
+<a href="display_user.phtml"><font size="2"><b>Users</b></font></a><br>
+<br>
+
+<?
+
+if (!$table_name)
+{
+	$table_name = "User";
+}
+
+// if $UserID exists then print the name
+if ($UserID)
+{
+	$sql	= "SELECT FirstName, LastName
+				FROM User
+				WHERE UserID = $UserID";
+	$result = mysql_query($sql,$db);
+	
+	$row = mysql_fetch_array($result);
+	$FirstName = $row['FirstName'];
+	$LastName = $row['LastName'];
+	
+	echo "<nobr><img src=\"../login/spacer.gif\" width=\"15\" height=\"1\" border=\"0\">• User: <a href=\"display_user.phtml?table_name=User&UserID=$UserID\">$FirstName $LastName</a></nobr><br>\n";
+	echo "<br>\n";
+}
+
+?>
+
+<table cellspacing="0" cellpadding="5" border="0" width="100%">
+<tr>
+<td><?
+
+// this image spacer indents the tables
+if ($table_name == "User")
+{
+	echo "<img src=\"../login/spacer.gif\" width=\"15\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "UserSave")
+{
+	echo "<img src=\"../login/spacer.gif\" width=\"30\" height=\"1\" border=\"0\">";
+}
+elseif ($table_name == "UnitType")
+{
+	echo "<img src=\"../login/spacer.gif\" width=\"5\" height=\"1\" border=\"0\">";
+}
+
+?></td>
+<td><font face="Arial,Verdana,Helvetica" size="2">
+
+<?
+
+if ($table_name)
+{
+
+	echo "<img src=\"../login/black.gif\" width=\"700\" height=\"1\" border=\"0\"><br>\n";
+	
+	if ($UserID)
+	{
+		echo "<font size=\"4\">$FirstName $LastName";
+	}
+	else
+	{
+		if ($table_name == "UnitType")
+		{
+			echo "<font size=\"4\">Unit Types";
+		}
+		else
+		{
+			echo "<font size=\"4\">List of all Users";
+		}
+	}
+	
+	echo "</font>";
+	
+	if ($user_message)
+	{
+		echo "<br>\n<br>\n" . $user_message;
+	}
+}
+
+// display table (User)
+if ($table_name == "User")
+{
+	$sql	= "SELECT	User.UserID AS UserID,
+				FirstName,
+				LastName,
+				Login,
+				Passwd,
+				User.UnitNumber AS UnitNumber,
+				Commit,
+				Address,
+				PostalCode,
+				City,
+				Country,
+				PhoneNumber,
+				Email,
+				ContractorReport,
+				UserReport,
+				Unit.UnitType AS UnitType
+			FROM User
+			LEFT JOIN Unit
+			ON Unit.UserID=User.UserID
+			ORDER BY UnitNumber";
+	$result = mysql_query($sql,$db) or die("Error : " . mysql_error() . " <BR>" . $sql);
+	
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Contractor Report</b></font></td>\n";	
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>User Report</b></font></td>\n";	
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Last Name</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>First Name</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Login</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Unit Number</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Unit Type</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>Locked?</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>E-Mail</b></font></td>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+	echo "<form name=\"user_update\" action=\"update_user.phtml\" method=\"post\">";
+	// print out rows to the table
+	while ($row = mysql_fetch_array($result))
+	{
+		if ($row['Commit'])
+		{
+			$Commit = "Yes";
+		}
+		else
+		{
+			$Commit = "No";
+		}
+		
+		echo "<tr>\n";
+//		echo "<input type=\"hidden\" name=\"table_name\" value=\"User\">";
+//		echo "<input type=\"hidden\" name=\"UserID\" value=\"" . $row['UserID'] . "\">";		
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><center><input type=\"checkbox\" name=\"" . $row['UserID'] . "_ContractorReport\"";
+		if ( ($row['ContractorReport'] == 1 && !isSet($select_locked_contractor_report) ) ||  
+			( ($row['ContractorReport'] == 1 || $row['Commit'] == 1) && $select_locked_contractor_report == 1)  ||
+			($row['ContractorReport'] == 1 && $row['Commit'] == 0 ) )			
+		{
+			echo " checked ";
+		}
+		echo "></center></font></td>\n";		
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><center><input type=\"checkbox\" name=\"" . $row['UserID'] . "_UserReport\"";
+//		if ($row['UserReport'] == 1)
+		if ( ($row['UserReport'] == 1 && !isSet($select_locked_user_report) ) ||  
+			( ($row['UserReport'] == 1 || $row['Commit'] == 1) && $select_locked_user_report == 1)  ||
+			($row['UserReport'] == 1 && $row['Commit'] == 0 ) )		
+		{
+			echo " checked ";
+		}
+		echo "></center></font></td>\n";		
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">" . $row['LastName'] . "</font></td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">" . $row['FirstName'] . "</font></td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">" . $row['Login'] . "</font></td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">" . $row['UnitNumber'] . "</font></td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\">". $row['UnitType']. "</font></td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><center><input type=\"checkbox\" name=\"" . $row['UserID'] . "_Commit\"";
+//		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"" . $row['UserID'] . "_LastName\" size=\"10\" value=\"" . $row['LastName'] . "\"></font></td>\n";
+//		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"" . $row['UserID'] . "_FirstName\" size=\"10\" value=\"" . $row['FirstName'] . "\"></font></td>\n";
+//		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"" . $row['UserID'] . "_Login\" size=\"10\" value=\"" . $row['Login'] . "\"></font></td>\n";
+//		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"" . $row['UserID'] . "_UnitNumber\" size=\"5\" value=\"" . $row['UnitNumber'] . "\"></font></td>\n";
+//		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"" . $row['UserID'] . "_UnitType\" size=\"5\" value=\"" . $row['UnitType'] . "\"></font></td>\n";
+		if ($row['Commit'] == 1) 
+		{
+			echo " checked ";
+		}
+		echo  "></center></font></td>\n";
+		echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"" . $row['UserID'] . "_Email\" value=\"" . $row['Email'] . "\"></font></td>\n";
+		echo "<td><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><nobr><a href=\"unit_no_contractor.phtml?UnitNumber=" . $row['UnitNumber'] . "\">Report</a>&nbsp;|&nbsp;<a href=\"file_management.phtml?table_name=$table_name&UserID=" . $row['UserID'] . "\">File Management</a>
+		<!--| <a href=\"row_edit.phtml?table_name=$table_name&UserID=" . $row['UserID'] . "\">Details</a> |-->
+		<!--<a href=\"row_delete.phtml?table_name=$table_name&UserID=" . $row['UserID'] . "\">Delete</a></nobr></font>--></td>\n";
+		echo "</tr>\n";
+	}
+	
+		
+	echo "<tr><td colspan=\"10\">";
+	echo "<a href=\"$PHP_SELF?select_locked_contractor_report=1\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Select all locked Units for Contractor Report</b></font></a>";
+	echo " | <a href=\"$PHP_SELF?select_locked_contractor_report=0\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Uselect all locked Units for Contractor Report</b></font></a>";
+	echo "</td></tr>";
+
+	echo "<tr><td colspan=\"10\">";
+	echo "<a href=\"$PHP_SELF?select_locked_user_report=1\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Select all locked Units for User Report</b></font></a>";
+	echo " | <a href=\"$PHP_SELF?select_locked_user_report=0\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Uselect all locked Units for User Report</b></font></a>";
+	echo "</td></tr>";
+	
+	echo "<tr><td colspan=\"10\">";
+	echo "<a href=\"display_selected_user_report.phtml\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Display selected user report</b></font></a>";
+	echo "</td></tr>";
+	
+	echo "<tr><td colspan=\"10\">";
+	echo "<a href=\"javascript:document.forms['user_update'].submit()\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Update</b></font></a>";
+//	echo " | <a href=\"row_edit.phtml?table_name=User\"><font face=\"Verdana,Arial,Helvetica\" size=\"2\"><b>Add new user</b></font></a>";
+	echo "</td></tr>";
+	echo "</form>";
+
+	// end HTML table
+	echo "</table>\n";
+}
+
+?>
+
+</font></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+
+
+</font>
+</td>
+</tr>
+<tr>
+<td><font face="Verdana,Arial,Helvetica" size="2"><b><br>
+<br>
+<a href="display_table.phtml?table_name=UnitType">Unit Types</a><br>
+<a href="display_table.phtml">Options and Upgrades</a><br>
+<a href="display_contractor.phtml">Contactors</a><br>
+<a href="contractor_pay.phtml">Contactor Payment Totals</a></br>
+<a href="disable_section.phtml">Disable Section by Unit Type</a></b></font></td>
+<tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,249 @@
+<?php
+// DO_Class web server skeleton
+//
+// sample request and response XML
+/*
+<request>
+		<class>DO_class</class>
+		<function>find</function>
+	<parameters>
+		<parameter>user</parameter>
+		<parameter>
+			<condition>login_name='abc'</condition>
+		</parameter>
+	</parameters>
+</request>
+
+<response>
+	<request>
+		<class>DO_class</class>
+		<function>find</function>
+		<parameters>
+			<parameter>user</parameter>
+			<parameter>
+				<condition>login_name='abc'</condition>
+			</parameter>
+		</parameters>
+	</request>
+	<array>
+		<DataObject>
+			<user>
+				<login_name>abc</login_name>
+				<email>abc@hotmail.com</email>
+				<first_name>xxx</first_name>
+			</user>
+		</DataObject>
+	</array>
+</response>
+
+*/
+error_reporting(E_ALL);
+#include 'DO_class.phtml';
+
+// get input request XML
+$req = file_get_contents('php://input'); 
+
+if (version_compare("5.0.0", phpversion(), "<")){
+	// PHP5
+	function xml2array($xml)
+	{
+		if(gettype($xml) == 'string') {
+			$domnode = new DOMDocument();
+			$domnode->loadXML($xml);
+		} else {
+			$domnode = $xml;
+		}
+		
+	   $nodearray = array();
+	   $domnode = $domnode->firstChild;
+	   while (!is_null($domnode))
+	   {
+	       $currentnode = $domnode->nodeName;
+	       switch ($domnode->nodeType)
+	       {
+	           case XML_TEXT_NODE:
+	               if(!(trim($domnode->nodeValue) == "")) $nodearray['cdata'] = $domnode->nodeValue;
+	           break;
+	           case XML_ELEMENT_NODE:
+	               if ($domnode->hasAttributes() )
+	               {
+	                   $elementarray = array();
+	                   $attributes = $domnode->attributes;
+	                   foreach ($attributes as $index => $domobj)
+	                   {
+	                       $elementarray[$domobj->name] = $domobj->value;
+	                   }
+	               }
+	           break;
+	       }
+	       if ( $domnode->hasChildNodes() )
+	       {
+	           $nodearray[$currentnode][] = xml2array($domnode);
+	           if (isset($elementarray))
+	           {
+	               $currnodeindex = count($nodearray[$currentnode]) - 1;
+	               $nodearray[$currentnode][$currnodeindex]['@'] = $elementarray;
+	           }
+	       } else {
+	           if (isset($elementarray) && $domnode->nodeType != XML_TEXT_NODE)
+	           {
+	               $nodearray[$currentnode]['@'] = $elementarray;
+	           }
+	       }
+	       $domnode = $domnode->nextSibling;
+	   }
+	   return $nodearray;
+	}
+} else {
+	
+	// PHP4
+	function xml2array($xml)
+	{
+		if(gettype($xml) == 'string') {
+			$domnode = domxml_open_mem($xml,DOMXML_LOAD_PARSING,$error);
+		} else {
+			$domnode = $xml;
+		}
+	
+		$nodearray = array();
+		$domnode = $domnode->first_child();
+		   
+		while (!is_null($domnode))
+		{
+		   $currentnode = $domnode->node_name();
+		   switch ($domnode->node_type())
+		   {
+		       case XML_TEXT_NODE:
+		           if(!(trim($domnode->node_value()) == "")) $nodearray['cdata'] = $domnode->node_value();
+		       break;
+		       case XML_ELEMENT_NODE:
+		           if ($domnode->has_attributes() )
+		           {
+		               $elementarray = array();
+		               $attributes = $domnode->attributes();
+		               foreach ($attributes as $index => $domobj)
+		               {
+		                   $elementarray[$domobj->name] = $domobj->value;
+		               }
+		           }
+		       break;
+		   }
+		   if ( $domnode->has_child_nodes() )
+		   {
+		       $nodearray[$currentnode][] = xml2array($domnode);
+		       if (isset($elementarray))
+		       {
+		           $currnodeindex = count($nodearray[$currentnode]) - 1;
+		           $nodearray[$currentnode][$currnodeindex]['@'] = $elementarray;
+		       }
+		   } else {
+		       if (isset($elementarray) && $domnode->node_type != XML_TEXT_NODE)
+		       {
+		           $nodearray[$currentnode]['@'] = $elementarray;
+		       }
+		   }
+		   $domnode = $domnode->next_sibling();
+		}
+		return $nodearray;
+	}
+}
+
+
+$arr = xml2array($req);
+
+// request validation
+$className = $arr['request'][0]['class'][0]['cdata'];
+
+try {
+	include $className . ".phtml";
+} catch (Exception $e) {
+	doError('invalid request: invalid class name');		
+}
+
+$functionName = $arr['request'][0]['function'][0]['cdata'];
+if ($functionName == "find") {
+	
+	$doName = $arr['request'][0]['parameters'][0]['parameter'][0]['cdata'];
+	if ($doName == "") {
+		doError('invalid request: invalid parameter');	
+	}
+	
+	$paras = array();
+	if (array_key_exists(1, $arr['request'][0]['parameters'][0]['parameter']))
+		foreach( $arr['request'][0]['parameters'][0]['parameter'][1] as $key=>$val ) 
+			$paras[$key] = $val[0]['cdata'];
+			
+} else if ($functionName == "create") {
+	
+	$doNode = $arr['request'][0]['parameters'][0]['parameter'][0]['DataObject'][0];
+	$doName = key($doNode);
+	$dataobject = new DataObject($doName);
+	
+	foreach($doNode[$doName][0] as $key=>$val)
+		$dataobject->setField($key, $val[0]['cdata']);
+} else if ($functionName == "delete") {
+	
+	$doNode = $arr['request'][0]['parameters'][0]['parameter'][0]['DataObject'][0];
+	$doName = key($doNode);
+	$dataobject = new DataObject($doName);
+	
+	foreach($doNode[$doName][0] as $key=>$val)
+		$dataobject->setField($key, $val[0]['cdata']);
+} else if ($functionName == "update") {
+	
+	$doNode = $arr['request'][0]['parameters'][0]['parameter'][0]['DataObject'][0];
+	$doName = key($doNode);
+	$dataobject = new DataObject($doName);
+	
+	foreach($doNode[$doName][0] as $key=>$val)
+		$dataobject->setField($key, $val[0]['cdata']);
+
+	$paras = array();
+	if (array_key_exists(1, $arr['request'][0]['parameters'][0]['parameter']))
+		foreach( $arr['request'][0]['parameters'][0]['parameter'][1] as $key=>$val ) 
+			$paras[$key] = $val[0]['cdata'];
+
+} else {
+	doError('invalid request: invalid function name');	
+}
+
+	// call DOFactory class service
+if ($functionName == "find") {
+	$res = DOFactory::find($doName, $paras);
+} else if ($functionName == "create") {
+	$res = DOFactory::create($dataobject);
+} else if ($functionName == "delete") {
+	$res = DOFactory::delete($dataobject);
+} else if ($functionName == "update") {
+	$res = DOFactory::update($dataobject, $paras);
+}
+
+
+// return XML
+//if ($functionName == "find") {
+	print('<response>' . toXML($res) . '</response>');
+//}
+
+
+function doError($errorMessage) {
+	header("HTTP/1.1 400 Bad Request");
+	header("ERROR_CODE: 2000");	
+	header("ERROR_TEXT: " . $errorMessage);	
+	exit;
+}
+
+
+
+function toXML($obj) {
+	$xml = '';
+	if (is_array($obj)) {
+		foreach ($obj as $o)
+			$xml = $xml . toXML($o);
+		return '<array>'. $xml . '</array>';
+	} 
+	
+	if (is_string($obj)) return '<string>' . $obj . '</string>';
+
+	if (is_object($obj)) return $obj->toXML();
+}
+?>

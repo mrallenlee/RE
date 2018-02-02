@@ -1,0 +1,192 @@
+<?
+include "main_include.phtml";
+// NOTE THIS IS ADMIN VERSION!!!
+// require UserID & UnitType
+// $ShowPrice: 1,0 
+// $mode: display, edit
+
+if (isSet($UserID) && $UserID > 0)
+{
+	// get user info
+	$sql = "SELECT FirstName, LastName, User.UnitNumber AS UnitNumber, Unit.UnitType AS UnitType
+		FROM User
+		LEFT JOIN Unit
+		ON Unit.UserID=User.UserID
+		WHERE User.UserID=$UserID";
+	
+	$user_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	$user_row = mysql_fetch_array($user_result);
+//	$UserNumber = $user_row['UserNumber'];
+}
+
+ 
+if (isSet($UnitNumber) && $UnitNumber > 0)
+{
+	// get user info
+	$sql = "SELECT FirstName, LastName, User.UserID AS UserID, Unit.UnitType AS UnitType
+		FROM User
+		LEFT JOIN Unit
+		ON Unit.UserID=User.UserID
+		WHERE User.UnitNumber='$UnitNumber'
+		AND User.DealStatus!= 'Rescinded'" ;
+	
+	$user_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:" . $sql . $PHP_SELF);
+	$user_row = mysql_fetch_array($user_result);
+	$UserID = $user_row['UserID'];
+}
+
+$UnitType = $user_row['UnitType'];
+
+// get info for option chosen
+// Commented by Cindy Lee July 18, 2003
+// Revise SQL statement to get contractor price from "UserSave" table instead of "Price" table
+// Note that the contractor info is frozen once user save their choice.
+//$sql = "SELECT Price.*, Item.Name As ItemName, Item.ItemID As ItemID, Section.SectionID As SectionID,
+//		Section.Name As SectionName, Subsection.NAme As SubsectionName,
+//		Options.Name As OptionName, Choice.Name As ChoiceName
+//		FROM UserSave, Price, Item, Subsection, Section, Options
+//		LEFT JOIN Choice
+//		ON UserSave.ChoiceID = Choice.ChoiceID
+//		AND UserSave.OptionID = Choice.OptionID
+//		WHERE UserSave.UserID = $UserID
+//		AND Price.UnitType = '$UnitType'
+//		AND UserSave.ItemID = Price.ItemID
+//		AND UserSave.OptionID = Price.OptionID
+//		AND UserSave.ItemID = Item.ItemID
+//		AND Item.SubsectionID = Subsection.SubsectionID
+//		AND Subsection.SectionID = Section.SectionID
+//		AND UserSave.OptionID = Options.OptionID
+//		ORDER BY Section.SectionID, Subsection.SubsectionID, Item.ItemID";
+
+$sql = "SELECT UserSave.*, Item.Name As ItemName, Item.ItemID As ItemID, Section.SectionID As SectionID,
+		Section.Name As SectionName, Subsection.NAme As SubsectionName,
+		Options.Name As OptionName, Choice.Name As ChoiceName
+		FROM UserSave, Price, Item, Subsection, Section, Options
+		LEFT JOIN Choice
+		ON UserSave.ChoiceID = Choice.ChoiceID
+		AND UserSave.OptionID = Choice.OptionID
+		WHERE UserSave.UserID = $UserID
+		AND Price.UnitType = '$UnitType'
+		AND UserSave.ItemID = Price.ItemID
+		AND UserSave.OptionID = Price.OptionID
+		AND UserSave.ItemID = Item.ItemID
+		AND Item.SubsectionID = Subsection.SubsectionID
+		AND Subsection.SectionID = Section.SectionID
+		AND UserSave.OptionID = Options.OptionID
+		ORDER BY Section.SectionID, Subsection.SubsectionID, Item.ItemID";
+
+
+$price_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $sql . $PHP_SELF);
+
+// get contractor info
+$sql = "SELECT ContractorName, ContractorID
+		FROM Contractor";
+
+$contractor_result = mysql_query($sql,$db) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $sql . $PHP_SELF);
+
+?>
+<html>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+<font face="Arial,Verdana,Helvetica" size="3" color="black"><b>Name : <?= $user_row['FirstName'] . " " . $user_row['LastName'];?></b></font><BR>
+<font face="Arial,Verdana,Helvetica" size="3" color="black"><b>Suite Number : <?= $UnitNumber;?></b></font><BR>
+<font face="Arial,Verdana,Helvetica" size="3" color="black"><b>Unit Type : <?= $UnitType;?></b></font><BR>
+
+<?
+if (mysql_num_rows($price_result) <= 0)
+{
+	die("<br><font face=\"Arial,Verdana,Helvetica\" size=\"3\" color=\"green\"><b>User has not chosen any options yet.</b></font>");
+}
+?>
+<table>
+
+
+<?
+$prev_contractor = "JUNK_DATA";
+for ($i=0; $i < $no_of_contractor; $i++)
+{
+	// if mysql_fetch_array returns error, break
+	$contractor_row = mysql_fetch_array($contractor_result);
+
+
+	mysql_data_seek($price_result, 0);
+	$prev_Section = "";
+	$prev_Subsection = "";
+	// read data from price row
+	while ($price_row = mysql_fetch_array($price_result))
+	{
+		// If this section for this unit type has been disabled, don't show this record in the report
+		if (section_disabledDUP($UnitType, $price_row['SectionID']))
+			continue;
+			
+		if ($price_row['contractor'. $i] != "" && $price_row['contractor'. $i] != 0)
+		{
+			if ($contractor_row['ContractorName'] != $prev_contractor)
+			{
+				// if no name for contractor, break the while loop
+				if ($contractor_row['ContractorName'] == "")
+				{
+					$prev_contractor = "(Please setup the name of the contractor)";
+				}
+				else
+				{
+					$prev_contractor = $contractor_row['ContractorName'];
+				}
+?>	
+			<tr>
+				<td colspan=3><br><font face="Arial,verdana,Helvetica" size="4" color="green"><a href="#"><b>
+			Contractor : <?= $prev_contractor ;?></b></a></font></td>
+			</tr>
+				<tr>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2">Section</td>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2">Subsection</td>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2">Option</td>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2">Choice</td>
+<?
+					if ($ShowPrice == 1)
+					{
+?>
+					<td bgcolor="#F6F6F6"><font face="Arial,Verdana,Helvetica" size="2">Price</td>
+<?
+					}
+?>
+				</tr>
+<?
+			}
+			
+?>
+			<tr>
+				<td><font face="Arial,Verdana,Helvetica" size="2"><?= $price_row['SectionName'];?></font></td>
+				<td><font face="Arial,Verdana,Helvetica" size="2"><?= $price_row['SubsectionName'];?></font></td>
+				<td><font face="Arial,Verdana,Helvetica" size="2"><?= $price_row['OptionName'];?></font></td>
+				<td><font face="Arial,Verdana,Helvetica" size="2"><?= $price_row['ChoiceName'];?></font></td>
+<?
+			if ($ShowPrice == 1)
+			{
+				if ($price_row['contractor'. $i] == -9)
+				{
+					$price_to_show = "For Info Only";
+				}
+				else if ($price_row['contractor'. $i] == -99)
+				{
+					$price_to_show = "$0";
+				}
+				else
+				{
+				$price_to_show = "$" . number_format($price_row['contractor'. $i]);
+				}
+?>
+
+				<td><font face="Arial,Verdana,Helvetica" size="2"><nobr><?= $price_to_show; ?></nobr></font></td>
+<?
+			}
+?>
+			</tr>
+<?
+		}
+	}	
+}
+
+?>
+</table>
+</html>

@@ -1,0 +1,58 @@
+<?php
+/*
+ * Created on 21-Jan-2006
+ *
+ * Display error message to user
+ */
+ include "main_include.phtml";
+ 
+ 
+?>
+<html>
+<? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", false, false); ?>
+
+<head>
+<title><?= get_project_name($PHP_SELF);?> - Login</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+<center>
+<table height="100%" width="100%">
+	<tr>
+		<td align="center" valign="center">
+			<table cellspacing="0" cellpadding="0" border="0" width="700" height="10">
+				<td align="left" valign="bottom"><img src="images/project-logo-small.jpg"></td>
+				<td></td>
+			</tr>
+			<tr><td><br></td></tr>
+			<tr><td colspan=5 align="right"><img src="images/orange-bar.jpg"></td></tr>
+			<tr>
+				<td width=230 valign="top" align="right"><img width=230 src="images/project-building-side.jpg"></td>
+				<td valign="top"align="left" width=470>
+					<table cellspacing="0" cellpadding="0" border="0" width="100%" height="10">
+						<tr>
+							<td align="left" ><img src="images/blue-bar.jpg"></td>
+						</tr>
+						<tr><td><br></td></tr>
+						<tr>
+							<td align="center"><img width=150 src="images/home-options-logo-small.jpg"></td>
+						</tr>
+						<tr>
+						<td colspan=2 align="center" class="blank"><br><font color="FF0000">
+						<BR><BR><BR><BR><BR><BR><BR><BR><BR>
+						<? displayError(); ?>
+						</font><br></td>
+						</tr>
+					</table>			
+				</td>				
+			</tr>
+			
+			</table>
+		</td>
+	</tr>
+</table>
+</center>
+</body>
+
+</html>

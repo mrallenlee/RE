@@ -1,0 +1,1045 @@
+<?
+include_once "config/config.phtml";
+include_once "guiUtil.phtml";
+include_once "framework/errorHandler.phtml";
+define("SUPERADMIN", 6);
+define("MANAGEMENT", 5);
+define("SALES", 2);
+define("HOMEOPTIONS", 4);
+define("ADMIN", 3);
+define("HELPDESK", 1);
+define("NOLOGIN", 0);
+
+define ("DO_NOT_DISPLAY_UNIT_NUMBER", 99999999);
+define ("DEFAULT_CUSTOM_MARK_UP_VALUE", -1);
+define ("DEFAULT_EMPTY_VALUE", -1);
+
+define ("MAX_INT", 9999999999);
+
+// global var about the current path
+$globalRelativePath = ".";
+
+// session_start() has to be called in every page which needs session variables 
+// that are set in login.phtml
+session_start();
+
+//--------------------------------------------------------------------------------------
+// Constants
+//--------------------------------------------------------------------------------------
+$no_of_contractor = 40;
+
+
+//--------------------------------------------------------------------------------------
+// Broker Commission Configuration
+//--------------------------------------------------------------------------------------
+// define number of commission supports in the system
+define("BROKER_COMMISSION_NUMBER", 4);
+define("BROKER_COMMISSION_TYPE_PERCENTAGE", "PERCENTAGE");
+define("BROKER_COMMISSION_TYPE_FLAT_RATE", "FLAT_RATE");
+define("BROKER_COMMISSION_TYPE_PERCENTAGE_DISPLAY", "Percentage (%)");
+define("BROKER_COMMISSION_TYPE_FLAT_RATE_DISPLAY", "Flat Rate ($)");
+
+//--------------------------------------------------------------------------------------
+// ErrorHandler function
+//--------------------------------------------------------------------------------------
+/**
+ * Handler Error
+ * Require constant ERROR_CONFIG_FILE and ERROR_LOG_FILE to be defined
+ * $externalErrorMsg - Error message will be displayed on the screen
+ * $internalErrorMsg - Error message will be written to the log file
+ */
+function handleError ($externalErrorMsg, $internalErrorMsg, $errorType, $appendToLog = false){
+	global $globalRelativePath;
+	if (!ERROR_HANDLER_ENABLED){
+		Die("Error: Internal Error Msg=" . $internalErrorMsg . "<BR>External Error Msg=" . $externalErrorMsg . " <BR>Error Type=$errorType");
+	}
+
+	try {
+		$errorHandler = new ErrorHandler(ERROR_LOG_FILE);
+
+		// get error file from current folder? 
+		$errorHandler->loadErrorDataFile(ERROR_CONFIG_FILE);
+
+		// Below two are for debug purpose
+		//$debugRealPath = realpath(ERROR_LOG_FILE);
+		//$errorHandler->handleError($externalErrorMsg . " ERROR_LOG_FILE={" . $debugRealPath  . "} appendToLog={$appendToLog}", $internalErrorMsg, $errorType, $appendToLog);	
+		$errorHandler->handleError($externalErrorMsg, $internalErrorMsg, $errorType, $appendToLog);	
+	} catch (Exception $e) {
+	 	print ("Caught Exception:" . $e->getMessage(). " ERROR_LOG_FILE={" . ERROR_LOG_FILE . "} appendToLog={$appendToLog}\n");
+	}
+	die();	 	
+}
+
+/**
+ * 
+ * Display error if this page has error
+ */ 
+function displayError(){
+	global $globalRelativePath;
+
+	$errorHandler = new ErrorHandler($globalRelativePath);
+	$errorHandler->displayError();	
+} 
+
+/**
+ * Output debug statement based on the level
+ * 1 is the info level
+ * 5 is the fatal
+ */
+function debug($msg, $level=5){
+	if ($level <= DEBUG_LEVEL){
+		print $msg;	
+	}
+}
+//--------------------------------------------------------------------------------------
+// Database function
+//--------------------------------------------------------------------------------------
+// make a connection to the database
+global $SERVER_NAME, $PHP_SELF;
+
+/**
+ * Centralize function to execute sql, and log the action
+ * @return object returned by mysql_query 
+ */
+function &executeSql($sql, $dieOnError = true){
+	global $_SERVER;
+	global $db;
+		
+	if ($dieOnError){
+		$errorHappened = 0;
+		$result = mysql_query($sql) or ($errorHappened = 1);
+		
+		if ($errorHappened){
+			if (ERROR_HANDLER_ENABLED){
+				handleError ("Database error. <BR>SQL=$sql", "Database error in " . $_SERVER['PHP_SELF']. "<BR>SQL=$sql", SQL_ERROR, false);	
+			} else {
+				die("Error: Database error in " . $_SERVER['PHP_SELF']. "<BR>" . mysql_error() . "<BR>SQL=$sql");
+			}
+		}
+	}
+	else {
+		$result = mysql_query($sql);
+	}
+	return $result;
+}
+
+
+$db = mysql_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
+mysql_select_db(REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database " . REAL_ESTATE_DB_NAME, $PHP_SELF);
+
+// Disable any caching of php scripts
+//header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");		// Date in the past
+//header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");//always modified
+//header ("Cache-Control: no-cache, must-revalidate");	// HTTP/1.1
+//header ("Pragma: no-cache");							// HTTP/1.0
+
+error_reporting(E_ERROR);
+function is_citygate_1($string)
+{
+	if (preg_match("/.*\/citygate_1.*/", $string))
+	{
+		return true;
+	}
+	return false;
+}
+
+function is_citygate_2($string)
+{
+	if (preg_match("/.*\/citygate_2.*/", $string))
+	{
+		return true;
+	}
+	return false;
+}
+
+function is_solstice_1($string)
+{
+	if (preg_match("/.*\/solstice_1.*/", $string))
+	{
+		return true;
+	}
+	return false;
+}
+
+function is_hearthstone_1($string)
+{
+	if (preg_match("/.*\/hearthstone_1.*/", $string))
+	{
+		return true;
+	}
+	return false;
+}
+
+function is_focus($string)
+{
+	if (preg_match("/.*\/focus360.*/", $string))
+	{
+		return true;
+	}
+	return false;
+}
+
+//test var b is number or not
+function IsNumeric($n)
+{
+  $p=trim($n);
+  $l=strlen($p);
+
+  for ($t=0; $t<$l; $t++)
+  {
+    $c=substr($p,$t,1);
+    if ($c<'0' || $c>'9')
+    { if ($c!='.') return 0; }
+  }
+
+  return 1;
+}
+
+// Function to log error and die
+//the $file_name is not necessary, but due to early implementation,
+//temporaily keep the variable here
+function log_err_die($msg, $file_name) {
+	global $DOCUMENT_ROOT;
+	global $PHP_SELF;
+
+//	$log_file = $DOCUMENT_ROOT . "/admin/spirit_error_log.txt";
+
+	// timestamp for the error entry
+//	$dt = date("F d, Y H:i:s");
+//	error_log($dt . "\nFile: " . $PHP_SELF . "\n" . $msg . "\n-----------------------------------------------------\n",
+//				3, $log_file);
+	if (ERROR_HANDLER_ENABLED){
+		handleError ($msg, $msg, GENERAL_ERROR, false);	
+	} else {
+		die(nl2br("<b>$msg</b>"));
+	}
+	
+}
+
+
+
+function
+test_valid_action()
+{
+	global $action;
+
+	if (!isset($action))
+	{
+		log_err_die("No action specified", $PHP_SELF);
+	}
+	elseif (!(	$action == "display" ||
+				$action == "edit" ||
+				$action == "verify" ||
+				$action == "add"))
+	{
+		log_err_die("Unknown action type: \"$action\"", $PHP_SELF);
+	}
+}
+
+/**
+ * Convert to number phone number format if needed
+ * Format 416-123-1234 or 1-800-123-1234
+ */
+function convertPhoneNumberFormat($phone){
+	if (strpos($phone, "-") > 0){
+		// assume whenever it has -, the format is correct
+		return $phone;	
+	}
+	
+	$length = strlen($phone) ;
+	$result = ""; 
+	
+	if ($length == 10){
+		$result .= substr($phone, 0, 3);
+		$result .= "-";
+		$result .= substr($phone, 3, 3);
+		$result .= "-";
+		$result .= substr($phone, 6);
+	} else if ($length == 11){
+		$result .= substr($phone, 0, 1);
+		$result .= "-";
+		$result .= substr($phone, 1, 3);
+		$result .= "-";
+		$result .= substr($phone, 4, 3);
+		$result .= "-";
+		$result .= substr($phone, 7);		
+	}
+	return $result;
+} // convertPhoneNumberFormat
+
+// A global key to use for encrypting/decrypting data
+$key = "myoldkey3";
+
+
+function isHex($data){
+	for ($i=0;$i<strlen($data);$i++){
+		if ((substr($data,$i,1) > 'F' || substr($data,$i,1) < 'A' ) &&
+		(substr($data,$i,1) > 'f' || substr($data,$i,1) < 'a' ) &&
+		(substr($data,$i,1) > '9' || substr($data,$i,1) < '0' )){
+			return false;
+		}
+	}
+	return true;
+}
+
+
+// A helper function used by en/de crypt routines
+function hex2bin($data)
+{
+	if (isHex($data)){
+		$len = strlen($data);
+		return pack("H" . $len, $data);
+	}
+	else return "";
+}
+
+function getNum2Words($num){
+	$numClass = new num2words;
+	$numClass->setNumber($num);
+	return $numClass->getCurrency();	
+}
+
+function printNum2Words($num){
+	$numClass = new num2words;
+	$numClass->setNumber($num);
+	$numClass->printCurrency();
+} // convertNum2Words
+
+/***********************************************                              
+  * Snippet Name : Num2Words                    *                             
+  * Scripted By  : Hermawan Haryanto            *                             
+  * Website      : http://hermawan.dmonster.com *                             
+  * Email        : hermawan@dmonster.com        *                             
+  * License      : GPL (Gnu Public License)     *                             
+  ***********************************************/                            
+  // START CONVERTION CLASS                                                   
+  class num2words {                                                           
+    var $numb = Array();                                                      
+    var $tail;                                                                
+    var $number;                                                              
+    var $currency;                                                            
+    var $min;                                                                 
+    function num2words () {                                                   
+      $this->numb = Array ("",                                                
+                           "one",                                             
+                           "two",                                             
+                           "three",                                           
+                           "four",                                            
+                           "five",                                            
+                           "six",                                             
+                           "seven",                                           
+                           "eight",                                           
+                           "nine");                                           
+    }                                                                         
+    function mod($a,$b) {                                                     
+      return $a-$b*floor($a/$b);                                              
+    }                                                                         
+    function setTail($str) {                                                  
+      $this->tail = $str;                                                     
+    }                                                                         
+    function setNumber($int) {     
+      $int = trim($int);                                                      
+      if (is_int(strpos($int,"-"))) {                                         
+        $this->number = substr($int,strpos($int,"-")+1,strlen($int));         
+        $this->currency = "minus";                                            
+      } else {                                                                
+        $this->number = $int;                                                 
+      }                                                                       
+      $this->setAsCurrency();                                                 
+    }                                                                         
+    function getCurrency() {                                                  
+      return $this->currency;                                                 
+    }                                                                         
+    function printCurrency() {                                                
+      print ucfirst(strtolower(trim($this->currency)));                       
+    }                                                                         
+    function setAsCurrency() {                                                
+      $xpos = strpos($this->number,".");                                      
+      if (is_int($xpos)) {                                                    
+        $pecahan = round(substr($this->number,$xpos,strlen($this->number)),2);
+        $sisa = substr($this->number,0,$xpos);                                
+      } else {                                                                
+        $pecahan = "";                                                        
+        $sisa    = $this->number;                                             
+      }                                                                       
+      if ($sisa==0 || $this->number==0) {                                     
+        $this->currency .= "zero ".$this->tail;                               
+      } else {                                                                
+        $trilion = floor($sisa/pow(10,12));                                   
+        $sisa    = $this->mod($sisa,1000000000000);                           
+                                                                              
+        $billion = floor($sisa/pow(10,9));                                    
+        $sisa    = $this->mod($sisa,1000000000);                              
+                                                                              
+        $million = floor($sisa/pow(10,6));                                    
+        $sisa    = $this->mod($sisa,1000000);                                 
+                                                                              
+        $thousand = floor($sisa/pow(10,3));                                   
+        $sisa     = $this->mod($sisa,1000);                                   
+                                                                              
+        $words    = $this->ThreeDigit($trilion, "trilion");                   
+        $words   .= $this->ThreeDigit($billion, "billion");                   
+        $words   .= $this->ThreeDigit($million, "million");                   
+        $words   .= $this->ThreeDigit($thousand, "thousand");                 
+        $words   .= $this->ThreeDigit($sisa,"");                              
+        $words   .= " ".$this->tail;                                          
+      }                                                                       
+      if ($pecahan>0) {                                                       
+        $words .= " and". $this->ThreeDigit(round($pecahan*100),"cents");       
+      }                                                                       
+      $this->currency .= strtolower($words);                                  
+    }                                                                         
+    function ThreeDigit($amount, $suffix="") {       
+      $sisa = (int) $amount;                                                  
+      $words = "";                                                            
+      if ($sisa < 20 && $sisa > 10) {                                         
+        if ($sisa==11) {                                                      
+          $words = " eleven";                                                 
+        } elseif ($sisa == 12) {                                              
+          $words = " twelve";                                                 
+        } elseif ($sisa == 13) {                                              
+          $words = " thirteen";                                               
+        } elseif ($sisa == 15) {                                              
+          $words = " fifteen";                                                
+        } elseif ($sisa == 18) {                                              
+          $words = " eighteen";                                               
+        } else {                                                              
+          $words = " ".$this->numb[$sisa-10]."teen";                          
+        }                                                                     
+        if ($suffix != "") {                                                  
+          $words .= " ".$suffix;                                              
+        }                                                                     
+        return $words;                                                        
+      }                                                                       
+      $ratus = floor($sisa/100);                                              
+      if ($ratus <= 0) {                                                      
+        $words .= "";                                                         
+      } else {                                                                
+        $words .= " ".$this->numb[$ratus]." hundred";                         
+      }                                                                       
+      $sisa = $this->mod($sisa,100);                                          
+      if ($sisa < 20 && $sisa > 10) {                                         
+        if ($sisa == 11) {                                                    
+          $words .= " eleven ". $suffix;                                      
+        } elseif ($sisa == 12) {                                              
+          $words .= " twelve";                                                
+        } elseif ($sisa == 13) {                                              
+          $words .= " thirteen";                                              
+        } elseif ($sisa == 15) {                                              
+          $words .= " fifteen";                                               
+        } elseif ($sisa == 18) {                                              
+          $words .= " eighteen";                                              
+        } else {                                                              
+          $words .= " ".$this->numb[$sisa-10]."teen ". $suffix;               
+        }                                                                     
+        if ($suffix != "") {                                                  
+          $words .= " ".$suffix;                                              
+        }                                                                     
+        return $words;                                                        
+      }                                                                       
+      $puluh = floor($sisa/10);                                               
+      if ($puluh == 0) {                                                      
+        $words .= "";                                                         
+      } elseif ($puluh == 1) {                                                
+        $words .= " ten";                                                     
+      } elseif ($puluh == 2) {                                                
+        $words .= " twenty";                                                  
+      } elseif ($puluh == 3) {                                                
+        $words .= " thirty";                                                  
+      } elseif ($puluh == 4) {                                                
+        $words .= " forty";                                                  
+      } elseif ($puluh == 5) {                                                
+        $words .= " fifty";                                                   
+      } elseif ($puluh == 8) {                                                
+        $words .= " eighty";                                                  
+      } else {                                                                
+        $words .= " ".$this->numb[$puluh]."ty";                               
+      }                                                                       
+      $sisa = $this->mod($sisa,10);                                           
+      if ($sisa>0&&$sisa<=9) {                                                
+        $words .= " ".$this->numb[$sisa];                                     
+      }                                                                       
+      if ($amount>0&&$amount<=1000) {                                         
+        $words .= " ".$suffix;                                                
+      }                                                                       
+      return $words;                                                          
+    }                                                                         
+  };                                       
+  
+function encrypt_data($data){
+	global $key;
+
+	if (is_mcrypt_enabled()){
+		//var for encryption
+		$td = mcrypt_module_open (MCRYPT_TripleDES, "", MCRYPT_MODE_ECB, "");
+		$iv = mcrypt_create_iv (mcrypt_enc_get_iv_size ($td), MCRYPT_RAND);
+		return bin2hex(mcrypt_ecb(MCRYPT_TripleDES, $key, $data, MCRYPT_ENCRYPT,$iv));
+	} else {
+		return $data;
+	}
+}
+
+function decrypt_data($data){
+	global $key;
+
+	if (is_mcrypt_enabled()){
+		//var for encryption
+		//for different version of php
+		$td = mcrypt_module_open (MCRYPT_TripleDES, "", MCRYPT_MODE_ECB, "");
+		$iv = mcrypt_create_iv (mcrypt_enc_get_iv_size ($td), MCRYPT_RAND);
+		$data = hex2bin($data);
+		if ($data=="") return "";
+		if (!is_string($data)) return "";
+		return mcrypt_ecb(MCRYPT_TripleDES,$key ,$data,MCRYPT_DECRYPT,$iv);
+	} else {
+		return $data;	
+	}
+}
+
+function encode_dot($string)
+{
+	$result = str_replace(".", "PHPDOT", $string);
+	$result = str_replace("+", "PHPPLUS", $result);
+	$result = str_replace(" ", "PHPSPACE", $result);
+	return $result;
+}
+
+function decode_dot($string)
+{
+	$result = str_replace("PHPDOT", ".", $string);
+	$result = str_replace("PHPPLUS", "+", $result);
+	$result = str_replace("PHPSPACE", " ", $result);
+	return $result;
+}
+
+function encode_special_url_char($url){
+	return encode_dot($url);	
+}
+
+function decode_special_url_char($url){
+	return decode_dot($url);	
+}
+
+/**
+ * Encode whole url by this method. Using built-in urleoncde
+ * introduces bug if data contains space.
+ */
+function encodeURL($url){
+	return encode_special_url_char(urlencode($url));
+}
+
+function decodeURL($url){
+	return decode_dot(urldecode($url));
+}
+
+$db_find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$db_replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+						
+function encode_special_db_char($string){
+	global $db_find;
+	global $db_replace;
+	
+	return preg_replace($db_find, $db_replace, $string);
+}
+
+// calculate the percentage 
+function calculate_percentage($up, $down)
+{
+	if ($down == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return number_format(($up / $down) * 100, 0);
+	}
+} // calculate_percentage
+
+// calculate the percentage 
+function calculate_division($up, $down)
+{
+	if ($down == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return number_format(($up / $down), 0);
+	}
+} // calculate_division
+
+//Function contains javascript to go to another page
+function goto_url($url){
+?>
+	<script language="JavaScript">
+	<!--
+		window.location = "<?echo $url;?>"
+	//-->
+	</script>
+<?
+}
+
+// Function contains javascript to go back
+// $back - number of level to go back
+function back($back){
+?>	
+	<script language="JavaScript">
+	<!--
+		history.back(<?= $back; ?>);
+	//-->
+	</script>
+<?}
+
+			
+// level indicates the level of security. 
+// $level1 <= number security level
+// 1 means everyone can read it. 2 means only administor can access the file. 3 means super user
+// $level2 <= string security level
+function check_auth($level1, $level2="mock")
+{
+	$level = get_access_security_level();
+	
+	if ($level == ""){
+			handleError ("", "Session Expired", SESSION_EXPIRED, false);	
+	}
+	
+//	global $PHP_AUTH_USER;
+	if ($level >= $level1)
+	{
+		return;
+	}
+	elseif ($level == $level2)
+	{
+		return;
+	}
+	else
+	{
+		if (strstr($SERVER_NAME,"qwe") || strstr($SERVER_NAME,"localhost") || strstr($SERVER_NAME,"127.0.0.1")) 
+		{
+			return;		
+		}
+		else
+		{
+			if (ERROR_HANDLER_ENABLED){
+				handleError ("User has no right to access this page", "User has no right to access this page", PRIVILEGE_ERROR, false);	
+			} else {
+				die("Error: User has no right to access this page");
+			}
+		}
+	}
+} // check_auth
+
+/**
+ * Logout from current session
+ */
+function logout(){
+	session_destroy();	
+}
+
+// get login user name
+function get_user_name_old(){
+	global $PHP_AUTH_USER;
+	
+	return 	$PHP_AUTH_USER;
+}
+
+function get_user_name(){
+	return 	$_SESSION["USER.NAME"];
+}
+
+// get login user id
+// not implemented yet
+function get_user_id(){
+	return $_SESSION["USER.ID"];	
+}
+
+function get_access_security_level_old()
+{
+	global $PHP_AUTH_USER;
+	global $SERVER_NAME;
+	global $db;
+
+	$authUser = $PHP_AUTH_USER;
+
+	if ($authUser == "sales")
+	{
+		return SALES;
+	}
+
+	if ($authUser == "sell")
+	{
+		return ADMIN;
+	}
+	elseif ($authUser == "citygate")
+	{
+		return HELPDESK;
+	}
+	elseif ($authUser == "hotsell")
+	{
+		return MANAGEMENT;
+	}
+	elseif ($authUser == "homeoptions")
+	{
+		return HOMEOPTIONS;
+	}
+	else
+	{	// for sales user
+		return SALES;
+	}
+}
+
+function get_access_security_level()
+{
+	return $_SESSION["USER.ROLE.LVL"];
+}
+
+if (!function_exists("section_disabled")){
+	// Check if the section in this unit type has been disabled
+	// Input : UnitType, SectionID
+	function section_disabled($UnitType, $SectionID)
+	{
+		// Exclude disabled sections from being displayed, which are stored in Disable_Section_by_Unittype
+		$sql_disabled = "SELECT SectionID FROM Disable_Section_by_Unittype 
+				WHERE UnitType = '" . $UnitType . "' " .
+				"AND SectionID = " . $SectionID;
+		$result_disabled = mysql_query($sql_disabled) or die("ERROR : $sql_disabled <br>" . mysql_error());
+		$row_disabled = mysql_fetch_array($result_disabled);
+	
+		if ($row_disabled['SectionID'] == $SectionID)
+			return 1;
+		else
+			return 0;
+	}
+}
+
+// Get Unit Level from given Suite Number:
+// starting from hearthstone, it has floor and level.
+// level is the legal level, floor is the fake level
+// For phase 1, skip level 13: decrease 1 for unit 1401 or above
+// For phase 2, skip level 2: increase 1 for unit 201 to 1201
+function get_unit_level($UnitNumber)
+{
+	global $PHP_SELF;
+	
+	$level = substr($UnitNumber, 0, strlen($UnitNumber) - 2);
+
+	// starting from hearthstone, it has floor and level.
+	// level is the legal level, floor is the fake level
+	if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF) || is_solstice_1($PHP_SELF)){
+		// skip level 2 for citygate_1, citygate_2
+		if ($level >= 2 & $level <= 12)
+		{
+			$level += 1;
+		}
+	}
+	return $level;
+}
+
+/**
+ * Display external customer type name by providing internal customer type
+ * Currently, internal customer type is the table name, user and visitor
+ */
+function get_customer_type($internalCustomerType){
+	if ($internalCustomerType == "user"){
+		return "Purchaser";	
+	} else if ($internalCustomerType == "visitor"){
+		return "Visitor";	
+	} else {
+		die("Unknown Customer Type");		
+	}	 	
+}
+
+/**
+ * Display internal customer type name by providing external customer type
+ * Currently, internal customer type is the table name, user and visitor
+ */
+function get_internal_customer_type($externalCustomerType){
+	if ($externalCustomerType == "Purchaser" || $externalCustomerType == "purchaser"){
+		return "user";
+	} else if ($externalCustomerType == "Visitor" || $externalCustomerType == "visitor"){
+		return "visitor";	
+	} else {
+		die("Unknown Customer Type");		
+	}		
+}
+
+/**
+ * Display internal customer type table by providing internal customer type
+ * Currently, internal customer type is the table name, user and visitor
+ */
+function get_internal_customer_type_table($internalCustomerType){
+	if ($internalCustomerType == "user" || $internalCustomerType == "User"){
+		return "User";
+	} else if ($internalCustomerType == "visitor" || $internalCustomerType == "Visitor"){
+		return "Visitor";
+	} else {
+		die("Unknown Customer Type");		
+	}		
+}
+
+/**
+ * Get page mode which is purchaser or visitor
+ * $customerType can be internal or external customer type
+ */
+function get_page_mode($customerType){
+	if ($customerType == "user" || $customerType == "Purchaser"){
+		return "purchaser";
+	} else if ($customerType == "visitor" || $customerType == "Visitor"){
+		return "visitor";
+	} else {
+		die("Unknown Customer Type");				
+	}	
+}
+
+function get_project_name($selfPath){
+	// Initialize heading to display
+	return PROJECT_NAME;	
+} // get_project_name
+
+function get_project_short_name($selfPath){
+	// Initialize heading to display
+	return PROJECT_SHORT_NAME;	
+} // get_project_name
+
+function get_internal_project_name($selfPath){
+	// Initialize heading to display
+	return PROJECT_INTERNAL_NAME;	
+} // get_internal_project_name
+
+function get_project_developer_name($selfPath){
+	// Initialize heading to display
+	return PROJECT_DEVELOPER;	
+} // get_project_name
+function is_mcrypt_enabled(){
+	global $SERVER_NAME;
+	
+	if (strstr($SERVER_NAME, "localhost") || strstr($SERVER_NAME, "supernova") || strstr($SERVER_NAME, "allen-lee.is-a-chef.com")){
+		return false;
+	}
+	return true;	
+}
+
+// return "where" clause for range or non-range value.
+// $columnName: column name in where clause
+// $value: a individual value or a range separated by "-". For example: 2-3 or 2
+// $linkKeyword: the keyword used when $value is a individual value. Most of time it's "=" or "like".
+//               The presense of "like" is because when value is a numeric, "like" has to be used to get right data.
+function get_range_where_clause($columnName, $value, $linkKeyword = "="){
+	$pos = strpos($value, "-");
+
+	if ($pos > 0) // value is a range
+	{
+		$startRange = trim(substr($value, 0, $pos));
+		$endRange = trim(substr($value, $pos + 1));
+		
+		$returnClause = " " . $columnName . " >= ". $startRange ." AND ". $columnName . " <= ". $endRange . " ";
+	}
+	else
+	{
+		$returnClause = " " . $columnName . " " . $linkKeyword . " '" . trim($value);
+		
+		if ($linkKeyword = "like")
+			$returnClause .= "%' ";
+		else
+			$returnClause .= "' ";
+	}
+	
+	return $returnClause;
+}
+
+/**
+ * Parse value separated by , and substitute value between
+ * '-'. 
+ * e.g. original string "2,3,6-10" return "2,3,6,7,8,9,10"
+ */
+function expandRange($CsvValue){
+	$firstValue = true;
+	$resultValue = "";
+	$value = explode(",", $CsvValue);
+	foreach ($value AS $individualValue ){
+		if (strpos($individualValue, "-") > 0){
+			list($from, $to) = explode("-", $individualValue);
+			for ($i=$from; $i <= $to; $i++){
+				if ($firstValue){
+					$resultValue .= "$i"; 	
+					$firstValue = false;
+				} else {
+					$resultValue .= ",$i";
+				} 	
+			}
+		} else {
+			if ($firstValue){
+				$resultValue .= "$individualValue"; 	
+				$firstValue = false;
+			} else {
+				$resultValue .= ",$individualValue";
+			}	
+		}
+	}
+	return $resultValue;
+}
+
+/**
+ * For VARCHAR and number column
+ * 1.Parse value separated by , and substitute value between
+ * '-'.
+ * e.g. original string "2,3,6-10" return "columnName IN (2,3) OR columnName > 6 and columnName < 10
+ * 2.If value contains '%', automatically use LIKE
+ * 
+ * arguments:
+ * columnName
+ * csvValue
+ * valuePrefix - For each indifidual value. If value doesn't have 
+ * 				the prefix, add the valuePrefix to the vaalue automatically.
+ */
+function expandSearchCriteria($arguments){
+	$columnName = $arguments['columnName'];
+	$CsvValue = $arguments['csvValue'];
+	$valuePrefix = $arguments['valuePrefix'];	
+	$intervalDelimiter = $arguments['intervalDelimiter'] == '' ? '~' : $arguments['intervalDelimiter'];
+	
+	$resultValue = " 1<>1 ";
+	$value = explode(",", $CsvValue);
+	foreach ($value AS $individualValue ){
+		$individualValue = trim($individualValue);
+		if (strpos($individualValue, $intervalDelimiter) > 0){
+			list($from, $to) = explode($intervalDelimiter, $individualValue);
+			$from = trim($from);
+			$to = trim($to);
+			// if valuePrefix is not empty, attach the prefix 
+			// to the value IF NECESSARY
+			if ($valuePrefix != ''){
+				if (strpos($to, $valuePrefix) === FALSE){
+					$to = $valuePrefix . $to;
+				}
+				if (strpos($from, $valuePrefix) === FALSE){
+					$from = $valuePrefix . $from;
+				}
+			}
+			
+			if (is_numeric($from) && is_numeric($to)){
+				$resultValue .= " OR ($columnName >= $from AND $columnName <= $to) ";				
+			}
+			else {
+				$resultValue .= " OR ($columnName >= '$from' AND $columnName <= '$to') ";	
+			}
+		}
+		else {
+			// if valuePrefix is not empty, attach the prefix 
+			// to the value IF NECESSARY
+			if ($valuePrefix != ''){
+				if (strpos($individualValue, $valuePrefix) === FALSE){
+					$individualValue = $valuePrefix . $individualValue;
+				}
+			}			
+			if (strpos($individualValue, "%") > 0){
+				$resultValue .= " OR $columnName LIKE '$individualValue'";		
+			} else {
+				$resultValue .= " OR $columnName = '$individualValue'";		
+			}
+		}
+	}
+	return $resultValue;
+}
+
+define ("DB_SORT_METHOD_VARCHAR_AS_NUMBER", 1);
+
+/**
+ * Return order clause for one column
+ * @argument array of following elements
+ * 1. columnName: column name of the table
+ * 2. sortMethod: sort Method. Predefine constant
+ * 	Constant: 	DB_SORT_METHOD_VARCHAR_AS_NUMBER
+ * Example: getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER))
+ * 
+ */
+function getOrderClause($arguments){
+	$columnName = $arguments['columnName'];
+	$sortMethod = $arguments['sortMethod'];
+	
+	if ($sortMethod == DB_SORT_METHOD_VARCHAR_AS_NUMBER){
+		$clause = " cast(" . $columnName . " as signed) ";
+//		$clause = " LPAD(" . $columnName . ", 10, 0) ";
+	} else {
+		$clause = " " . $columnName;
+	}
+	return $clause;	
+}
+
+
+function print_top_frame($selfPath, $relativePath, $showBackground = true, $showMenu = true){
+	global $globalRelativePath;
+	
+	$globalRelativePath = $relativePath;
+	
+?>		<BODY  <?
+			if ($showBackground){
+			?> background="<?= $relativePath; ?>images/project-background-big.jpg"<?
+			}
+			?> >
+    <link href="<?= $relativePath; ?>config/stylesheet.css" rel="styleSheet" type="text/css" media="screen" />
+    <link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="styleSheet" type="text/css" media="print" />
+	<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>javascript/utils.js"></script>
+<? if ($showMenu){ ?>
+		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/dynamicMenu.js"></script>
+		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/<?= MENU_FILE; ?>?relativePath=<?= $relativePath; ?>"></script>
+	<DIV class="html-space">
+		<BR>
+	</DIV>
+<? } 
+}// print_top_frame
+
+
+// return GST_RATE 13
+function getGSTRate($date = ""){	
+	return GST_RATE;
+
+	if ($date == ""){
+		$timestamp = time();
+	}
+	else {
+		$timestamp = strtotime($date);
+	}
+	
+	if ($timestamp === FALSE || $timestamp < 0){
+		return 0;
+	}
+	
+	if ($timestamp >= 1277956800){
+		// mktime (0, 0, 0, 7, 1, 2010), HST
+		return 0.13;
+	} else if ($timestamp >= 1199163600){
+		// mktime (0, 0, 0, 1, 1, 2008)
+		return 0.05;
+	} else if ($timestamp >= 1151726400) {
+		// mktime (0, 0, 0, 7, 1, 2006);
+		return 0.06;
+	} else {
+		return 0.07;
+	} 	
+}
+
+// Caculate pro-rated fees
+function getProRatedFee($fee, $occupancyDate) {
+  $occupancyYear  = (int)substr($occupancyDate,0,4);
+  $occupancyMonth = (int)substr($occupancyDate,5,2);
+  $occupancyDay   = (int)substr($occupancyDate,8,2);
+  $num_of_days    = date("t",mktime(0, 0, 0, $occupancyMonth, $occupancyDay, $occupancyYear));
+ 
+  // get interest rate
+//  $interestRate = getInterestRate($occupancyYear,$occupancyMonth) / 12;
+//  if($interestRate == 0) return 0;
+  
+  return ($fee) * ($num_of_days - $occupancyDay) / $num_of_days; 
+}
+?>

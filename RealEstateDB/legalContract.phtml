@@ -1,0 +1,281 @@
+<?
+include "main_include.phtml";
+// set the security level to be 2 for this page
+// query String: PDFName
+check_auth(2, "sales");
+
+$sql = "	SELECT User.*, Unit.* ";
+if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF)){ 
+	$sql .= " ,Unit.Model ";
+}	
+$sql .= "	FROM User, Unit
+				WHERE User.UserID=$UserID
+				AND Unit.UserID = User.UserID";	
+
+$result = executeSql($sql);
+$row = mysql_fetch_array($result);
+
+$additionalPurchaserSql = 	" SELECT Person.FirstName, Person.LastName, " .
+							" 	AdditionalPurchaser.CompanyName " .
+							" FROM AdditionalPurchaser, Person" .
+							" WHERE UserID = " . $row['UserID'] . 
+							" AND AdditionalPurchaser.PersonId = Person.PersonID" .
+							" ORDER BY AdditionalPurchaserID ASC";
+							
+$additionalPurchaserResult = executeSql($additionalPurchaserSql);
+$additionalPurchaserRow = mysql_fetch_array($additionalPurchaserResult);
+							 
+
+$guarantorSql = 	" SELECT Person.*, " .
+							" Guarantor.CompanyName, Address.* " .
+							" FROM Guarantor, Person, Address" .
+							" WHERE UserID = " . $row['UserID'] . 
+							" AND Guarantor.PersonId = Person.PersonID" .
+							" AND Person.AddressID = Address.AddressID" .
+							" ORDER BY GuarantorID ASC";
+							
+$guarantorResult = executeSql($guarantorSql);
+$guarantor1Row = mysql_fetch_array($guarantorResult);
+$guarantor2Row = mysql_fetch_array($guarantorResult);
+//print_r ($guarantor1Row);
+//die();
+// assume Corporate deal DOES NOT have additional purchaser
+// All information is retrieved from gurantor
+$company = $row['Company'];
+if ($company != ""){
+	// retrieve gurantor information	
+	$purchaser1Name = $guarantor1Row['FirstName'] . " " . $guarantor1Row['LastName'];
+	$purchaser2Name = $guarantor2Row['FirstName'] . " " . $guarantor2Row['LastName'];
+	
+	// Assume company and purchaser excludes each other.
+	$purchasers = ""; 
+	$index = 1;
+	$purchasers .=  $company . "   ";
+	
+	$displayPurchaser1 = $company;
+	
+	// if there's no address for company, use grarantor's address
+
+	
+} else { // personal purchase
+	$purchaser1Name = $row['FirstName'] . " " . $row['LastName'];
+	//$purchaser2Name = $row['AdditionalPurchaser1FirstName'] . " " . $row['AdditionalPurchaser1LastName'];
+	//$purchaser3Name = $row['AdditionalPurchaser2FirstName'] . " " . $row['AdditionalPurchaser2LastName'];
+	// use new Additional Purchaser Module
+	if ($additionalPurchaserRow['FirstName'] != "" && $additionalPurchaserRow['LastName'] != ""){
+		$purchaser2Name = $additionalPurchaserRow['FirstName'] . " " . $additionalPurchaserRow['LastName'];
+	} else {
+		$purchaser2Name = "";
+	}
+	$purchaser2Company = $additionalPurchaserRow['Company'];
+	// Assume company and purchaser excludes each other.
+	$purchasers = ""; 
+	$index = 1;
+	if ($company != "") {
+		$purchasers .=  $company . "   ";
+		$displayPurchaser1 = $company;
+	} else if ($purchaser1Name != "") {
+		$purchasers .=  $purchaser1Name . "   ";
+		$displayPurchaser1 = $purchaser1Name;
+	}
+	if ($purchaser2Company != "") {
+		$purchasers .=  $purchaser2Company . "   ";
+		$displayPurchaser2 = $purchaser2Company;
+	} else if ($purchaser2Name != "") {
+		$purchasers .=  $purchaser2Name . "   ";
+		$displayPurchaser2 = $purchaser2Name;
+	}	
+}
+
+
+$Unit = substr($row['UnitNumber'], strlen($row['UnitNumber']) - 2);
+$Floor = get_unit_level($row['UnitNumber']);
+$Level = get_legal_level($Floor);;
+
+//print "user id=$UserID, Unit=$Unit<BR>";
+
+$num2Words = new num2words;
+
+$protocol = "http";
+
+// Since FDF doesn't work in HTTPS, so temporaily disable the HTTPS
+// The PDF should copy to the public_html(http) folder with the same
+// directory structure.
+if (0 && $_SERVER['HTTPS'] == "on"){
+	$protocol = "https";	
+}
+
+if (!isSet($PDFName)){
+	$PDFName = "AgreementForm.pdf";	
+}
+?>
+<HTML>
+<head>
+	<title><?= get_project_name($PHP_SELF); ?> Admin</title>
+	<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+</head>
+
+	<FORM NAME="hiddenForm" METHOD=POST ACTION="./openPDF.phtml" >
+		<INPUT TYPE="HIDDEN" NAME="url"						VALUE="<?
+			// DO NOT put port 80, otherwise, the PDF will not work
+			if ($_SERVER['HTTPS'] == "on" || $_SERVER['SERVER_PORT'] == 80){
+				echo $protocol . "://" . $_SERVER['SERVER_NAME'] . dirname($_SERVER['PHP_SELF']);							
+			} else{
+				echo $protocol . "://" . $_SERVER['SERVER_NAME'] . ":" . $_SERVER['SERVER_PORT'] . dirname($_SERVER['PHP_SELF']);
+			}			
+			?>/<?= $PDFName; ?>">
+		<INPUT TYPE="HIDDEN" NAME="UnitNumber" 				VALUE="<?= $row['UnitNumber']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Price" 					VALUE="<?
+		if ($row['OfferPrice'] > 0) 
+			print numberFormat( array("value" => $row['OfferPrice'],
+										"decimals" => 2,
+										"defaultValue" => "N/A"));
+		else
+			print numberFormat( array("value" => $row['Price'],
+										"decimals" => 2,
+										"defaultValue" => "N/A"));
+		?>">
+		<INPUT TYPE="HIDDEN" NAME="PriceEnglish" 					VALUE="<?
+		if ($row['OfferPrice'] > 0) 
+			print ucwords(getNum2Words($row['OfferPrice']));
+		else
+			print ucwords(getNum2Words($row['Price']));
+			?>">
+		<INPUT TYPE="HIDDEN" NAME="Floor" 					VALUE="<?= $Floor ?>">
+		<INPUT TYPE="HIDDEN" NAME="Unit" 					VALUE="<?= $Unit; ?>">
+		<INPUT TYPE="HIDDEN" NAME="CondoNumber" 					VALUE="<?= ($row['CondoNumber']==0)?'':$row['CondoNumber']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Level" 					VALUE="<?= $row['Level']; ?>">		
+		<INPUT TYPE="HIDDEN" NAME="Model" 					VALUE="<?= $row['Model']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Area" 					VALUE="<?= $row['Area']; ?>">		
+		<INPUT TYPE="HIDDEN" NAME="NetArea" 					VALUE="<?= $row['NetArea']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="AgreementDepositAmount" 	VALUE="<?= 
+															numberFormat( array("value" => $row['AgreementDepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A"));?>">
+		<INPUT TYPE="HIDDEN" NAME="AgreementDepositAmountEnglish" 	VALUE="<?= ucwords(getNum2Words($row['AgreementDepositAmount'])) . "";?>">
+		<INPUT TYPE="HIDDEN" NAME="AgreementDepositDate" 	VALUE="<?= convert_date($row['AgreementDepositDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="RescissionDate" 			VALUE="<?= convert_date($row['RescissionDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="ConditionalDate" 		VALUE="<?= convert_date($row['ConditionalDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day30DepositAmount" 		VALUE="<?= numberFormat( array("value" => $row['Day30DepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A")); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day30DepositAmountEnglish" 		VALUE="<?= ucwords(getNum2Words($row['Day30DepositAmount'])); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day30DepositDate" 		VALUE="<?= convert_date($row['Day30DepositDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day90DepositAmount" 		VALUE="<?= numberFormat( array("value" => $row['Day90DepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A")); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day90DepositAmountEnglish" 		VALUE="<?= ucwords(getNum2Words($row['Day90DepositAmount'])); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day90DepositDate" 		VALUE="<?= convert_date($row['Day90DepositDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day150DepositAmount" 	VALUE="<?= numberFormat( array("value" => $row['Day150DepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A")); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day150DepositAmountEnglish" 		VALUE="<?= ucwords(getNum2Words($row['Day150DepositAmount'])); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day150DepositDate" 		VALUE="<?= convert_date($row['Day150DepositDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day210DepositAmount" 	VALUE="<?= numberFormat( array("value" => $row['Day210DepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A")); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day210DepositAmountEnglish" 		VALUE="<?= ucwords(getNum2Words($row['Day210DepositAmount'])); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Day210DepositDate" 		VALUE="<?= convert_date($row['Day210DepositDate']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="OccupancyDepositAmount" 	VALUE="<?= numberFormat( array("value" => $row['OccupancyDepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A")); ?>">
+		<INPUT TYPE="HIDDEN" NAME="OccupancyDepositAmountEnglish" 	VALUE="<?= ucwords(getNum2Words($row['OccupancyDepositAmount'])); ?>">
+		<INPUT TYPE="HIDDEN" NAME="OccupancyDepositDate" 	VALUE="<?= convert_date($row['OccupancyDepositDate']); ?>">
+<?		// if second revised closing date is not empty, use it
+		if ($row['SecondRevisedClosingDate'] != "0000-00-00") { ?>		
+		<INPUT TYPE="HIDDEN" NAME="FirstRevisedClosingDate" 	VALUE="<?= convert_date($row['SecondRevisedClosingDate']); ?>">
+<?		} else { ?>		
+		<INPUT TYPE="HIDDEN" NAME="FirstRevisedClosingDate" 	VALUE="<?= convert_date($row['FirstRevisedClosingDate']); ?>">
+<?		} ?>
+
+<?		// if second revised closing date is not empty, use it
+		if ($row['SecondRevisedClosingDate'] != "0000-00-00") {  ?>		
+		<INPUT TYPE="HIDDEN" NAME="ClosingDate" 	VALUE="<?= convert_date($row['SecondRevisedClosingDate']); ?>">
+<?		} else if ($row['FirstRevisedClosingDate'] != "0000-00-00"){ ?>		
+		<INPUT TYPE="HIDDEN" NAME="ClosingDate" 	VALUE="<?= convert_date($row['FirstRevisedClosingDate']); ?>">
+<?		} else { ?>		
+		<INPUT TYPE="HIDDEN" NAME="ClosingDate" 	VALUE="<?= convert_date($row['OccupancyDepositDate']); ?>">		
+<?		} ?>
+
+		<INPUT TYPE="HIDDEN" NAME="DisplayPurchaser1"		 		VALUE="<?= $displayPurchaser1; ?>">
+		<INPUT TYPE="HIDDEN" NAME="DisplayPurchaser2"		 		VALUE="<?= $displayPurchaser2; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchasers"		 		VALUE="<?= $purchasers; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser1Name"	 		VALUE="<?= $purchaser1Name; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser1DateOfBirth"	VALUE="<?= convert_date($row['DateOfBirth']) ;?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser1SIN" 			VALUE="<?= $row['SIN']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser2Name" 			VALUE="<?= $purchaser2Name;?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser2DateOfBirth" 	VALUE="<?= convert_date($row['AdditionalPurchaser1DateOfBirth']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser2SIN" 			VALUE="<?= $row['AdditionalPurchaser1SIN']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser3Name" 			VALUE="<?= $purchaser3Name;?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser3DateOfBirth" 	VALUE="<?= convert_date($row['AdditionalPurchaser2DateOfBirth']); ?>">
+		<INPUT TYPE="HIDDEN" NAME="Purchaser3SIN" 			VALUE="<?= $row['AdditionalPurchaser2SIN']; ?>">
+		
+<?		if ($company != "" && $row['Address'] == ""){
+			// use guarantor1's address if company has no address
+?>		<INPUT TYPE="HIDDEN" NAME="Suite" 					VALUE="<?= $guarantor1Row['Unit']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Address" 				VALUE="<?= $guarantor1Row['Street']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="City"		 			VALUE="<?= $guarantor1Row['City']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Province"	 			VALUE="<?= $guarantor1Row['Province']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="PostalCode" 				VALUE="<?= $guarantor1Row['PostalCode']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="BusinessPhone" 			VALUE="(B)<?= $guarantor1Row['BusinessPhone']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="FaxNumber"	 			VALUE="(F)<?= $guarantor1Row['Fax']; ?>">		
+		<INPUT TYPE="HIDDEN" NAME="HomePhone" 				VALUE="(H)<?= $guarantor1Row['HomePhone']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="CellPhone" 				VALUE="(C)<?= $guarantor1Row['CellPhone']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Email"	 				VALUE="<?= $guarantor1Row['Email']; ?>">		
+<?		} else { ?>
+		<INPUT TYPE="HIDDEN" NAME="Suite" 					VALUE="<?= $row['Suite']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Address" 				VALUE="<?= $row['Address']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="City"		 			VALUE="<?= $row['City']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Province"	 			VALUE="<?= $row['Province']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="PostalCode" 				VALUE="<?= $row['PostalCode']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="BusinessPhone" 			VALUE="(B)<?= $row['BusinessPhone']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="FaxNumber"	 			VALUE="(F)<?= $row['FaxNumber']; ?>">		
+		<INPUT TYPE="HIDDEN" NAME="HomePhone" 				VALUE="(H)<?= $row['PhoneNumber']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="CellPhone" 				VALUE="(C)<?= $row['CellPhone']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="Email"	 				VALUE="<?= $row['Email']; ?>">		
+<?		} ?>		
+		<INPUT TYPE="HIDDEN" NAME="SolicitorName"			VALUE="<?= $row['SolicitorName']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="SolicitorAddress" 		VALUE="<?= $row['SolicitorAddress']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="SolicitorCityPostalCode" VALUE="<?= $row['SolicitorCity'] . " " . $row['SolicitorPostalCode']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="SolicitorPostalCode" 	VALUE="<?= $row['SolicitorPostalCode']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="SolicitorTelephone" 		VALUE="(B)<?= $row['SolicitorTelephone']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="SolicitorFaxNumber" 		VALUE="(F)<?= $row['SolicitorFaxNumber']; ?>">
+		<INPUT TYPE="HIDDEN" NAME="CurrentDay" 				VALUE="<?= date("d"); ?>">
+		<INPUT TYPE="HIDDEN" NAME="CurrentMonth" 			VALUE="<?= date("F"); ?>">
+		<INPUT TYPE="HIDDEN" NAME="CurrentYearNum" 			VALUE="<?= substr(date("y"),1,1); ?>">
+		<INPUT TYPE="HIDDEN" NAME="ClosingDateAmount"		VALUE="<?= numberFormat( array("value" => $row['OccupancyDepositAmount'],
+																				"decimals" => 2,
+																				"defaultValue" => "N/A")); ?>">
+		<INPUT TYPE="HIDDEN" NAME="ClosingDateAmountEnglish"		VALUE="<?= ucwords(getNum2Words($row['OccupancyDepositAmount'])); ?>">
+		<INPUT TYPE="HIDDEN" NAME="OccupancyDepositDate"	VALUE="<?= convert_date($row['OccupancyDepositDate']); ?>">
+		<BR><BR><BR><BR><BR><BR><BR><BR>
+		<BR><BR><BR><BR><BR><BR><BR><BR>
+		<BR><BR><BR><BR><BR><BR><BR><BR>
+		<BR><BR><BR><BR><BR><BR><BR><BR>
+		<BR><BR><BR><BR><BR><BR><BR><BR>
+		<INPUT TYPE="SUBMIT">
+<?
+		if (isSet($back))
+		{
+			$back--;
+?>
+		<INPUT TYPE="HIDDEN" NAME="back"					VALUE="<?= $back; ?>">
+<?
+		}
+?>
+	</FORM>
+<script language="JavaScript">
+<!--	
+	function MM_findObj(n, d) { //v4.0
+	  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+	    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+	  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+	  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+	  if(!x && document.getElementById) x=document.getElementById(n); return x;
+	}
+	
+	formObj	= MM_findObj('hiddenForm');
+	formObj.submit();
+//-->
+</script>	
+</HTML>

@@ -1,0 +1,252 @@
+<?
+/**
+ * Broker view
+ * Jan 18, 2007
+ */
+include_once "Entity/View/EntityView.phtml";
+include_once "Entity/View/AddressView.phtml";
+include_once "guiUtil.phtml";
+include_once "main_include.phtml";
+
+class CompanyView extends EntityView{
+	 	
+	 function CompanyView(){}
+	 
+ /**
+ * html form for new additional purchaser
+ * @params index : The Nth Entity in the page
+ */
+function getNewHTMLForm(&$arguments){
+	$arguments['mode'] = "add";
+	$html = $this->getExistingHTMLForm($arguments);			
+	return $html;
+}
+
+/**
+ * html form for company. There are 2 display mode for company
+ * List mode: Display a combo box filled with company name
+ * Detail mode: Display company fields for display/update
+ * arguments can be mysql result row which simply is an associate array
+ * @params index : The Nth Entity in the page
+ * @params mode : add, update/edit
+ * @params CompanyID: Mandatory if in update mode.
+ * @params DisplayType: DETAIL(Default), LIST
+ * @params onListChangeJS: apply to company list mode
+ * @params editButtonEnabled: enable edit button
+ * @params editButtonJS: enable edit button JS
+ */
+function getExistingHTMLForm(&$arguments){
+		
+	$index 					= $arguments['index'] > 0 ? $arguments['index'] : "";
+	$mode 					= $arguments['mode'];
+	$arguments['CompanyID']	= checkValue($arguments['CompanyID'], -1);
+	$arguments['DisplayType']= checkValue($arguments['DisplayType'], "DETAIL");
+	
+	if (($mode == "display" || $mode == "update" || $mode == "edit") && $arguments['CompanyID'] < 0){
+		return "Error: Company ID is missing.<BR>";		
+	}				
+	
+	// retrieve broker information
+	if ($mode == "display" || $mode == "update" || $mode == "edit"){
+		$sql = "SELECT * FROM Company, Address
+				WHERE CompanyID=" . $arguments['CompanyID'] .
+				" AND Company.AddressID = Address.AddressID";
+		$result = executeSql($sql);
+		$row = mysql_fetch_array($result);
+	}
+	
+	if ($this->inputPrefix != ""){
+		$prefix = $this->inputPrefix . "_Company";	
+	} else {
+		$prefix = "Company";	
+	}
+	
+	if ($index != ""){
+		$prefix .= "_" . $index;
+	}
+	
+	if ($this->inputSuffix != ""){
+		$suffix = "_" . $this->inputSuffix;	
+	} else {
+		$suffix = "";	
+	}
+	
+	$action = $mode;
+	
+	if ($arguments['DisplayType'] == "DETAIL"){
+		$address = new AddressView();
+		// Address belongs to Company table
+		$address->setInputPrefix($prefix . "_Address");
+						
+		$html = "	<input type=\"hidden\" name=\"" . $prefix . "_CompanyID" . $suffix . "\" value=\"" . 
+						$row['CompanyID'] ."\">" .
+				"	<input type=\"hidden\" name=\"" . $prefix . "_AddressID" . $suffix . "\" value=\"" . 
+						$row['AddressID'] ."\">" .						
+				"	<input type=\"hidden\" name=\"" . $prefix . "_CompanyType" . $suffix . "\" value=\"" . 
+						$arguments['CompanyType'] ."\">" .						
+				"	<input type=\"hidden\" name=\"" . $prefix . "_Action" . $suffix . "\" value=\"$mode\">" .						
+				"	<input type=\"hidden\" name=\"" . $prefix . "_SubAction" . $suffix . "\" value=\"All\">" .						
+				"	<tr>\n" .
+				"		<td>Company Name:</td><td colspan=3>" . 
+								displayText(array ("value" => $row['CompanyName'],
+								"source" => "CompanyName", "action" => $mode, 
+								"inputPrefix" => $prefix, "size"=>50)) . "</td>\n" .							
+				"	</tr>\n" . 
+				"	<tr>\n" .
+				"		<td>Branch:</td><td colspan=3>" . 
+								displayText(array ("value" => $row['BranchName'],
+								"source" => "BranchName", "action" => $mode, 
+								"inputPrefix" => $prefix)) . "</td>\n" .							
+				"	</tr>\n" . 
+				"	<tr>\n" .
+				"		<td>Business Phone:</td><td>" . 
+								displayText(array ("value" => $row['Phone'], 
+								"source" => "Phone", "action" => $mode, 
+								"inputPrefix" => $prefix)) . "</td>\n" .
+				"		<td>Fax Number:</td><td>"  . 
+								displayText(array ("value" =>  $row['Fax'],
+								"source" => "Fax", "action" => $mode, 
+								"inputPrefix" => $prefix )) . "</td>\n" .
+				"	</tr>\n" .
+				$address->getExistingHTMLForm($row, $mode);				
+	} // end of DETAIL mode	
+	else {
+		// LIST mode	
+		$html = $this->getList($arguments);
+	}
+							
+	return $html;
+}
+
+/**
+ * Get a list of company
+ */
+function getList(&$arguments){
+	
+	if ($this->inputPrefix != ""){
+		$prefix = $this->inputPrefix . "_Company";	
+	} else {
+		$prefix = "Company";	
+	}
+				
+	$html = "<tr>\n" . 
+			"	<input type=\"hidden\" name=\"" . $prefix . "_Action" . $arguments['suffix'] . "\" value=\"no-update\">" .						
+			"	<td>Company:</td><td colspan=3>" . $this->displayCompanyList(array(
+		"col" => "CompanyName", 
+		"valueCol" => "CompanyID",
+		"table"=> "Company", 
+		"value"=>$arguments['CompanyID'],	
+		"inputName"=>"CompanyID", 
+		"action"=>$arguments['mode'], 
+		"inputPrefix"=> $prefix,
+		"onChangeJSFunction"=>$arguments['onListChangeJS']));
+
+	if ($arguments['editButtonEnabled']){
+		$html .= "<input type=\"button\" value=\"Edit Selected Company\" onClick=\"" . $arguments['editButtonJS'] . "\">";	
+	
+	}
+	$html .= "</tdsdf>\n" .
+		"</tr>\n";
+			
+	return $html;
+} // getList
+
+ 
+/**
+ * Display company in a combo box
+ * If company has branch information, this function displays it in COMPANY(BRANCH) format
+ */
+function displayCompanyList ( $arguments){	
+
+	$col = checkValue($arguments['col'], $arguments['table']); 
+	$valueCol = checkValue($arguments['valueCol'], $arguments['col']); 
+	$orderByClause = checkValue($arguments['orderByClause'], $arguments['col'] . " ASC"); 
+	$table = $arguments['table']; 
+	$value = $arguments['value'];
+	$source = $arguments['source'];
+	$inputName 		= isSet($arguments['inputName']) ? $arguments['inputName'] : $source;	
+	$action			= isSet($arguments['action']) ? $arguments['action'] : "display"; 
+	$editHeading   	= isSet($arguments['editHeading']) ? $arguments['editHeading'] : "";
+	$editHeading 	= isSet($arguments['editHeadingeditHeading']) ? $arguments['numberValue'] : FALSE;
+	$maxLength 		= isSet($arguments['maxLength']) ? $arguments['maxLength'] : 50;
+	$isLink 		= isSet($arguments['isLink']) ? $arguments['isLink'] : FALSE;
+	$linkHeading 	= isSet($arguments['linkHeading']) ? $arguments['linkHeading'] : "";
+	$target 		= isSet($arguments['target']) ? $arguments['target'] : "";
+	$nonEditable 	= isSet($arguments['nonEditable']) ? $arguments['nonditable'] : FALSE;
+	$size 			= isSet($arguments['size']) ? $arguments['size'] : 17;
+	$inputPrefix 	= isSet($arguments['inputPrefix']) ? $arguments['inputPrefix'] : "";
+	$inputSuffix 	= isSet($arguments['inputSuffix']) ? $arguments['inputSuffix'] : "";
+	$onClickJSFunction = isSet($arguments['onClickJSFunction']) ? $arguments['onClickJSFunction'] : "";
+	$onChangeJSFunction = isSet($arguments['onChangeJSFunction']) ? $arguments['onChangeJSFunction'] : "";
+	$dollarValue 	= isSet($arguments['dollarValue']) ? $arguments['dollarValue'] : FALSE;
+	$decimal 		= isSet($arguments['decimal']) ? $arguments['decimal'] : 2;	
+	
+	ob_start();
+	
+	if ($action == "display" || $action == "verify" || $nonEditable)
+	{
+        textFormat($value);
+	}
+	else
+	{
+
+		if (strlen($onChangeJSFunction) > 0)
+		{
+	 		if (strpos($onChangeJSFunction, "(") === false)
+	 		{
+	 			$onChangeJSFunction .= "()";
+	 		}
+	 		$onChange = " onChange=\"javascript:" . $onChangeJSFunction . " \" ";
+		}
+		if ($inputPrefix != "")
+		{
+			$name = $inputPrefix . "_$inputName";
+		}
+		else
+		{
+			$name = "$inputName";
+		}
+		
+		echo "$editHeading<select name=\"$name\" id=\"$name\"" . $onChange . "\n";
+		
+		echo ">";
+		echo "<OPTION VALUE=\"\">Choose one</OPTION>";
+		// TOOD add security level
+		echo "<OPTION VALUE=\"\">Add new company...</OPTION>";		
+		$sql = "SELECT DISTINCT $col, BranchName, $valueCol FROM " . $table . " ORDER BY $orderByClause ";	
+		
+		$result = executeSql($sql);
+		while ($sourceRow = mysql_fetch_array($result)) 
+		{
+			echo "<OPTION VALUE=\"" . $sourceRow[$valueCol] . "\"";
+			if ($value == $sourceRow[$valueCol])
+				echo " SELECTED ";
+			echo ">" . $sourceRow[$col];
+			if ($sourceRow['BranchName'] != ""){
+				echo " (" . $sourceRow['BranchName'] . ")";			
+			}
+			echo "</OPTION>";		
+		}
+		echo "</SELECT>\n";
+	}
+
+	$output = ob_get_contents();
+    ob_end_clean();
+    return $output;	
+	
+} // displayCompanyList
+	
+} // CompanyView
+
+if ($isDebug == 1){
+?>
+<html>
+<table>
+<? $CompanyView = new CompanyView();
+print $CompanyView->getNewHTMLForm();
+?>
+</table>
+</html>
+<?
+}
+?>

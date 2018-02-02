@@ -1,0 +1,474 @@
+<?php
+define("CAM_PARKING",	"'REG_PARKING','COMPACT_PARKING','TANDEM_PARKING'");
+
+include "main_include.phtml";
+
+include_once 'AjaxUtil_class.phtml';
+include_once 'closing_commons.phtml';
+
+
+// get list of old statements
+if ($_REQUEST["act"] == "list_old_statements") {
+  $listStatements = array();
+  
+  $rows = AjaxUtil::doSql("select distinct CreatedDate from UserClosingInterimStatement");
+  foreach ($rows as $row) {
+    array_push($listStatements,"Interim_" . $row['CreatedDate']);
+  }
+
+  $rows = AjaxUtil::doSql("select distinct CreatedDate from UserClosingFinalStatement");
+  foreach ($rows as $row) {
+    array_push($listStatements, 'Final_' . $row['CreatedDate']);
+  }
+
+  echo AjaxUtil::phpArray2JsArray($listStatements);
+
+// retrieve or create new statement
+} elseif ($_REQUEST["act"] == "get_statement") {
+  if (strstr($_REQUEST["statement"],'New')) {
+    if (strstr($_REQUEST["statement"],'Interim')) {
+      createInterimStatement();
+    } else {
+      createFinalStatement();
+    }
+  } else {
+    $createdDate = substr($_REQUEST["statement"], strpos($_REQUEST["statement"],'_') + 1);
+    if (strstr($_REQUEST["statement"],'Interim')) {
+      getInterimStatement($createdDate);
+    } else {
+      getFinalStatement($createdDate);
+    }
+  }
+
+// delete statement
+} elseif ($_REQUEST["act"] == "del_statement") {
+  $createdDate = substr($_REQUEST["statement"], strpos($_REQUEST["statement"],'_') + 1);
+  if (strstr($_REQUEST["statement"],'Interim')) {
+    deleteInterimStatement($createdDate);
+  } else {
+    deleteFinalStatement($createdDate);
+  }
+
+}
+
+function createInterimStatement() {
+  // get user closing data
+  $sql = "select c.*, concat_ws(' ',u.FirstName, u.LastName) PurchaserName,"
+       . " concat(' ', suite, concat_ws(',',address, province, country, postalcode)) PurchaserAddress,"
+       . " c.TarionNumber TarionNumber,"
+       . " u.UserID UserID,"
+       . " If(u.OfferPrice=0,u.Price,u.OfferPrice) OfferPrice,"
+       . " u.AgreementDepositAmount AgreementDepositAmount,"
+       . " AdjustedSalesPrice AdjustedBalance,"
+       . " FirstRevisedClosingDate,SecondRevisedClosingDate,ThirdRevisedClosingDate,OccupancyDepositDate," // require for calculate closing date
+       . " c.AdmFeeCommExpense AdmFeeCommExpense,"
+       . " p.EstimatedRealtyTax RealtyTaxes,"
+       . " u.AgreementDepositTransactionsRecordID,"
+       . " u.Day30DepositTransactionsRecordID,"
+       . " u.Day30DepositAmount,"
+       . " u.Day90DepositTransactionsRecordID,"
+       . " u.Day90DepositAmount,"
+       . " u.Day150DepositTransactionsRecordID,"
+       . " u.Day150DepositAmount,"
+       . " u.Day210DepositTransactionsRecordID,"
+       . " u.Day210DepositAmount,"
+       . " u.OccupancyDepositTransactionsRecordID,"
+       . " u.OccupancyDepositAmount"
+       . " from UserClosing c, User u, ProjectClosing p"
+       . " where c.UnitNumber = u.UnitNumber"
+       . " and u.DealStatus = 'Firm'";
+  $uClosings = AjaxUtil::doSql($sql);
+  $count = count($uClosings);
+  if($count == 0) {
+    AjaxUtil::raiseError("User Closing data has not been generated yet!");
+  } 
+  
+  
+  $createdDate = date('Y-m-d H:i:s');
+  for ($i = 0; $i < $count; $i++) {
+
+		$uClosings[$i]["OccupancyDate"] = getClosingDate($uClosings[$i]);
+
+  	// get total deposit amount from Cheque table
+		$sql = "select sum(ChequeAmount) TotalDeposit"
+				 . "  from Cheque"
+				 . " where ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . ")"
+				 . "   and (TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["AgreementDepositTransactionsRecordID"]) . " or "
+				 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day30DepositTransactionsRecordID"]) . " or "
+				 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day90DepositTransactionsRecordID"]) . " or "
+  			 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day150DepositTransactionsRecordID"]) . " or "
+  			 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day210DepositTransactionsRecordID"]) . " or "
+  			 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["OccupancyDepositTransactionsRecordID"]) . " )";
+  	
+  	$ChequeAmount = AjaxUtil::doSql($sql);
+
+  	$uClosings[$i]["TotalDeposit"] = $ChequeAmount[0]['TotalDeposit'];
+		$uClosings[$i]["ContractedDeposit"] = $uClosings[$i]["AgreementDepositAmount"] + $uClosings[$i]["Day30DepositAmount"] + $uClosings[$i]["Day90DepositAmount"] + $uClosings[$i]["Day150DepositAmount"] + $uClosings[$i]["Day210DepositAmount"] + $uClosings[$i]["OccupancyDepositAmount"];
+  	$uClosings[$i]["InterestOnBalance"] = getInterestOnBalance($uClosings[$i]["OfferPrice"],$uClosings[$i]["ContractedDeposit"],$uClosings[$i]["OccupancyDate"]);
+
+  	$sql = "select sum(CAM) CAM"
+				 . "  from InventoryItem"
+				 . " where UserID=" . $uClosings[$i]["UserID"];
+  	$cam = AjaxUtil::doSql($sql);
+  	$uClosings[$i]["TotalCommonExpenses"] = $Cam[0]['CAM'] + $uClosings[$i]["UnitCAM"];
+  	
+  	$uClosings[$i]["OccupancyFee"] = $uClosings[$i]["TotalCommonExpenses"] + $uClosings[$i]["InterestOnBalance"] + $uClosings[$i]["RealtyTaxes"];
+  	
+  	$uClosings[$i]["ProRatedOccupancyFee"] = getProRatedFee($uClosings[$i]["OccupancyFee"],$uClosings[$i]["OccupancyDate"]);
+  	$uClosings[$i]["BalanceDueOnFinalClosing"] = $uClosings[$i]["OfferPrice"] - $uClosings[$i]["ContractedDeposit"];
+  	$uClosings[$i]["UnadjustedBalance"] = $uClosings[$i]["ContractedDeposit"] - $uClosings[$i]["TotalDeposit"];
+
+  	$uClosings[$i]["ProRatedCAM"] = getProRatedFee($uClosings[$i]["TotalCommonExpenses"],$uClosings[$i]["OccupancyDate"]);
+  	$uClosings[$i]["ProRatedTax"] = getProRatedFee($uClosings[$i]["RealtyTaxes"],$uClosings[$i]["OccupancyDate"]);
+  	$uClosings[$i]["ProRatedInterest"] = getProRatedFee($uClosings[$i]["InterestOnBalance"],$uClosings[$i]["OccupancyDate"]);
+
+		//Additional Purchaser
+		// get additional purchaser
+		$sql = "select Person.FirstName, Person.LastName"
+		     . "  from AdditionalPurchaser, Person "
+		     . " where AdditionalPurchaser.PersonID = Person.PersonID "
+		     . "   AND AdditionalPurchaser.UserID = " . $uClosings[$i]["UserID"];
+		$additionalPurchaserRows = AjaxUtil::doSql($sql);
+		$additionalPurchaser = "";
+	  foreach ($additionalPurchaserRows as $additionalPurchaserRow) {
+	    $additionalPurchaser = $additionalPurchaser . $additionalPurchaserRow['FirstName'] . " " . $additionalPurchaserRow['LastName'] . '    ' ;
+	  }
+		$uClosings[$i]['AdditionalPurchaser'] = $additionalPurchaser;
+  			
+  	// CAM number,level
+  	$RegPacking = getInventoryItem($uClosings[$i]["UserID"],'REG_PACKING');
+  	if($RegPacking != null) {
+  		$uClosings[$i]["RegParkingNumber"] = $RegPacking["ItemNumber"];
+  		$uClosings[$i]["RegParkingLevel"] = $RegPacking["ItemLevel"];
+  	}
+
+  	$CompactParkingNumber = getInventoryItem($uClosings[$i]["UserID"],'COMPACT_PARKING');
+  	if($CompactParkingNumber != null) {
+  		$uClosings[$i]["CompactParkingNumber"] = $RegPacking["ItemNumber"];
+  		$uClosings[$i]["CompactParkingLevel"] = $RegPacking["ItemLevel"];
+  	}
+  	
+		$TandemPacking = getInventoryItem($uClosings[$i]["UserID"],'TANDEM_PARKING');
+  	if($TandemPacking != null) {
+  		$uClosings[$i]["TandemParkingNumber"] = $RegPacking["ItemNumber"];
+  		$uClosings[$i]["TandemParkingLevel"] = $RegPacking["ItemLevel"];
+  	}  			
+  	
+		$RegLocker = getInventoryItem($uClosings[$i]["UserID"],'REG_LOCKER');
+  	if($RegLocker != null) {
+  		$uClosings[$i]["RegLockerNumber"] = $RegPacking["ItemNumber"];
+  		$uClosings[$i]["RegLockerLevel"] = $RegPacking["ItemLevel"];
+  	}  			
+
+		$BikeRacker = getInventoryItem($uClosings[$i]["UserID"],'BIKE_RACKER');
+  	if($BikeRacker != null) {
+  		$uClosings[$i]["BikeRackerNumber"] = $RegPacking["ItemNumber"];
+  		$uClosings[$i]["BikeRackerLevel"] = $RegPacking["ItemLevel"];
+  	}  			
+
+		$uClosings[$i]["UnitNbr"] = substr($uClosings[$i]["UnitNumber"], strlen($uClosings[$i]["UnitNumber"]) - 2);
+		$uClosings[$i]["UnitLevel"] = "TODO";
+
+    $sql = sprintf("insert into UserClosingInterimStatement(" .
+    	"UnitNumber,CreatedDate,PurchaserName,PurchaserAddress,TarionNumber,OfferPrice,ContractedDeposit,TotalDeposit,AdjustedBalance," .
+    	"OccupancyDate,ProRatedOccupancyFee,TotalCommonExpenses,RealtyTaxes,InterestOnBalance,OccupancyFee,BalanceDueOnFinalClosing,UnadjustedBalance,AdditionalPurchaser," .
+    	"UnitNbr,UnitLevel,BikeRackerNumber,BikeRackerLevel,RegLockerNumber,RegLockerLevel,TandemParkingNumber,TandemParkingLevel,CompactParkingNumber,CompactParkingLevel,RegParkingNumber,RegParkingLevel," .
+    	"ProRatedCAM,ProRatedTax,ProRatedInterest)".
+    	" values ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+			$uClosings[$i]["UnitNumber"],
+      $createdDate,
+      mysql_real_escape_string($uClosings[$i]["PurchaserName"]),
+      '', //mysql_real_escape_string($uClosings[$i]["PurchaserAddress"]),
+      $uClosings[$i]["TarionNumber"],
+      $uClosings[$i]["OfferPrice"],
+      $uClosings[$i]["ContractedDeposit"],
+      $uClosings[$i]["TotalDeposit"],
+      $uClosings[$i]["AdjustedBalance"],
+      $uClosings[$i]["OccupancyDate"],
+      $uClosings[$i]["ProRatedOccupancyFee"],
+      $uClosings[$i]["TotalCommonExpenses"],
+      $uClosings[$i]["RealtyTaxes"],
+      $uClosings[$i]["InterestOnBalance"],
+      $uClosings[$i]["OccupancyFee"],
+      $uClosings[$i]["BalanceDueOnFinalClosing"],
+      $uClosings[$i]["UnadjustedBalance"],
+      $uClosings[$i]["AdditionalPurchaser"],
+      $uClosings[$i]["UnitNbr"],
+      $uClosings[$i]["UnitLevel"],
+      $uClosings[$i]["BikeRackerNumber"],
+      $uClosings[$i]["BikeRackerLevel"],
+      $uClosings[$i]["RegLockerNumber"],
+      $uClosings[$i]["RegLockerLevel"],
+      $uClosings[$i]["TandemParkingNumber"],
+      $uClosings[$i]["TandemParkingLevel"],
+      $uClosings[$i]["CompactParkingNumber"],
+      $uClosings[$i]["CompactParkingLevel"],
+      $uClosings[$i]["RegParkingNumber"],
+      $uClosings[$i]["RegParkingLevel"],
+      $uClosings[$i]["ProRatedCAM"],
+      $uClosings[$i]["ProRatedTax"],
+      $uClosings[$i]["ProRatedInterest"]
+      );
+    AjaxUtil::doSql($sql);
+  }
+  echo "Interim_" . $createdDate;
+}
+
+function createFinalStatement() {
+  // get user closing data
+  $sql = "select c.UnitNumber UnitNumber, u.UserID,"
+       . " concat_ws(' ',u.FirstName, u.LastName) PurchaserName,"
+       . " concat(' ', suite, concat_ws(',',address, province, country, postalcode)) PurchaserAddress,"
+       . " c.TarionNumber TarionNumber,"
+       . " If(u.OfferPrice=0,u.Price,u.OfferPrice) OfferPrice,"
+       . " u.AgreementDepositAmount+u.Day30DepositAmount+u.Day90DepositAmount+u.Day150DepositAmount+u.Day210DepositAmount+u.OccupancyDepositAmount ContractedDeposit,"
+       . " FirstRevisedClosingDate,SecondRevisedClosingDate,ThirdRevisedClosingDate,OccupancyDepositDate," // require for calculate closing date
+       . " p.NumOfUnit NumberOfUnit,"
+       . " c.LandTaxYear1 LandTaxYear1,"
+       . " c.LandTaxYear2 LandTaxYear2,"
+       . " c.PropertyTaxYear1 SupplLandTaxYear1,"
+       . " c.PropertyTaxYear2 SupplLandTaxYear2,"
+       . "c.SixFeeProvTax SixFeeProvTax,"
+       . "c.SixFeeConnCharge," 
+       . "c.SixFeeWaterMeter,"
+       . "c.SixFeeHydroCharge,"
+       . "c.SixFeeDevCharge,"
+       . "c.SixFeeTarion,"
+       . "c.AdmFeeLawSociety LawSocietyLevy,"
+       . "c.AdmFeeCheqRecovery CheqRecoveryCost,"
+       . "c.AdmFeeMortageCharge DischargeFee,"
+       . "c.AdmFeeCreditPurchase CreditAmount,"
+       . " u.AgreementDepositTransactionsRecordID,"
+       . " u.Day30DepositTransactionsRecordID,"
+       . " u.Day90DepositTransactionsRecordID,"
+       . " u.Day150DepositTransactionsRecordID,"
+       . " u.Day210DepositTransactionsRecordID,"
+       . " u.OccupancyDepositTransactionsRecordID"
+       . " from UserClosing c, User u, ProjectClosing p"
+       . " where c.UnitNumber = u.UnitNumber"
+       . " and u.DealStatus = 'Firm'";
+  
+  $uClosings = AjaxUtil::doSql($sql);
+  $count = count($uClosings);
+  if($count == 0) {
+    AjaxUtil::raiseError("User Closing data has not been generated yet!");
+  } 
+  
+  
+  $createdDate = date('Y-m-d H:i:s');
+  
+  for ($i = 0; $i < $count; $i++) {
+    
+  	$GSTRate = strtotime($uClosings[$ii]["AgreementDepositDate"]) > strtotime("2006-06-30") ? 0.06:0.07;
+		$uClosings[$i]["GST"] = $uClosings[$i]["OfferPrice"]*$GSTRate;
+		
+		$uClosings[$i]["OccupancyDate"] = getClosingDate($uClosings[$i]);
+		
+  	// get total deposit amount from Cheque table
+		$sql = "select sum(ChequeAmount) TotalDepositPaid"
+				 . "  from Cheque"
+				 . " where ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . ")"
+				 . "   and (TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["AgreementDepositTransactionsRecordID"]) . " or "
+				 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day30DepositTransactionsRecordID"]) . " or "
+				 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day90DepositTransactionsRecordID"]) . " or "
+  			 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day150DepositTransactionsRecordID"]) . " or "
+  			 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["Day210DepositTransactionsRecordID"]) . " or "
+  			 . "        TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["OccupancyDepositTransactionsRecordID"]) . " )";
+  	$ChequeAmount = AjaxUtil::doSql($sql);
+  	$uClosings[$i]["TotalDepositPaid"] = $ChequeAmount[0]['TotalDepositPaid'];
+
+    // get total Occupancy deposit amount from Cheque table
+		$sql = "select sum(ChequeAmount) OccupancyDeposit, max(ChequeDate) OccupancyDepositDate"
+				 . "  from Cheque"
+				 . " where ChequeStatus IN (" . CHEQUE_GROUP_PAYMENT_RECEIVED_LIST . ")"
+				 . "   and TransactionsRecordID=" . ZeroIfBlank($uClosings[$i]["OccupancyDepositTransactionsRecordID"]);
+  	$OccupancyDeposit = AjaxUtil::doSql($sql);
+  	$uClosings[$i]["OccupancyDeposit"] = $OccupancyDeposit[0]['OccupancyDeposit'];
+  	$uClosings[$i]["DepositInterest"] = $uClosings[$i]["TotalDepositPaid"] * $interestRate; // * ($uClosings[$i]["OccupancyDate"] - $uClosings[$i]["OccupancyDepositDate"]) / 30;
+
+  	$sql = "select sum(CAM) CAM, sum(Price) Price"
+				 . "  from InventoryItem"
+				 . " where ItemType IN (" . CAM_PARKING . ")"
+				 . "   and UserID=" . $uClosings[$i]["UserID"];
+  	$ParkingCam = AjaxUtil::doSql($sql);
+  	$uClosings[$i]["ParkingCamFee"] = $ParkingCam[0]['CAM'];
+  	$uClosings[$i]["ParkingCamFeeProRated"] = $ParkingCam[0]['Price'];
+		$uClosings[$i]["ParkingCamFeePaid"] = $uClosings[$i]["ParkingCamFee"] * diffMonth($uClosings[$i]["OccupancyDate"]);
+
+		$sql = "select sum(CAM) CAM, sum(Price) Price"
+				 . "  from InventoryItem"
+				 . " where ItemType IN ('REG_LOCKER')"
+				 . "   and UserID=" . $uClosings[$i]["UserID"];
+  	$LockerCam = AjaxUtil::doSql($sql);
+  	$uClosings[$i]["LockerCamFee"] = $LockerCam[0]['CAM'];
+  	$uClosings[$i]["LockerCamFeeProRated"] = $LockerCam[0]['Price'];
+		$uClosings[$i]["LockerCamFeePaid"] = $uClosings[$i]["LockerCamFee"] * diffMonth($uClosings[$i]["OccupancyDate"]);
+		$uClosings[$i]["CreditDescription"] = ""; // this is input by lawer
+		
+		$uClosings[$i]["UnitCamFee"] = 0; //TODO
+		$uClosings[$i]["UnitCamFeeProRated"] = 0; //TODO
+		$uClosings[$i]["UnitCamFeePaid"] = 0; //TODO
+
+  	$uClosings[$i]["TotalCommonExpenses"] = $uClosings[$i]["ParkingCamFee"] + $uClosings[$i]["LockerCamFee"] + $uClosings[$i]["UnitCamFee"];
+  	$uClosings[$i]["InterestOnBalance"] = getInterestOnBalance($uClosings[$i]["OfferPrice"],$uClosings[$i]["ContractedDeposit"],$uClosings[$i]["OccupancyDate"]);
+
+  	$uClosings[$i]["OccupancyFee"] = $uClosings[$i]["TotalCommonExpenses"] + $uClosings[$i]["InterestOnBalance"] + $uClosings[$i]["RealtyTaxes"];
+
+		$uClosings[$i]["Balance"] = (int)$uClosings[$i]["OfferPrice"] + (int)ZeroIfBlank($uClosings[$i]["UnitCAMFeePaid"]) + ZeroIfBlank($uClosings[$i]["ParkingCAMFeePaid"]) + ZeroIfBlank($uClosings[$i]["LockerCamFeePaid"])
+		   + $uClosings[$i]["LandTaxYear1"] + $uClosings[$i]["LandTaxYear2"] + $uClosings[$i]["SupplLandTaxYear1"] + $uClosings[$i]["SupplLandTaxYear2"];
+		   + $uClosings[$i]["SixFeeProvTax"] + $uClosings[$i]["SixFeeConnCharge"] + $uClosings[$i]["SixFeeWaterMeter"] + $uClosings[$i]["SixFeeHydroCharge"] + $uClosings[$i]["SixFeeDevCharge"]+ $uClosings[$i]["SixFeeTarion"]
+		   + ZeroIfBlank($uClosings[$i]["LawSocietyLevy"]) + ZeroIfBlank($uClosings[$i]["CheqRecoveryCost"]) + ZeroIfBlank($uClosings[$i]["DischargeFee"]) ;
+		   - ZeroIfBlank($uClosings[$i]["TotalDepositPaid"]) + ZeroIfBlank($uClosings[$i]["DepositInterest"]);
+//		 echo 	$uClosings[$i]["Balance"];
+//		 return;
+	
+    $sql = sprintf("insert into UserClosingFinalStatement(" .
+    	"createdDate, UnitNumber,PurchaserName,PurchaserAddress,TarionNumber,OfferPrice,GST,ContractedDeposit,TotalDepositPaid,OccupancyDate,OccupancyDeposit,DepositInterest," .
+    	"UnitCamFee,UnitCamFeeProRated,UnitCamFeePaid,ParkingCamFee,ParkingCamFeeProRated,ParkingCamFeePaid,LockerCamFee,LockerCamFeeProRated,LockerCamFeePaid,NumberOfUnit,LandTaxYear1,LandTaxYear2,SupplLandTaxYear1,SupplLandTaxYear2," .
+    	"SixFeeProvTax,SixFeeConnCharge,SixFeeWaterMeter,SixFeeHydroCharge,SixFeeDevCharge,SixFeeTarion,LawSocietyLevy,CheqRecoveryCost,DischargeFee,".
+    	"CreditAmount,CreditDescription,Balance,OccupancyFee) \n".
+    	" values ('%s','%s','%s','%s','%s',%s,%s,%s,'%s','%s',%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'%s',%s,%s)",
+    	$createdDate,
+			$uClosings[$i]["UnitNumber"],
+      mysql_real_escape_string($uClosings[$i]["PurchaserName"]),
+      mysql_real_escape_string($uClosings[$i]["PurchaserAddress"]),
+      $uClosings[$i]["TarionNumber"],
+      $uClosings[$i]["OfferPrice"],
+      $uClosings[$i]["GST"],
+      $uClosings[$i]["ContractedDeposit"],
+      $uClosings[$i]["TotalDepositPaid"],
+      $uClosings[$i]["OccupancyDate"],
+      ZeroIfBlank($uClosings[$i]["OccupancyDeposit"]),
+      ZeroIfBlank($uClosings[$i]["DepositInterest"]),
+      ZeroIfBlank($uClosings[$i]["UnitCamFee"]),
+      ZeroIfBlank($uClosings[$i]["UnitCamFeeProRated"]),
+      ZeroIfBlank($uClosings[$i]["UnitCamFeePaid"]),
+      ZeroIfBlank($uClosings[$i]["ParkingCamFee"]),
+      ZeroIfBlank($uClosings[$i]["ParkingCamFeeProRated"]),
+      ZeroIfBlank($uClosings[$i]["ParkingCamFeePaid"]),
+	  	ZeroIfBlank($uClosings[$i]["LockerCamFee"]),
+	  	ZeroIfBlank($uClosings[$i]["LockerCamFeeProRated"]),
+	  	ZeroIfBlank($uClosings[$i]["LockerCamFeePaid"]),
+      ZeroIfBlank($uClosings[$i]["NumberOfUnit"]),
+      ZeroIfBlank($uClosings[$i]["LandTaxYear1"]),
+      ZeroIfBlank($uClosings[$i]["LandTaxYear2"]),
+      ZeroIfBlank($uClosings[$i]["SupplLandTaxYear1"]),
+      ZeroIfBlank($uClosings[$i]["SupplLandTaxYear2"]),
+      ZeroIfBlank($uClosings[$i]["SixFeeProvTax"]),
+			ZeroIfBlank($uClosings[$i]["SixFeeConnCharge"]),
+			ZeroIfBlank($uClosings[$i]["SixFeeWaterMeter"]),
+			ZeroIfBlank($uClosings[$i]["SixFeeHydroCharge"]),
+			ZeroIfBlank($uClosings[$i]["SixFeeDevCharge"]),
+			ZeroIfBlank($uClosings[$i]["SixFeeTarion"]),
+			ZeroIfBlank($uClosings[$i]["LawSocietyLevy"]),
+			ZeroIfBlank($uClosings[$i]["CheqRecoveryCost"]),
+      ZeroIfBlank($uClosings[$i]["DischargeFee"]),
+      ZeroIfBlank($uClosings[$i]["CreditAmount"]),
+      $uClosings[$i]["CreditDescription"],
+      ZeroIfBlank($uClosings[$i]["Balance"]),
+      ZeroIfBlank($uClosings[$i]["OccupancyFee"])
+      );
+//    echo $sql;
+//    return;
+    AjaxUtil::doSql($sql);
+
+  }
+  echo "Final_" . $createdDate;
+}
+
+function getInterimStatement($createdDate) {
+  $rows = AjaxUtil::doSql("select * from UserClosingInterimStatement where CreatedDate='" . $createdDate . "' ORDER BY cast(UnitNumber as signed)");
+  echo AjaxUtil::phpObjArray2JsObjArray($rows);
+}
+
+function getFinalStatement($createdDate) {
+  $rows = AjaxUtil::doSql("select * from UserClosingFinalStatement where CreatedDate='" . $createdDate . "'  ORDER BY cast(UnitNumber as signed)");
+  echo AjaxUtil::phpObjArray2JsObjArray($rows);
+}
+
+function deleteInterimStatement($createdDate) {
+  $rows = AjaxUtil::doSql("delete from UserClosingInterimStatement where CreatedDate='" . $createdDate . "'");
+  echo "Interim Statement on " . $createdDate . " has been deleted successfully.";
+}
+
+function deleteFinalStatement($createdDate) {
+  $rows = AjaxUtil::doSql("delete from UserClosingFinalStatement where CreatedDate='" . $createdDate . "'");
+  echo "Final Statement on " . $createdDate . " has been deleted successfully.";
+}
+
+function getInterestRate($year,$month) {
+	$sql = sprintf("select Rate from InterestRate where Year=%s and Month=%s", $year, $month);
+	$rows = AjaxUtil::doSql($sql);
+  return count($rows)==0 ? 0 : $rows[0]['Rate']/100;
+}
+
+function getInventoryItem($userID,$type) {
+	$sql = sprintf("select * from InventoryItem where ItemType='%s' and UserID=%s", $type,$userID);
+	$CAM = AjaxUtil::doSql($sql);
+	
+	if(count($InventoryItems) > 0) {
+		return $InventoryItems[0];
+	} else {
+		return null;
+	}
+}
+
+function diffMonth($date1) {
+  $year1  = (int)substr($date1,0,4);
+  $month1 = (int)substr($date1,5,2);
+  $todayYear  = date('Y');
+  $todayMonth = date('n');
+  return ($todayYear-$year1)*12+($todayMonth-$month1)+1;
+}
+
+
+// this function already defined in main_include.phtml
+//function getProRatedFee($fee, $occupancyDate) {
+//  $occupancyYear  = (int)substr($occupancyDate,0,4);
+//  $occupancyMonth = (int)substr($occupancyDate,5,2);
+//  $occupancyDay   = (int)substr($occupancyDate,8,2);
+//  $num_of_days    = date("t",mktime(0, 0, 0, $occupancyMonth, $occupancyDay, $occupancyYear));
+// 
+//  // get interest rate
+////  $interestRate = getInterestRate($occupancyYear,$occupancyMonth) / 12;
+////  if($interestRate == 0) return 0;
+//  
+//  return ($fee) * ($num_of_days - $occupancyDay) / $num_of_days; 
+//}
+
+function getInterestOnBalance($offerPrice, $contractedDeposit, $occupancyDate) {
+  $occupancyYear  = (int)substr($occupancyDate,0,4);
+  $occupancyMonth = (int)substr($occupancyDate,5,2);
+  $occupancyDay   = (int)substr($occupancyDate,8,2);
+ 
+  // get interest rate
+  $interestRate = getInterestRate($occupancyYear,$occupancyMonth);
+  if($interestRate == 0) return 0;
+  
+  return ($offerPrice - $contractedDeposit) * ($interestRate/12); 
+}
+
+/*
+function getInterestOnBalance($offerPrice, $totalDeposit, $occupancyDate) {
+  $occupancyYear  = (int)substr($occupancyDate,0,4);
+  $occupancyMonth = (int)substr($occupancyDate,5,2);
+  $occupancyDay   = (int)substr($occupancyDate,8,2);
+ 
+  // get interest rate
+  $interestRate = getInterestRate($occupancyYear,$occupancyMonth);
+  if($interestRate == 0) return 0;
+ 
+  $todayYear  = date('Y');
+  $todayMonth = date('n');
+  $todayDay   = date('j');
+
+  $mthBalance = ($offerPrice - $totalDeposit) * $interestRate / 12;
+  $mth1 = $mthBalance*$occupancyDay/date("t",mktime(0, 0, 0, $occupancyMonth, $occupancyDay, $occupancyYear));
+  $mth_ = $mthBalance*(($todayYear-$occupancyYear)*12+($todayMonth-$occupancyMonth));
+  
+  //echo $interestRate, "-" , $occupancyDate, "-", ($mth1 + $mth_), "\n";
+  return ($mth1 + $mth_);
+}
+*/
+
+?>

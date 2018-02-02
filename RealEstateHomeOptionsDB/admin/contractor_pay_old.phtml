@@ -1,0 +1,329 @@
+<?
+include "main_include.phtml";
+
+function get_section_by_item($ItemID) {
+	//$sql_section = "SELECT SectionID from Subsection limit 1";
+	$sql_section = "SELECT Subsection.SectionID As SectionID
+				FROM Item, Subsection
+				WHERE Item.ItemID = '".$ItemID."'"." AND Subsection.SubsectionID = Item.SubsectionID";
+	$result_section = mysql_query($sql_section) or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql_section."<BR>".$PHP_SELF);
+	$row_section = mysql_fetch_array($result_section);
+
+	return $row_section['SectionID'];
+}
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+?>
+<H4>HOME Sales STATS</H4>
+<H5>Note: All amount does not include tax</H5>
+<table CELLSPACING="2">
+<tr>
+	<tr>
+		<td colspan=2>Contractor Cost</td>
+	</tr>
+	
+<tr class="head">
+	<th>Contractor</th>
+	<th>Costs</th>
+<!--	<th>Sales</th>
+	<th>Percentage</th>
+//-->
+</tr>
+<?
+
+
+$contractor_sql = "SELECT * from Contractor";
+$contractor_result = mysql_query($contractor_sql, $db) or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql."<BR>".$PHP_SELF);
+
+$total = 0;
+$sales_total = 0;
+$sales_total_with_GST = 0;
+// pick up non standard upgrade from UserOption table
+// User inputs the information via Addiitional Option in purchaser info page.
+// Only picks up value > 0. If value < 0, it means the option is an incentive.
+$non_standard_sales_total = 0;
+// ***********************************
+// retrieve sales total
+// ***********************************
+
+// retrieve sales total 
+// Commented by Cindy on Mar 31, 2003; Modify to take price from UserSave
+//$sql = "SELECT Price.price As Price
+//	FROM UserSave
+//	LEFT JOIN User
+//	On UserSave.UserID = User.UserID
+//	AND User.Commit = 1
+//	LEFT JOIN Price
+//	ON UserSave.ItemID = Price.ItemID
+//	AND UserSave.OptionID = Price.OptionID
+//	LEFT JOIN Unit
+//	ON Unit.UserID=User.UserID
+//	AND Unit.UnitType = Price.UnitType";
+
+// Commented by Cindy - July 18, 2003: direct join with Unit instead of "Left Join" to synchronize with the next SQL
+// Take price from UserSave table
+//$sql = "SELECT UserSave.Price AS Price, UserSave.ItemID AS ItemID, Unit.UnitType AS UnitType
+//	FROM UserSave, User
+//	LEFT JOIN Unit
+//	ON Unit.UnitNumber = User.UnitNumber
+//	AND User.Commit = 1
+//	WHERE UserSave.UserID = User.UserID
+//	AND UserSave.Price <> 0
+//	AND User.DealStatus <> 'Rescinded'";
+
+$sql = "SELECT UserSave.Price AS Price, (UserSave.Price * GSTRate) AS GST, UserSave.ItemID AS ItemID, Unit.UnitType AS UnitType
+	FROM UserSave, User, Unit, UserUpgradeOptionStatus
+	WHERE UserSave.UnitNumber = Unit.UnitNumber
+	AND Unit.UnitNumber = UserUpgradeOptionStatus.UnitNumber
+	AND UserUpgradeOptionStatus.Commit = 1
+	AND User.DealStatus <> 'Rescinded'
+	AND UserSave.Price <> 0
+	AND Unit.UnitNumber = User.UnitNumber";
+
+$result = mysql_query($sql, $db) or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql."<BR>".$PHP_SELF);
+
+while ($row = mysql_fetch_array($result)) {
+	
+	$realPrice = convertPriceConstantToValidNumber($row[Price]);
+	if ($realPrice == 0){
+		continue;	
+	}
+	// Reduce search scope for disabled section
+//	if ($row[Price] == -9999 || $row[Price] == -99999 || $row[Price] == 0)
+//		continue;
+
+	// Exclude disabled sections from calculating total sales
+	$SectionID = get_section_by_item($row['ItemID']);
+	if (section_disabled($row['UnitType'], $SectionID)) {
+		//echo "item_id = ". $row['ItemID'] . "; unit type = ". $row['UnitType'] . "; section id = ". $SectionID . ";<br>";
+		//echo "price = ". $row[Price] . "<br>";
+		continue;
+	}
+
+	$sales_total_GST += $row['GST'];
+	$sales_total += $realPrice;
+	
+}
+
+// ***********************************
+// retrieve contractor pay
+// ***********************************
+
+for ($i = 0; $i < $no_of_contractor; $i ++) {
+
+	$contractor_row = mysql_fetch_array($contractor_result);
+
+	// Commented by Cindy on Mar 31, 2003; 
+	// Modified to join User & Unit thru UnitNumber instead of UserID 
+	// because somehow, sometimes UserID in Unit table is 0 even though this User did purchase the unit.
+	// Circumvented this bug by using UnitNumber before addressing the bug
+	// Moreover, exclude rescinded users from calculation - new scenario after integrating citygate admin and options & upgrades
+
+
+	// keep this feature for double checking the correctness of using StandardPO table
+	if ($useUserSave){
+		$contractor = "UserSave.contractor$i";
+	
+		$sql = "SELECT $contractor AS Cost, UserSave.ItemID As ItemID, Unit.UnitType As UnitType
+					FROM UserSave, User, Unit, UserUpgradeOptionStatus
+					WHERE Unit.UnitNumber = UserSave.UnitNumber
+					AND Unit.UnitNumber=User.UnitNumber
+					AND Unit.UnitNumber = UserUpgradeOptionStatus.UnitNumber
+					AND UserUpgradeOptionStatus.Commit = 1
+					AND User.DealStatus <> 'Rescinded'
+					AND $contractor <> 0
+					ORDER BY $contractor";
+	} else {
+		$contractor = "contractor$i";
+		$sql = "(SELECT Cost FROM StandardPO, User, UserUpgradeOptionStatus" .
+				" WHERE StandardPO.UnitNumber = User.UnitNumber " .
+				" AND User.UnitNumber = UserUpgradeOptionStatus.UnitNumber" .
+				" AND User.DealStatus <> 'Rescinded'" .
+				" AND UserUpgradeOptionStatus.Commit = 1" .
+				" AND ContractorID='" . $contractor . "')";
+				
+		// includes all Non-Standard PO
+		$sql .= " UNION ALL " .
+				" (SELECT Cost FROM NonStandardPO, User, UserUpgradeOptionStatus" .
+				" WHERE NonStandardPO.UnitNumber = User.UnitNumber " .
+				" AND User.UnitNumber = UserUpgradeOptionStatus.UnitNumber" .
+				" AND User.DealStatus <> 'Rescinded'" .
+				" AND UserUpgradeOptionStatus.Commit = 1" .
+				" AND ContractorID='" . $contractor . "')";		
+	}
+	
+//	print "sql=$sql<BR>";
+	$result = mysql_query($sql, $db) or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql."<BR>".$PHP_SELF);
+	$sum = 0;
+//print ("num rows=" . mysql_num_rows($result) . "<BR>");
+	while ($row = mysql_fetch_array($result)) {
+		// Reduce search scope
+		$realPrice = convertPriceConstantToValidNumber($row[Cost]);
+		if ($realPrice == 0){
+			continue;	
+		}
+
+		if ($useUserSave){
+		// Exclude disabled sections from calculating contractor pay
+			$SectionID = get_section_by_item($row['ItemID']);
+	
+			if (section_disabled($row['UnitType'], $SectionID))
+			continue;
+		}
+//		print "price=$realPrice<BR>";
+		$sum += $realPrice;
+	}
+
+	$total += $sum;
+	// print out the line iff the sum is not 0 and contractorName is not empty
+	if ($sum != 0 || $contractor_row['ContractorName'] != "") {
+		displayMouseOverTR();
+?>	
+		<td><?= $contractor_row['ContractorName'];?></td>
+		<td align="right">$<?= number_format($sum, 2);?></td>
+	</tr>
+<?	}
+}
+?>
+
+	<tr class="tail">
+		<td>Total</td>
+		<td>$<?= number_format($total, 2); ?></td>
+	</tr>
+<?
+// ***********************************
+// Retrieve non-standard upgrade from the UserOption table.
+// User inputs the information via Additional Option section 
+// in Purchaser Info page./
+// Only picks up value > 0
+// ***********************************
+
+$sql = "SELECT sum(UserOption.Price) AS Price, sum(UserOption.Price * GSTRate) AS GST
+	FROM UserOption, User, UserUpgradeOptionStatus
+	WHERE UserOption.UnitNumber = User.UnitNumber
+	AND User.UnitNumber = UserUpgradeOptionStatus.UnitNumber
+	AND UserUpgradeOptionStatus.Commit = 1
+	AND User.DealStatus <> 'Rescinded'
+	AND UserOption.Price > 0";
+
+$result = executeSql($sql);
+$row = mysql_fetch_array($result);
+$non_standard_sales_total = $row[Price];
+$non_standard_sales_total_GST = $row[GST];
+
+// ***********************************
+// retrieve total credits from UserOption(Incentives)
+// ***********************************
+
+$sql = "SELECT sum(UserOption.Price) total_credits
+			FROM UserOption, User, UserUpgradeOptionStatus
+			WHERE UserOption.Price < 0
+			AND UserUpgradeOptionStatus.UnitNumber = User.UnitNumber
+			AND UserOption.UnitNumber = User.UnitNumber
+			AND UserUpgradeOptionStatus.Commit = 1
+			AND User.DealStatus <> 'Rescinded'";
+
+$result = mysql_query($sql, $db) or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql."<BR>".$PHP_SELF);
+$row = mysql_fetch_array($result);
+$total_credits = $row['total_credits'];
+
+$sql = "SELECT Package.PackageName, SUM(UserPackage.Note) total_incentive " .
+		" FROM UserPackage, Package, User, UserUpgradeOptionStatus " .
+		" WHERE UserPackage.PackageID = Package.PackageID" .
+		" AND UserPackage.UserID = User.UserID" .
+		" AND UserUpgradeOptionStatus.UnitNumber = User.UnitNumber" .
+		" AND UserUpgradeOptionStatus.Commit = 1" .
+		" AND User.DealStatus <> 'Rescinded'" .
+		" AND " . UPGRADE_INCENTIVE_WHERE_CLAUSE . 
+		" GROUP BY Package.PackageName ";
+
+$result = executeSql($sql);
+$row = mysql_fetch_array($result);
+$total_incentive =  0;
+		
+
+?>
+	<tr>
+		<td colspan="2"><BR><BR></td>
+	</tr>
+
+	<tr>
+		<td colspan=2">Incentives Summary</td>
+	</tr>
+	<tr class="head">
+		<th>Incentive</th>
+		<th >Costs</th>
+	</tr>
+<?
+	while ($row = mysql_fetch_array($result)){
+		$total_incentive += $row['total_incentive'];
+?>
+	<tr>
+		<td><?= $row['PackageName']; ?></td>
+		<td align="right">$<?= number_format($row['total_incentive'], 2);?></td>
+	</tr>		
+<?	}
+?>
+	<tr class="tail">
+		<th>Total</th>
+		<th >$<?= number_format($total_incentive, 2);?></th>
+	</tr>
+<?
+	// collect sales total equals to (standard sales total + non standard sales total) x GST - total incentive
+	$collected_sales_total = $sales_total + $sales_total_GST + $non_standard_sales_total
+							+ $non_standard_sales_total_GST - $total_incentive;
+	$collected_GST =  $sales_total_GST+ $non_standard_sales_total_GST;	
+	$collected_sales_total_no_GST = $sales_total + $non_standard_sales_total - $total_incentive;
+							
+	$profit = $collected_sales_total_no_GST - $total + $total_incentive;
+	
+?>
+
+	<tr>
+		<td colspan="2"><BR><BR></td>
+	</tr>
+
+	<tr>
+		<td colspan="2">Profit Summary</td>
+	</tr>
+	<tr class="head">
+		<td>Description</td>
+		<td>Amount</td>
+	</tr>
+
+	<tr>
+		<td>Total Sales : </td>
+		<td align="right">$<?= number_format($collected_sales_total, 2); ?></td>
+	</tr>	
+
+	<tr>
+		<td>Total Sales HST: </td>
+		<td align="right">$<?= number_format($collected_GST, 2); ?></td>
+	</tr>	
+
+	<tr>
+		<td>Total Sales Exclude HST: </td>
+		<td align="right">$<?= number_format($collected_sales_total_no_GST, 2); ?></td>
+	</tr>	
+	<tr>
+		<td>Total Incentive Recoveries : </td>
+		<td align="right">$<?= number_format($total_incentive, 2); ?></td>
+	</tr>		
+	<tr>
+		<td>Total Cost: </td>
+		<td align="right">$<?= number_format($total, 2);?></td>
+	</tr>
+	<tr class="tail">
+		<td>Profit<br>(Total Sales Exclude HST + Total Incentive Recoveries - Total Cost): </td>
+		<td align="right">$<?= number_format($profit, 2); ?></td>
+	</tr>		
+	<tr></tr>
+<!--	<tr></tr>
+		<tr>
+		<td>Total Credits : </td>
+		<td align="right">$<?= number_format($total_credits, 2); ?></td>
+	</tr>		
+//-->	
+	</table>
+	<br>
+	</html>
+

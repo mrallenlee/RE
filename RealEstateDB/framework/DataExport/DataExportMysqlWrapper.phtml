@@ -1,0 +1,44 @@
+<?php
+/*
+ * Created on 9-Oct-2006
+ *
+ * Extends DataExport specifically for MySql data
+ */
+ include_once "DataExport.phtml";
+ 
+ class DataExportMysqlWrapper extends DataExport{
+ 	
+ 	var $sqlResult;
+ 	var $delimiter;
+ 	/**
+ 	 * Constructor with a sql statement
+ 	 */
+	function DataExportMysqlWrapper(&$sqlResult, $delimiter = ','){
+		$this->sqlResult = $sqlResult;
+		$this->delimiter = $delimiter;
+	}
+	
+	 /**
+	  * Export data from sql result var
+	  * Default is CSV file format
+	  */
+	 function exportData(){	 	
+		$no = mysql_num_fields($this->sqlResult);
+	
+		for ($i=0; $i < $no; $i++)
+		{
+			print  mysql_field_name($this->sqlResult, $i) . $this->delimiter;
+		}
+		print "\n";
+		while ($row = mysql_fetch_array($this->sqlResult))
+		{	
+			for ($i=0; $i < sizeof($row); $i++)
+			{
+				print "\"" . $row[$i] . "\""  . $this->delimiter;
+			}
+			print "\n";
+		} 	 		
+	 }
+ } 
+?>
+

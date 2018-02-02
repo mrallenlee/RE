@@ -1,0 +1,168 @@
+<?
+include "main_include.phtml";
+
+// This file displays an edit form for whichever record was
+// chosen to be editted.
+
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+
+?>
+
+<html>
+
+<head>
+  <title>Admin</title>
+  <META http-equiv="Content-Style-Type" content="text/css">
+  <link rel="stylesheet" href="./citygate.css" type="text/css">
+  <script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/dojo/dojo.js"></script>
+  <script language="javascript">
+    dojo.require("dojo.widget.DatePicker");
+    dojo.require("dojo.widget.DropdownDatePicker");
+  </script>
+
+  <script language="javaScript">
+  function set_fixeddate()
+  {
+    if (document.frm_edit_pdidefect.Fixed_new.checked == true) {
+      var today = new Date();
+      var today_mth = today.getMonth() + 1;
+      document.frm_edit_pdidefect.FixedDate.value = today.getFullYear() + "-" + today_mth + "-" + today.getDate();
+    }
+    else
+    {
+      document.frm_edit_pdidefect.FixedDate.value = "";
+    }
+  }
+  </script>
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#F0FFF0">
+
+<form action="process_row_edit_pdi.phtml" method="get" name="frm_edit_pdi">
+  <table cellspacing="2" cellpadding="0" border="0" width="700">
+    <tr>
+      <td class="link_small" colspan="3"><b>
+
+<?
+
+if ($table_name == "Unit")
+{
+
+?>	<H3><?= get_project_name($PHP_SELF); ?></H3>
+        <H4>Edit PDI General Information</H4>
+
+<?
+
+
+}
+else
+{
+//	echo "<a href=\"display_user.phtml\"><b>Users</b></a>";
+}
+
+?>
+
+      </b><br><br></td>
+    </tr>
+
+<?
+
+// Edit record in PDI table
+if ($table_name == "Unit")
+{
+	$sql	= "SELECT $table_name.UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, 
+			PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
+			OccupancyDate, OccupancyTime, OccupancyNotified, OccupancyNotifiedDate
+			FROM $table_name
+			LEFT JOIN User
+			ON ($table_name.UserID = User.UserID)
+			WHERE $table_name.UnitNumber=$unit";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+
+	$row = mysql_fetch_array($result);
+
+?>	
+	<tr>
+	  <td class="table_header"><b>Unit</b></td>
+	  <td class="table_header"><b>Purchaser</b></td>
+	  <td class="table_header"><b><nobr>ONHWP REG#</nobr></b></td>
+  </tr>
+
+
+	
+	  <tr>
+       <td class="table_rec"><?= $row['UnitNumber'] ?></td>
+       <td class="table_rec"><?= $row['PurchaserName'] ?></td>
+       <td class="table_rec"><input type="text" name="ONHWPRegNumber" value="<?= $row['ONHWPRegNumber'] ?>"></td>
+     </tr>
+
+<tr><td><br><br></td></td>
+  
+
+  <tr>
+    <td class="table_header"><b><nobr>PDI Date</nobr></b></td>
+    <td class="table_header"><b><nobr>PDI Time</nobr></b></td>
+    <td class="table_header"><b><nobr>PDI Notified</nobr></b></td>
+    <td class="table_header"><b><nobr>PDI Notified Date</nobr></b></td>
+  </tr>
+     <tr>
+       <td class="table_rec"><div dojoType="dropdowndatepicker" widgetId="PDIDate" inputName="PDIDate" value='<?= $row['PDIDate'] == "0000-00-00" ? "" : $row['PDIDate']; ?>' adjustWeeks="true"></div></td>
+       <td class="table_rec"><input type="text" name="PDITime" value="<?= $row['PDITime'] ?>"></td>
+       <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDINotified"
+<?
+		if ($row['PDINotified'] == 1) 
+		{
+?>
+			 CHECKED
+<?
+		}
+?>
+            ></td>
+       <td class="table_rec"><div dojoType="dropdowndatepicker" widgetId="PDINotifiedDate" inputName="PDINotifiedDate" value='<?= $row['PDINotifiedDate'] == "0000-00-00" ? "" : $row['PDINotifiedDate']; ?>' adjustWeeks="true"></div></td>
+     </tr>
+  <tr><td><br><br></td></td>
+  <tr>
+    <td class="table_header"><b><nobr>Occupancy Date</nobr></b></td>
+    <td class="table_header"><b><nobr>Occupancy Time</nobr></b></td>
+    <td class="table_header"><b><nobr>Occupancy Notified</nobr></b></td>
+    <td class="table_header"><b><nobr>Occupancy Notified Date</nobr></b></td>
+  </tr>
+     <tr>
+       <td class="table_rec"><div dojoType="dropdowndatepicker" widgetId="OccupancyDate" inputName="OccupancyDate" value='<?= $row['OccupancyDate'] == "0000-00-00" ? "" : $row['OccupancyDate']; ?>' adjustWeeks="true"></div></td>
+       <td class="table_rec"><input class="width100" type="text" name="OccupancyTime" value="<?= $row['OccupancyTime'] ?>"></td>
+       <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_OccupancyNotified"
+<?
+		if ($row['OccupancyNotified'] == 1) 
+		{
+?>
+			 CHECKED
+<?
+		}
+?>
+            ></td>
+       <td class="table_rec"><div dojoType="dropdowndatepicker" widgetId="OccupancyNotifiedDate" inputName="OccupancyNotifiedDate" value='<?= $row['OccupancyNotifiedDate'] == "0000-00-00" ? "" : $row['OccupancyNotifiedDate']; ?>' adjustWeeks="true"></div></td>
+
+       <!-- <td><font face="Arial,Verdana,Helvetica" size="2"><a href="javascript:document.forms['frm_edit_pdi'].submit()">Update</a> //-->
+	</tr>
+
+  <tr><td><br><br></td></td>
+  
+  <tr>
+      <td colspan=10 align="right"><input type="button" value="Update" onClick="document.forms['frm_edit_pdi'].submit()"><td>
+  </tr>
+
+
+  
+      <input type="hidden" name="table_name" value="<?= $table_name ?>" />
+      <input type="hidden" name="UnitNumber" value="<?= $unit ?>" />
+	
+  </table>
+</form>
+<?
+} // end of if ($table_name == "PDI")
+?>
+
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+<?php
+// Action for statement
+include_once 'AjaxUtil_class.phtml';
+
+if ($_REQUEST["act"] == "find") {
+  $sql = sprintf("select Year, Month, Rate from InterestRate where Year between %s and %s", 
+    $_REQUEST["startYear"], 
+    $_REQUEST["endYear"]
+    ); 
+  
+  $rows = AjaxUtil::doSql($sql);
+  
+  echo AjaxUtil::phpObjArray2JsObjArray($rows);
+  
+} elseif ($_REQUEST["act"] == "update") {
+  $sql = sprintf("select count(*) count from InterestRate where Year='%s' and Month='%s'", 
+    $_REQUEST["Year"], 
+    $_REQUEST["Month"]
+    ); 
+	
+	$rows = AjaxUtil::doSql($sql);
+	if($rows[0]["count"]>0) {
+	  $sql = sprintf("update InterestRate set Rate='%s' where Year='%s' and Month='%s'", 
+	  	$_REQUEST["Rate"], 
+	    $_REQUEST["Year"], 
+	    $_REQUEST["Month"]
+	    ); 
+	} else {
+	  $sql = sprintf("insert into InterestRate(Rate,Year,Month) values('%s','%s','%s')", 
+	  	$_REQUEST["Rate"], 
+	    $_REQUEST["Year"], 
+	    $_REQUEST["Month"]
+	    ); 
+	}
+	
+  $rows = AjaxUtil::doSql($sql);
+  
+	echo "Interest Rate Updated successfully !";
+}
+
+?>

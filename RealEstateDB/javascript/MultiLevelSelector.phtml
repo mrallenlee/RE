@@ -1,0 +1,117 @@
+<?php
+/*
+ * Created on 15-Jan-2006
+ *
+ * PHP class that generates multi level selector
+ * Pass in SQL should name field name as LevelXName, LevelXID
+ * $section_sql =  " SELECT Section.Name as Level1Name, " .
+				" Subsection.Name as Level2Name, " .
+				" Section.SectionID as Level1ID, Subsection.SubsectionID as Level2ID" .
+				" FROM Section, Subsection " .
+				" WHERE Section.SectionID = Subsection.SectionID " .
+				" ORDER BY Section.Name, Subsection.Name ";
+				
+e.g. 
+This is the calling sequence for the class
+ set up multi level selector for adding non standard POs 
+$section_sql =  " SELECT Section.Name as Level1Name, " .
+				" Subsection.Name as Level2Name, " .
+				" Section.SectionID as Level1ID, Subsection.SubsectionID as Level2ID" .
+				" FROM Section, Subsection " .
+				" WHERE Section.SectionID = Subsection.SectionID " .
+				" ORDER BY Section.Name, Subsection.Name ";
+				
+$selectorGenerator = new MultiLevelSelector();
+$selectorGenerator->generateData($section_sql, $db, 2);
+...
+<td><?= $selectorGenerator->generateLevelSelector(1, "sectionID", 1, 370); ?></td>
+...
+<td><?= $selectorGenerator->generateLevelSelector(2, "subsectionID", 1, 350); ?></td>
+...
+<?= $selectorGenerator->initMultiLevelSelector(); ?>							
+ */
+ 
+$levelHTMLInputName = array();
+ 
+class MultiLevelSelector{
+	function MultiLevelSelector(){
+	}
+	
+	/**
+	 * dataSql - Name must be assigned to LevelXID, LevelXName
+	 */
+	function generateData($dataSql, $db, $level = 2 ){
+		global $PHP_SELF;
+		
+		$dataResult =  mysql_query($dataSql,$db) or die("Select failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $dataSql . $PHP_SELF);
+		
+		$currentSectionID = "";
+		?> 
+		<script type="text/javascript"> 
+		var dataArr = new Array();
+		
+		<?
+		while ($section_row = mysql_fetch_array($dataResult)){
+			if ($currentSectionID != $section_row['Level1ID']){
+		?>		dataArr['<?= $section_row['Level1ID']; ?>'] = new Array(); 
+				dataArr['<?= $section_row['Level1ID']; ?>']['caption'] = '<?= $section_row['Level1Name']; ?>'; 	
+				dataArr['<?= $section_row['Level1ID']; ?>']['selected'] = false; 	
+				dataArr['<?= $section_row['Level1ID']; ?>']['children'] = new Array(); 	
+		<?		
+				$currentSectionID = $section_row['Level1ID'];  							
+			}
+		?>		dataArr['<?= $section_row['Level1ID']; ?>']['children']['<?= $section_row['Level2ID']; ?>'] = '<?= $section_row['Level2Name'];?>';	
+		<? } ?>
+		</script>		
+<?	}
+
+	/**
+	 * level starts at 1
+	 */
+	function generateLevelSelector($level, $name, $size = 1, $width = 370){
+		global $levelHTMLInputName;
+		
+		// store the name of the level
+		$levelHTMLInputName[$level - 1] = $name;
+		
+?> <SELECT name="<?= $name; ?>" id="<?= $name; ?>" size="<?= $size; ?>" style="width:<?= $width; ?>px;"> 		
+<?	}		
+
+	/**
+	 * Print out javascript to initialize the multi level selector
+	 */
+	function initMultiLevelSelector() {
+		global $levelHTMLInputName;
+?>
+		<script type="text/javascript"> 
+		function initMultiLevelSelectors() {
+			mls = new Bs_MultiLevelSelector();
+			mls.setData(dataArr);
+<?		for ($i = 0; $i < count($levelHTMLInputName); $i++){
+?>			mls.initLevelByExistingField(<?= $i + 1; ?>, '<?= $levelHTMLInputName[$i]; ?>');
+<?		} ?>				
+			mls.render();
+		}
+		initMultiLevelSelectors();
+		</script>
+<?		
+	}
+
+
+	/**
+	 * Set default value for the selector
+	 */
+	function setSelectorDefaultValue($level, $value){
+		global $levelHTMLInputName;
+
+		$realLevel = $level-1;
+		$levelHTMLInputName[$realLevel]
+?>
+		<script type="text/javascript"> 
+		var myField = document.getElementById('<?= $levelHTMLInputName[$realLevel];?>');
+		myField.setTo(<?= $value; ?>, 'value')
+		</script>
+<?		
+	}
+}
+?>

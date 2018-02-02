@@ -1,0 +1,660 @@
+<?
+
+include "../admin/main_include.phtml";
+
+
+print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+
+// This script creates 4 PDI reports: Suite Report; Floor Report; Trade Unit Report; Trade Floor Report
+
+// Handle update request on PDIDefect -> TradeContacted
+if ($_POST["update"]) {
+	$sql = "UPDATE PDIDefect SET TradeContacted=0";
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+
+	foreach ($_POST as $key=>$ignore) {
+		$data = explode("_", $key);
+		if ($data[0] == 'TradeContacted') {
+			$PDIDefect_id = $data[1];
+			$sql = "UPDATE PDIDefect SET TradeContacted=1 WHERE PDIDefectID=".$PDIDefect_id;
+			$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+		}
+	}
+}
+?>
+
+<html>
+
+<head>
+  <title>PDI reports</title>
+  <META http-equiv="Content-Style-Type" content="text/css">
+  <link rel="stylesheet" href="./citygate.css" type="text/css">
+  <link rel="stylesheet" href="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/themes/base/jquery-ui.css" />
+  <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery-1.8.3.js"></script>
+  <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
+  <script src="report_pdi_others.js"></script>
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+
+  <form name="form_PDIdefectByFloor" method="post" action="<?echo  $_SERVER["PHP_SELF"] . '?floor=' . $floor . '&trade=' . $trade . '&unit=' . $unit ; ?>">
+  <table cellspacing="3" cellpadding="3" border="2" width="800" style="margin-top: 1em">
+<?
+//
+// Suite report: All Defects in Unit xxx
+//
+if ($unit && !$trade)
+{
+?>
+    <tr>
+      <td class="tail" colspan="6">
+        <b>All Defects in Unit <?= $unit ?></b><br><br>
+      </td>
+    </tr>
+
+<?
+	$sql = "SELECT * FROM 
+				(SELECT *, 			
+					(CASE	WHEN DefectType = 'QA' 		THEN QAReportDate
+							WHEN DefectType = 'PDI' 	THEN PDIReportDate					
+							WHEN DefectType = 'DAY30' 	THEN day30ReportDate
+							WHEN DefectType = 'MONTH11'	THEN month11ReportDate
+					END) As ReportDate,
+					(CASE	WHEN DefectType = 'QA' 		THEN QAFixedDate
+							WHEN DefectType = 'PDI' 	THEN PDIFixedDate					
+							WHEN DefectType = 'DAY30' 	THEN day30FixedDate
+							WHEN DefectType = 'MONTH11'	THEN month11FixedDate
+					END) As FixedDate
+					FROM 
+						(SELECT PDIType.Name as DefectName, Section.Name as SectionName, Contractor.ContractorName, 
+							(CASE 	WHEN (PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1) THEN 'PDI'
+									WHEN (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1) THEN 'DAY30'
+									WHEN (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1) THEN 'QA'
+									WHEN (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1) THEN 'MONTH11'
+							END) AS DefectType, PDIDefect.*
+							FROM PDIDefect
+							LEFT JOIN Section
+							ON PDIDefect.SectionID = Section.SectionID
+							LEFT JOIN Contractor
+							ON PDIDefect.ContractorID = Contractor.ContractorID
+							LEFT JOIN PDIType
+							ON PDIDefect.PDITypeID 	= PDIType.PDITypeID			
+							WHERE PDIDefect.UnitNumber = $unit
+							AND ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+							OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+							OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+							OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+						) A
+				) B
+			ORDER BY B.SectionName, B.ReportDate";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="link_small">
+        No defect data found in unit <?= $unit ?>.
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		// table header
+		echo "<tr class='table_header'>\n";
+		echo "  <td align='center' class='head'>Defect Description</td>\n";
+		echo "  <td align='center' class='head'>Defect Type</td>\n";
+		echo "  <td align='center' class='head'>Room</td>";
+		echo "  <td align='center' class='head'>Trade Assigned</td>\n";
+		echo "  <td align='center' class='head'>Report Date</td>\n";
+		echo "  <td align='center' class='head'>Schedule Fix Date</td>\n";
+		echo "</tr>\n\n";
+
+		while ($row = mysql_fetch_array($result))
+		{
+			echo "<tr class='table_rec'>\n";
+			echo "  <td>" . $row["DefectName"] . "</td>\n";
+			echo "  <td>" . $row["DefectType"] . "</td>\n";
+			echo "  <td>" . $row["SectionName"] . "</td>\n";
+			echo "  <td>" . $row["ContractorName"] . "</td>\n";
+			echo "  <td>" . $row["ReportDate"] . "</td>\n";
+			echo "  <td>" . $row["FixedDate"] . "</td>\n";
+			echo "</tr>\n\n";
+		}
+	}
+}
+
+//
+// Floor report: Report of All Defects on the XXth Floor or Floor == "all"
+//
+if ($floor && !$trade)
+{
+?>
+    <tr>
+      <td class="tail" colspan="8">
+        <b>All Defects on Floor  <?= $floor ?></b><br><br>
+      </td>
+    </tr>
+
+<?
+	$sql = "SELECT * FROM
+                                (SELECT *,
+                                        (CASE   WHEN DefectType = 'QA'          THEN QAReportDate
+                                                        WHEN DefectType = 'PDI'         THEN PDIReportDate
+                                                        WHEN DefectType = 'DAY30'       THEN day30ReportDate
+                                                        WHEN DefectType = 'MONTH11'     THEN month11ReportDate
+                                        END) As ReportDate,
+                                        (CASE   WHEN DefectType = 'QA'          THEN QAFixedDate
+                                                        WHEN DefectType = 'PDI'         THEN PDIFixedDate
+                                                        WHEN DefectType = 'DAY30'       THEN day30FixedDate
+                                                        WHEN DefectType = 'MONTH11'     THEN month11FixedDate
+                                        END) As FixedDate
+                                        FROM
+					(SELECT PDIDefect.*, PDIType.Name as DefectName, Section.Name as SectionName, Contractor.ContractorName,  
+						(CASE   WHEN (PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1) THEN 'PDI'
+						     WHEN (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1) THEN 'DAY30'
+						     WHEN (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1) THEN 'QA'
+						     WHEN (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1) THEN 'MONTH11'
+						     END) AS DefectType
+					FROM PDIDefect
+					LEFT JOIN Section
+					ON PDIDefect.SectionID = Section.SectionID
+					LEFT JOIN Contractor
+					ON PDIDefect.ContractorID = Contractor.ContractorID
+					LEFT JOIN PDIType
+					ON PDIDefect.PDITypeID 	= PDIType.PDITypeID
+					WHERE ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+					OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+					OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+					OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+					 ) A
+				) B
+			ORDER BY B.UnitNumber,  B.SectionName, B.ReportDate";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="head">
+        No defect data found on the floor <?= $floor ?>.
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		// table header
+		echo "<input type='hidden' value='".$floor."' name='floor'>";
+		echo "<tr>\n";
+		echo "  <td align='center' class='head'>Unit</td>\n";
+		echo "  <td align='center' class='head'>Defect Description</td>\n";
+		echo "  <td align='center' class='head'>Defect Type</td>\n";
+		echo "  <td align='center' class='head'>Room</td>";
+		echo "  <td align='center' class='head'>Trade Assigned</td>\n";
+		echo "  <td align='center' class='head'>Report Date</td>\n";
+                echo "  <td align='center' class='head'>Schedule Fix Date</td>\n";
+
+		echo "  <td align='center' class='head'>Trade Contacted &nbsp; <input type='checkbox' id='TradeContactedAll' />\n";
+		echo "</tr>\n\n";
+
+		$curr_unit = 0;
+		while ($row = mysql_fetch_array($result))
+		{
+			if (substr($row["UnitNumber"], 0, strlen($row["UnitNumber"]) - 2) == $floor || $floor == "all")
+			{
+				// print a blank line to stand out different unit
+				if ($curr_unit == 0)
+					$curr_unit = $row["UnitNumber"];
+				elseif ($curr_unit != $row["UnitNumber"])
+				{
+					echo "<tr><td colspan='8'>&nbsp;</td></tr>\n\n";
+					$curr_unit = $row["UnitNumber"];
+				}
+				
+				echo "<tr class='table_rec'>\n";
+				echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+				echo "  <td>" . $row["DefectName"] . "</td>\n";
+				echo "  <td>" . $row["DefectType"] . "</td>\n";
+				echo "  <td>" . $row["SectionName"] . "</td>\n";
+				echo "  <td>" . $row["ContractorName"] . "</td>\n";
+				echo "  <td>" . $row["ReportDate"] . "</td>\n";
+				echo "  <td>" . $row["FixedDate"] . "</td>\n";
+
+				echo "  <td align='center'><input type='checkbox' name='TradeContacted_" . $row["PDIDefectID"] . "'";
+				if ($row['TradeContacted']) { echo " checked='checked'"; }
+				echo "></td>\n";
+				echo "</tr>\n\n";
+			}
+		}
+		echo "<tr><td colspan='5'>\n";
+		echo "  <input type='submit' value='Update' name='update' size='50' style='margin-right:1em'>";
+		echo "  <input type='submit' value='Cancel' name='cancel' size='50'>";
+		echo "</td></tr>\n";
+		echo "</form>";
+	}
+}
+
+//
+// Floor All Trade report: Report of All Defects on This floor for All Trades
+//
+if ($floor && $trade == "all")
+{
+?>
+    <tr class="tail">
+      <td colspan="3">
+        <b>All Defects on Floor <?= $floor ?> for All Trades</b><br><br>
+      </td>
+	  <td align='center'>Trade Contacted &nbsp; <input type='checkbox' id='TradeContactedAll' /></td>      
+    </tr>
+
+<?
+	$sql = "SELECT PDIDefectID, PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name, 
+			PDIDefect.ContractorID, Contractor.ContractorName, PDIDefect.TradeContacted
+			FROM PDIDefect
+			LEFT JOIN Section
+			ON PDIDefect.SectionID = Section.SectionID
+			LEFT JOIN Contractor
+			ON PDIDefect.ContractorID = Contractor.ContractorID
+			WHERE ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+			OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+			OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+			OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+			ORDER BY Contractor.ContractorName, PDIDefect.UnitNumber, Section.Name";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="link_small">
+        No defect data found on floor <?= $floor ?> for all trades.
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		$curr_trade = "";
+		$curr_unit = 0;
+		
+		$print_header_and_reset_vars = false;	// indicate if it's time to print table header. table header is printed for each trade report
+
+		while ($row = mysql_fetch_array($result))
+		{
+			if (substr($row["UnitNumber"], 0, strlen($row["UnitNumber"]) - 2) == $floor)
+			{
+				if ($curr_trade == "")
+				{
+					echo "<tr class='head'><td colspan='3'><b>" . $row['ContractorName'] . "</b></td></tr>";
+					
+					$print_header_and_reset_vars = true;
+				}
+				elseif ($curr_trade != $row['ContractorID'])
+				{
+					echo "<tr class='table_rec'><td colspan='3'>&nbsp;</td></tr>\n\n";
+					echo "<tr class='head' style='page-break-before:always'><td colspan='3'><b>" . $row['ContractorName'] . "</b></td>";
+					echo "</tr>";
+					
+					$print_header_and_reset_vars = true;
+				}
+	
+				if ($print_header_and_reset_vars)
+				{
+					// table header
+					echo "<tr class='head'>\n";
+					echo "  <td align='center'>Unit</td>\n";
+					echo "  <td align='center'>Defect Description</td>\n";
+					echo "  <td align='center'>Room</td>";
+					echo "  <td align='center'></td>";
+					echo "</tr>\n\n";
+			
+					$curr_trade = $row['ContractorID'];
+					$curr_unit = 0;
+					
+					$print_header_and_reset_vars = false; 	//reset indicator
+				}
+			
+				// print a blank line to stand out different unit
+				if ($curr_unit == 0)
+					$curr_unit = $row["UnitNumber"];
+				elseif ($curr_unit != $row["UnitNumber"])
+				{
+					echo "<tr><td colspan='3'>&nbsp;</td></tr>\n\n";
+					$curr_unit = $row["UnitNumber"];
+				}
+				
+				echo "<tr class='table_rec'>\n";
+				echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+				echo "  <td>" . $row["DefectDesc"] . "</td>\n";
+				echo "  <td>" . $row["Name"] . "</td>\n";
+				echo "  <td align='center'><input type='checkbox' name='TradeContacted_" . $row["PDIDefectID"] . "'";
+				if ($row['TradeContacted']) { echo " checked='checked'"; }
+				echo "></td>\n";				
+				echo "</tr>\n\n";
+			}
+		}
+		echo "<tr><td colspan='5'>\n";
+		echo "  <input type='submit' value='Update' name='update' size='50' style='margin-right:1em'>";
+		echo "  <input type='submit' value='Cancel' name='cancel' size='50'>";
+		echo "</td></tr>\n";
+		echo "</form>";		
+	}
+}
+
+//
+// Group Z Defect on All Floor All Trade report: Report of All Group Z Defects on All floors for All Trades
+//
+if ($defectgroup == "Z")
+{
+?>
+    <tr>
+      <td class="link_small" colspan="3">
+        <b>All Group Z Defects on All Floors for All Trades</b><br><br>
+      </td>
+    </tr>
+
+<?
+	$sql = "SELECT PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name, PDIDefect.ContractorID, Contractor.ContractorName
+			FROM PDIDefect, Section
+			LEFT JOIN Contractor
+			ON PDIDefect.ContractorID = Contractor.ContractorID
+			WHERE PDIDefect.SectionID = Section.SectionID
+			AND Section.Name like 'Z.%'
+			AND ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+			OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+			OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+			OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+			ORDER BY Contractor.ContractorName, PDIDefect.UnitNumber, Section.Name";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="link_small">
+        No group Z defects found on all floors for all trades.
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		$curr_trade = "";
+		$curr_unit = 0;
+		
+		$print_header_and_reset_vars = false;	// indicate if it's time to print table header. table header is printed for each trade report
+
+		while ($row = mysql_fetch_array($result))
+		{
+			if ($curr_trade == "")
+			{
+				echo "<tr class='table_rec'><td colspan='3'><b>" . $row['ContractorName'] . "</b></td></tr>";
+				
+				$print_header_and_reset_vars = true;
+			}
+			elseif ($curr_trade != $row['ContractorID'])
+			{
+				echo "<tr><td colspan='3'>&nbsp;</td></tr>\n\n";
+				echo "<tr class='table_rec' style='page-break-before:always'><td colspan='3'><b>" . $row['ContractorName'] . "</b></td></tr>";
+				
+				$print_header_and_reset_vars = true;
+			}
+
+			if ($print_header_and_reset_vars)
+			{
+				// table header
+				echo "<tr class='table_header'>\n";
+				echo "  <td align='center'>Unit</td>\n";
+				echo "  <td align='center'>Defect Description</td>\n";
+				echo "  <td align='center'>Room</td>";
+				echo "</tr>\n\n";
+		
+				$curr_trade = $row['ContractorID'];
+				$curr_unit = 0;
+				
+				$print_header_and_reset_vars = false; 	//reset indicator
+			}
+		
+			// print a blank line to stand out different unit
+			if ($curr_unit == 0)
+				$curr_unit = $row["UnitNumber"];
+			elseif ($curr_unit != $row["UnitNumber"])
+			{
+				echo "<tr><td colspan='3'>&nbsp;</td></tr>\n\n";
+				$curr_unit = $row["UnitNumber"];
+			}
+			
+			echo "<tr class='table_rec'>\n";
+			echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+			echo "  <td>" . $row["DefectDesc"] . "</td>\n";
+			echo "  <td>" . $row["Name"] . "</td>\n";
+			echo "</tr>\n\n";
+		}
+	}
+}
+
+// From here are reports for given trade.
+// prepare trade name if $trade is provided
+if ($trade)
+{
+	$sql = "SELECT ContractorName FROM Contractor WHERE ContractorID = '$trade'";
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	$row = mysql_fetch_array($result);
+	$trade_name = $row["ContractorName"];
+}
+
+//
+// Trade Unit report: All Defects in Unit XXX for Trade YYY
+//
+if ($unit && $trade && $trade != "all")
+{
+?>
+    <tr>
+      <td class="link_small" colspan="2">
+        <b>All Defects in Unit <?= $unit ?> for Trade <?= $trade_name ?></b><br><br>
+      </td>
+    </tr>
+
+<?
+	$sql = "SELECT PDIDefect.UnitNumber, PDIDefectID,  PDIType.Name as DefectDesc, Section.Name, 
+			Contractor.ContractorName, PDIDefect.TradeContacted, Section.Name
+			FROM PDIDefect
+			LEFT JOIN Section
+			ON PDIDefect.SectionID = Section.SectionID
+			LEFT JOIN Contractor
+                        ON PDIDefect.ContractorID = Contractor.ContractorID
+                        LEFT JOIN PDIType
+                        ON PDIDefect.PDITypeID  = PDIType.PDITypeID
+
+			WHERE PDIDefect.UnitNumber = '$unit'
+			AND ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+			OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+			OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+			OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+			AND PDIDefect.ContractorID = '$trade'
+			ORDER BY PDIDefect.UnitNumber, Section.Name";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="link_small">
+        No defect data found in unit <?= $unit ?> for trade <?= $trade_name ?>.
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		// table header
+		echo "<tr class='table_header'>\n";
+		echo "  <td align='center' class='tail'>Defect Description</td>\n";
+		echo "  <td align='center' class='tail'>Room</td>";
+		echo "</tr>\n\n";
+
+		while ($row = mysql_fetch_array($result))
+		{
+			echo "<tr class='table_rec'>\n";
+			echo "  <td >" .$row["DefectDesc"] . "</td>\n";
+			echo "  <td>" . $row["Name"] . "</td>\n";
+			echo "</tr>\n\n";
+		}
+	}
+}
+
+//
+// Trade Floor report: All Defects on the XXth Floor for Trade YYY
+//
+if ($floor && $trade && $floor != "all" && $trade != "all")
+{
+?>
+    <tr>
+      <td class="link_small" colspan="3">
+        <b>All Defects on Floor <?= $floor ?> for Trade <?= $trade_name ?></b><br><br>
+      </td>
+    </tr>
+
+<?
+	$sql = "SELECT PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name
+			FROM PDIDefect
+			LEFT JOIN Section
+			ON PDIDefect.SectionID = Section.SectionID
+			WHERE PDIDefect.ContractorID = '$trade'
+			AND ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+			OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+			OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+			OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+			ORDER BY PDIDefect.UnitNumber, Section.Name";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="link_small">
+        No defect data found on the floor <?= $floor ?> for trade <?= $trade_name ?>
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		// table header
+		echo "<tr class='table_header'>\n";
+		echo "  <td align='center'>Unit</td>\n";
+		echo "  <td align='center'>Defect Description</td>\n";
+		echo "  <td align='center'>Room</td>";
+		echo "</tr>\n\n";
+
+		$curr_unit = 0;
+		while ($row = mysql_fetch_array($result))
+		{
+			if (substr($row["UnitNumber"], 0, strlen($row["UnitNumber"]) - 2) == $floor)
+			{
+				if ($curr_unit == 0)
+					$curr_unit = $row["UnitNumber"];
+				elseif ($curr_unit != $row["UnitNumber"])
+				{
+					// draw a separator to stand out different unit
+					echo "<tr><td colspan='4'>&nbsp;</td></tr>\n\n";
+					$curr_unit = $row["UnitNumber"];
+				}
+				
+				echo "<tr class='table_rec'>\n";
+				echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+				echo "  <td>" . $row["DefectDesc"] . "</td>\n";
+				echo "  <td>" . $row["Name"] . "</td>\n";
+				echo "</tr>\n\n";
+			}
+		}
+	}
+}
+
+//
+// Trade All Floor report: All Defects on All Floors for Trade YYY
+//
+if ($floor == "all" && $trade)
+{
+?>
+    <tr>
+      <td class="link_small" colspan="3">
+        <b>All Defects on All Floors for Trade <?= $trade_name ?></b><br><br>
+      </td>
+    </tr>
+
+<?
+	$sql = "SELECT PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name
+			FROM PDIDefect
+			LEFT JOIN Section
+			ON PDIDefect.SectionID = Section.SectionID
+			WHERE PDIDefect.ContractorID = '$trade'
+			AND ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1)
+			OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1)
+			OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1)
+			OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1))
+			ORDER BY PDIDefect.UnitNumber, Section.Name";
+
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	if (mysql_num_rows($result) == 0)
+	{
+?>
+    <tr>
+      <td class="link_small">
+        No defect data found on all floors for trade <?= $trade_name ?>
+      </td>
+    </tr>
+
+<?
+	}
+	else
+	{
+		// table header
+		echo "<tr class='table_header'>\n";
+		echo "  <td align='center'>Unit</td>\n";
+		echo "  <td align='center'>Defect Description</td>\n";
+		echo "  <td align='center'>Room</td>";
+		echo "</tr>\n\n";
+
+		$curr_unit = 0;
+		while ($row = mysql_fetch_array($result))
+		{
+			if ($curr_unit == 0)
+				$curr_unit = $row["UnitNumber"];
+			elseif ($curr_unit != $row["UnitNumber"])
+			{
+				// draw a separator to stand out different unit
+				echo "<tr><td colspan='4'>&nbsp;</td></tr>\n\n";
+				$curr_unit = $row["UnitNumber"];
+			}
+			
+			echo "<tr class='table_rec'>\n";
+			echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+			echo "  <td>" . $row["DefectDesc"] . "</td>\n";
+			echo "  <td>" . $row["Name"] . "</td>\n";
+			echo "</tr>\n\n";
+		}
+	}
+}
+
+?>
+  </table>
+  </form>
+</body>
+
+</html>

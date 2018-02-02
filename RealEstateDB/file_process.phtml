@@ -1,0 +1,72 @@
+<?
+include "../main_include.phtml";
+
+// Called by file_management.phtml. update, delete according record in table UserFile and server
+// Accept actions: edit, delete
+
+?>
+<html>
+
+<head>
+<title>Admin</title>
+
+</head>
+
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+
+<table cellspacing="0" cellpadding="0" border="0" !width="700">
+<tr>
+<td>
+
+<td><font face="Arial,Verdana,Helvetica" size="2">
+
+<?
+
+echo "<img src=\"../black.gif\" width=\"700\" height=\"1\" border=\"0\"><br>\n";
+	
+	echo "<font size=\"4\">Edit</font>";
+	
+	if ($user_message)
+	{
+		echo "<br>\n<br>\n" . $user_message;
+	}
+
+	$sql	= "SELECT FileDesc, FileName
+			FROM UserFile
+			WHERE UserID = $UserID and FileID = $FileID";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	// start HTML table and column labels
+	echo "<table cellspacing=\"2\" cellpadding=\"2\" border=\"0\">\n";
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>File Description</b></font></td>\n";
+	echo "<td bgcolor=\"#666666\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\" color=\"#F6F6F6\"><b>File Name</b></font></td>\n";
+	echo "<td></td>\n";
+	echo "</tr>\n";
+	
+	// print out rows to the table
+	$row = mysql_fetch_array($result);
+
+	echo "<form action=\"process_row_edit.phtml\" method=\"get\" name=\"edit_userfile\">\n";
+	echo "<input type=\"hidden\" name=\"table_name\" value=\"$table_name\">\n";
+	echo "<input type=\"hidden\" name=\"UserID\" value=\"$UserID\">\n";
+	echo "<input type=\"hidden\" name=\"FileID\" value=\"$FileID\">\n";
+	
+	echo "<tr>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" size=\"70\" name=\"FileDesc\" value=\"" . $row['FileDesc'] . "\"></font></td>\n";
+	echo "<td bgcolor=\"#F6F6F6\"><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><input type=\"text\" name=\"FileName\" value=\"" . $row['FileName'] . "\"></font></td>\n";
+	echo "<td><font face=\"Arial,Verdana,Helvetica\" size=\"2\"><nobr><a href=\"javascript:document.forms['edit_userfile'].submit()\">Update</a>\n";
+	echo "</tr>\n";
+	echo "</form>\n";
+	
+	// end HTML table
+	echo "</table>\n";
+
+?>
+
+</font>
+</table>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<?
+include "main_include.phtml";
+include "multiPageNavigation.phtml";
+// set the security level to be 2 for this page
+check_auth(2, "sales");
+?>
+
+<script type="text/javascript" src="framework/dojo/dojo.js"></script>
+<script type="text/javascript">
+	dojo.require("dojo.widget.DatePicker");
+  dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+
+<?
+// expect
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+// MultiPageNavigationResultsPerPage : for multi page navigation
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+// init var
+$searchFor = "";
+
+$sql = "SELECT UserID,
+               UnitNumber,
+               CASE WHEN OfferPrice > 0 
+                    THEN OfferPrice
+                    ELSE Price end Price,
+               AdjustedSalesPrice,
+               CASE WHEN QualifyGSTRebate = 1 
+                    THEN 'Y'
+                    ELSE 'N' end QualifiedForGSTRebate,
+               GSTRebate, 
+               ASPNetGST
+          FROM User
+         WHERE DealStatus != 'Rescinded' ";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+
+		{
+
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+
+				if ($search_field == "FirstName" || $search_field == "LastName")
+
+					$sql_cond = " AND (" . $search_field . " LIKE '" . $val . "' OR AdditionalPurchaser1" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser2" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser3" . 
+
+					$search_field . " LIKE '" . $val . "' OR AdditionalPurchaser4" . 
+
+					$search_field . " LIKE '" . $val . "')";
+
+				else if ($search_field == "UnitNumber")
+					$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>"User.UnitNumber", "csvValue"=>$val)) . ") ";
+				else if ($search_field == "RegistrationDateFrom")
+					$sql_cond .= " AND RegistrationDate >= '" . $val . "'";
+
+				else if ($search_field == "RegistrationDateTo")
+					$sql_cond .= " AND RegistrationDate <= '" . $val . "'";
+					
+				else if ($search_field == "PhoneNumber"){
+					$val = convertPhoneNumberFormat($val);
+					$sql_cond .= " AND (PhoneNumber  LIKE '" . $val . "'" .
+								"  OR CellPhone LIKE '" . $val . "'" .
+								"  OR BusinessPhone LIKE '" . $val . "'" .
+								"  OR FaxNumber LIKE '" . $val . "')";
+				}					 
+				else
+					$sql_cond .= " AND " . $search_field . " LIKE '" . $val . "'";
+
+				$sql .= $sql_cond;
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+
+//	if ($dumpdata == 1)
+//	{
+//		$dumpCSVLocation = "./dumpCSVGSTRebate.phtml";
+//
+//		$dumpCSVLocation .= "&sql_cond=" . $sql_cond;
+//
+//		goto_url($dumpCSVLocation);
+//	}
+}
+else
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+}
+
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+
+$result = mysql_query($pageSql) or log_err_die(mysql_error() . "<BR>SQL=$pageSql", $PHP_SELF);	
+
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+<? createCalendarPopupDiv(); ?>
+
+<script language="JavaScript">
+<!--
+function dump_data()
+{
+	window.location='dumpCSVGSTRebate.phtml?sql_cond=<?= urlencode($sql_cond); ?>';
+}
+
+function listall(){
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+//-->
+</script>
+
+	<TITLE>GST Rebate List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_gst_rebate" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+		<TABLE>
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+
+		<TR CLASS="blank">
+			<TD>First Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_FirstName" VALUE="<?= $search_FirstName; ?>"></TD>
+			<TD>Last Name : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_LastName" VALUE="<?= $search_LastName; ?>"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Register Date From :<BR>(YYYY-MM-DD) </TD>
+			<!--TD><? display_date("RegistrationDateFrom", "", "search", "", false, $search_RegistrationDateFrom, true, "", "document.search_gst_rebate.search_RegistrationDateTo.value=document.search_gst_rebate.search_RegistrationDateFrom.value"); ?>
+				</TD//-->
+			<TD><? display_date("RegistrationDateFrom", "search", "", false, $search_RegistrationDateFrom, "document.search_gst_rebate.search_RegistrationDateTo.value=document.search_gst_rebate.search_RegistrationDateFrom.value"); ?>
+				</TD>
+			<TD>Register Date To :<BR>(YYYY-MM-DD) </TD>
+			<!--TD><? display_date("RegistrationDateTo", "", "search", "", false, $search_RegistrationDateTo); ?></TD//-->
+			<TD><? display_date("RegistrationDateTo", "search", "", false, $search_RegistrationDateTo); ?></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Type : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitTypeDesired" VALUE="<?= $search_UnitTypeDesired; ?>"></TD>
+			<TD>Phone  : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_PhoneNumber" VALUE="<?= $search_PhoneNumber; ?>" onChange="this.value=tool.string.ReformatPhoneNumber(this.value);"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Broker Agent : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_BrokerName" VALUE="<?= $search_BrokerName; ?>"></TD>
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+		</TR>
+		<TR CLASS="blank">
+			<TD>Deal Status : </TD>
+			<TD><? display_generic_table_list("DealStatus", "DealStatus", "", "search", ""); ?></TD>
+			<TD>Company : </TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_Company" VALUE="<?= $search_Company; ?>"></TD>
+		</TR>
+		<tr class="blank">
+			<td>Results per Page : </td>
+			<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+		<TR CLASS="blank">
+			<TD COLSPAN=5 ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+		</TR>
+		<TR>
+			<TD COLSPAN="5" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listall()">
+        <INPUT TYPE="BUTTON" VALUE="View in Excel Spreadhsheet" onClick="dump_data()">
+			  <INPUT TYPE="BUTTON" VALUE="Go To Closing - Purchaser List" onClick="javascript:window.location='./Closing/list.phtml?mode=purchaser'">
+				<INPUT TYPE="HIDDEN" NAME="dumpdata" VALUE="0">
+			</TD>
+		</TR>
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+	
+<script language="JavaScript">
+	document.search_gst_rebate.search_DealStatus.value = "<?= $search_DealStatus; ?>";
+</script>
+
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+
+	{
+		die("");
+	}
+?>	
+
+	<H4>GST Rebate List</H4>
+<center>
+<TABLE >
+  <TR>
+  <? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&orderby=" . $orderby; ?>
+    <TD align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?></td>
+    <td  align="center" ><?= $multiPageNavigation->getAllPageButtons($linkCreterion);?></td>
+    <td  align="center" valign="center" ><?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  </TR>
+</TABLE>  
+</center>
+	<TABLE BORDER=0>
+
+<?
+		$totalGSTRebate = 0;
+		$totalASPNetGST = 0;
+		
+		while ($row = mysql_fetch_array($result))
+		{
+			$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
+
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=<?= getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); ?>">Suite Number</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Price">Price</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=AdjustedSalesPrice">Adjusted Sales Price</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=QualifiedForGSTRebate">Qualified For GST Rebate</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=GSTRebate">GST Rebate</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=ASPNetGST">ASP Net GST</A></TD>
+		</TR>
+<?
+			}
+      $totalGSTRebate += $row['GSTRebate'];
+      $totalASPNetGST += $row['ASPNetGST'];
+
+			$url = "./userListing.phtml?action=display&mode=purchaser&UserID=" . $row['UserID'];
+
+			displayMouseOverTR("blank", "body");
+?>			
+				<TD><A HREF="<?= $url; ?>"><?= $row['UnitNumber']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['Price'], "isDollarValue"=>TRUE)); ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['AdjustedSalesPrice'], "isDollarValue"=>TRUE)); ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= $row['QualifiedForGSTRebate']; ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['GSTRebate'], "isDollarValue"=>TRUE)); ?></A></TD>
+				<TD><A HREF="<?= $url; ?>"><?= numberFormat(array("value"=>$row['ASPNetGST'], "isDollarValue"=>TRUE)); ?></A></TD>
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UserID']?>" VALUE="<?= $row['UserID']?>"></TD>
+			</TR>
+<?
+		}
+?>
+
+		<tr class=tail>
+			<td colspan=4 align=left>Total:</td>
+			<td><?= numberFormat(array("value"=>$totalGSTRebate, "isDollarValue"=>TRUE)); ?></td>
+			<td><?= numberFormat(array("value"=>$totalASPNetGST, "isDollarValue"=>TRUE)); ?></td>
+		</tr>
+
+	</TABLE>
+
+
+</BODY>
+</HTML>

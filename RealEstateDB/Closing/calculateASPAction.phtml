@@ -1,0 +1,61 @@
+<?
+/**
+* Calculate Adjusted Sales Price by deducting incentives and GST Rebate. Vavlues are stored 
+* in User.AdjustedSalesPrice and User.GSTRebate0
+*/
+include_once "main_include.phtml";
+
+include_once "Closing/GSTRebateAction.phtml";
+
+/**
+ * Calculate ASP for the user
+ * userID : userID or string "ALL"
+ */
+function calculateASP($userID){
+	$sql = "SELECT UserID, UnitNumber, OfferPrice, Price, AdjustedSalesPrice,
+			UnitAllowance, AgreementDepositDate, QualifyGSTRebate
+			FROM User";
+	
+	if ($userID != "ALL"){
+		$sql .= " WHERE UserID=$userID";
+	}
+	
+	$result = executeSql($sql);
+	
+	while ($row = mysql_fetch_array($result)){
+		$realPrice = $row['OfferPrice'];
+		if (!isSet($realPrice) || $realPrice <= 0 ){
+			$realPrice = $row['Price'];
+		}
+		// less incentives
+		$realPrice -= $row['UnitAllowance'];
+//		print "realPrice=$realPrice<BR>";
+//		print 'gstRate=' . getGSTRate($row['AgreementDepositDate']). "<BR>";
+//		print "date=" . $row['AgreementDepositDate'] . "<BR>";
+		$gst = $realPrice * getGSTRate($row['AgreementDepositDate']);
+		// only calculates rebate IF qualified
+		// TODO ALLEN Still need to calculate the rebate value, then 
+		// ask the purchaser to pay back the GST rebate
+		// Need special handling on this case
+		$gstRebate = calGSTRebateValue(array("offerPrice"=>$realPrice, "purchaseDate"=>$row['AgreementDepositDate']));		
+		$adjustedSalesPrice  = $realPrice - $gst + $gstRebate;
+//		echo "orig ASP=" . $row['AdjustedSalesPrice'];
+		if ($adjustedSalesPrice != $row['AdjustedSalesPrice']){
+			// update the DB
+			$updateSql = "UPDATE User 
+					SET 
+					AdjustedSalesPrice=$realPrice,
+					GSTRebate=$gstRebate,
+					ASPNetGST=$adjustedSalesPrice
+					WHERE UserID=" . $row['UserID'];
+//			echo "sql=$updateSql<BR>";
+			$updateResult = executeSql($updateSql);			
+		}
+	} // while
+}
+
+// if in debug mode
+if ($isDebug == 1){
+	calculateASP($userID);
+}
+?>

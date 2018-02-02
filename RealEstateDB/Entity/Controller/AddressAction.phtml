@@ -1,0 +1,25 @@
+<?php
+/*
+ * Created on 27-Dec-2006
+ *
+ * Action script for adderess
+ */
+ 
+include_once "config/config.phtml";
+include_once "framework/sajax/Sajax.php";
+include_once "guiUtil.phtml";
+include_once "Entity/View/AddressView.phtml";
+
+function getNewAddressHTMLForm($index){
+	$address = new AddressView();
+	return $address->getNewHTMLForm($index);
+}
+
+function getExistingAddressHTMLForm($index, $DBResultRow, $mode = "display"){
+	$address = new AddressView();
+	return $address->getExistingHTMLForm($index, $DBResultRow, $mode);
+}
+
+sajax_export("getNewAddressHTMLForm");
+
+?>

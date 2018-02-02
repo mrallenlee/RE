@@ -1,0 +1,78 @@
+<?
+
+include "main_include.phtml";
+
+// This file updates records in the database. It is called when
+// the admin clicks on the Update button in the edit form.
+$valid = 0;
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+// Store data to the database
+if ($table_name == "Unit")
+{
+	// fix bad characters
+	$ONHWPRegNumber = preg_replace($find, $replace, $ONHWPRegNumber);
+	
+	if ($UnitNumber)
+	{
+		$valid = 1;
+	}
+	
+	$var = $UnitNumber . "_PDINotified";
+	
+	if ($$var)	$PDINotified = 1;
+	else $PDINotified = 0;
+
+	$var = $UnitNumber . "_OccupancyNotified";
+	
+	if ($$var)	$OccupancyNotified = 1;
+	else $OccupancyNotified = 0;
+
+	$sql = "UPDATE $table_name 
+			SET PDIDate='$PDIDate', PDITime='$PDITime', ONHWPRegNumber = '$ONHWPRegNumber', 
+				PDINotified = '$PDINotified', PDINotifiedDate = '$PDINotifiedDate',
+				OccupancyDate='$OccupancyDate', OccupancyTime='$OccupancyTime', 
+				OccupancyNotified = '$OccupancyNotified', OccupancyNotifiedDate = '$OccupancyNotifiedDate'
+			WHERE UnitNumber='$UnitNumber'";
+
+	$goto = "display_pdi.phtml";
+	$query_s = "table_name=$table_name";
+	
+} // end of if ($table_name == "PDI")
+
+if ($valid)
+{
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+}
+
+?>
+
+<script language="javascript">
+
+<?
+if (!$valid)
+{
+?>
+	alert('One or more of the data fields were invalid.');
+	history.go(-1);
+<?
+}
+else
+{
+?>
+	location.href = "<?echo $goto;?>?<?echo $query_s;?>"; 
+<?
+}
+?>
+</script>

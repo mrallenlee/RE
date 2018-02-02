@@ -1,0 +1,71 @@
+<?php
+/*
+ * Actions for upgrade option
+ */
+ 
+include_once "main_include.phtml";
+ 
+/**
+ * Update the UserOptionUpgradeStatus table which stores
+ * commit information, and tax rates.
+ */
+function updateUserUpgradeOptionStatus($unitNumber, $commit = 1){	
+	$isCommittedBefore = isCommittedBefore($unitNumber);
+	
+	// only update fields if this is the first commit
+	if (!$isCommittedBefore && $commit){
+		$sql = "INSERT UserUpgradeOptionStatus" .
+			" SET Commit = $commit" .
+			" ,CommitDate = NOW()," .
+			" GSTRate=" . getGSTRate() . "," .
+			" PSTRate=" . PST_RATE . "," .
+			" UnitNumber = '$unitNumber'";
+	} else {
+		// update the row	
+		$sql = "UPDATE UserUpgradeOptionStatus" .
+			" SET Commit = $commit" .
+			" WHERE UnitNumber = '$unitNumber'";
+	}
+	$result = executeSql($sql);	
+} 
+
+/**
+ * Get an array contains information
+ * Keys: Commit, CommitDate, GSTRate, PSTRate
+ */
+function &getUpgradeOptionStatus($unitNumber){
+	if ($unitNumber < 0)
+		return -1;
+	
+	$sql	= "SELECT Commit, CommitDate, GSTRate, PSTRate " .
+				"FROM UserUpgradeOptionStatus " .
+				"WHERE UnitNumber = '" . strval($unitNumber) ."'";
+	$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+	$row = mysql_fetch_array($result);
+	
+	// construct a hash map 
+	$result = array("Commit" 		=> $row['Commit'],
+					"CommitDate" 	=> $row['CommitDate'],
+					"GSTRate" 		=> $row['GSTRate'],
+					"PSTRate"		=> $row['PSTRate']); 
+				 	
+	return $result;
+}
+
+/**
+ * Migrate commit data previously stored in User Table to 
+ * UserUpgradeOptionStatus Table
+ */
+function migrateCommitData(){
+	$sql = "SELECT Commit, UnitNumber FROM User";
+	$result = executeSql($sql);	
+	
+	while ($row = mysql_fetch_array($result)){
+		echo "commit=" . $row['Commit'] . "<BR>";
+		$Commit = $row['Commit'] > 0 ? 1 : 0;
+		updateUserUpgradeOptionStatus($row['UnitNumber'], $Commit);	
+	}
+}
+
+//migrateCommitData();
+?>

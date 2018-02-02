@@ -1,0 +1,213 @@
+<?
+include "main_include.phtml";
+include "multiPageNavigation.phtml";
+// set the security level to be 2 for this page
+check_auth(MANAGEMENT);
+?>
+
+<?
+
+// expect
+// where : where clause to use for listing
+// orderby : set of column name separated by comma
+// MultiPageNavigationResultsPerPage : for multi page navigation
+
+if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
+	$MultiPageNavigationResultsPerPage = 100;
+}		
+
+$sql = "SELECT *
+				FROM UnitPriceHistory
+				WHERE 1=1 ";
+
+if (!isSet($listall)) // if not list all records, use the search criteria to do the search
+
+{
+
+	$values=$_GET;
+
+	$search_criterion = "";
+
+	$hasSearchValue = false;
+
+	//loop that adds the field names and values
+
+	foreach($values as $key=>$val)
+	{
+		$pos = strpos($key, "_");
+
+		if ($pos > 0)
+		{
+			if ($val != "")
+			{
+				$hasSearchValue = true;
+
+				$search_field = substr($key, $pos + 1);
+
+				// Search both PRINCIPLE & ADDITIONAL purchasers when searching purchaser by name
+				// As input search conditions are also used for dumping data, they are kept in 
+				// $sql_cond for further use.
+
+				$sql_cond .= " AND (" . expandSearchCriteria(array("columnName"=>$search_field, "csvValue"=>$val)) . ") ";								
+				$sql .= $sql_cond;				
+				$search_criterion .= "&" . $key . "=" . $val;
+			}
+		}
+	}
+}
+
+// list all
+else
+{
+	$hasSearchValue = true;
+	$search_criterion .= "&listall=1";
+}
+
+if ($orderby != "")
+{
+	$sql .= " ORDER BY $orderby";
+}
+else
+{
+	$sql .= " ORDER BY UnitNumber";
+}
+//die($sql);
+$multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
+$pageSql = $multiPageNavigation->getSQLForCurrentPage();
+//echo "<br><br>pageSql=$pageSql<BR>";
+//die();
+$result = executeSql($pageSql);
+?>
+
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+
+<script language="JavaScript">
+<!--
+
+function listall(){
+	var rowsPerPage = document.getElementById('MultiPageNavigationResultsPerPage').value;
+	window.location='<?= $PHP_SELF; ?>?listall=1&orderby=<?= $orderby; ?>&MultiPageNavigationResultsPerPage=' + rowsPerPage;
+}
+
+//-->
+</script>
+
+	<TITLE><?= get_project_name($PHP_SELF); ?> - Unit Price History List</TITLE>
+
+		<DIV id="search" name="search">
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>
+	<FORM NAME="search_unit_price_history" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
+
+		<TABLE>
+	
+		<INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
+	
+		<TR CLASS="blank">
+			<TD>Suite Number: <BR>e.g. B1-%, B11-1~B2-3,B4-5,B6-1</TD>
+			<TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+		</TR>
+
+		<TR class="blank">
+			<td>Results per Page : </td>
+			<td><?= $multiPageNavigation->getRowsPerPageComboBox(); ?></td>
+		</TR>
+
+		<TR CLASS="blank">
+			<TD COLSPAN="2" ALIGN="LEFT">Note : Use % as a wildcard character</TD>
+		</TR>
+
+		<TR>
+			<TD COLSPAN="6" ALIGN="LEFT" CLASS="blank">
+				<INPUT TYPE="SUBMIT" VALUE="Search">
+				<INPUT TYPE="BUTTON" VALUE="List All" onClick="listall()">
+		</TR>
+
+		</TABLE>
+	</FORM>
+</DIV>
+</DIV>
+	
+<?
+	// if no search criteria, don't do any search
+	if ($hasSearchValue == false)
+
+	{
+		die("");
+	}
+?>	
+
+	<H4>List Unit Price History</H4>
+	<TABLE BORDER=0>
+
+  	<TR>
+  	<? $linkCreterion = $PHP_SELF . "?" . $search_criterion . "&mode=" . $mode . "&orderby=" . $orderby; ?>
+    	<TD colspan="7" align="center" valign="center"><?= $multiPageNavigation->getPrevButton($linkCreterion);?>
+    	<?= $multiPageNavigation->getAllPageButtons($linkCreterion);?>
+    	<?= $multiPageNavigation->getNextButton($linkCreterion);?></TD>
+  	</TR>
+
+<?
+
+		$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
+		$num_of_rows = 0;
+
+		while ($row = mysql_fetch_array($result))
+		{				
+			if ($num_of_rows++ % DEFAULT_NUM_OF_ROWS_TO_DISPLAY_HEADER == 0)
+			{
+?>
+		<TR CLASS="head">
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=UnitNumber">Suite Number</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=Price">Price</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=PriceNote">Price Note</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=PriceDate">Price Date</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=UpdatedBy">Updated By</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=LastModifiedDate">Last Modified Date</A></TD>
+			<TD><A HREF ="<?= $tempSearchCriterion; ?>&orderby=CreatedDate">Created Date</A></TD>
+		</TR>
+<?
+			}
+			
+			displayMouseOverTR("blank", "body");
+?>			
+				<TD><?= $row['UnitNumber']; ?></TD>
+				<TD><?= $row['Price']; ?></TD>
+				<TD><?= $row['PriceNote']; ?></TD>
+				<TD><?= $row['PriceDate']; ?></TD>
+				<TD><?= $row['UpdatedBy']; ?></TD>
+				<TD><?= $row['LastModifiedDate']; ?></TD>
+				<TD><?= $row['CreatedDate']; ?></TD>
+			</TR>
+<?
+		}
+?>
+		<tr class=tail>
+			<td align="right"><?= numberFormat(array("value"=>$num_of_rows)); ?></td>
+			<td colspan="6">&nbsp;</td>
+		</tr>
+
+	</TABLE>
+
+<?
+	if (isSet($err))
+	{
+?>
+
+<script language="JavaScript">
+
+<!--
+	alert('<?= $err; ?>');
+//-->
+
+</SCRIPT>
+
+<?	
+	}
+?>
+
+</BODY>
+</HTML>

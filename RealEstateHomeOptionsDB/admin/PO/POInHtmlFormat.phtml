@@ -1,0 +1,497 @@
+<?php
+
+include_once "POListFormat.phtml";
+
+class POListHtmlFormat extends POListFormat {
+	// multi page obj
+	var $multiPageNavigation;
+	var $sql;
+	
+	// url of the current page
+	var $url;
+	
+	// col to be disply
+	var $displayUnitNumberCol;
+	var $displaySelectionCol;
+	var $displayInvoicedCol;	
+	var $displayIssuedCol;
+	var $displayIssuedDateCol;
+	var $displayPOIssuedNumberCol;
+	var $displayPONumberCol;
+	var $displaySectionCol;
+	var $displaySubsectionCol;
+	var $displayOptionCol;
+	var $displayChoiceCol;
+	var $displayCostCol;
+
+	var $sortOrder = array();
+	// associated array for type. Element can be unit, trade, option	
+	var $typeOrder = array();
+	
+	function POListHtmlFormat($sql, $url){
+		$resultPerPage = $_REQUEST['MultiPageNavigationResultsPerPage'];
+		if ($resultPerPage == ""){
+			// default result per page
+			$resultPerPage = 100;
+		}
+		$currentPAge = $_REQUEST['MultiPageNavigationPage'];
+		
+		$this->displaySelectionCol 		= $_REQUEST['showSelection']; 
+		$this->displayInvoicedCol 		= $_REQUEST['showInvoiced']; 
+		$this->displayIssuedCol 		= $_REQUEST['showIssued']; 
+		$this->displayIssuedDateCol 	= $_REQUEST['showIssuedDate']; 
+		$this->displayPOIssuedNumberCol = $_REQUEST['showPOIssuedNumber']; 
+		$this->displayPONumberCol		= $_REQUEST['showPONumber']; 
+		$this->displaySectionCol 		= $_REQUEST['showSection']; 
+		$this->displaySubsectionCol 	= $_REQUEST['showSubsection']; 
+		$this->displayOptionCol 		= $_REQUEST['showOption']; 
+		$this->displayChoiceCol 		= $_REQUEST['showChoice']; 
+		$this->displayCostCol 			= $_REQUEST['showCost']; 
+
+		// description in non stand po is the option for stand po
+		$this->displayDescriptionCol =  $this->displayOptionCol || $this->displayChoiceCol;
+		
+		$this->url = $url;
+		$this->multiPageNavigation = new MultiPageNavigation($sql, $resultPerPage, $currentPAge);
+		$this->sql = $this->multiPageNavigation->getSQLForCurrentPage();
+		$this->retrieveResult();					
+	}
+/*
+ * Print po in html format
+ */
+/**
+	 * print unit number head row
+	 */
+	function printUnitNumberHeadRow($unitNumber){
+		global $prev_PO_type;
+		global $prev_unit_number;
+		global $prev_contractor;
+		
+		 		
+		if ($unitNumber != $prev_unit_number){
+			$prev_unit_number = $unitNumber;
+			// reset po type every time a new contractor is displayed 
+			$prev_PO_type = "JUNK_DATA";
+			$CSSClass = "tail-left";
+			
+			if ($this->sortOrder[0] == "unit"){
+				// reset contractor
+				$prev_contractor = "JUNK_DATA";
+				$CSSClass = "subhead-left";
+							
+?>		
+			<tr><td><br><br></td></tr>
+<?			}
+	
+			$this->printHorizontalLine();			
+?>		
+			<tr level=<?= $this->typeOrder["unit"]; ?>>
+<?		 	if ($this->displaySelectionCol){ ?>
+				<TD  class="<?= $CSSClass; ?>"><INPUT TYPE="CHECKBOX"  name="DUMMY-CHECKBOX" ONCLICK="tool.input.checkbox.selectSubLevel(this,this.parentNode.parentNode, this.checked);"></TD>					
+<? 			} ?>						
+				<td colspan=100 class="<?= $CSSClass; ?>">Unit Number: <?= $unitNumber ;?></td>
+			</tr>
+<?		}
+	}
+
+	/**
+	 * Print trade head row
+	 */
+	function printTradeHeadRow($price_row){
+		global $prev_PO_type;
+		global $prev_contractor;
+		
+		if ($price_row['ContractorName'] != $prev_contractor){
+			$prev_contractor = $price_row['ContractorName'];
+			// reset po type every time a new contractor is displayed 
+			$prev_PO_type = "JUNK_DATA";
+			$CSSClass = "tail-left";
+			if ($this->sortOrder[0] == "trade"){
+				// reset contractor
+				$prev_unit_number = "JUNK_DATA";
+				$CSSClass = "subhead-left";			
+?>		
+			<tr><td class="html-space"><br><br></td></tr>
+<? 			}
+			$this->printHorizontalLine();			
+
+?>
+			<tr level=<?= $this->typeOrder["trade"]; ?>>
+<?		 	if ($this->displaySelectionCol){ ?>
+				<TD  class="<?= $CSSClass; ?>"><INPUT TYPE="CHECKBOX" name="DUMMY-CHECKBOX" ONCLICK="tool.input.checkbox.selectSubLevel(this,this.parentNode.parentNode, this.checked);"></TD>					
+<? 			} ?>						
+				<td colspan=100 class="<?= $CSSClass; ?>">Trade : <?= $price_row['ContractorName'] ;?></td>
+			</tr>
+<?		}
+	}
+
+
+	/**
+	 * Print Option head row
+	 */
+	function printOptionHeadRow($price_row){
+		global $prev_PO_type;
+		global $prev_option;
+		
+		if ($price_row['OptionName'] != $prev_option){
+			$prev_option = $price_row['OptionName'];
+			// reset po type every time a new contractor is displayed 
+			$prev_PO_type = "JUNK_DATA";
+			$CSSClass = "tail-left";
+			if ($this->sortOrder[0] == "trade" && $this->sortOrder[1] == "unit"){
+				// reset contractor
+				$prev_unit_number = "JUNK_DATA";
+//				$CSSClass = "subhead-left";			
+?>		
+			<tr><td><br><br></td></tr>
+<? 			}
+			$this->printHorizontalLine();			
+
+?>
+			<tr level=<?= $this->typeOrder["option"]; ?>>
+<?		 	if ($this->displaySelectionCol){ ?>
+				<TD  class="<?= $CSSClass; ?>"><INPUT TYPE="CHECKBOX"  name="DUMMY-CHECKBOX" ONCLICK="tool.input.checkbox.selectSubLevel(this,this.parentNode.parentNode, this.checked);"></TD>					
+<? 			} ?>						
+				<td colspan=100 class="<?= $CSSClass; ?>">Option : <?= $price_row['OptionName'] ;?></td>
+			</tr>
+<?		}
+	}
+	
+	
+	/**
+	 * Pride PO Head row
+	 * $price_row is an associate array contains sql result
+	 */
+	function printPOHeadRow($price_row){
+		global $prev_PO_type;
+		global $mode;
+		global $ShowPrice;
+		
+		if ($price_row['POType'] != $prev_PO_type){
+			$prev_PO_type = $price_row['POType']; 
+			if ($price_row['POType'] == "StandardPO"){
+?>				<tr class="head">
+<?				if ($mode != "display"){ 
+					if ($this->displaySelectionCol){				 	 			
+						print "<td>Selection</td>";
+					}
+					if ($this->displayInvoicedCol){				 	 			
+						print "<td>Invoiced</td>";
+					}
+					if ($this->displayIssuedCol){				 	 			
+						print "<td>Issued</td>";
+					}
+					if ($this->displayIssuedDateCol){				 	 			
+					 	print "<td>Issued Date</td>";
+					}
+					if ($this->displayPOIssuedNumberCol){				 	 						
+						print "<td>PO Issued #</td>";
+					}
+					if ($this->displayPONumberCol){				 	 											
+						print "<td>PO #</td>";
+					}
+				} 					
+				if ($this->displayUnitNumberCol){ 
+						print "<td>Unit #</td>";
+				} 
+				if ($this->displaySectionCol){ 
+					print "<td>Section</td>";
+				}
+				if ($this->displaySubsectionCol){ 
+					print "<td>Subsection</td>";
+				}
+				if ($this->displayOptionCol){ 
+					print "<td>Option</td>";
+				}
+				if ($this->displayChoiceCol){ 
+					print "<td>Choice</td>";
+				}
+				if ($this->displayCostCol){ 
+					print "<td>Cost</td>";
+				}
+?>				</tr>
+<?
+			} else {
+?>				<tr class="head">
+<?				if ($mode != "display"){ 
+					if ($this->displaySelectionCol){				 	 			
+						print "<td>Selection</td>";
+					}	
+					if ($this->displayInvoicedCol){				 	 			
+						print "<td>Invoiced</td>";
+					}
+					if ($this->displayIssuedCol){				 	 			
+						print "<td>Issued</td>";
+					}
+					if ($this->displayIssuedDateCol){				 	 			
+					 	print "<td>Issued Date</td>";
+					}
+					if ($this->displayPOIssuedNumberCol){				 	 						
+						print "<td>PO Issued #</td>";
+					}
+					if ($this->displayPONumberCol){				 	 											
+						print "<td>PO #</td>";
+					}
+				} 					
+				if ($this->displayUnitNumberCol){ 
+					print "<td>Unit #</td>";
+				} 
+				if ($this->displaySectionCol){ 
+					print "<td>Section</td>";
+				}
+				if ($this->displaySubsectionCol){ 
+					print "<td>Subsection</td>";
+				}
+				if ($this->displayDescriptionCol){
+					print "<td colspan=";
+					if ($this->displayChoiceCol && $this->displayOptionCol){
+						print "2";
+					} else {
+						print "1";	
+					} 
+					print ">Description</td>";
+				}
+				if ($this->displayCostCol){ 
+					print "<td>Cost</td>";
+				}
+				if (0 && $mode != "display"){ ?>									
+					<td>Action</td>
+<?				} ?>					
+				</tr>
+<?			}				
+		}	
+	}
+
+
+	/**
+	 * Print PO Data
+	 */
+	function printPODataRow($price_row){
+		global $mode, $ShowPrice;
+		
+		if ($price_row['POType'] == "StandardPO"){
+			if ($mode != "display"){
+				if ($this->displaySelectionCol){				 
+					print "<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+					printSelectionCheckBox(array("POType"=>"StandardPO",
+										 "POID" =>$price_row['POID'],
+										 "mode"=>"edit"));					
+					print "</td>"; 
+				}
+				if ($this->displayInvoicedCol){				 
+					print "<td>";
+					printPOInvoicedCheckBox(array("POType"=>"StandardPO", 
+										"POID" =>$price_row['POID'], 
+										"Invoiced"=>$price_row['Invoiced'], 
+										"disabled"=>1, "mode"=>"display"));			
+					print "</td>"; 
+				}
+				if ($this->displayIssuedCol){				 
+					print "<td>";
+					printStandardPOIssueCheckBox(array("POID" =>$price_row['POID'], 
+										"issued"=>$price_row['Issued'], 
+										"disabled"=>1, "mode"=>"display"));
+					print "</td>"; 
+				}
+				if ($this->displayIssuedDateCol){
+					print "<TD>";
+					print $price_row['IssuedDate']; 
+					print "</td>";
+				}
+				
+				if ($this->displayPOIssuedNumberCol){
+?>					<td align="center"><?
+					if ($price_row['POIssuedID'] > 0){				
+				?><a href="<?= $_SERVER["PHP_SELF"]; ?>?POIssuedID=<?= $price_row['POIssuedID'];?>"><?= $price_row['POIssuedID'];?></a><?
+					} else {
+						print "N/A";		
+				}?></td>				
+<?				}				
+				if ($this->displayPONumberCol){
+?>					<td><?= $price_row['PONumber'];?></td>
+<?				}				
+			} ?>
+<?				if ($this->displayUnitNumberCol){ 
+?>					<td><?= $price_row['UnitNumber'];?></td>
+<?				} 
+				if ($this->displaySectionCol){
+?>					<td><?= $price_row['SectionName'];?></td>
+<?				}
+				if ($this->displaySubsectionCol){
+?>					<td><?= $price_row['SubsectionName'];?></td>
+<?				}
+				if ($this->displayOptionCol){
+?>					<td><?= $price_row['OptionName'];?></td>
+<?				}
+				if ($this->displayChoiceCol){
+?>					<td><?= $price_row['ChoiceName'];?></td>
+<?				}				
+				if ($this->displayCostCol){
+?>					<td><?= convertPriceConstantToString($price_row['Cost']); ?></td>
+<?				} ?>
+				
+			</tr>
+<?
+		} else {	
+			if ($mode != "display"){ 				
+				if ($this->displaySelectionCol){				 
+					print "<td>";
+					printSelectionCheckBox(array("POType"=>"NonStandardPO", 
+					"POID" =>$price_row['POID'], "mode"=>"edit"));					
+					print "</td>"; 
+				}
+				if ($this->displayInvoicedCol){				 
+?>					<td><? printPOInvoicedCheckBox(array("POType"=>"NonStandardPO",
+						"POID" =>$price_row['POID'], "Invoiced"=>$price_row['Invoiced'], 
+						"disabled"=>0, "mode"=>"display")); ?></td>
+<?				}
+				if ($this->displayIssuedCol){				 
+?>					<td><? printNonStandardPOIssueCheckBox(array("POID" =>$price_row['POID'], 
+						"issued"=>$price_row['Issued'], 
+						"disabled"=>1)); ?></td>
+<?				}
+				if ($this->displayIssuedDateCol){					
+?>					<td><?= $price_row['IssuedDate'];?></td>
+<?				}
+				if ($this->displayPOIssuedNumberCol){				
+?>				<td align="center"><?
+					if ($price_row['POIssuedID'] > 0){				
+				?><a href="<?= $_SERVER["PHP_SELF"]; ?>?POIssuedID=<?= $price_row['POIssuedID'];?>"><?= $price_row['POIssuedID'];?></a><?
+					} else {
+						print "N/A";		
+				}?></td>
+<?				}
+				if ($this->displayPONumberCol){								
+?>					<td><?= $price_row['PONumber'];?></td>
+<?				}				
+			} ?>
+<?				if ($this->displayUnitNumberCol){ 
+?>					<td><?= $price_row['UnitNumber'];?></td>
+<?				} 
+				if ($this->displaySectionCol){
+?>					<td><?= $price_row['SectionName'];?></td>
+<?				}
+				if ($this->displaySubsectionCol){
+?>					<td><?= $price_row['SubsectionName'];?></td>
+<?				}
+				if ($this->displayDescriptionCol){
+					print "<td colspan=";
+					if ($this->displayChoiceCol && $this->displayOptionCol){
+						print "2";
+					} else {
+						print "1";	
+					} 
+					print ">";					
+?>					<?= $price_row['Description'];?></td>
+<?				}
+				if ($this->displayCostCol){
+?>				<td><?= convertPriceConstantToString($price_row['Cost']);?></td>
+<? 				} 
+				if (0 && $mode != "display"){ ?>								
+				<td nowrap><? printNonStandardPOEditButton($price_row['POID']); ?><? printNonStandardPODeleteButton($price_row['POID']); ?></td>
+<?				} ?>				
+			</tr>
+<?
+		}
+	}	 
+// get info for option chosen
+		
+		
+	function printPageNavigation(){
+?>		
+	<DIV ID="navigation" NAME="navigation">
+		<tr width=100%>
+			<td colspan=100>
+				<table width=100%>
+					<Tr>		
+			    <TD align="right" valign="center"><?= $this->multiPageNavigation->getPrevButton($this->url);?></td>
+		    <td  align="center" ><?= $this->multiPageNavigation->getAllPageButtons($this->url);?></td>
+		    <td  align="left" valign="center" ><?= $this->multiPageNavigation->getNextButton($this->url);?></TD>
+		    		</tr>
+		    	</table>
+		    </td>
+		</tr>
+	</DIV>
+<?				
+	}
+	
+	// print horizontal line inside a table
+	function printHorizontalLine(){
+?>		<tr class="print-tr"><td class="print-td" colspan=100><hr class="print-hr"></td></tr> 				
+<?		
+	}
+	
+	
+	/**
+	 * Print PO in div
+	 * Return data in a string
+	 */		
+	function printPO($POViewOrder){
+		ob_start();
+		// print page navigation buttons
+		$this->printPageNavigation();
+		$this->sortOrder = explode(";", $POViewOrder);
+		for ($i=0; $i < sizeof($this->sortOrder); $i++){
+			$this->typeOrder[$this->sortOrder[$i]]=$i;
+		}
+		$this->typeOrder['data']=4;
+		
+		$total_cost = 0;	
+		$prev_contractor = "JUNK_DATA";
+		$prev_unit_number = "JUNK_DATA";
+		$prev_PO_type = "JUNK_DATA";
+		print "<TABLE ID=\"POListTable\" WIDTH=\"100%\">";
+		while ($price_row = mysql_fetch_array($this->sqlResult)){
+
+			// display unit number col
+			$displayUnitNumberCol = false;	
+
+			// print the specific one first depends on the sort order	
+			
+			if ($this->sortOrder[0] == "trade" && $this->sortOrder[1] == "option"){
+				$this->displayUnitNumberCol = true;	
+				$this->printTradeHeadRow($price_row);
+				$this->printOptionHeadRow($price_row);					
+			} else if ($this->sortOrder[0] == "trade"){
+				$this->printTradeHeadRow($price_row);
+			} else {
+				$this->printUnitNumberHeadRow($price_row['UnitNumber']);
+			}
+
+			// no need to print unit number head row if unit number 
+			// is one of the column
+			if (!$this->displayUnitNumberCol){			
+				// print header if needed
+				$this->printUnitNumberHeadRow($price_row['UnitNumber']);				
+			} 
+			
+			
+			$this->printTradeHeadRow($price_row);						
+			$this->printPOHeadRow($price_row);
+			
+//			displayMouseOverTR();
+			
+?>			<TR level=<?= $this->typeOrder["data"]; ?> height=20 CLASS="blank" onmouseover="this.className='blank-highlight'" onmouseout="this.className='blank'">			
+<?
+			// a standarized way to display PO Issue checkbox			
+			$this->printPODataRow($price_row);
+
+			// Calculater Total
+			$cost = $price_row['Cost'];
+			$total_cost += convertPriceConstantToValidNumber($cost);
+		}		
+
+		// ALLEN 20151025 Add Total cost in each page
+		print "<TR class=\"TAIL\"><TD colspan=100 align=\"RIGHT\">";
+		print "Total " . $total_cost;
+		print "</TD></TR>";
+		print "</TABLE>";		
+		// print page navigation buttons
+		$this->printPageNavigation();
+		
+	   $output = ob_get_contents();
+	   ob_end_clean();
+	   return $output;		
+	}
+}			
+?>

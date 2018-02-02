@@ -1,0 +1,258 @@
+<?php
+// Closing common functions
+include_once "main_include.phtml";
+include_once 'AjaxUtil_class.phtml';
+
+function NullIfBlank($data) {
+  if($data=="") 
+    return 'null';
+  else
+    return $data;
+}
+
+function ZeroIfBlank($data) {
+  if($data=="") 
+    return '0';
+  else
+    return $data;
+}
+
+function updateInventoryItem($data,$type) {
+  if($data[$type."Price"]<>"" || $data[$type."Number"]<>"" || $data[$type."Level"]<>"" || $data[$type."CAM"]<>"") {
+  	if($data[$type."RID"]=="") {
+//  		$sql = "delete from InventoryItem where UserID=".$data["UserID"]." and ItemType='".$type."'";
+//  		AjaxUtil::doSql($sql);
+  		// insert
+  		$sql = sprintf("insert into InventoryItem(UserID,ItemType,Price,ItemNumber,ItemLevel,CAM) values(%s,'%s',%s,'%s','%s',%s)",
+  			$data["UserID"],
+  			$type,
+  			NullIfBlank($data[$type."Price"]),
+  			$data[$type."Number"],
+  			$data[$type."Level"],
+  			NullIfBlank($data[$type."CAM"])
+  			);
+  	} else {
+  		// update
+  		$sql = sprintf("update InventoryItem set Price=%s,ItemNumber='%s',ItemLevel='%s',CAM=%s where RID=%s",
+  			NullIfBlank($data[$type."Price"]),
+  			$data[$type."Number"],
+  			$data[$type."Level"],
+  			NullIfBlank($data[$type."CAM"]),
+  			$data[$type."RID"]
+  			);
+  	}
+	  AjaxUtil::doSql($sql);
+  }
+}
+
+function genInventoryItem($UnitNumber){
+	$prjClosingSQL = "SELECT * FROM ProjectClosing";
+	$prjClosingResult = executeSql($prjClosingSQL);
+	$prjClosingData	= mysql_fetch_array($prjClosingResult);
+	
+	$sql = "SELECT UnitNumber, UserID, ParkingSpace, ParkingSpaceCharge,
+			ParkingExtended, ParkingTandemUnit, 
+			ParkingIncludedInPrice, Locker, LockerCharge
+			FROM User WHERE DealStatus IN (" . DEAL_STATUS_PURCHASE_INCLUDE_LIST . ") ";
+	
+	if ($UnitNumber != "ALL"){
+		$sql .= " AND UnitNumber='$UnitNumber'";		
+	}
+	
+//	echo "sql=" . $sql;
+	$result = executeSql($sql);
+	while ($row=mysql_fetch_array($result)){
+//		echo '<BR>In ' . $row['UnitNumber'];
+		if ($row['ParkingSpace'] > 0){
+			$data = array();
+			$type = 'REG_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['ParkingSpaceCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeParkingStall'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['ParkingIncludedInPrice'] > 0){
+			$data = array();
+			$type = 'REG_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = "0";
+			$data[$type."CAM"] = $prjClosingData['CamFeeParkingStall'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['ParkingExtended'] > 0){
+			$data = array();
+			$type = 'REG_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['ParkingSpaceCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeTandemParking'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['ParkingTandemUnit'] > 0){
+			$data = array();
+			$type = 'TANDEM_PARKING';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['ParkingSpaceCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeTandemParking'];
+			updateInventoryItem($data,$type);
+		} 
+		if ($row['Locker'] > 0){
+			$data = array();
+			$type = 'REG_LOCKER';
+			$data['UserID']		= $row['UserID'];			
+			$data[$type."Price"] = $row['LockerCharge'] / $row['Locker'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeLocker'];
+			// for multiple locker
+			for ($i = 0; $i < $row['Locker']; $i++){
+				updateInventoryItem($data,$type);
+			}
+		} 
+		if ($row['BicycleRack'] > 0){
+			$data = array();
+			$type = 'BIKE_RACKER';
+			$data['UserID']		= $row['UserID'];
+			$data[$type."Price"] = $row['BicycleRackCharge'];
+			$data[$type."CAM"] = $prjClosingData['CamFeeBikeRack'];			
+			updateInventoryItem($data,$type);
+		}
+	}
+}
+
+function assignInventoryItem($UnitNumber){
+	$prjClosingSQL = "SELECT * FROM ProjectClosing";
+	$prjClosingResult = executeSql($prjClosingSQL);
+	$prjClosingData	= mysql_fetch_array($prjClosingResult);
+	
+//	$sql = "SELECT UnitNumber, UserID, ParkingSpace,
+//			ParkingExtended, ParkingTandemUnit, 
+//			ParkingIncludedInPrice FROM User WHERE DealStatus IN (" . DEAL_STATUS_PURCHASE_INCLUDE_LIST . ") ";
+	
+	$sql = "SELECT InventoryItem.*, User.UnitNumber
+			FROM InventoryItem, User 
+			WHERE InventoryItem.UserID = User.UserID ";
+	
+	if ($UnitNumber != "ALL"){
+		$sql .= " AND UnitNumber='$UnitNumber'";		
+	}
+	
+//	echo "sql=" . $sql;
+	$result = executeSql($sql);
+	while ($row=mysql_fetch_array($result)){
+		$type = $row['ItemType'];
+		$data = array();
+		$data['RID']		= $row['RID'];
+		$data['UserID']		= $row['UserID'];
+		$data[$type."Number"] = $row['Number'];
+		$data[$type."Level"] = $row['Level'];
+		$data[$type."Price"] = $row['Price'];
+
+//		echo '<BR>In ' . $row['UnitNumber'];
+		if ($row['ItemType'] == 'REG_PARKING'){
+			$data[$type."CAM"] = $prjClosingData['CamFeeParkingStall'];
+			updateInventoryItem($data,$type);
+		} 
+		elseif ($row['ItemType'] == 'TANDEM_PARKING'){
+			$data[$type."CAM"] = $prjClosingData['CamFeeTandemParking'];
+			updateInventoryItem($data,$type);
+		} 
+		elseif ($row['ItemType'] == 'LOCKER'){
+			$data[$type."CAM"] = $prjClosingData['CamFeeLocker'];
+			updateInventoryItem($data,$type);
+		} 
+		elseif ($row['ItemType'] == 'BIKE_RACKER'){
+			$data[$type."CAM"] = $prjClosingData['CamFeeBikeRack'];
+			updateInventoryItem($data,$type);
+		} 
+	}
+}
+
+
+function genUnitClosingData($UnitNumber) {
+  // get project closing data
+  $rows = AjaxUtil::doSql("select * from ProjectClosing");
+
+  if(count($rows) <> 1) {
+    AjaxUtil::raiseError("database error with ProjectClosing");
+  } else {
+    $pClosing = $rows[0];
+  }
+  
+  $unit0 = $pClosing["NumOfUnit"];
+  $unit1 = $pClosing["NumOfCombinedUnit"];
+  
+  $SixFeeProvTax = $pClosing["SixFeeProvTax"]/($pClosing["SixFeeProvTaxFlg"]==0?$unit0:$unit1);
+  $SixFeeConnCharge = $pClosing["SixFeeConnCharge"]/($pClosing["SixFeeConnChargeFlg"]==0?$unit0:$unit1);
+  $SixFeeWaterMeter = $pClosing["SixFeeWaterMeter"]/($pClosing["SixFeeWaterMeterFlg"]==0?$unit0:$unit1);
+  $SixFeeHydroCharge = $pClosing["SixFeeHydroCharge"]/($pClosing["SixFeeHydroChargeFlg"]==0?$unit0:$unit1);
+  
+  $sql = "select c.UnitNumber, u.Area, If(ur.OfferPrice=0,ur.Price,ur.OfferPrice) OfferPrice from UserClosing c, Unit u, User ur where c.UnitNumber=u.UnitNumber and ur.DealStatus='Firm' and c.UnitNumber=ur.UnitNumber";
+ 	if (strtoupper($UnitNumber) != "ALL"){
+		$sql .= " AND c.UnitNumber='" . $UnitNumber . "'";		
+	}
+  $uClosings = AjaxUtil::doSql($sql);
+  
+  $count = count($uClosings);
+  for ($i = 0; $i < $count; $i++) {
+  	$uClosing = $uClosings[$i];
+  	$PropertyTaxYear1 = $pClosing["TaxRateYear1"] * $uClosing["OfferPrice"];
+		$PropertyTaxYear2 = $pClosing["TaxRateYear2"] * $uClosing["OfferPrice"];
+		$LandTaxYear1 = $pClosing["LandTaxYear1"] * $uClosing["Area"] / $pClosing["TotalArea"];
+		$LandTaxYear2 = $pClosing["LandTaxYear2"] * $uClosing["Area"] / $pClosing["TotalArea"];
+    $SixFeeDevCharge = $pClosing["SixFeeDevCharge"] * $uClosing["Area"] /$pClosing["TotalArea"] ;
+		$SixFeeTarion = $pClosing["SixFeeTarion"] * $uClosing["Area"] /$pClosing["TotalArea"];
+		$UnitCAM = $pClosing["CamFeeRatePerSf"] * $uClosing["Area"];
+  	 
+    $sql = "update UserClosing set " .
+      " SixFeeProvTax=" . $SixFeeProvTax .
+      ",SixFeeConnCharge=" . $SixFeeConnCharge .
+      ",SixFeeWaterMeter=" . $SixFeeWaterMeter .
+      ",SixFeeHydroCharge=" . $SixFeeHydroCharge .
+      ",SixFeeDevCharge=" . $SixFeeDevCharge .
+      ",SixFeeTarion=" . $SixFeeTarion .
+      ",AdmFeeLawSociety=" . $pClosing["LawSocietyLevy"] .
+      ",AdmFeeMortageCharge=" . $pClosing["DischargeFee"] .
+      ",PropertyTaxYear1=" . $PropertyTaxYear1 .
+      ",PropertyTaxYear2=" . $PropertyTaxYear2 .
+      ",LandTaxYear1=" . $LandTaxYear1 .
+      ",LandTaxYear2=" . $LandTaxYear2 .
+      ",UnitCAM=" . $UnitCAM .
+      " where UnitNumber='" . $uClosings[$i]["UnitNumber"] . "'";
+    AjaxUtil::doSql($sql);
+  }
+  
+   // Inventory Item is added by user in purchaser info page. 
+   // No long need to generate the item here
+	//  genInventoryItem($UnitNumber);
+	assignInventoryItem($UnitNumber);
+	return $UnitNumber . " Unit Closing Data has been generated successfully!";
+}
+
+// calculate Unit Closing Date, also called Occupancy Date
+function getClosingDate(
+  /* Input: UserID or 
+            Associated Array cotains:
+               FirstRevisedClosingDate,SecondRevisedClosingDate,
+               ThirdRevisedClosingDate,OccupancyDepositDate
+  */ $v
+  ) {
+    
+  if(!is_array($v)) {
+    $sql = "select FirstRevisedClosingDate,SecondRevisedClosingDate,ThirdRevisedClosingDate,OccupancyDepositDate from user where UserID=" . $v;
+    $dts = AjaxUtil::doSql($sql);
+  } else {
+    $dts = $v;
+  }
+
+  if(!is_null($dts["ThirdRevisedClosingDate"]) && $dts["ThirdRevisedClosingDate"]!="0000-00-00") 
+    return $dts["ThirdRevisedClosingDate"];
+  else if(!is_null($dts["SecondRevisedClosingDate"]) && $dts["SecondRevisedClosingDate"]!="0000-00-00") 
+    return $dts["SecondRevisedClosingDate"];
+  else if(!is_null($dts["FirstRevisedClosingDate"]) && $dts["FirstRevisedClosingDate"]!="0000-00-00") 
+    return $dts["FirstRevisedClosingDate"];
+  else
+    return $dts["OccupancyDepositDate"];
+}
+
+if ($genAllInventoryItem==1){
+	genInventoryItem('ALL');	
+}
+?>

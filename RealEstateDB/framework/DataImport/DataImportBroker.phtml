@@ -1,0 +1,134 @@
+<?php
+/*
+ * Created on 6-Jan-2007
+ *
+ * To change the template for this generated file go to
+ * Window - Preferences - PHPeclipse - PHP - Code Templates
+ */
+ 
+include_once "config/config.phtml";
+include_once "main_include.phtml";
+include_once "framework/DataImport/DataImport.phtml";
+include_once "Entity/Model/BrokerModel.phtml";
+
+class DataImportBroker extends DataImport {
+ 
+
+/**
+ * Update broker id in user table
+ */
+function updateBrokerID($unitNumber, $brokerID){
+	$sql = "UPDATE User SET BrokerID=$brokerID
+		WHERE UnitNumber=$unitNumber"	;
+	$result = executeSql($sql);
+}
+
+ /**
+  * Import data for landmark.
+  */
+function insertRecord($arguments){
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+ 	$brokerID = -1;
+	$companyID = -1;	
+ 	$numOfCol = sizeof($headerInfoArray);
+ 	$arguments = array();
+	$arguments['Action'] = "add";
+	$arguments['SubAction'] = "All";
+ 	
+ 	for ($i =0; $i < $numOfCol; $i++){
+ 		if (preg_match("/Broker_/" , $headerInfoArray[$i])){
+ 			if (!isSet($dataArray[$i]) || trim($dataArray[$i]) == "")
+ 				continue;
+			$data = explode('_', $headerInfoArray[$i], 2);
+			$varName = $data[1];
+			
+			$arguments[$varName] = trim($dataArray[$i]);
+			print "VARNAME $varName=" . trim($dataArray[$i]) . "<BR>"; 			 			
+ 		}
+ 		else if ($headerInfoArray[$i] == "UnitNumber"){
+	 		$UnitNumber = $dataArray[$i];
+	 	}
+ 		else if ($headerInfoArray[$i] == "UserID"){
+	 		$UserID = $dataArray[$i];
+	 	}
+ 	}
+ 	
+ 	// find company id
+ 	if ($arguments['Person_Company_CompanyName'] != ""){
+ 		$sql = "SELECT * FROM Company 
+				WHERE CompanyName=\"" . $arguments['Person_Company_CompanyName'] . "\"
+				AND BranchName=\"" . $arguments['Person_Company_BranchName'] . "\"";
+//print "CompanySQL=$sql<BR>";
+ 		$companyResult = executeSql($sql);
+ 		$companyRow = mysql_fetch_array($companyResult);
+ 		$companyID = $companyRow['CompanyID']; 	
+ 	}
+ //print "ACompanyID=$companyID<BR>";	
+ 	// find broker
+ 	$brokerSql = "SELECT * FROM Broker, Person
+				WHERE Broker.PersonID = Person.PersonID
+				AND Person.FirstName = \"" . $arguments['Person_FirstName'] . "\"
+				AND Person.LastName = \"" . $arguments['Person_LastName'] . "\"";
+ 	
+ 	if ($companyID > 0){
+ 		$brokerSql .= " AND Person.CompanyID=$companyID" ; 		
+ 	}
+//print "BrokerSQL=$brokerSql<BR>";	
+ 	$brokerResult = executeSql($brokerSql);
+ 	$brokerRow = mysql_fetch_array($brokerResult);
+ 	$brokerID = $brokerRow['BrokerID'];
+ 	
+ //print "BrokerID=$brokerID<BR>";	
+ 	if ($brokerID > 0){
+	 	// update broker ID in user table
+		$this->updateBrokerID($UnitNumber, $brokerID);
+		return;
+ 	}
+print "BCompanyID=$companyID<BR>";
+
+	if ($companyID > 0) 	{
+		$arguments['Person_Company_CompanyID'] = $companyID;
+		$arguments['Person_Company_Action'] = 'no-update';
+	}
+ 	// if broker doesn't exist, add it
+//print "going to call brokerModel<BR>";
+//print_r ($arguments);
+//print "<BR>";
+ 	$brokerModel = new BrokerModel();
+ 	$brokerID = $brokerModel->handle($arguments);
+ 	
+ 	if ($brokerID > 0){
+	 	// update broker ID in user table
+		$this->updateBrokerID($UnitNumber, $brokerID);
+		return;
+ 	}
+
+ 	// if still here, error must have happened.
+ 	print "Error: Cannot create broker";
+ 	print_r($arguments);
+ 	
+ }
+ 
+/**
+  * Import data for landmark.
+  */
+  function updateRecord($arguments){
+  	die("UpdateRecord for DataImportBroker is not ready!!!");
+	$table = $arguments['table'];
+	$headerInfoArray = $arguments['headerArray'];
+	$dataArray = $arguments['dataArray'];
+	$primaryKey = $arguments['primaryKey'];
+	
+	$numOfCol = sizeof($headerInfoArray);
+ 	$multiAdditionalPurchaserArray = array();
+ 	$multiDepositTransactionsArray = array();
+ 	$UnitNumber = -1;
+ 	$UserID = -1;
+ 	$addComma = false;
+ 	
+ 
+ } 
+}
+?>

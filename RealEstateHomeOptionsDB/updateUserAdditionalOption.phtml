@@ -1,0 +1,54 @@
+<?
+$not_include_javascript = 1;
+include_once "main_include.phtml";
+
+//$newDesc = addslashes($newDesc);
+//$orgDesc = addslashes($orgDesc);
+//echo "newDesc=$newDesc";
+//echo "orgDesc=$orgDesc";
+
+
+$newDesc = encode_special_db_char($newDesc);
+$orgDesc = encode_special_db_char($orgDesc);
+
+#echo "newDesc=$newDesc";
+
+if ($act == "add"){
+	$sql = "INSERT INTO UserOption
+			SET UnitNumber	= '$unitNumber',
+			Description = \"$newDesc\",
+			Price = $newPrice";
+				
+//echo("sql=" . $sql);
+	executeSql($sql);
+	echo "Add succeeded.";
+}	
+else if ($act == "edit"){
+	$sql = "UPDATE UserOption
+			SET Description = \"$newDesc\",
+				Price		= $newPrice
+			WHERE UnitNumber	= '$unitNumber'
+			AND Description = \"$orgDesc\"";
+				
+//echo("sql=" . $sql);
+	$result = executeSql($sql);
+	
+	$numRows = mysql_affected_rows();
+	if ($numRows == 1){	
+		echo "Update succeeded.";
+	} else if ($numRows > 1) {
+		echo "Warning! There is duplicate description. Please remove duplicate description now.";
+	} else {
+		echo "0 record got updated. If description contains \" or \', please delete the entry and re-enter it again. If record values are exactly the same before, this is an expected behaviour.";		
+	}
+} else if ($act == "delete"){
+	$sql = "Delete From UserOption
+			WHERE UnitNumber = '$unitNumber'
+			AND Description = \"$orgDesc\"";
+				
+//echo("sql=" . $sql);
+	executeSql($sql);
+	echo "Delete succeeded.";
+}	
+die("updateUserOtionStatus");	
+?>

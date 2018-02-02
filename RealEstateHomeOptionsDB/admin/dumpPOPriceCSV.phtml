@@ -1,0 +1,26 @@
+<?php
+$not_include_javascript = 1;
+
+include_once "main_include.phtml";
+include_once SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/framework/DataExport/DataExportMysqlWrapper.phtml";
+
+
+$sql = "SELECT UserSave.UnitNumber,Item.ItemID AS ItemID, Item.Name AS ItemName, Options.OptionID, Options.Name AS OptionsName, 
+		Options.Choice AS OptionsChoice, Choice.ChoiceID, Choice.Name AS ChoiceName, UserSave.Price AS Price 
+		FROM UserSave Left JOIN Item 
+			ON Item.ItemID = UserSave.ItemID 
+		LEFT JOIN Options 
+			ON UserSave.OptionID = Options.OptionID 
+		LEFT JOIN Choice 
+			ON UserSave.ChoiceID = Choice.ChoiceID 
+		WHERE Price > -9995
+		AND Price <> 0
+		ORDER BY Item.Name, Options.Name, Choice.Name";
+
+$result = mysql_query($sql,$db) or 
+					 die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $unionSQL . $PHP_SELF);
+
+$exporter = new DataExportMysqlWrapper($result, '|');
+$exporter->exportHeader("UpgradePrice.csv");
+$exporter->exportData();
+?>

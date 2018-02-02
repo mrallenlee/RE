@@ -1,0 +1,324 @@
+<?
+include "main_include.phtml";
+
+// This file deletes records from the database. It is called when
+// the admin user clicks on the Delete button.
+
+
+
+
+?>
+<html>
+
+<head>
+<title>Admin</title>
+
+<script language="javascript">
+
+function redirect_url(url)
+{
+	location.href=url;
+}
+
+</script>
+
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
+
+<font face="Arial,Verdana,Helvetica" size="3">
+
+
+
+<?
+
+$user_message = "[ <font color=#009900><b>Record DELETED successfully.</b></font> ]";
+
+// delete record (used for table: Section, Subsection, Item, and Options)
+if ($table_name == "Section" || $table_name == "Subsection" ||
+	$table_name == "Item" || $table_name == "Options")
+{
+	if ($table_name != "Options")	$id_name = $table_name . "ID";
+	else				$id_name = "OptionID";
+	
+	$sql 	= "DELETE FROM $table_name 
+			WHERE $id_name = ";
+				if ($table_name == "Section")	$sql .= $SectionID;
+				elseif ($table_name == "Subsection")	$sql .= $SubsectionID;
+				elseif ($table_name == "Item")	$sql .= $ItemID;
+				elseif ($table_name == "Options")	$sql .= $OptionID;
+	$result = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	
+	// if table is Section then some records from lower tables must be deleted
+	if ($table_name == "Section")
+	{
+		$sql = "SELECT SubsectionID
+				FROM Subsection
+				WHERE SectionID = $SectionID";
+		$result_Subsection = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		
+		// loop through Subsections
+		while ($row = mysql_fetch_array($result_Subsection))
+		{
+			$SubsectionID = $row['SubsectionID'];
+			
+			$sql = "SELECT ItemID
+					FROM Item
+					WHERE SubsectionID = $SubsectionID";
+			$result_Item = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			
+			// loop through Items
+			while ($row = mysql_fetch_array($result_Item))
+			{
+				// delete from Item_Options table
+				$sql 	= "DELETE FROM Item_Options
+						WHERE ItemID = " . $row['ItemID'];
+				$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+				
+				// delete from Price table
+				$sql 	= "DELETE FROM Price
+						WHERE ItemID = " . $row['ItemID'];
+				$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+				
+				// delete from UserSave table
+				$sql 	= "DELETE FROM UserSave
+						WHERE ItemID = " . $row['ItemID'];
+				$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+				
+				// delete from Item table
+				$sql = "DELETE FROM Item
+						WHERE ItemID = " . $row['ItemID'];
+				$result = mysql_query($sql); //or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			}
+			
+			// delete from Subsection table
+			$sql = "DELETE FROM Subsection
+					WHERE SubsectionID = $SubsectionID";
+			$result = mysql_query($sql); //or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		}
+	}
+	
+	// if table is Subsection then some records from lower tables must be deleted
+	elseif ($table_name == "Subsection")
+	{
+		$sql = "SELECT ItemID
+				FROM Item
+				WHERE SubsectionID = $SubsectionID";
+		$result_Item = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		
+		// loop through Items
+		while ($row = mysql_fetch_array($result_Item))
+		{
+			// delete from Item_Options table
+			$sql 	= "DELETE FROM Item_Options
+					WHERE ItemID = " . $row['ItemID'];
+			$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			
+			// delete from Price table
+			$sql 	= "DELETE FROM Price
+					WHERE ItemID = " . $row['ItemID'];
+			$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			
+			// delete from UserSave table
+			$sql 	= "DELETE FROM UserSave
+					WHERE ItemID = " . $row['ItemID'];
+			$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			
+			// delete from Item table
+			$sql = "DELETE FROM Item
+					WHERE ItemID = " . $row['ItemID'];
+			$result = mysql_query($sql); //or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		}
+	}
+	
+	// if table is Item or Options then some records from Item_Options table must be deleted
+	elseif ($table_name == "Item" || $table_name == "Options")
+	{
+		$sql 	= "DELETE FROM Item_Options";
+		if ($table_name == "Item")
+		{
+			$sql .= " WHERE ItemID = $ItemID";
+		}
+		elseif ($table_name == "Options")
+		{
+			$sql .= " WHERE OptionID = $OptionID";
+		}
+		
+		$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		
+		// if table is Options then corresponding records from Choice table & image file must be deleted
+		if ($table_name == "Options")
+		{
+			// Delete corresponding image files for this OptionID and according ChoiceID
+			if (is_file("../images/". $OptionID))
+				unlink("../images/". $OptionID);
+			
+			$sql = "SELECT ChoiceID FROM Choice
+				WHERE OptionID = $OptionID";
+			$result = mysql_query($sql);
+			
+			while ($row = mysql_fetch_array($result))
+			{
+				echo "../images/". $OptionID . "_". $row['ChoiceID'];
+				if (is_file("../images/". $OptionID . "_". $row['ChoiceID']))
+					unlink("../images/". $OptionID . "_". $row['ChoiceID']);
+			}
+
+			$sql 	= "DELETE FROM Choice
+					WHERE OptionID = $OptionID";
+			$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		}
+		
+		// if table is Item then some records from Price and UserSave table must be deleted
+		elseif ($table_name == "Item")
+		{
+			$sql 	= "DELETE FROM Price
+					WHERE ItemID = $ItemID";
+			$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+			
+			$sql 	= "DELETE FROM UserSave
+					WHERE ItemID = $ItemID";
+			$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		}
+	}
+}
+
+// delete record (used for table: Item_Options, Choice, Price, UnitType, and User)
+elseif ($table_name == "Item_Options" || ($table_name == "Choice" && $type == "delete_row") || $table_name == "UnitType" || $table_name == "User")
+{
+	$sql 	= "DELETE FROM $table_name ";
+	if ($table_name == "Item_Options")
+	{
+		$sql .= "WHERE ItemID = $ItemID AND OptionID = $OptionID";
+	}
+	elseif ($table_name == "Choice")
+	{
+		$sql .= "WHERE ChoiceID = $ChoiceID";
+	}
+	elseif ($table_name == "UnitType")
+	{
+		$sql .= "WHERE Type = '" . urldecode($Type) . "'";
+	}
+	elseif ($table_name == "User")
+	{
+		$sql .= "WHERE UserID = $UserID";
+	}
+
+	$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	
+	// if table is UnitType then some records from Price table must be deleted
+	if ($table_name == "UnitType")
+	{
+		$sql 	= "DELETE FROM Price
+				WHERE UnitType = '$Type'";
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	}
+	// if table is User then some records from UserSave table must be deleted
+	elseif ($table_name == "User")
+	{
+		$sql 	= "DELETE FROM UserSave
+				WHERE UserID = $UserID";
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+		
+		$sql 	= "DELETE FROM UserOption
+				WHERE UserID = $UserID";
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	}
+	// if table is Choice then according image file must be deleted
+	elseif ($table_name == "Choice")
+	{
+		// Duplicate code with line 239, 240
+		if (is_file("../images/". $OptionID . "_". $ChoiceID))
+			unlink("../images/". $OptionID . "_". $ChoiceID);
+	}
+}
+
+// delete image only if table is Choice and delete type is "delete_image"
+elseif ($table_name == "Choice" && $type == "delete_image")
+{
+	// Duplicate code with line 230, 231
+	if (is_file("../images/". $OptionID . "_". $ChoiceID))
+		unlink("../images/". $OptionID . "_". $ChoiceID);
+	// update choice table
+	$sql =  "UPDATE Choice" .
+			" SET ImageName=''" .
+			" WHERE ChoiceID=$ChoiceID" .
+			" AND OptionID=$OptionID";
+			
+	$result = mysql_query($sql) or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+}
+
+// delete record (used for table: UserOption)
+elseif ($table_name == "UserOption")
+{
+	$sql 	= "DELETE FROM $table_name
+			WHERE UserID = $UserID
+			AND Description = '$UserOptionDesc'";
+	
+	$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+}
+
+// delete record (used for table: UserFile)
+elseif ($table_name == "UserFile")
+{
+	if (@unlink("./". $UserID ."/". $FileName))
+	{
+		$sql 	= "DELETE FROM UserFile
+			WHERE UserID = $UserID
+			AND FileID = $FileID";
+
+		$result = mysql_query($sql); //or die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	}
+	else
+	{
+		$user_message = "Unable to delete ". $FileName ."from server.";
+	}
+}
+
+// fix the query string that's going to be passed back
+$query_s = $QUERY_STRING;
+if ($table_name == "Section")		$query_s = str_replace("&SectionID=" . $SectionID, "", $query_s);
+elseif ($table_name == "Subsection")	$query_s = str_replace("&SubsectionID=" . $SubsectionID, "", $query_s);
+elseif ($table_name == "Subsection" && $UnitType == $Type)	$query_s = str_replace("&UnitType=" . $UnitType, "", $query_s);
+elseif ($table_name == "Item_Options")	$query_s = str_replace("&OptionID=" . $OptionID, "", $query_s);
+elseif ($table_name == "Item")		$query_s = str_replace("&ItemID=" . $ItemID, "", $query_s);
+elseif ($table_name == "Options")	$query_s = str_replace("&OptionID=" . $OptionID, "", $query_s);
+elseif ($table_name == "User")		$query_s = str_replace("&UserID=" . $UserID, "", $query_s);
+elseif ($table_name == "UserOption")	$query_s = "table_name=User&UserID=$UserID";
+elseif ($table_name == "UserFile")	$query_s = "table_name=User&UserID=$UserID";
+
+if ($from == "User" || $table_name == "User" || $table_name == "UserSave")
+{
+	$goto = "display_user.phtml";
+	$query_s .= "&user_message=" . urlencode($user_message);
+}
+elseif ($table_name == "UserOption")
+{
+	$goto = "row_edit.phtml";
+}
+elseif ($table_name == "UserFile")
+{
+	$goto = "file_management.phtml";
+	$query_s .= "&user_message=" . urlencode($user_message);
+}
+else
+{
+	$goto = "display_table.phtml";
+	$query_s .= "&user_message=" . urlencode($user_message);
+}
+
+?>
+
+<script language="javascript">
+
+	redirect_url("<?echo $goto;?>?<?echo $query_s;?>");
+
+</script>
+
+
+
+</font>
+
+</body>
+
+</html>

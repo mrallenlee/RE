@@ -1,0 +1,144 @@
+<?
+include "main_include.phtml";
+// add, delete, update info of sales reps. Also used to transfer all customers of one rep to another.
+// set the security level to be 2 for this page
+check_auth(2);
+
+?>
+
+<script language="JavaScript">
+<!--
+function confirm_delete_sales(url)
+{
+	ans = confirm("Please make sure you have transferred customers of this sales rep to aother sales rep.\nAre you sure you want to delete this record ?");
+	if (ans)
+	{
+		window.location = url;	
+	}
+}
+//-->
+</script>
+	
+<HTML>
+<? print_top_frame($PHP_SELF, "./"); ?>
+	<H3><?= get_project_name($PHP_SELF); ?> -- Sales Rep Information</H3>
+
+<?
+
+$sql = "SELECT * FROM SalesRep ORDER BY SalesRepFirstName, SalesRepLastName";
+$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
+?>
+
+<BODY>
+<TABLE>
+  <FORM NAME="editSalesRep" METHOD="POST" ACTION="./updateSalesRepInfo.phtml?action=update">
+  	<TABLE>
+      <TR  CLASS="head">
+        <TD>First Name</TD>
+        <TD>Last Name</TD>
+        <TD>Action</TD>
+      </TR>
+<?
+	while ($row = mysql_fetch_array($result)) 
+	{		
+			if ($class == "body" || $class == "")
+			{
+				$class = "blank";
+			}
+			else
+			{
+				$class = "body";
+			}
+?>
+      <TR CLASS="<?= $class; ?>">
+        <TD><INPUT TYPE="TEXT" SIZE="17" NAME="<?= $row['SalesRepID']; ?>_SalesRepFirstName" VALUE="<?= $row['SalesRepFirstName']; ?>"></TD>
+        <TD><INPUT TYPE="TEXT" SIZE="17" NAME="<?= $row['SalesRepID']; ?>_SalesRepLastName" VALUE="<?= $row['SalesRepLastName']; ?>"></TD>
+        <TD><A HREF="javascript:confirm_delete_sales('./updateSalesRepInfo.phtml?action=delete&id=<?= $row['SalesRepID']?>')">Del</A></TD>
+        <TD><INPUT TYPE="HIDDEN" NAME="<?= $row['SalesRepID']; ?>_SalesRepID" VALUE="<?= $row['SalesRepID']; ?>"></TD>
+      </TR>
+<?
+	}
+?>
+      <TR COLSPAN="3">
+        <TD><INPUT TYPE="SUBMIT" VALUE="SUBMIT"></TD>
+      </TR>			
+  </FORM>
+
+      <TR>
+        <TD COLSPAN="3"><BR><BR><H4>Insert New Sales Rep</H4></TD>
+      </TR>
+  <FORM NAME="addSalesRep" METHOD="POST" ACTION="./updateSalesRepInfo.phtml?action=add">
+      <TR>
+      <TR  CLASS="head">
+        <TD>First Name</TD>
+        <TD>Last Name</TD>
+        <TD>Action</TD>
+      </TR>					
+      <TR CLASS=blank>
+        <TD ALIGN="CENTER"><INPUT TYPE="TEXT" SIZE="17" NAME="SalesRepFirstName_new"></TD>
+        <TD ALIGN="CENTER"><INPUT TYPE="TEXT" SIZE="17" NAME="SalesRepLastName_new"></TD>
+        <TD><A href="javascript:document.forms['addSalesRep'].submit()">Add</A></TD>
+      </TR>
+  </FORM>
+
+      <TR>
+        <TD COLSPAN="3"><BR><BR><H4>Transfer Customers</H4></TD>
+      </TR>
+  <FORM NAME="transferCustomer" METHOD="POST" ACTION="./updateSalesRepInfo.phtml?action=transfer">
+      <TR  CLASS="head">
+        <TD>From</TD>
+        <TD>To</TD>
+        <TD>Action</TD>
+      </TR>
+
+      <TR CLASS=blank>
+        <TD>
+          <SELECT NAME="SalesRepID_from">
+          <OPTION VALUE="">Choose one</OPTION>
+<?
+// reset mysql pointer to reselect from 1st record
+mysql_data_seek($result, 0);
+
+while ($row = mysql_fetch_array($result)) 
+{
+?>
+          <OPTION VALUE="<?= $row['SalesRepID']; ?>"><?= $row['SalesRepFirstName']; ?></OPTION>
+<?
+}
+?>
+          </SELECT>
+        </TD>
+
+        <TD>
+          <SELECT NAME="SalesRepID_to">
+          <OPTION VALUE="">Choose one</OPTION>
+<?
+// reset mysql pointer to reselect from 1st record
+mysql_data_seek($result, 0);
+
+while ($row = mysql_fetch_array($result)) 
+{
+?>
+          <OPTION VALUE="<?= $row['SalesRepID']; ?>"><?= $row['SalesRepFirstName']; ?></OPTION>
+<?
+}
+?>
+          </SELECT>
+        </TD>
+        <TD><A href="javascript:document.forms['transferCustomer'].submit()">Transfer</A></TD>
+      </TR>
+  </FORM>
+
+<?
+if (isSet($error))
+{
+?>
+      <TR CLASS=error COLSPAN="3">
+        <TD><BR><?= $error; ?></TD>
+      </TR>
+<?
+}
+?>
+</TABLE>
+</BODY>
+</HTML>
