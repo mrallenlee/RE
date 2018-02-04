@@ -14,12 +14,12 @@
     "confirm_sync": true,
     "confirm_overwrite_newer": false,
     
-    "host": "yasur.pair.com",
-    "user": "lmark",
-    "password": "Isatthebest1115",
+    "host": "",
+    "user": "",
+    "password": "",
     "port": "22",
     
-    "remote_path": "/usr/home/lmark/public_ssl/ljm/appleby/",
+    "remote_path": "/usr/home/lmark/public_ssl/dev/PDI_PIC_BRANCH",
     "ignore_regexes": [
         "\\.sublime-(project|workspace)", "sftp-config(-alt\\d?)?\\.json",
         "sftp-settings\\.json", "/venv/", "\\.svn/", "\\.hg/", "\\.git/",
