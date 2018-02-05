@@ -72,6 +72,89 @@ function change_link(type)
 
 }
 
+/**
+* Handle change event on the File Selector. Display Thumbnail on provided imag element
+*/ 
+function handleImageSelector(fileObjName, imgObjName) {
+
+	var fileObj = document.getElementById(fileObjName);
+	var file 	= fileObj.files[0];
+
+	var imgObj 	= document.getElementById(imgObjName);
+    
+    if (!file.type.startsWith('image/')){ alert('Please select image files for upload!'); return; }
+    
+    imgObj.height = 100;
+
+
+    // load selected file to Thumbnail
+    var reader = new FileReader();
+    reader.onload 	= function(){
+      	var dataURL = reader.result;
+      	imgObj.src 	= dataURL;
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+/**
+* Upload selected image to server via xhttp call
+*/ 
+function uploadImage(fileObjName) {
+
+	var fileObj = document.getElementById(fileObjName);
+	var file 	= fileObj.files[0];
+
+	alert("uploadImage Function called" + fileObj);	
+
+    var uri = "upload_file.phtml";
+    var xhr = new XMLHttpRequest();
+    var fd = new FormData();
+
+    fd.append('myFile', file);
+  /*  
+    xhr.open("POST", uri, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            alert(xhr.responseText); // handle response.
+        }
+    };
+    fd.append('myFile', file);
+    // Initiate a multipart/form-data upload
+    xhr.send(fd);
+*/
+
+	$.ajax({
+		url: 'upload_file_ajax.phtml',
+		type: "POST",
+		data: fd,
+		contentType: false,
+		dataType: 'json',
+		cache: false,
+		processData: false,
+		success: function(data) {
+			// initialize the first row
+			alert("Upload Succeed " + data);
+		},
+		error: function(data){
+
+			alert("Error: " + data);
+		}
+	});    
+}
+
+
+/**
+* Upload selected image to server
+*/ 
+function deleteImage(fileObjName) {
+
+	var fileObj = Document.getElementById(fileObjName);
+	alert("deleteImage Function called" + fileObj);	
+}
+
+
 var num_of_rows = 0;
 
 var filter_date = function (one_date) {
@@ -104,6 +187,8 @@ var generate_defect_form = function (num_of_rows, row) {
 	row["month11ReportDate"] = row["month11ReportDate"] || "";
 	row["DefectDesc"] = row["DefectDesc"] || "";
 	row["PDIDefectID"] = row["PDIDefectID"] || "";
+// TODO Add image name from DB
+//	row[""] = row[""] || "";
 	
 	return PDI_TABLE_TEMPLATE.replace(/\{1\}/g, num_of_rows)
 	                         .replace(/\{QAFixedDate\}/g, filter_date(row["QAFixedDate"]))

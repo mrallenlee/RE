@@ -1,0 +1,32 @@
+<?
+/**
+* Upload file to server via AJAX call
+*/
+include "main_include.phtml";
+
+$dir = "../image/PDI/";
+$filename = "PDI_TEST.jpg";
+
+if (!isset($File) || $File == "none")
+{
+	echo "Upload file invalid.";
+	return;
+}
+
+
+		
+	if (!move_uploaded_file($File, $dir.$filename))
+		echo "Upload to $dir.$filename failed.";
+	else {
+		if ($table_name == "Choice"){
+			// update DB
+			$sql = "UPDATE " . $table_name . 
+					" SET ImageName=\"" . $filename . "\" WHERE " .
+					" ChoiceID=$ChoiceID";
+			$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());	
+		}
+		echo "Upload Successfully.";
+	}
+}
+return;
+?>

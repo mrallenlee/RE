@@ -23,8 +23,11 @@ JEC from below website
 //-->
 <link rel="stylesheet" href="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/themes/base/jquery-ui.css" />
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery-1.8.3.js"></script>
+<//script src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery.jec.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
+
+
 
 
 <!-- <script src="scripts.js" type="text/javascript"> //-0>
@@ -615,6 +618,12 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
             <td align="center"><input type="checkbox" name="TradeContacted_{1}" id="TradeContacted_{1}" /></td>\
           </tr>\
           <tr>\
+            <td><img name="DefectImageID_{1}" id="DefectImageID_{1}" src="">Defect Image</td>\
+            <td><input type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}"></td>\
+            <td><input type="button" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\');"</td>\
+            <td><input type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}" onClick="deleteImage(\'DefectImageFile_{1}\');"></td>\
+            </tr>\
+          <tr>\
             <td class="subhead" colspan="5"><b>QA</b></td>\
             <td class="subhead" colspan="5"><b>PDI</b></td>\
           </tr>\
@@ -688,6 +697,6 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
 
 	var UNIT = <?php echo $unit; ?>;
 </script>
-<script language="javascript" src="display_pdi_TEST.js"></script>
+<script language="javascript" src="display_pdi.js"></script>
 
 </html>
