@@ -135,11 +135,11 @@ function uploadImage(fileObjName) {
 		processData: false,
 		success: function(data) {
 			// initialize the first row
-			alert("Upload Succeed " + data);
+			alert("Upload " + data['status'] + " : " + data['message']);
 		},
 		error: function(data){
 
-			alert("Error: " + data);
+			alert("Error: " + data['message']);
 		}
 	});    
 }

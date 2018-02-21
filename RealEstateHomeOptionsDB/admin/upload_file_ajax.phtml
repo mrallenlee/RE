@@ -4,20 +4,32 @@
 */
 include "main_include.phtml";
 
-$dir = "../image/PDI/";
+$dir = "../image/";
 $filename = "PDI_TEST.jpg";
 
-if (!isset($File) || $File == "none")
+
+$rtn_rows = array();
+
+if (!isset($myFile) || $myFile == "none")
 {
-	echo "Upload file invalid.";
+	//echo "Upload file invalid.";
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "File is invalid.";	
+	echo json_encode($rtn_rows);
 	return;
 }
 
 
-		
-	if (!move_uploaded_file($File, $dir.$filename))
-		echo "Upload to $dir.$filename failed.";
-	else {
+
+
+			
+				
+//	if (!move_uploaded_file($myFile, $dir . $filename)) {
+	if (!copy($myFile, $dir . $filename)) {
+			//echo "Upload to $dir.$filename failed.";
+			$rtn_rows['status']	= "ERROR";
+			$rtn_rows['message']= "Upload to " . $dir . $filename . " failed.";
+	} else {
 		if ($table_name == "Choice"){
 			// update DB
 			$sql = "UPDATE " . $table_name . 
@@ -25,8 +37,11 @@ if (!isset($File) || $File == "none")
 					" ChoiceID=$ChoiceID";
 			$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());	
 		}
-		echo "Upload Successfully.";
+
+			$rtn_row['status'] 	= "SUCCESS";
+			$rtn_row['message']	= "Upload successfully to $dir.$filename failed.";
+
+			//echo "Upload Successfully.";
 	}
-}
-return;
+echo json_encode($rtn_rows);
 ?>
