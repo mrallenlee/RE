@@ -3,17 +3,21 @@ include_once "main_include.phtml";
 include_once "framework/sajax/Sajax.php";
 
 /**
+* Issue: The UnitInfoAction.phtml below could be in wrong cases. Check the case of the file
+*/
+
+/**
  * Get unit info section html	
  */
 function getUnitInfo($whereClause = "", $sortOrder = ""){
 	if ($sortOrder == ""){
 		$sortOrder = getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 	}
-	require_once("unitInfoAction.phtml");
+	require_once("UnitInfoAction.phtml");
 	return generateUnitInfo($whereClause, $sortOrder);
 }
 
-/**
+/**	
  * Delete a unit
  */
 function deleteUnit($UnitNumber){
