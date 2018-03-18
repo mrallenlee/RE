@@ -476,9 +476,9 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 <?
 
 
-	echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\" color=\"#000000\"><b>$SubsectionName</b></font>";
+	echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\"><b>$SubsectionName</b></font>";
 	if ($SubsectionDesc != "") {
-		echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\" color=\"#000000\"> - $SubsectionDesc</font><br>";
+		echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\"> - $SubsectionDesc</font><br>";
 	}
 ?>		
 		</td>
@@ -697,7 +697,6 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 						echo "\t\t\t\t\t\tImageHeight_array[\"".$OptionID."_".$ChoiceID."\"] = \"".$imageOfChoiceHeight."\";\n";
 						echo "\t\t\t\t\t</script>\n";
 						// End by Cindy
-
 						//retrieve choiceID from database and show it on the page
 						//if the user has select the choice before
 						echo "\t\t\t\t\t<option value=\"$ChoiceID\"";
@@ -730,7 +729,7 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 				// if size is 250*250, pop up small window
 				// if size is 640*480, pop up large window
 				$size = getimagesize($imageForDisplay);
-//print "choiceHasImage=$choiceHasImage optionHasImage=$optionHasImage<BR>";
+//die("choiceHasImage=$choiceHasImage optionHasImage=$optionHasImage<BR>");
 				if ($showSelectedChoiceImage){
 ?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left" 
 					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>,  <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
@@ -745,7 +744,7 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" 
 					align="left" valign="center" border=0 src="<?= $imageForDisplay;?>" 
 					width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
-					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
+					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)" onClick="chooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)" 
 					onMouseOut="hideOptionsPhotoDIV()" >
 <?				}
  				else if ($choiceHasImage){
