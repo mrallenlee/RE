@@ -113,33 +113,27 @@ function uploadImage(fileObjName) {
     var fd = new FormData();
 
     fd.append('myFile', file);
-  /*  
-    xhr.open("POST", uri, true);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            alert(xhr.responseText); // handle response.
-        }
-    };
-    fd.append('myFile', file);
-    // Initiate a multipart/form-data upload
-    xhr.send(fd);
-*/
 
+	/* Add error message checking in success scope */
 	$.ajax({
-		url: 'upload_file_ajax.phtml',
+		url: 'upload_file_ajax.phtml?component=PDI&ID=9999',
 		type: "POST",
-		data: fd,
+		data: fd, 
 		contentType: false,
 		dataType: 'json',
 		cache: false,
 		processData: false,
 		success: function(data) {
 			// initialize the first row
-			alert("Upload " + data['status'] + " : " + data['message']);
+			if (data['status'] == 'ERROR'){
+				alert (data['status']  + " : " + data['message']);
+			} else {
+				alert("Upload " + data['status'] + " : " + data['message']);
+			}
 		},
 		error: function(data){
 
-			alert("Error: " + data['message']);
+			alert("Error 2: " + data['message']);
 		}
 	});    
 }
