@@ -234,12 +234,13 @@ $Status)
 	}
 
 	$result = executeSql($sql, false);
+	$error = error_get_last();
 
 	ob_end_clean();
 	if ($result){
 		return 1;
 	} else {
-		return 0;
+		return $errors['type'] . " Error : " . $errors['message'] . " SQL - " . $sql;
 	}
 }
 ?>

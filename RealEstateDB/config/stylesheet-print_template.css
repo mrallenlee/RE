@@ -1,0 +1,87 @@
+
+@media print {
+
+@page {
+	size: auto;
+	margin-bottom: 5mm;
+	margin-top: 5mm;
+}
+
+.big-head {	text-align: center; color: #555555;   
+			font-family : "Times New Roman", Times, serif; font-size : 16pt; 
+			fong-weight: bold; font-style: italic; 
+			}
+
+.head { 	color : #555555; background : #DDDDDD; text-align: center;
+			font-family : "Times New Roman", Times, serif; font-size : 14pt; 
+			font-weight: bold; text-decoration: ;  transition: none;
+			-moz-transition: none; -webkit-transition: none; !important;}
+
+.header3 { 	color : #555555; background : #BBBBBB; text-align: center;
+			font-family : "Times New Roman", Times, serif; font-size : 16pt; 
+			font-weight: bold; text-decoration: underline;  transition: none; -moz-transition: none; -webkit-transition: none; !important;}
+
+.headtd {	border-bottom: 2px solid #000000;}
+
+.tail { 	color : #555555; background : #EEEEEE; text-align: center;
+			font-family : "Times New Roman", Times, serif; font-size : 14pt; 
+			font-weight: bold; }
+
+.tail-left, .tail-left-med { 	color : #000000; background : #CCCCCC; text-align: left;
+					font-family : "Times New Roman", Times, serif; font-size : 12pt; 
+					font-weight: bold; }
+
+
+.subhead { 	color : #000000; background : #CCCCCC; text-align: center;
+			font-family : "Times New Roman", Times, serif; font-size : 12pt; 
+			font-weight: bold; }
+
+.subhead-left { 	color : #000000; background : #CCCCCC; text-align: left;
+					font-family : "Times New Roman", Times, serif; font-size : 12pt; 
+					font-weight: bold; }
+
+.blank .body { 	color : #000000; background : #CCCCCC; 
+			font-family : "Times New Roman", Times, serif; font-size : 8pt; 
+			}
+
+
+table { border-spacing: 0px; }
+
+.blank td { border:1px solid black; }
+.tail td { border:1px solid black; }
+a 		{ color : #000000; background : #CCCCCC; text-align: center;
+			font-family : "Times New Roman", Times, serif; font-size : 8pt; 
+			font-weight: bold;  text-decoration:none}
+
+blockquote { page-break-inside: avoid; }
+
+a:visited { color:#000000 }
+a:link 		{ color:#000000 }
+a:hover 	{color: #F2862F }
+
+.largetitle {	font-family : "Times New Roman, Times, serif"; font-size : 12pt; 	color: #000000;	font-weight: bold;	}
+.smalltitle {	font-family : "Times New Roman, Times, serif"; font-size : 10pt; 	color: #000000;	font-weight: bold;	}
+
+
+
+#search, #banner, #menu, #navigation, #nav, #links, #update,
+.html-space, .button,
+#Stm0p0i, #Stm0p1i, #Stm0p2i,  #Stm0p3i, #Stm0p4i, #Stm0p5i, 
+#Stm0p6i, #Stm0p7i, #Stm0p8i, #Stm0p9i  {
+        display:none;
+}
+
+
+body { background-color: #FFFFFF }
+h1 { font-family : "Times New Roman", Times, serif; color: #000000; }
+h2 { font-family : "Times New Roman", Times, serif; color: #000000; }
+h3 { font-family : "Times New Roman", Times, serif; color: #000000; }
+h4 { font-family : "Times New Roman", Times, serif; color: #000000; }
+h5 { font-family : "Times New Roman", Times, serif; color: #000000; }
+
+input 		{ display: none; font-family: "Times New Roman"; font-size: 8pt; }
+select 		{ font-family: "Times New Roman"; font-size: 8pt; }
+textarea 	{ font-family: "Times New Roman"; font-size: 8pt; }
+error		{ font-family: "Times New Roman"; font-size: 8pt; color: red}
+
+}
