@@ -100,8 +100,10 @@ function handleImageSelector(fileObjName, imgObjName) {
 
 /**
 * Upload selected image to server via xhttp call
+* fileObjName - Obj name continas the upload file
+* ID - 
 */ 
-function uploadImage(fileObjName) {
+function uploadImage(fileObjName, ID) {
 
 	var fileObj = document.getElementById(fileObjName);
 	var file 	= fileObj.files[0];
@@ -116,7 +118,7 @@ function uploadImage(fileObjName) {
 
 	/* Add error message checking in success scope */
 	$.ajax({
-		url: 'upload_file_ajax.phtml?component=PDI&ID=9999',
+		url: 'upload_file_ajax.phtml?component=PDI&ID=' + ID,
 		type: "POST",
 		data: fd, 
 		contentType: false,

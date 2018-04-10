@@ -63,13 +63,19 @@ if (!isset($myFile) || $myFile == "none")
 			$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
 			//Upload to " . $dir . $filename . " failed.";
 	} else {
-		// TODO Allen to custoize PDI component. NEed to get correct PDI ID from called
-		if ($table_name == "Choice"){
+		// TODO Allen to custoize PDI component. Need to get correct PDI ID from called
+		if ($component == 'PDI'){
 			// update DB
-			$sql = "UPDATE " . $table_name . 
-					" SET ImageName=\"" . $filename . "\" WHERE " .
-					" ChoiceID=$ChoiceID";
-			$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());	
+			$sql = "UPDATE PDIDefect" . 
+					" SET hasImage=1, imageName='" . $filename . "' WHERE " .
+					" PDIDefectID=$ID";
+			$result = mysql_query($sql);
+			if (!$result) {
+		 		$errors= error_get_last();
+
+				$rtn_rows['status']	= "ERROR";
+				$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+			}
 		}
 
 			$rtn_row['status'] 	= "SUCCESS";

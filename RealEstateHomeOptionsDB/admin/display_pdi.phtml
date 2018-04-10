@@ -620,7 +620,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
           <tr>\
             <td><img name="DefectImageID_{1}" id="DefectImageID_{1}" src="">Defect Image</td>\
             <td><input type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}"></td>\
-            <td><input type="button" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\');"</td>\
+            <td><input type="button" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\', \'{PDIDefectID}\');"</td>\
             <td><input type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}" onClick="deleteImage(\'DefectImageFile_{1}\');"></td>\
             </tr>\
           <tr>\
