@@ -1,3 +1,7 @@
+<?
+include "main_include.phtml";
+
+?>
 <html>
 <head>
 <title>Untitled Document</title>
@@ -8,20 +12,19 @@
 <table border="0" cellspacing="1" cellpadding="1" >
   <tr bgcolor="#FFFFFF" valign=top> 
 	<?
-	//
-	// Find any images associated with this optionID.
-	// This is based on the province and property_id, e.g.
-	//      images/British_Columbia/245_02.jpg 
-	// 245 is the property_id and 02 identifies the 2nd photo.
-	//
 	$no_photos = TRUE;
 
 		
 	$optionID = $OptionID;
 
-	for ($i = 0; $i <= 10000; $i++)
-	{
-		$filename = "images/" . $optionID . "_" . $i;
+	// Query Choice table to list out all choices related to this optionID
+
+	$sql = "SELECT * FROM Choice WHERE OptionID = $optionID order by Name";
+
+	$result = mysql_query($sql) or handleError ("", "$sql <br>".mysql_error(), SQL_ERROR, true);
+
+	while ($row = mysql_fetch_array($result)) {
+		$filename = "images/" . $optionID . "_" . $row['ChoiceID'];
 
 		if (file_exists($filename))
 		{
