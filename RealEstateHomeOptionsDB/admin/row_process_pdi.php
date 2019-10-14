@@ -76,7 +76,7 @@ if ($action == "get") {
 				QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 				day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 				month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-				PDICatID, PDITypeID, TradeContacted
+				PDICatID, PDITypeID, TradeContacted, hasImage, imageName
 			FROM PDIDefect
 			LEFT JOIN Section
 			ON (PDIDefect.SectionID = Section.SectionID)

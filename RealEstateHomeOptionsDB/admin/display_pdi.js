@@ -1,3 +1,7 @@
+// Global variable for PDI
+
+var PDI_IMAGE_DIR = "..\/images\/PDI\/";
+
 function confirm_delete(url)
 {
 	var msg =	"WARNING: If this record is deleted, then other records\n" +
@@ -172,19 +176,24 @@ var set_selectbox_status = function (name, id, value) {
 };
 
 var generate_defect_form = function (num_of_rows, row) {
+
+
 	var row = row || {};
-	row["QAFixedDate"] = row["QAFixedDate"] || "";
-	row["PDIFixedDate"] = row["PDIFixedDate"] || "";
-	row["day30FixedDate"] = row["day30FixedDate"] || "";
+	row["QAFixedDate"] 		= row["QAFixedDate"] || "";
+	row["PDIFixedDate"] 	= row["PDIFixedDate"] || "";
+	row["day30FixedDate"] 	= row["day30FixedDate"] || "";
 	row["month11FixedDate"] = row["month11FixedDate"] || "";
-	row["QAReportDate"] = row["QAReportDate"] || "";
-	row["PDIReportDate"] = row["PDIReportDate"] || "";
-	row["day30ReportDate"] = row["day30ReportDate"] || "";
-	row["month11ReportDate"] = row["month11ReportDate"] || "";
-	row["DefectDesc"] = row["DefectDesc"] || "";
-	row["PDIDefectID"] = row["PDIDefectID"] || "";
+	row["QAReportDate"] 	= row["QAReportDate"] || "";
+	row["PDIReportDate"] 	= row["PDIReportDate"] || "";
+	row["day30ReportDate"] 	= row["day30ReportDate"] || "";
+	row["month11ReportDate"]= row["month11ReportDate"] || "";
+	row["DefectDesc"] 		= row["DefectDesc"] || "";
+	row["PDIDefectID"] 		= row["PDIDefectID"] || "";
+	row["hasImage"] 		= row["hasImage"] || "";
+	row["imageName"] 		= row["hasImage"]==1 ? PDI_IMAGE_DIR + row["imageName"] : "";
 // TODO Add image name from DB
 //	row[""] = row[""] || "";
+					
 	
 	return PDI_TABLE_TEMPLATE.replace(/\{1\}/g, num_of_rows)
 	                         .replace(/\{QAFixedDate\}/g, filter_date(row["QAFixedDate"]))
@@ -196,7 +205,8 @@ var generate_defect_form = function (num_of_rows, row) {
 	                         .replace(/\{day30ReportDate\}/g, filter_date(row["day30ReportDate"]))
 	                         .replace(/\{month11ReportDate\}/g, filter_date(row["month11ReportDate"]))
 	                         .replace(/\{DefectDesc\}/g, row["DefectDesc"])
-	                         .replace(/\{PDIDefectID\}/g, row["PDIDefectID"]);
+	                         .replace(/\{PDIDefectID\}/g, row["PDIDefectID"])
+	                         .replace(/\{DefectImageName\}/g, row["imageName"]);
 };
 
 var setInputStatus = function (num_of_rows, row) {
@@ -332,7 +342,7 @@ var refreshPDICatComboBox = function (divName, asynchronize) {
 		dataType: 'json',
 		async: asynchronize,
 		success: function(data) {
-	alert('data='+data);		
+//	alert('data='+data);		
 			// Find the Cat select obj and clear the list 
 			PDICatSelectObj = $(selectObj).siblings("[name^='PDICatID']");
 			// Remove the JEC before removing all the option, 

@@ -552,11 +552,38 @@ function get_dojo_date($one_date){
 <script language="JavaScript" type="text/javascript">
 var PDI_TABLE_TEMPLATE_1=' \
         <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=5" style="margin-bottom: 1em;"> \
-          <tr>\
-            <td class="tail" colspan="10"><b>Defect Desc</b></td>\
-            </tr>\
-            <tr>\
-            <td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
+            <tr valign="top">\
+               <td colspan=2>\
+                <table cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
+                  <tr>\
+                    <td class="tail"><b>Defect Image</b></td>\
+                  </tr>\
+                  <tr>\
+                    <td>\
+                      <table>\
+                        <tr>\
+                          <td>\
+              <img name="DefectImageID_{1}" id="DefectImageID_{1}" height=130 width=180 src="{DefectImageName}">\
+                          </td>\
+                        </tr>\
+                        <tr>\
+                          <td>\
+               <input type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}">\
+                          <br>\
+                      <input type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}" onClick="deleteImage(\'DefectImageFile_{1}\');">\
+                      <input type="button" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\', \'{PDIDefectID}\');"\
+                          </td>\
+                        </tr>\
+                        </table>\
+                    </td>\
+                  </tr>\
+                  </table>\
+                  </td>\
+               <td colspan="9">\
+              <table width="100% cellspacing="0" cellpadding=5" style="margin-bottom: 1em;">\
+                <tr valign="top">\
+                  <td class="tail" colspan="10"><b>Defect Desc</b></td>\
+                </tr>\            <tr><td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
             Defect Category:<select name="PDICatID_{1}" id="PDICatID_{1}" onChange="refreshPDITypeComboBox(\'PDICatID_{1}\')">';
 
 
@@ -572,7 +599,7 @@ var PDI_TABLE_TEMPLATE_CAT_OPTIONS=' \
 
 var PDI_TABLE_TEMPLATE_2=' </select>\
             New Category Value:<input size=15 type="text" name="PDICatID_New_Text_{1}" id="PDICatID_New_Text_{1}";/>\
-            Defect Type:<select name="PDITypeID_{1}" id="PDITypeID_{1}">\
+            <br>Defect Type:<select name="PDITypeID_{1}" id="PDITypeID_{1}">\
                 <option value="0">choose...</option>\
             </select>\
             New Type Value:<input size=15 type="text" name="PDITypeID_New_Text_{1}" id="PDITypeID_New_Text_{1}";/>\
@@ -617,12 +644,9 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
             </td>\
             <td align="center"><input type="checkbox" name="TradeContacted_{1}" id="TradeContacted_{1}" /></td>\
           </tr>\
-          <tr>\
-            <td><img name="DefectImageID_{1}" id="DefectImageID_{1}" src="">Defect Image</td>\
-            <td><input type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}"></td>\
-            <td><input type="button" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\', \'{PDIDefectID}\');"</td>\
-            <td><input type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}" onClick="deleteImage(\'DefectImageFile_{1}\');"></td>\
-            </tr>\
+          </table>\
+          </td>\
+          </tr>\
           <tr>\
             <td class="subhead" colspan="5"><b>QA</b></td>\
             <td class="subhead" colspan="5"><b>PDI</b></td>\
