@@ -67,7 +67,7 @@ if (!isset($myFile) || $myFile == "none")
 		if ($component == 'PDI'){
 			// update DB
 			$sql = "UPDATE PDIDefect" . 
-					" SET hasImage=1, imageName='" . $filename . "' WHERE " .
+					" SET hasImage=1, imageName='" . $dir . $filename . "' WHERE " .
 					" PDIDefectID=$ID";
 			$result = mysql_query($sql);
 			if (!$result) {

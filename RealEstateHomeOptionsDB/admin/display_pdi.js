@@ -190,7 +190,7 @@ var generate_defect_form = function (num_of_rows, row) {
 	row["DefectDesc"] 		= row["DefectDesc"] || "";
 	row["PDIDefectID"] 		= row["PDIDefectID"] || "";
 	row["hasImage"] 		= row["hasImage"] || "";
-	row["imageName"] 		= row["hasImage"]==1 ? PDI_IMAGE_DIR + row["imageName"] : "";
+	row["imageName"] 		= row["hasImage"]==1 ? row["imageName"] : "";
 // TODO Add image name from DB
 //	row[""] = row[""] || "";
 					

@@ -165,6 +165,12 @@ if ($action == "get") {
 			$PDITypeID_name			= "PDITypeID_" . $i;
 			$PDITypeID_new_name		= "PDITypeID_New_Text_" . $i;
 			$TradeContacted_name	= "TradeContacted_" . $i;
+
+			if ($$hasImage)			$hasImage = 1;
+			else $hasImage = 0;
+
+			$imageName				= "ImageName_" . $i;
+
 				
 
 			$DefectDesc = preg_replace($find, $replace, $$DefectDesc_name);
@@ -266,13 +272,13 @@ if ($action == "get") {
 					QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 					day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 					month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-					PDICatID, PDITypeID, TradeContacted)
+					PDICatID, PDITypeID, TradeContacted, hasImage, imageName)
 					VALUES ('$unit', '$DefectDesc', '" . $$SectionID_name . "', '" . $$ContractorID_name . "', 
 					$QADefect, '" . $$QAReportDate_name . "', $QAFixed, '" . $$QAFixedDate_name ."', 
 					$PDIDefect,  '" . $$PDIReportDate_name . "', $PDIFixed, '" . $$PDIFixedDate_name ."', $PDISignoff,
 					$day30Defect,  '" . $$day30ReportDate_name . "', $day30Fixed, '" . $$day30FixedDate_name ."', $day30Signoff, 
 					$month11Defect,  '" . $$month11ReportDate_name . "', $month11Fixed, '" . $$month11FixedDate_name ."', $month11Signoff,
-					$PDICatID, $PDITypeID, $TradeContacted)";
+					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $imageName . "')";
 
 			$row = array();
 			$row['status'] = "ERROR";
