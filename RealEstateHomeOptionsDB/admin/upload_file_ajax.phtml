@@ -70,6 +70,13 @@ if (!isset($myFile) || $myFile == "none")
 					" SET hasImage=1, imageName='" . $dir . $filename . "' WHERE " .
 					" PDIDefectID=$ID";
 			$result = mysql_query($sql);
+
+			$rtn_rows['status'] 	= "SUCCESS";
+			$rtn_rows['message']	= "Image uploaded successfully";
+			$rtn_rows['filepath'] 	= $dir . $filename;
+			$rtn_rows['filename']	= $filename;
+			$rtn_rows['dirname']	= $dir;
+
 			if (!$result) {
 		 		$errors= error_get_last();
 
@@ -78,8 +85,6 @@ if (!isset($myFile) || $myFile == "none")
 			}
 		}
 
-			$rtn_row['status'] 	= "SUCCESS";
-			$rtn_row['message']	= "Upload successfully to $dir.$filename failed.";
 
 			//echo "Upload Successfully.";
 	}

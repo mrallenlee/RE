@@ -134,7 +134,7 @@ function uploadImage(fileObjName, ID) {
 			if (data['status'] == 'ERROR'){
 				alert (data['status']  + " : " + data['message']);
 			} else {
-				alert("Upload " + data['status'] + " : " + data['message'] + " filepath=" + data['filepath']);
+				alert("Upload " + data['status'] + " : " + data['message']);
 			}
 		},
 		error: function(data){

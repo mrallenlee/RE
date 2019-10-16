@@ -165,11 +165,12 @@ if ($action == "get") {
 			$PDITypeID_name			= "PDITypeID_" . $i;
 			$PDITypeID_new_name		= "PDITypeID_New_Text_" . $i;
 			$TradeContacted_name	= "TradeContacted_" . $i;
+			$hasImage				= "DefectHasImage_" . $i;
 
 			if ($$hasImage)			$hasImage = 1;
 			else $hasImage = 0;
 
-			$imageName				= "ImageName_" . $i;
+			$imageName				= "DefectImageName_" . $i;
 
 				
 
@@ -278,7 +279,7 @@ if ($action == "get") {
 					$PDIDefect,  '" . $$PDIReportDate_name . "', $PDIFixed, '" . $$PDIFixedDate_name ."', $PDISignoff,
 					$day30Defect,  '" . $$day30ReportDate_name . "', $day30Fixed, '" . $$day30FixedDate_name ."', $day30Signoff, 
 					$month11Defect,  '" . $$month11ReportDate_name . "', $month11Fixed, '" . $$month11FixedDate_name ."', $month11Signoff,
-					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $imageName . "')";
+					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $$imageName . "')";
 
 			$row = array();
 			$row['status'] = "ERROR";
