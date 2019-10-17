@@ -20,3 +20,7 @@
 *.sbr
 *.sdf
 *.pyc
+
+ftp-kr.*
+.vscode/ftp-kr.json
+.vscode/ftp-kr.sync.cache.json
