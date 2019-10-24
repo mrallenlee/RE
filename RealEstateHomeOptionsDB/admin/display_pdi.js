@@ -80,8 +80,12 @@ function change_link(type)
 
 /**
 * Handle change event on the File Selector. Display Thumbnail on provided imag element
+* fileObjName 
+* imgObjName
+* ID - Defect ID, or 'NEW' for new defect
+* localDefectID - local defect ID added dynamacially by js i.e. 1,2,3...
 */ 
-function handleImageSelector(fileObjName, imgObjName) {
+function handleImageSelector(fileObjName, imgObjName, ID, localDefectID) {
 
 	var fileObj = document.getElementById(fileObjName);
 	var file 	= fileObj.files[0];
@@ -100,7 +104,10 @@ function handleImageSelector(fileObjName, imgObjName) {
       	imgObj.src 	= dataURL;
     };
 
-    reader.readAsDataURL(file);
+	reader.readAsDataURL(file);
+	
+	// Call upload image function automatically
+	uploadImage(fileObjName, ID, localDefectID)
 }
 
 
@@ -165,11 +172,12 @@ function uploadImage(fileObjName, ID, localDefectID) {
 				// + " filepath=" + data['filepath']);
 				// TODO
 				// Update the input text file with the new file name and hasImage properties
+				alert('Image uploaded successfully');
 			}
 		},
 		error: function(data){
 
-			alert("Error 2: " + data['message']);
+			alert("Error: " + data['message']);
 		}
 	});    
 } // uploadImage
@@ -230,7 +238,7 @@ var generate_defect_form = function (num_of_rows, row) {
 	row["day30ReportDate"] 	= row["day30ReportDate"] || "";
 	row["month11ReportDate"]= row["month11ReportDate"] || "";
 	row["DefectDesc"] 		= row["DefectDesc"] || "";
-	row["PDIDefectID"] 		= row["PDIDefectID"] || "";
+	row["PDIDefectID"] 		= row["PDIDefectID"] || "NEW";
 	row["hasImage"] 		= row["hasImage"] || "";
 	row["imageName"] 		= row["hasImage"]==1 ? row["imageName"] : "";
 					

@@ -24,7 +24,15 @@ if (!isset($ID) || $ID == "") {
 	return $rtn_rows;
 }
 
+// set a var to distinguish is uploaded file for new record, which 
+// doesn't have any existing record in the DB
+$newID = false;
 
+if ($ID == "NEW") {
+	$newID = true;
+	// New record without ID provided. Generate one with timestamp
+	$ID = time();
+}
 
 // Set up directory
 if ($component == 'PDI') {
@@ -65,23 +73,27 @@ if (!isset($myFile) || $myFile == "none")
 	} else {
 		// TODO Allen to custoize PDI component. Need to get correct PDI ID from called
 		if ($component == 'PDI'){
-			// update DB
-			$sql = "UPDATE PDIDefect" . 
-					" SET hasImage=1, imageName='" . $dir . $filename . "' WHERE " .
-					" PDIDefectID=$ID";
-			$result = mysql_query($sql);
 
+			// Prepare return status
 			$rtn_rows['status'] 	= "SUCCESS";
 			$rtn_rows['message']	= "Image uploaded successfully";
 			$rtn_rows['filepath'] 	= $dir . $filename;
 			$rtn_rows['filename']	= $filename;
 			$rtn_rows['dirname']	= $dir;
 
-			if (!$result) {
-		 		$errors= error_get_last();
+			// update DB
+			if (!$newID){
+				$sql = "UPDATE PDIDefect" . 
+						" SET hasImage=1, imageName='" . $dir . $filename . "' WHERE " .
+						" PDIDefectID=$ID";
+				$result = mysql_query($sql);
+			
+				if (!$result) {
+					$errors= error_get_last();
 
-				$rtn_rows['status']	= "ERROR";
-				$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+					$rtn_rows['status']	= "ERROR";
+					$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+				}
 			}
 		}
 

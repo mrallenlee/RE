@@ -171,6 +171,8 @@ if ($action == "get") {
 			else $hasImage = 0;
 
 			$imageName				= "DefectImageName_" . $i;
+			if 
+			(!($$imageName)) 		$$imageName = '';
 
 				
 
@@ -284,7 +286,7 @@ if ($action == "get") {
 			$row = array();
 			$row['status'] = "ERROR";
 			$row['sql']		= $sql;
-			//die("Error : $sql<br>" . mysql_error());
+			// die("Error : $sql<br>" . mysql_error());
 //			$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 			$result = mysql_query($sql);
 			if (result) {
