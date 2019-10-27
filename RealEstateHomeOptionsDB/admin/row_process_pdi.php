@@ -23,6 +23,16 @@ $replace = array (
 
 
 /**
+ * Standardize name function
+ * Currently use for PDI Category, Defect Type
+ */
+function standardizeName($name){
+	$name = trim($name);
+
+	return ucfirst($name);
+}
+
+/**
  * Add new PDI Category by providing the cateogry name and category description 
  * @param unknown_type $PDICatID
  * @return new PDICatID after inserting to the database table; -1 if error
@@ -30,12 +40,28 @@ $replace = array (
 function addNewPDICategory($PDICatName, $PDICatDescription = "") {
 	global $db;
 	
-	$PDICatName 		= trim($PDICatName);
-	$PDICatDescription 	= trim($PDICatDescription);
-	
+	// Standardize the Category name, and look for existing one. 
+	// If there's one already exist, return the ID for exist one
+	$PDICatName 		= standardizeName($PDICatName);
+	$PDICatDescription 	= standardizeName($PDICatDescription);
+
+
 	if ($PDICatName == "")
 		return -1;
+
+	// Check if category already exists
+	$sql = "SELECT * FROM PDICategory where Name = '" . $PDICatName . "';";
+	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+
+	$row = mysql_fetch_array($result);
+	$returnResult = mysql_num_rows($result);
+
+	if ($returnResult > 0){
+		// Category already exist, return the category ID
+		return $row['PDICatID'];
+	}
 	
+	// No category exists, insert a new category
 	$sql = "INSERT INTO PDICategory (Name, Description) values (\"" . $PDICatName . "\", \"" . $PDICatDescription . "\");";
 	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 	//$numOfRecordsAffected = mysqli_affected_rows();
@@ -52,15 +78,29 @@ function addNewPDICategory($PDICatName, $PDICatDescription = "") {
 function addNewPDIType($PDITypeName, $PDICatID, $PDITypeDescription = "") {
 	global $db;
 	
-	$PDITypeName 		= trim($PDITypeName);
-	$PDITypeDescription = trim($PDITypeDescription);
+	$PDITypeName 		= standardizeName($PDITypeName);
+	$PDITypeDescription = standardizeName($PDITypeDescription);
 
 	if ($PDITypeName == "")
 		return -1;
 
 	if ($PDICatID <= 0)
 		return -1;
+
+
+	// Check if type already exists
+	$sql = "SELECT * FROM PDIType where Name = '" . $PDITypeName . "';";
+	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+
+	$row = mysql_fetch_array($result);
+	$returnResult = mysql_num_rows($result);
+
+	if ($returnResult > 0){
+		// Type already exist, return the type ID
+		return $row['PDITypeID'];
+	}
 	
+	// No category exists, insert a new type		
 	$sql = "INSERT INTO PDIType (Name, PDICatID, Description) values (\"" . $PDITypeName . "\"," . $PDICatID . ", \"" . $PDITypeDescription . "\");";
 	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 	$PDITypeID = mysql_insert_id();
