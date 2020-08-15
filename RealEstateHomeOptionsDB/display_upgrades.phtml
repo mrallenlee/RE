@@ -731,7 +731,7 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 				$size = getimagesize($imageForDisplay);
 //die("choiceHasImage=$choiceHasImage optionHasImage=$optionHasImage<BR>");
 				if ($showSelectedChoiceImage){
-?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left" 
+?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left" title="Click here to choose choices"
 					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>,  <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
 					onMouseOut="hideOptionsPhotoDIV()" 
 					valign="center" border=0 src="<?= $imageForDisplay;?>" width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
@@ -744,13 +744,13 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" 
 					align="left" valign="center" border=0 src="<?= $imageForDisplay;?>" 
 					width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
-					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)" onClick="chooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)" 
+					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)" onClick="XXXchooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)" 
 					onMouseOut="hideOptionsPhotoDIV()" >
 <?				}
  				else if ($choiceHasImage){
 					// if option doesn't have image, and one of the choice has image,
 					// use the default option image to ask user to click 
-?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left"
+?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left"  title="Click here to choose choices"
  					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, -1, -1)"
 					onMouseOut="hideOptionsPhotoDIV()" valign="center" border=0 
 					width="<?= DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH ;?>" 
