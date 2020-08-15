@@ -42,7 +42,7 @@ $gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'
 //----------------------------------------------------------------------------------------------
 function generate_navigation()
 {
-?>	<input type="button" onClick="javascript:window.location='display_upgrades.phtml'" value="Back to Options and Upgrades">
+?>	<input type="button" class="nav" onClick="javascript:window.location='display_upgrades.phtml'" value="Back to Options and Upgrades">
 <? }
 
 
@@ -83,6 +83,7 @@ function getTitle($commit){
  * Subsection style
  */
 function getSubsectionStyle($mode){
+	return "";
 	if ($mode == "print"){
 		return "bgcolor=\"#bbbbbb\"";		
 	} else{	
@@ -94,6 +95,7 @@ function getSubsectionStyle($mode){
  * header style
  */
 function getOptionHeaderStyle($mode){
+	return "";
 	if ($mode == "print"){
 		return "bgcolor=\"#CCCCCC\" border=5";	
 	} else {	
@@ -106,15 +108,13 @@ function getOptionHeaderStyle($mode){
  * option content style
  */
 function getOptionContentStyle($mode){
-	if ($mode == "print"){
-		return "bgcolor=\"#eeeeee\"";
-	} else {
-		return "class=\"blank\" onmouseover=\"this.className='blank-highlight'\" " .
-			"onmouseout=\"this.className='blank'\"";	
-	}	
+	return "class=\"blank\" onmouseover=\"this.className='blank-highlight'\" " .
+		"onmouseout=\"this.className='blank'\"";	
+
 }	
 
 function getSummaryContentStyle($mode){
+	return "";
 	if ($mode == "print"){
 		return "bgcolor=\"#eeeeee\"";
 	} else {
@@ -137,57 +137,6 @@ function getAdminEditPrice($priceType) {
 
 <head>
 	<style type="text/css">
-		button {width: 100px;}
-
-		#pane_grid {
-			overflow: auto;
-		}
-		
-		#pane_grid table {
-			font-family:Lucida Grande, Verdana;
-			font-size:0.8em;
-			width:100%;
-			border:1px solid #ccc;
-			border-collapse:collapse;
-			cursor:default;
-			position: absolute; 
-			left: 0; 
-			top: 0;
-		}
-		#pane_grid table td,
-		#pane_grid table th{
-			padding:2px;
-			font-weight:normal;
-		}
-		
-		#pane_grid table thead td, table thead th {
-			background-image:url(images/ft-head.gif);
-			background-repeat:no-repeat;
-			background-position:top right;
-		}
-		#pane_grid table thead td.selectedUp, table thead th.selectedUp {
-			background-image:url(images/ft-headup.gif);
-		}
-		#pane_grid table thead td.selectedDown, table thead th.selectedDown {
-			background-image:url(images/ft-headdown.gif);
-		}
-		
-		#pane_grid table tbody tr td{
-			border-bottom:1px solid #ddd;
-		}
-		#pane_grid table tbody tr.alt td{
-			background: #e3edfa;
-		}
-		#pane_grid table tbody tr.selected td{
-			background: yellow;
-		}
-		#pane_grid table tbody tr:hover td{
-			background: #a6c2e7;
-		}
-		#pane_grid table tbody tr.selected:hover td{
-			background:#ff9;
-		}
-
 		/* group multiple buttons in a row */
 		.box {
 			display: block;
@@ -288,7 +237,7 @@ function hideWaitingDIV(){
 }
 </script>
 
-<title><?= getTitle($commit); ?>></title>
+<title class"page-title"><?= getTitle($commit); ?>></title>
 </head>
 <? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", $mode != "print", false); ?>
 <body>
@@ -359,7 +308,7 @@ while ($section_row = mysql_fetch_array($section_result))
 		
 	// cache the html code for section, subsection title. The code
 	// will be printed if item-option is available
-	$htmlCacheHeader = "<tr><td colspan=\"4\" ><font size=\"4\"><b>&nbsp;<br>&nbsp;<br>" . $section_row['Name'] . "</b></font></td></tr>";
+	$htmlCacheHeader = "<tr><td class=\"header3\" colspan=\"4\" >" . $section_row['Name'] . "</td></tr><tr><td><br><br></td></tr>";
 
 	$sql = "SELECT Name, Description, SubsectionID
 			FROM Subsection
@@ -369,13 +318,12 @@ while ($section_row = mysql_fetch_array($section_result))
 	{
 		$subsectionID = $subsection_row['SubsectionID'];
 		
-		$htmlCache = "<tr><td colspan=\"5\"" . getSubsectionStyle($mode) . "><b>" . $subsection_row['Name'] . "</b></td></tr>";
-		$htmlCache .= "<tr>";
-		$htmlCache .= "<td bgcolor=\"#FFFFFF\">&nbsp;</td>";
-		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Item</td>";
-		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Option</td>";
-		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Choice</td>";
-		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Price</td>";
+		$htmlCache = "<tr class=\"head\"><td colspan=\"4\">" . $subsection_row['Name'] . "</td></tr>";
+		$htmlCache .= "<tr class=\"tail\">";
+		$htmlCache .= "<td>Item</td>";
+		$htmlCache .= "<td>Option</td>";
+		$htmlCache .= "<td>Choice</td>";
+		$htmlCache .= "<td>Price</td>";
 		$htmlCache .= "</tr>";
 
 
@@ -450,7 +398,6 @@ while ($section_row = mysql_fetch_array($section_result))
 	
 ?>
 	<tr <?= getOptionContentStyle($mode); ?>>
-		<td bgcolor="#FFFFFF">&nbsp;</td>
 		<td ><?= $userSave_row['ItemName'];?></td>
 		<td >
 		<? if ($userSave_row['OptionsName'] != "" && $userSave_row['Price'] != -9999)
@@ -466,7 +413,7 @@ while ($section_row = mysql_fetch_array($section_result))
 		?></td>
 <?			if ($userSave_row['OptionsChoice'] != "")		
 			{
-?>		<td ><i><?= $userSave_row['OptionsChoice'];?>:</i> <nobr><?= $userSave_row['ChoiceName'];?></nobr></td>
+?>		<td ><i><?= $userSave_row['OptionsChoice'];?>:</i><?= $userSave_row['ChoiceName'];?></td>
 <?			}
 			else
 			{
@@ -498,6 +445,7 @@ while ($section_row = mysql_fetch_array($section_result))
 	</tr>
 <?			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
 		}// end of userSave loop
+?>	<tr><td><br><br></td></tr> <?
 	}// end of subsection loop
 }// end of section loop
 	
@@ -518,20 +466,18 @@ $useroption_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Erro
 ?>
 <tr><td><BR></td></tr>
 <tr ID="<?= ADDITIONAL_CHANGE_TABLE_PREFIX . "HEADER";?>" >
-<td colspan=4 ><font size=\"4\"><b>Additional Changes</b></font></td>
+<td class="header3" colspan=4 >Additional Changes</td>
 </tr>
 
-<tr <?= getOptionContentStyle($mode); ?>>
-</tr>
 <?
 $numOfAddChange = 0;
 
 if (mysql_num_rows($useroption_result) > 0)
 {
 ?>
-<tr>
-<td colspan="4" <?= getOptionHeaderStyle($mode); ?>>Option</td>
-<td <?= getOptionHeaderStyle($mode); ?>>Price</td>
+<tr class="head" >
+	<td colspan="4">Option</td>
+	<td>Price</td>
 </tr>
 <?
 	for ($i=0;$useroption_row = mysql_fetch_array($useroption_result);$i++)
@@ -598,46 +544,48 @@ else
 	<img src="black.gif" width="100%" height="1" alt="" border="0"></td>
 </tr>
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right">
+	<td colspan="2">
+	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">
 	Total options before taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="totalBeforeTaxes" ><?= number_format($total, 2)?></span></nobr></td>
 </tr>
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
+	<td colspan="2">
+	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="credit" ><?= number_format($credit, 2); ?></span></nobr></td>
 </tr>	
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
+	<td colspan="2">
+	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
 </tr>	
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
+	<td colspan="2">
+	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span id="gst"><?= number_format($gstAmount, 2)?></span></nobr></td>
 </tr>
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
+	<td colspan="2">
+	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="total" ><?= number_format($total_with_tax, 2)?></span></nobr></td>
 </tr>	
 
+<? /** Disable in this project
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right" ID="CashPayment_desc">Cash payment:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="CashPayment" <?
+	<td colspan="2">
+	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right" ID="CashPayment_desc">Cash payment:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="CashPayment" <?
 	echo getAdminEditPrice("CashPayment"); ?>><?= number_format($cashPayment, 2)?></span></nobr></td>
 </tr>	
-
+*/ ?>
+<? /** Disable in this project
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right" ID="PayByMortgage_desc">Pay by mortgage:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="PayByMortgage" <?
+	<td colspan="2">
+	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right" ID="PayByMortgage_desc">Pay by mortgage:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="PayByMortgage" <?
 	echo getAdminEditPrice("PayByMortgage"); ?>><?= number_format($payByMortgage, 2)?></span></nobr></td>
 </tr>	
-
+*/ ?>
 <?php
 if ($outstandingAmt != 0) {
 	$outstandingAmt_to_display = $outstandingAmt;
@@ -645,13 +593,14 @@ if ($outstandingAmt != 0) {
 	$outstandingAmt_to_display = $total_with_tax - $cashPayment - $payByMortgage;
 }
 ?>
+<? /** Disable in this project
 <tr>
-	<td colspan="3">
-	<td <?= getSummaryContentStyle($mode); ?> align="right" ID="OutstandingAmt_desc">Outstanding amount:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="OutstandingAmt" <?
-	echo getAdminEditPrice("OutstandingAmt"); ?>><?= number_format($outstandingAmt_to_display, 2)?></span></nobr></td>
+	<td colspan="2">
+	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right" ID="OutstandingAmt_desc">Outstanding amount:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="OutstandingAmt" <?
+	// echo getAdminEditPrice("OutstandingAmt"); ?>><?= number_format($outstandingAmt_to_display, 2)?></span></nobr></td>
 </tr>	
-
+*/ ?>
 </table>
 <?
 	if ($commit)
