@@ -124,9 +124,9 @@ function calculateTotal(){
 	}
 
 	// calculate outstanding amount
-	var cashPayment = sanitizeAmt(document.getElementById('CashPayment').childNodes[0].nodeValue);
-	var payByMortgage = sanitizeAmt(document.getElementById('PayByMortgage').childNodes[0].nodeValue);
-	var outstandingAmt = calTotalWithGST - cashPayment - payByMortgage;
+	// var cashPayment = sanitizeAmt(document.getElementById('CashPayment').childNodes[0].nodeValue);
+	// var payByMortgage = sanitizeAmt(document.getElementById('PayByMortgage').childNodes[0].nodeValue);
+	// var outstandingAmt = calTotalWithGST - cashPayment - payByMortgage;
 	
 	// display new value
 	document.getElementById('totalBeforeTaxes').childNodes[0].nodeValue = calTotal.toFixed(2);
@@ -134,10 +134,10 @@ function calculateTotal(){
 	document.getElementById('totalSales').childNodes[0].nodeValue 		= calSalesTotal.toFixed(2);
 	document.getElementById('gst').childNodes[0].nodeValue 				= calGST.toFixed(2);
 	document.getElementById('total').childNodes[0].nodeValue 			= calTotalWithGST.toFixed(2);
-	document.getElementById('OutstandingAmt').childNodes[0].nodeValue 		= outstandingAmt.toFixed(2);
+	// document.getElementById('OutstandingAmt').childNodes[0].nodeValue 		= outstandingAmt.toFixed(2);
 	
 	var userIDToUpdate = document.getElementById('ac_price_form_userID').value;
-	var priceToSave = Math.round(outstandingAmt * 100) / 100;
+	var priceToSave = 0; //Math.round(outstandingAmt * 100) / 100;
 	
 	// save "outstanding amount" into database
 
