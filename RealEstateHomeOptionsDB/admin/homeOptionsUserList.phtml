@@ -5,7 +5,8 @@ if ($showTotalCost){
 	include_once "PO/POAction.phtml";	
 }
 // set the security level to be 2 for this page
-check_auth(HOMEOPTIONS);
+//check_auth(HOMEOPTIONS);
+check_auth(HELPDESK);
 
 // expect
 // mode : visitor, purchaser
@@ -603,10 +604,13 @@ $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 				onClick="window.location='unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=0&mode=display'" ></TD>
 				<TD><INPUT TYPE="BUTTON" value="Report W/ Price"
 				onClick="window.location='unit_no_contractor.phtml?UnitNumber=<?= $row['UnitNumber'] ?>&ShowPrice=1&mode=edit'" ></TD>
+<?
+				if (is_authorize(HOMEOPTIONS)) {
+?>
 				<TD><INPUT TYPE="BUTTON" value="Select Upgrades"
 				onClick="window.location='loadUnitSession.phtml?UnitNumber=<?= $row['UnitNumber']; ?>'" ></TD>
 
-<?
+<?				}
 
 			}
 
