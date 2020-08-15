@@ -181,14 +181,6 @@ $nonStandardDIVLinkGenerator = new LinkGenerator($PHP_SELF, "nonStandardPO.phtml
 		}		
 	</script>
 	
-<table width=100%>	
-	<tr><td class="html-space"><br></td></tr>
-	<tr>
-		<td align="left" class="smalltitle">Name : <?= $user_row['FirstName'] . " " . $user_row['LastName'];?></td>
-		<td align="center" class="smalltitle">Unit Number : <?= $UnitNumber;?></td>
-		<td align="right" class="smalltitle">Unit Type : <?= $UnitType;?></td>
-	</tr>
-</table>
 
 <?
 if (mysql_num_rows($price_result) <= 0)
@@ -197,6 +189,13 @@ if (mysql_num_rows($price_result) <= 0)
 }
 ?>
 <table>
+<thead>
+	<tr>
+		<th align="left" class="smalltitle">Name : <?= $user_row['FirstName'] . " " . $user_row['LastName'];?></th>
+		<th align="center" class="smalltitle">Unit Number : <?= $UnitNumber;?></th>
+		<th align="right" class="smalltitle">Unit Type : <?= $UnitType;?></th>
+	</tr>
+  </thead>
 <form id="updatePOForm" method="post" action="updatePO.phtml">
 <input type="hidden" name="action" value="edit"/>
 <input type="hidden" name="poType" value="mix"/>
@@ -257,7 +256,8 @@ while ($price_row = mysql_fetch_array($price_result)){
 				</tr>
 <?		}				
 	}	
-	displayMouseOverTR();
+
+	$cost = convertPriceConstantToValidNumber($price_row['Cost']);
 	// a standarized way to display PO Issue checkbox
 			
 ?>
@@ -265,34 +265,34 @@ while ($price_row = mysql_fetch_array($price_result)){
 <?	
 	if ($price_row['POType'] == "StandardPO"){
 		if ($mode != "display"){ 				
-?>				<td><? printStandardPOIssueCheckBox(array("itemID"=>$price_row['ItemID'], "optionID"=>$price_row['OptionID'], "issued"=>$price_row['Issued'])); ?></td>
-				<td><?= $price_row['IssuedDate'];?></td>
+?>				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><? printStandardPOIssueCheckBox(array("itemID"=>$price_row['ItemID'], "optionID"=>$price_row['OptionID'], "issued"=>$price_row['Issued'])); ?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['IssuedDate'];?></td>
 <?		} ?>
-				<td><?= $price_row['SectionName'];?></td>
-				<td><?= $price_row['SubsectionName'];?></td>
-				<td><?= $price_row['OptionName'];?></td>
-				<td><?= $price_row['ChoiceName'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['SectionName'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['SubsectionName'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['OptionName'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['ChoiceName'];?></td>
 				<? if ($ShowPrice){
 					$total_cost += convertPriceConstantToValidNumber($price_row['Cost']); ?>					 
-				<td><?= convertPriceConstantToString($price_row['Cost']); ?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= convertPriceConstantToString($price_row['Cost']); ?></td>
 				<? } ?>
 				
 			</tr>
 <?
 	} else {	
 			if ($mode != "display"){ ?>				
-				<td><? printNonStandardPOIssueCheckBox(array("POID" =>$price_row['POID'], "issued"=>$price_row['Issued'])); ?></td>				
-				<td><?= $price_row['IssuedDate'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><? printNonStandardPOIssueCheckBox(array("POID" =>$price_row['POID'], "issued"=>$price_row['Issued'])); ?></td>				
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['IssuedDate'];?></td>
 <?			} ?>
-				<td><?= $price_row['SectionName'];?></td>
-				<td><?= $price_row['SubsectionName'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['SectionName'];?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= $price_row['SubsectionName'];?></td>
 				<td colspan=2><?= $price_row['Description'];?></td>
 <? 				if ($ShowPrice){ 		
 					$total_cost += convertPriceConstantToValidNumber($price_row['Cost']); ?>
-				<td><?= convertPriceConstantToString($price_row['Cost']);?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><?= convertPriceConstantToString($price_row['Cost']);?></td>
 <? 				} ?>
 <?				if ($mode != "display"){ ?>								
-				<td><? printNonStandardPOEditButton($price_row['POID']); ?><? printNonStandardPODeleteButton($price_row['POID']); ?></td>
+				<td <?= ($cost>0 ? 'class="tdI"' : ''); ?>><? printNonStandardPOEditButton($price_row['POID']); ?><? printNonStandardPODeleteButton($price_row['POID']); ?></td>
 <?				} ?>				
 			</tr>
 <?
