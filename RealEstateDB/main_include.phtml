@@ -600,7 +600,33 @@ function back($back){
 	</script>
 <?}
 
-			
+	
+
+// level indicates the level of security
+// return 1 or 0
+function is_authorize($level1, $level2="mock")
+{
+	$level = get_access_security_level();
+	
+	if ($level == ""){
+		return 0;
+	}
+	
+//	global $PHP_AUTH_USER;
+	if ($level >= $level1)
+	{
+		return 1;
+	}
+	elseif ($level == $level2)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+} // is_authroize
+		
 // level indicates the level of security. 
 // $level1 <= number security level
 // 1 means everyone can read it. 2 means only administor can access the file. 3 means super user
@@ -966,10 +992,13 @@ define ("DB_SORT_METHOD_VARCHAR_AS_NUMBER", 1);
 function getOrderClause($arguments){
 	$columnName = $arguments['columnName'];
 	$sortMethod = $arguments['sortMethod'];
-	
+
+	// ALLEN Disable using cast method as no longer works
+	// could be the new version of mysql
+	// revert to use original way to sort	
 	if ($sortMethod == DB_SORT_METHOD_VARCHAR_AS_NUMBER){
-		$clause = " cast(" . $columnName . " as signed) ";
-//		$clause = " LPAD(" . $columnName . ", 10, 0) ";
+		// $clause = " cast(" . $columnName . " as signed) ";
+		$clause = " " . $columnName;
 	} else {
 		$clause = " " . $columnName;
 	}
@@ -987,8 +1016,8 @@ function print_top_frame($selfPath, $relativePath, $showBackground = true, $show
 			?> background="<?= $relativePath; ?>images/project-background-big.jpg"<?
 			}
 			?> >
-    <link href="<?= $relativePath; ?>config/stylesheet.css" rel="styleSheet" type="text/css" media="screen" />
-    <link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="styleSheet" type="text/css" media="print" />
+    <link href="<?= $relativePath; ?>config/stylesheet.css" rel="stylesheet" type="text/css" media="screen" />
+    <link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="stylesheet" type="text/css" media="print" />
 	<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>javascript/utils.js"></script>
 <? if ($showMenu){ ?>
 		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/dynamicMenu.js"></script>
