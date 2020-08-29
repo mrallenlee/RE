@@ -235,7 +235,7 @@ $prev_PO_type = "JUNK_DATA";
 
 // Print CSV Header
 if ($mode == "CSV") {
-	fputs ($out, "Trade, POType, Section, Subsection, Option, Choice, Description");
+	fputs ($out, "UnitNumber, Trade, POType, Section, Subsection, Option, Choice, Description");
 
     if ($ShowPrice){ 
         fputs ($out, ",Cost");
@@ -339,7 +339,8 @@ while ($price_row = mysql_fetch_array($price_result)){
 <?      }            
     } else {
         if ($price_row['POType'] == "StandardPO"){
-            fputs ($out, "\"" . $price_row['ContractorName'] . "\"");
+            fputs ($out, "\"" . $UnitNumber . "\"");
+            fputs ($out, ",\"" . $price_row['ContractorName'] . "\"");
             fputs ($out,  ",\"StandardPO\"");
             fputs ($out,  ",\"" . $price_row['SectionName'] . "\"");
             fputs ($out,  ",\"" . $price_row['SubsectionName'] . "\"");
@@ -353,7 +354,8 @@ while ($price_row = mysql_fetch_array($price_result)){
             }
             fputs ($out,  "\n");
         } else {
-            fputs ($out,  "\"" . $price_row['ContractorName'] . "\"");
+            fputs ($out, "\"" . $UnitNumber . "\"");
+            fputs ($out,  ",\"" . $price_row['ContractorName'] . "\"");
             fputs ($out,  ",\"NonStandardPO\"");
             fputs ($out,  ",\"" . $price_row['SectionName'], "\"");
             fputs ($out,  ",\"" . $price_row['SubsectionName'] . "\"");
