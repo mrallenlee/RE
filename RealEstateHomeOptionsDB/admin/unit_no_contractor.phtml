@@ -5,6 +5,19 @@ if ($mode == "CSV") {
 include "main_include.phtml";
 include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/URL/LinkGenerator.phtml";
 
+
+/**
+ * Beautify Subsection Name to remove the "1. ", "1a. " in the Subsection name,
+ * which the number is to organize the order of the list 
+ */
+function beautifySubsectionName($subSectionName){
+    return preg_replace('/(\d\w?). (.*)/i', '$2', $subSectionName);
+} // beautifySubsectionName
+
+
+
+//echo (beautifySubsectionName ("1a. ABC CDE"));
+
 // require UserID & UnitType
 // ShowPrice 1/0
 // $mode: display, edit, CSV
@@ -220,7 +233,7 @@ if ($mode != "CSV") { ?>
     <input type="hidden" name="UserID" value="<?= $UserID; ?>"/>
     <input type="hidden" name="UnitNumber" value="<?= $UnitNumber; ?>"/>
     <tr>
-        <td colspan=<?= $headerColSpan; ?> align="right" ><input type="button" value="CSVDownload" ONCLICK="dumpCSV()"/></td>
+        <td colspan=<?= $headerColSpan; ?> align="right" ><input type="button" value="CSV Download" ONCLICK="dumpCSV()"/></td>
     </tr>
 
 
@@ -343,7 +356,7 @@ while ($price_row = mysql_fetch_array($price_result)){
             fputs ($out, ",\"" . $price_row['ContractorName'] . "\"");
             fputs ($out,  ",\"StandardPO\"");
             fputs ($out,  ",\"" . $price_row['SectionName'] . "\"");
-            fputs ($out,  ",\"" . $price_row['SubsectionName'] . "\"");
+            fputs ($out,  ",\"" . beautifySubsectionName($price_row['SubsectionName'] . "\""));
             fputs ($out,  ",\"" . $price_row['OptionName'] . "\"");
             fputs ($out,  ",\"" . $price_row['ChoiceName'] . "\"");
             fputs ($out,  ",\"\"");
@@ -358,7 +371,7 @@ while ($price_row = mysql_fetch_array($price_result)){
             fputs ($out,  ",\"" . $price_row['ContractorName'] . "\"");
             fputs ($out,  ",\"NonStandardPO\"");
             fputs ($out,  ",\"" . $price_row['SectionName'], "\"");
-            fputs ($out,  ",\"" . $price_row['SubsectionName'] . "\"");
+            fputs ($out,  ",\"" . beautifySubsectionName($price_row['SubsectionName'] . "\""));
             fputs ($out,  ",\"\"" );
             fputs ($out,  ",\"\"" );
             fputs ($out,  ",\"\"" );
@@ -390,7 +403,7 @@ if ($ShowPrice){
 	</tr>
 
 <?  } else { // CSV mode
-        fputs ($out,  "Total,,,,,,," . $total_cost);
+        fputs ($out,  "Total,,,,,,,," . $total_cost);
         fputs ($out,  "\n");
     }
 } 
