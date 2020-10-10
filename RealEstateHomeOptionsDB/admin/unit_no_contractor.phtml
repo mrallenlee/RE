@@ -359,12 +359,12 @@ while ($price_row = mysql_fetch_array($price_result)){
     } else {
         if ($price_row['POType'] == "StandardPO"){
             fputs ($out, "\"" . $UnitNumber . "\"");
-            fputs ($out, ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode($price_row['ContractorName'])) . "\"");
+            fputs ($out, ",\"" . escapeCSVSpecialChar(decode_special_db_char($price_row['ContractorName'])) . "\"");
             fputs ($out,  ",\"StandardPO\"");
             fputs ($out,  ",\"" . $price_row['SectionName'] . "\"");
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode(beautifySubsectionName($price_row['SubsectionName']))) . "\"");
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode($price_row['OptionName'])) . "\"");
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode($price_row['ChoiceName'])). "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char(beautifySubsectionName($price_row['SubsectionName']))) . "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char($price_row['OptionName'])) . "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char($price_row['ChoiceName'])). "\"");
             fputs ($out,  ",\"\"");
 
             if ($ShowPrice) {
@@ -374,14 +374,14 @@ while ($price_row = mysql_fetch_array($price_result)){
             fputs ($out,  "\n");
         } else {
             fputs ($out, "\"" . $UnitNumber . "\"");
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode($price_row['ContractorName'])) . "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char($price_row['ContractorName'])) . "\"");
             fputs ($out,  ",\"NonStandardPO\"");
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode($price_row['SectionName'])), "\"");
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(htmlspecialchars_decode(beautifySubsectionName($price_row['SubsectionName']))) . "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char($price_row['SectionName'])), "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char(beautifySubsectionName($price_row['SubsectionName']))) . "\"");
             fputs ($out,  ",\" \"" );
             fputs ($out,  ",\" \"" );
             fputs ($out,  ",\" \"" );
-            fputs ($out,  ",\"" . escapeCSVSpecialChar(html_entity_decode($price_row['Description'])) . "\"");
+            fputs ($out,  ",\"" . escapeCSVSpecialChar(decode_special_db_char($price_row['Description'])) . "\"");
 
             if ($ShowPrice) {
                 fputs ($out,  ",\"" . convertPriceConstantToString($price_row['Cost']) . "\"");

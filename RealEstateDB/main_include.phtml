@@ -550,7 +550,29 @@ function encode_special_db_char($string){
 	global $db_replace;
 	
 	return preg_replace($db_find, $db_replace, $string);
-}
+} // encode_special_db_char
+
+
+
+$db_find_decode = array (
+	"'",
+	"\"",
+	"<",
+	">"
+	);
+$db_replace_decode = array (
+	"'&#039;'",
+	"'&quot;'",
+	"'&lt;'",
+	"'&gt;'"
+	);
+
+function decode_special_db_char($string){
+	global $db_find_decode;
+	global $db_replace_decode;
+	
+	return preg_replace($db_replace_decode, $db_find_decode, $string);
+} // decode_special_db_char
 
 // calculate the percentage 
 function calculate_percentage($up, $down)
