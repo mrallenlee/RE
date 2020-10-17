@@ -23,7 +23,7 @@ function &getUserSaveTableRows($UnitNumber){
 						" Options.Name AS OptionName," .
 						" Item.Name AS ItemName " .
 						" FROM UserSave, Item, Options, Section, Subsection " .
-						" WHERE UnitNumber=" . $UnitNumber .
+						" WHERE UnitNumber=\"" . $UnitNumber . "\"" .
 						" AND UserSave.ItemID = Item.ItemID" .
 						" AND UserSave.OptionID = Options.OptionID" .
 						" AND Item.SubsectionID = Subsection.SubsectionID" .
@@ -67,7 +67,7 @@ function getContent($UnitNumber){
 	$usersave_result = getUserSaveTableRows($UnitNumber); 
 
 	while ($usersave_row = mysql_fetch_array($usersave_result)){
-		displayMouseOverTR("blank", "blank", "javascript:editItem(". $UnitNumber . "," . $usersave_row['ItemID'] . "," . $usersave_row['OptionID'] . "," . $usersave_row['ChoiceID'] . ")");
+		displayMouseOverTR("blank", "blank", "javascript:editItem('". $UnitNumber . "'," . $usersave_row['ItemID'] . "," . $usersave_row['OptionID'] . "," . $usersave_row['ChoiceID'] . ")");
 ?>		<TD ><?= $usersave_row['SectionName']; ?></TD>
 		<TD ><?= $usersave_row['ItemName']; ?></TD>
 <?		for ($i=0; $i < $numOfContractor; $i++){
@@ -131,7 +131,7 @@ function editItemDone(){
 	hideFloatingDiv(1);
 	// must set timer to perform the call because
 	// firefox doesn't allow children to access DIV element
-	x_getContent(<?= $UnitNumber; ?>, getContent_CallBack);
+	x_getContent('<?= $UnitNumber; ?>', getContent_CallBack);
 }
 
 /**

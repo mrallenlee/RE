@@ -73,7 +73,7 @@ while ($contractor_row = mysql_fetch_array($contractor_result)){
 	}
 }
 
-$updateUserSaveSql .= " WHERE UnitNumber=$UnitNumber " .
+$updateUserSaveSql .= " WHERE UnitNumber=\"$UnitNumber\" " .
 						"AND ItemID=$ItemID " .
 						"AND OptionID=$OptionID " .
 						"AND ChoiceID=$ChoiceID ";

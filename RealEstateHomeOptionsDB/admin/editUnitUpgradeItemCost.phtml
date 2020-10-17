@@ -13,7 +13,7 @@ function &getUserSaveTableRow($UnitNumber, $ItemID, $OptionID, $ChoiceID){
 						" Options.Name AS OptionName," .
 						" Item.Name AS ItemName " .
 						" FROM UserSave, Item, Options, Section, Subsection " .
-						" WHERE UnitNumber=" . $UnitNumber .
+						" WHERE UnitNumber=\"" . $UnitNumber . "\"" .
 						" AND UserSave.ItemID = Item.ItemID" .
 						" AND UserSave.OptionID = Options.OptionID" .
 						" AND Item.SubsectionID = Subsection.SubsectionID" .
