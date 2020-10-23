@@ -53,12 +53,12 @@ function display_PO_view_list($inputName, $currentValue){
  * '-'. 
  * e.g. original string "2,3,6-10" return "2,3,6,7,8,9,10"
  */
-function parseCSV($CsvValue){
+function parseCSV($CsvValue, $enableRangeSearch = 1){
 	$firstValue = true;
 	$resultValue = "";
 	$value = explode(",", $CsvValue);
 	foreach ($value AS $individualValue ){
-		if (strpos($individualValue, "-") > 0){
+		if ($enableRangeSearch && strpos($individualValue, "-") > 0){
 			list($from, $to) = explode("-", $individualValue);
 			for ($i=$from; $i <= $to; $i++){
 				if ($firstValue){
@@ -92,12 +92,12 @@ function appendSearchCriteria($sql, $POTable){
 //		$sql .= " AND  substring(UnitNumber, 1, (LENGTH(UnitNumber)-2) ) <= " . $_REQUEST['floorTo'] . " ";	
 //	}
 	if ($_REQUEST['floor'] != ""){
-		
-		$parsedFloorValue = parseCSV($_REQUEST['floor']);
+		// Disable range search for Monaco as unit has '-' char "PH-02"	
+		$parsedFloorValue = parseCSV($_REQUEST['floor'], 0);
 		// For regular condo
-		//$sql .= " AND  substring(Unit.UnitNumber, 1, (LENGTH(Unit.UnitNumber)-2) ) IN ($parsedFloorValue) ";
+		$sql .= " AND  substring(Unit.UnitNumber, 1, (LENGTH(Unit.UnitNumber)-2) ) IN ($parsedFloorValue) ";
 		// For houses defined by build block B1P123, B11P234
-		$sql .= " AND  substring(Unit.UnitNumber, 1, locate('P', Unit.UnitNumber)-1) IN ($parsedFloorValue) ";
+		//$sql .= " AND  substring(Unit.UnitNumber, 1, locate('P', Unit.UnitNumber)-1) IN ($parsedFloorValue) ";
 	} 
 //	if ($_REQUEST['floorTo'] != ""){
 //		$sql .= " AND  substring(Unit.UnitNumber, 1, (LENGTH(Unit.UnitNumber)-2) ) <= " . $_REQUEST['floorTo'] . " ";	
