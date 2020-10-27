@@ -79,9 +79,10 @@ class POListPdfFormat extends POListFormat {
 		$this->contractorCountry 	= "contractorCountry=" . $PODataRow['ContractorCountry'];
 		$this->contractorPostalCode 	= "contractorPostalCode=" . $PODataRow['ContractorPostalCode'];
 		
-		$this->PONumber 		= "PONumber=" . $PODataRow['PONumber'];
-		$displayCost 		= convertPriceConstantToValidNumber($PODataRow['Cost']);
-		$this->cost			+= $displayCost;
+		$this->PONumber 	= "PONumber=" . $PODataRow['PONumber'];
+		$displayCost 		= convertPriceConstantToString($PODataRow['Cost']);
+		$validCost 			= convertPriceConstantToValidNumber($PODataRow['Cost']);
+		$this->cost			+= $validCost;
 		if ($PODataRow['POType'] == "StandardPO"){
 			$description = array("description"=>$this->unhtmlentity($PODataRow['SectionName']) ."\n".$this->unhtmlentity($PODataRow['SubsectionName']),
 							"subDescription"=>$this->unhtmlentity($PODataRow['OptionName']) . " " . $this->unhtmlentity($PODataRow['ChoiceName']),

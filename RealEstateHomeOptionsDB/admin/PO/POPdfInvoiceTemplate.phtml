@@ -65,10 +65,12 @@ function printPDFInvoice($pdfMaker, &$descriptionArray){
 	$revisedText = "REVISED";
 	$date = date("M d, Y");
 	$total = $cost + $gst;
-	$companyAddress = "	LJM Developments
-	1860 Appleby Line, Unit 28
-	Burlington, Ontario
-	L7L 0B7"; 
+	$companyAddress = "Monaco Development Partners G.P. Ltd.
+c/o YYZED Project Management
+8888 Keele Street
+Suite #1
+Vaughan, Ontario
+L4K 2N2";
 	$invoiceIDText = "PO #: $PONumber";
 	$issuedDateText = "Issued Date: $issuedDate";
 	
@@ -89,12 +91,12 @@ function printPDFInvoice($pdfMaker, &$descriptionArray){
 	$notesOnCost = "If you disagree with the COSTING of this P.O., please contact LJM Developments\nWITHIN 7 DAYS to clarify the pricing.\nIf we do not hear from you within 7 days, we assume you agree with the above figures.";
 	
 	$authorizationTitle = "AUTHORISATION:";
-	$marleneInfo = "\nLJM Developments\n$date";
+	$marleneInfo = "\nMonaco \n$date";
 
 	$pdfMaker->newPage();
 	$pdfMaker->setColor("000000", "fill");
 
-	$pdfMaker->addImage("PO/images/project-logo-small.jpg", "jpeg", "center", 0.5, true);
+	$pdfMaker->addImage("PO/images/project-logo-small.jpg", "jpeg", "center", 0.6, true);
 
 	$pdfMaker->insertTable("cellPadding=0");	
 	$pdfMaker->setTableColWidth(0, 180);	
@@ -145,7 +147,11 @@ function printPDFInvoice($pdfMaker, &$descriptionArray){
 		$pdfMaker->insertRow();
 		$pdfMaker->insertCell("text=" . html_entity_decode($description['description']),"fontName=Helvetica", "fontSize=10", "align=left");
 		$pdfMaker->insertCell("text=" . html_entity_decode($description['subDescription']),"fontName=Helvetica", "fontSize=10", "align=left");
-		$pdfMaker->insertCell("text=$" . number_format($description['cost'], 2),"fontName=Helvetica", "fontSize=10", "align=right");
+		if (is_numeric($description['cost'])){
+			$pdfMaker->insertCell("text=$" . number_format($description['cost'], 2),"fontName=Helvetica", "fontSize=10", "align=right");
+		} else { // display INFO, STANDARD, etc...
+			$pdfMaker->insertCell("text=" . $description['cost'],"fontName=Helvetica", "fontSize=10", "align=right");
+		}
 		$pdfMaker->endRow();			
 	}
 	$pdfMaker->endTable();
