@@ -24,7 +24,8 @@ $gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'
 
 // Start the unit loop
 // Includes both sold and unsold unit
-$unitSql = "SELECT * FROM Unit ORDER BY UnitNumber";
+
+$unitSql = "SELECT * FROM Unit ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 $unitResult = mysql_query($unitSql,$db) or handleError("", "SQL=$unitSql <br>Error=" . mysql_error(), SQL_ERROR, true);	
 while ($unitRow = mysql_fetch_array($unitResult))
 {
