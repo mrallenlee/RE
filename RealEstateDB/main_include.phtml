@@ -1000,7 +1000,6 @@ function expandSearchCriteria($arguments){
 	return $resultValue;
 }
 
-define ("DB_SORT_METHOD_VARCHAR_AS_NUMBER", 1);
 
 /**
  * Return order clause for one column
@@ -1019,8 +1018,8 @@ function getOrderClause($arguments){
 	// could be the new version of mysql
 	// revert to use original way to sort	
 	if ($sortMethod == DB_SORT_METHOD_VARCHAR_AS_NUMBER){
-		// $clause = " cast(" . $columnName . " as signed) ";
-		$clause = " " . $columnName;
+		$clause = " cast(" . $columnName . " as signed) ";
+		//$clause = " " . $columnName;
 	} else {
 		$clause = " " . $columnName;
 	}
