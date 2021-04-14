@@ -65,12 +65,8 @@ function printPDFInvoice($pdfMaker, &$descriptionArray){
 	$revisedText = "REVISED";
 	$date = date("M d, Y");
 	$total = $cost + $gst;
-	$companyAddress = "Monaco Development Partners G.P. Ltd.
-c/o YYZED Project Management
-8888 Keele Street
-Suite #1
-Vaughan, Ontario
-L4K 2N2";
+	$companyAddress = "Highlight Development 
+";
 	$invoiceIDText = "PO #: $PONumber";
 	$issuedDateText = "Issued Date: $issuedDate";
 	
@@ -91,7 +87,7 @@ L4K 2N2";
 	$notesOnCost = "If you disagree with the COSTING of this P.O., please contact LJM Developments\nWITHIN 7 DAYS to clarify the pricing.\nIf we do not hear from you within 7 days, we assume you agree with the above figures.";
 	
 	$authorizationTitle = "AUTHORISATION:";
-	$marleneInfo = "\nMonaco \n$date";
+	$marleneInfo = "\nHighlight \n$date";
 
 	$pdfMaker->newPage();
 	$pdfMaker->setColor("000000", "fill");
