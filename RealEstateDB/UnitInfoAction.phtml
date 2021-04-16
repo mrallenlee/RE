@@ -161,9 +161,14 @@ function delete($UnitNumber)
 	ob_start();
 	$sql = "DELETE FROM Unit WHERE UnitNumber='$UnitNumber'";
 	$result = executeSql($sql);
+	$error = error_get_last();
 
 	ob_end_clean();
-	return 1;
+	if ($result){
+		return 1;
+	} else {
+		return $errors['type'] . " Error : " . $errors['message'] . " SQL - " . $sql;
+	}	
 }
 
 /**

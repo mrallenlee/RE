@@ -21,7 +21,7 @@ function getUnitInfo($whereClause = "", $sortOrder = ""){
  * Delete a unit
  */
 function deleteUnit($UnitNumber){
-	require_once("unitInfoAction.phtml");
+	require_once("UnitInfoAction.phtml");
 	$result = delete($UnitNumber);
 	return $result;
 }
@@ -205,6 +205,15 @@ function editSingleUnit_callback(result){
 	}
 }
 
+
+function delSingleUnit_callback(result){
+	if (result == 1){
+		alert("The unit is deleted successfully!");
+		refreshUnitInfo();
+	} else {
+		alert("Error : " + result);
+	}
+}
 /**
 * Update information of a specific unit
 * Adding alert for testing
@@ -233,9 +242,9 @@ function editUnit()
 */
 function deleteUnit(UnitNumber)
 {
-	var answer = confirm('Are you sure you want to delete this unit?');
+	var answer = confirm('Are you sure you want to delete this unit ' + UnitNumber + '?');
 	if (answer){
-		x_deleteUnit(UnitNumber, refreshUnitInfo);
+		x_deleteUnit(UnitNumber, delSingleUnit_callback);
 	}	
 }
 
@@ -256,6 +265,10 @@ function showEditDialog(UnitNumber)
 
 		document.form_edit.Ustatus.value = current_status;
 
+		// Always disable the UnitStatus field as it should not be modifiable
+		document.form_edit.Ustatus.disabled = true;
+
+		/** Always disable Unit Status field 
 		if (current_status.toLowerCase() == "sold")
 		{
 			document.form_edit.Ustatus.disabled = true;
@@ -264,7 +277,7 @@ function showEditDialog(UnitNumber)
 		{
 			document.form_edit.Ustatus.disabled = false;
 		}
-		
+		*/
 			
 		var dialogEditUnitObj = document.getElementById("DialogEditUnit");
 		// MUST show the dialog first before center it in order to get the correct DIV width and height
