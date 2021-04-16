@@ -242,6 +242,8 @@ function editUnit()
 */
 function deleteUnit(UnitNumber)
 {
+	//TODO ALLEN to add check if the unit status is Available, or Sold. Should not allow delete if 
+	// it's in sold status
 	var answer = confirm('Are you sure you want to delete this unit ' + UnitNumber + '?');
 	if (answer){
 		x_deleteUnit(UnitNumber, delSingleUnit_callback);
