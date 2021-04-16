@@ -267,10 +267,11 @@ function showEditDialog(UnitNumber)
 		
 			
 		var dialogEditUnitObj = document.getElementById("DialogEditUnit");
+		// MUST show the dialog first before center it in order to get the correct DIV width and height
+		dlg.show();
 		// center the floating pane	
 		centerDIV(dialogEditUnitObj);		
 
-		dlg.show();
 }
 
 </script>
@@ -397,12 +398,12 @@ x_getUnitInfo("<?= $whereClause; ?>", currentSortOrder, getUnitInfo_CallBack);
 
 </style>
 
-<div dojoType="dialog" id="DialogEditUnit" bgColor="white" bgOpacity="0.5" toggle="fade" toggleDuration="250">
+<div dojoType="dialog" id="DialogEditUnit" bgColor="white" bgOpacity="0.1" toggle="fade" toggleDuration="250">
 <form name="form_edit">
 <table>
 	<tr>
     <TD>Unit Number</TD>
-		<td><input id="UnitNumber" type="text" style="background-color:gray" disabled="disabled"></td>
+		<td><input id="UnitNumber" type="text" style="background-color:white" disabled="disabled"></td>
     <TD>Unit Type</TD>
 		<td><? display_generic_table_list("UnitType", "UnitType"); ?></td>
 	</tr>

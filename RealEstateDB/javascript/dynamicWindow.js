@@ -121,6 +121,14 @@ function centerDIV(divObj){
 	var docHeight=document.all? Math.min(truebody().scrollHeight, truebody().clientHeight) : window.innerHeight
 	var divWidth = getNumber(styleObj.width);
 	var divHeight = getNumber(styleObj.height);
+
+	if (divHeight == '' || divWidth == ''){
+		divHeight = divObj.offsetHeight;
+		divWidth = divObj.offsetWidth;
+	}
+
+//alert('docWidth=' + docWidth + ' docHeight=' + docHeight);
+//alert('divWidth=' + divWidth + ' divHeight=' + divHeight);
 	var x=(docWidth - divWidth) /2;
 	var y=(docHeight - divHeight) /2;
 	y = y + truebody().scrollTop;
