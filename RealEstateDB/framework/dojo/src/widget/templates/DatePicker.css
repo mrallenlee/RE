@@ -8,23 +8,23 @@
 
 .calendarBodyContainer {
 	width:100%; /* needed for the explode effect (explain?) */
-	background: #7591bc url("images/dpBg.gif") top left repeat-x;
+	background-color:#FFFFFF !important;
 }
 
 .calendarBodyContainer thead tr td {
-	color:#293a4b;
+	color:#505050;
 	font:bold 0.75em Helvetica, Arial, Verdana, sans-serif;
 	text-align:center;
 	padding:0.25em;
-	background: url("images/dpHorizLine.gif") bottom left repeat-x;
+	background-color:#FFFFFF !important;
 }
 
 .calendarBodyContainer tbody tr td {
-	color:#fff;
+	color:#505050;
 	font:bold 0.7em Helvetica, Arial, Verdana, sans-serif;
 	text-align:center;
 	padding:0.4em;
-	background: url("images/dpVertLine.gif") top right repeat-y;
+	background-color:#FFFFFF !important;
 	cursor:pointer;
 	cursor:hand;
 }
@@ -32,7 +32,7 @@
 
 .monthWrapper {
 	padding-bottom:2px;
-	background: url("images/dpHorizLine.gif") bottom left repeat-x;
+	background-color:#DDDDDD !important;
 }
 
 .monthContainer {
@@ -42,8 +42,8 @@
 .monthLabelContainer {
 	text-align:center;
 	font:bold 0.75em Helvetica, Arial, Verdana, sans-serif;
-	background: url("images/dpMonthBg.png") repeat-x top left !important;
-	color:#293a4b;
+	background-color:#FFFFFF !important;
+	color:#505050;
 	padding:0.25em;
 }
 
@@ -52,16 +52,16 @@
 }
 
 .monthCurveTL {
-	background: url("images/dpCurveTL.png") no-repeat top left !important;
+	background-color:#FFFFFF !important;
 }
 
 .monthCurveTR {
-		background: url("images/dpCurveTR.png") no-repeat top right !important;
+	background-color:#FFFFFF !important;
 }
 
 
 .yearWrapper {
-	background: url("images/dpHorizLineFoot.gif") top left repeat-x;
+	background-color:#DDDDDD !important;
 	padding-top:2px;
 }
 
@@ -70,26 +70,26 @@
 }
 
 .yearContainer td {
-	background:url("images/dpYearBg.png") top left repeat-x;
+	background-color:#FFFFFF !important;
 }
 
 .yearContainer .yearLabel {
 	margin:0;
 	padding:0.45em 0 0.45em 0;
-	color:#fff;
+	color:#505050;
 	font:bold 0.75em Helvetica, Arial, Verdana, sans-serif;
 	text-align:center;
 }
 
 .curveBL {
-	background: url("images/dpCurveBL.png") bottom left no-repeat !important;
+	background-color:#FFFFFF !important;
 	width:9px !important;
 	padding:0;
 	margin:0;
 }
 
 .curveBR {
-	background: url("images/dpCurveBR.png") bottom right no-repeat !important;
+	background-color:#FFFFFF !important;
 	width:9px !important;
 	padding:0;
 	margin:0;
@@ -97,25 +97,25 @@
 
 
 .previousMonth {
-	background-color:#6782a8 !important;
+	background-color:#FFFFFF !important;
 }
 
 .previousMonthDisabled {
-	background-color:#a4a5a6 !important;
+	background-color:#FFFFFF !important;
 	cursor:default !important
 }
 .currentMonth {
 }
 
 .currentMonthDisabled {
-	background-color:#bbbbbc !important;
+	background-color:#FFFFFF !important;
 	cursor:default !important
 }
 .nextMonth {
-	background-color:#6782a8 !important;
+	background-color:#FFFFFF !important;
 }
 .nextMonthDisabled {
-	background-color:#a4a5a6 !important;
+	background-color:#FFFFFF !important;
 	cursor:default !important;
 }
 
@@ -125,13 +125,13 @@
 }
 
 .selectedItem {
-	background-color:#fff !important;
-	color:#6782a8 !important;
+	background-color:#CCCCCC !important;
+	color:#505050 !important;
 }
 
 .yearLabel .selectedYear {
 	padding:0.2em;
-	background-color:#9ec3fb !important;
+	background-color:#CCCCCC !important;
 }
 
 .nextYear, .previousYear {
