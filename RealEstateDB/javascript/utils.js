@@ -333,7 +333,7 @@ tool.table.format = function (/* table DOM node **/ myTable) {
 		dojo.widget.byId("tool_table_format").destroy();
 	}
 	
-	var win = createFloatWindow("tool_table_format","Format Table", formatViewHTML, 430, 350, 200, 200); 
+	var win = createFloatWindow("tool_table_format","Format Table", formatViewHTML, 400, 350, 200, 200); 
 	
 	dojo.event.connect(dojo.byId("btnFormatTableClose"), "onclick", function(evt) {
 		dojo.widget.byId("tool_table_format").hide();
@@ -369,15 +369,15 @@ tool.table.format = function (/* table DOM node **/ myTable) {
 }
 
 tool.table.format_template = '\
-<div style="overflow: auto; position:absolute; height:245px; top:0px; width: 395px"> \
+<div style="overflow: auto; position:absolute; height:300px; top:0px; width: 395px; background: white;"> \
 <form name="tool_table_format_form"> \
-<table id="tool_table_format_cols" width="360" cellspacing="0" style="font-size: 12px; margin: 5px;"> \
-	<tr style="font-weight: bold;"><td style="border-bottom:thin solid blue">Field</td><td style="border-bottom:thin solid blue;">Display</td></tr> \
+<table id="tool_table_format_cols" width="360" cellspacing="0" style="font-size: 12px; margin: 5px; background: white;"> \
+	<tr style="font-weight: bold;"><td style="border-bottom:thin solid red">Field</td><td style="border-bottom:thin solid green;">Display</td></tr> \
 <!--LIST--> \
 </table> \
 </form> \
 </div> \
-<div style="position:absolute; height:40px; width: 395px; bottom: 0px "> \
+<div style="position:absolute; height:40px; width: 395px; bottom: 0px; background: white; "> \
 <table align="center" >  \
 	<tr><td>  \
 		<INPUT TYPE="BUTTON" VALUE="Apply" id="btnFormatTableApply" >  \
