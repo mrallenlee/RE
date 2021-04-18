@@ -1,0 +1,64 @@
+<?
+/**
+* Generate PDF via FDF format. Use fpdm framework
+* http://www.fpdf.org/en/script/script93.php
+* Input: Takes a list of values from HTTPS POST
+*/
+
+require_once 'framework/fpdm/fpdm.php';
+
+$values=$HTTP_POST_VARS;
+
+/** DEBUG 
+foreach($values as $key=>$val)
+{
+    print "$key=$val<BR>";
+}
+die();
+*/
+
+$fields = array ();
+
+//loop that adds the field names and values
+foreach($values as $key=>$val)
+{
+    if ($key == "url") continue;
+    if ($key == "Floor") continue;
+    if ($key == "CondoNumber") continue;
+    if ($key == "Area") continue;
+    if ($key == "NetArea") continue;
+    if ($key == "AgreementDepositDate") continue;
+    if ($key == "RescissionDate") continue;
+    if ($key == "ConditionalDate") continue;
+    if ($key == "Day210DepositDate") continue;
+    if ($key == "Day210DepositAmount") continue;
+    if ($key == "Day210DepositAmountEnglish") continue;
+    if ($key == "OccupancyDepositAmount") continue;
+    if ($key == "OccupancyDepositAmountEnglish") continue;
+    if ($key == "ClosingDate") continue;
+    if ($key == "FirstRevisedClosingDate") continue;
+    if ($key == "DisplayPurchaser1") continue;
+    if ($key == "DisplayPurchaser2") continue;
+    if ($key == "Purchaser3Name") continue;
+    if ($key == "Purchaser3DateOfBirth") continue;
+    if ($key == "Purchaser3SIN") continue;
+    if ($key == "CellPhone") continue;
+    if ($key == "SolicitorCityPostalCode") continue;
+    if ($key == "SolicitorPostalCode") continue;
+    if ($key == "CurrentDay") continue;
+    if ($key == "CurrentMonth") continue;
+    if ($key == "CurrentYearNum") continue;
+    if ($key == "back") continue;
+    if ($key == "CellPhone") continue;
+    if ($key == "CellPhone") continue;
+    if ($key == "CellPhone") continue;
+
+
+    $fields[$key] = $val;
+}
+
+$pdf = new FPDM('AgreementForm2.pdf');
+$pdf->Load($fields, false); // second parameter: false if field values are in ISO-8859-1, true if UTF-8
+$pdf->Merge();
+$pdf->Output();
+?>

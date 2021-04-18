@@ -1,0 +1,3 @@
+[submodule "RealEstateDB/framework/fpdm"]
+	path = RealEstateDB/framework/fpdm
+	url = https://github.com/codeshell/fpdm.git
