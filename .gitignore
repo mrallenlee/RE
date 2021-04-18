@@ -9,6 +9,7 @@
 *.jpg
 *.swp
 *.cgi
+*.csv
 RealEstateDB/FloatingMenu/menu.phtml
 RealEstateDB/FloatingMenu/config.js
 RealEstateDB/config/config.phtml
