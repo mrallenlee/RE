@@ -2,6 +2,10 @@
 /**
 * Generate PDF via FDF format. Use fpdm framework
 * http://www.fpdf.org/en/script/script93.php
+* https://github.com/codeshell/fpdm 
+* Repo URL https://github.com/codeshell/fpdm.git
+* Use pdftk to convert OLD pdf formation to compatible one for FPDF
+* pdftk modele.pdf output modele2.pdf 
 * Input: Takes a list of values from HTTPS POST
 */
 
@@ -57,7 +61,7 @@ foreach($values as $key=>$val)
     $fields[$key] = $val;
 }
 
-$pdf = new FPDM('AgreementForm2.pdf');
+$pdf = new FPDM('AgreementForm.pdf');
 $pdf->Load($fields, false); // second parameter: false if field values are in ISO-8859-1, true if UTF-8
 $pdf->Merge();
 $pdf->Output();
