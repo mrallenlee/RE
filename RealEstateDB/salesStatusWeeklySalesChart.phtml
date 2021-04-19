@@ -1,0 +1,124 @@
+<? require_once "main_include.phtml";
+
+$totalUnitSql   = "SELECT COUNT(*) FROM Unit";
+$totalUnitResult= mysql_query($totalUnitSql) or log_err_die(mysql_error(), $PHP_SELF);
+$totalUnitRow   = mysql_fetch_array($totalUnitResult);
+$totalUnit      = $totalUnitRow[0];
+
+// Get a date range in php
+$period = new DatePeriod(
+    new DateTime(PROJECT_OPENING_DATE),
+    new DateInterval('P1D'),
+    new DateTime('2021-04-21')
+);
+
+
+// Get the Sold Date and Number of Sales on that day
+$sql    = "SELECT AgreementDepositDate, count(User.UnitNumber) AS NumOfSales FROM User WHERE " . 
+            " DealStatus='" . DEAL_STATUS_PENDING . 
+            "' OR DealStatus='" . DEAL_STATUS_FIRM . "' " .
+            "GROUP BY AgreementDepositDate ORDER BY AgreementDepositDate ASC";
+
+$result = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+
+// Init var
+$totalSalesNumber   = 0;
+$salesNumberList     = array();   
+$totalSalesNumberList= array();
+$unitAvailableList   = array();
+$dayList             = array();
+
+//for ($i = 0; $row = mysql_fetch_array($result); $i++) {
+    $row = mysql_fetch_array($result);
+    foreach ($period as $key => $value) {
+        print $value->format('Y-m-d');
+        $loopDate = $value->format('Y-m-d'); 
+        if ($row['AgreementDepositDate'] == $loopDate) {
+            array_push($dayList, $row['AgreementDepositDate']);
+            array_push($salesNumberList, $row['NumOfSales']);
+            $totalSalesNumber        +=$row['NumOfSales'];  
+            array_push($totalSalesNumberList, $totalSalesNumber);
+            array_push($unitAvailableList, $totalUnit - $totalSalesNumber);
+
+            // extract next record, if error happens, let row to be null value
+            $row = mysql_fetch_array($result);
+        } else {
+            array_push($dayList, $loopDate);
+            array_push($salesNumberList, 0);
+            array_push($totalSalesNumberList, $totalSalesNumber);
+            array_push($unitAvailableList, $totalUnit - $totalSalesNumber);
+        }
+}
+
+
+?>
+<link rel="stylesheet" href="https://dojotoolkit.org/reference-guide/1.10/_static/js/dojo/../dijit/themes/claro/claro.css">
+	
+	<script>dojoConfig = {parseOnLoad: true}</script>
+
+    <? // TODO ALLEN Using lateset DOJO 1.14, may have conflict with other Dojo script ?>
+    <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
+    
+	<script>
+require(["dojox/charting/Chart", "dojox/charting/axis2d/Default", 
+        "dojox/charting/plot2d/Lines", "dojo/ready",
+        "dojox/charting/widget/Legend"],
+  function(Chart, Default, Lines, ready){
+  ready(function(){
+    var chart1 = new dojox.charting.Chart("simplechart", {
+      title: "Sales Report",
+      titlePos: "bottom",
+      titleGap: 25,
+      titleFont: "normal normal normal 15pt Arial",
+      titleFontColor: "orange"});    
+    chart1.addPlot("default", {
+        type: Lines,
+        markers: false});
+
+
+    var weeklySalesData = [<? print_r(implode(', ', $salesNumberList)); ?>];
+    var totalSalesData  = [<? print_r(implode(', ', $totalSalesNumberList)); ?>];
+    var availableUnits  = [<? print_r(implode(', ', $unitAvailableList)); ?>];
+    
+//    chart1.addAxis("x");
+    chart1.addAxis("x", {fixLower: "minor", fixUpper: "minor", natural: true,
+                                font: "normal normal 10pt Arial",
+                                 labels: [<?
+                                 // print {value: 1, text: "Q2 FY11"},
+                                 $i = 1;
+                                 foreach ($period as $key => $value) {
+                                     if ($i > 1) print (',');
+                                     print ('{value: ' . $i . ', text: "' . $value->format('Y-m-d') . '"}');
+                                    $i++;
+                                 }
+                                 
+                                 ?>]
+                                });
+    chart1.addAxis("y", {vertical: true});
+    chart1.addSeries("Weekly Sales", weeklySalesData, {   
+        stroke: {
+            color: "#888888",
+            width: 2
+        },
+        fill: "#123456"});
+    chart1.addSeries("Total Sales", totalSalesData, {
+        stroke: {
+            color: "#FFCC00",
+            width: 1
+        }
+    });
+    chart1.addSeries("Available Units", availableUnits, {
+        stroke: {
+            color: "#C0C0C0"
+        }
+    });
+    chart1.render();
+
+    //this legend is created within an element with a "legend1" ID.
+    var legend = new Legend({ chart: chart1}, "legend1");    
+  });
+});
+	</script>
+<body class="claro">
+    <div id="simplechart" style="width: 750px; height: 300px; "></div>
+    <div id="legend1"></div>
