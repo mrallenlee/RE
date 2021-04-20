@@ -9,17 +9,17 @@ $totalUnit      = $totalUnitRow[0];
 $period = new DatePeriod(
     new DateTime(PROJECT_OPENING_DATE),
     new DateInterval('P1D'),
-    new DateTime('2021-04-21')
+    new DateTime(date("Y-m-d", strtotime("tomorrow")))
 );
 
 
 // Get the Sold Date and Number of Sales on that day
-$sql    = "SELECT AgreementDepositDate, count(User.UnitNumber) AS NumOfSales FROM User WHERE " . 
+$chartSql    = "SELECT AgreementDepositDate, count(User.UnitNumber) AS NumOfSales FROM User WHERE " . 
             " DealStatus='" . DEAL_STATUS_PENDING . 
             "' OR DealStatus='" . DEAL_STATUS_FIRM . "' " .
             "GROUP BY AgreementDepositDate ORDER BY AgreementDepositDate ASC";
 
-$result = mysql_query($sql) or log_err_die(mysql_error(), $PHP_SELF);
+$chartResult = mysql_query($chartSql) or log_err_die(mysql_error(), $PHP_SELF);
 
 // Init var
 $totalSalesNumber   = 0;
@@ -28,20 +28,20 @@ $totalSalesNumberList= array();
 $unitAvailableList   = array();
 $dayList             = array();
 
-//for ($i = 0; $row = mysql_fetch_array($result); $i++) {
-    $row = mysql_fetch_array($result);
+//for ($i = 0; $chartRow = mysql_fetch_array($result); $i++) {
+    $chartRow = mysql_fetch_array($chartResult);
     foreach ($period as $key => $value) {
-        print $value->format('Y-m-d');
+        //print $value->format('Y-m-d');
         $loopDate = $value->format('Y-m-d'); 
-        if ($row['AgreementDepositDate'] == $loopDate) {
-            array_push($dayList, $row['AgreementDepositDate']);
-            array_push($salesNumberList, $row['NumOfSales']);
-            $totalSalesNumber        +=$row['NumOfSales'];  
+        if ($chartRow['AgreementDepositDate'] == $loopDate) {
+            array_push($dayList, $chartRow['AgreementDepositDate']);
+            array_push($salesNumberList, $chartRow['NumOfSales']);
+            $totalSalesNumber        +=$chartRow['NumOfSales'];  
             array_push($totalSalesNumberList, $totalSalesNumber);
             array_push($unitAvailableList, $totalUnit - $totalSalesNumber);
 
             // extract next record, if error happens, let row to be null value
-            $row = mysql_fetch_array($result);
+            $chartRow = mysql_fetch_array($chartResult);
         } else {
             array_push($dayList, $loopDate);
             array_push($salesNumberList, 0);
@@ -60,14 +60,15 @@ $dayList             = array();
     <script src="https://ajax.googleapis.com/ajax/libs/dojo/1.14.1/dojo/dojo.js"></script>
     
 	<script>
-require(["dojox/charting/Chart", "dojox/charting/axis2d/Default", 
-        "dojox/charting/plot2d/Lines", "dojo/ready",
-        "dojox/charting/widget/Legend"],
-  function(Chart, Default, Lines, ready){
+require([ "dojox/charting/Chart",  "dojox/charting/axis2d/Default", 
+        "dojox/charting/plot2d/Lines", "dojox/charting/widget/Legend", "dojo/ready",
+        // Load the Legend, Tooltip, and Magnify classes
+        ],
+  function(Chart, Default, Lines, Legend, ready){
   ready(function(){
     var chart1 = new dojox.charting.Chart("simplechart", {
-      title: "Sales Report",
-      titlePos: "bottom",
+      title: "Daily Sales Report",
+      titlePos: "top",
       titleGap: 25,
       titleFont: "normal normal normal 15pt Arial",
       titleFontColor: "orange"});    
@@ -76,13 +77,13 @@ require(["dojox/charting/Chart", "dojox/charting/axis2d/Default",
         markers: false});
 
 
-    var weeklySalesData = [<? print_r(implode(', ', $salesNumberList)); ?>];
+    var dailySalesData  = [<? print_r(implode(', ', $salesNumberList)); ?>];
     var totalSalesData  = [<? print_r(implode(', ', $totalSalesNumberList)); ?>];
     var availableUnits  = [<? print_r(implode(', ', $unitAvailableList)); ?>];
     
-//    chart1.addAxis("x");
-    chart1.addAxis("x", {fixLower: "minor", fixUpper: "minor", natural: true,
-                                font: "normal normal 10pt Arial",
+    chart1.addAxis("x", {fixLower: "minor", fixUpper: "minor", minorLabels: true, 
+                                dropLabels: true, majorLabels: true, natural: false,
+                                font: "normal normal 10pt Arial", width: 4,
                                  labels: [<?
                                  // print {value: 1, text: "Q2 FY11"},
                                  $i = 1;
@@ -94,22 +95,23 @@ require(["dojox/charting/Chart", "dojox/charting/axis2d/Default",
                                  
                                  ?>]
                                 });
-    chart1.addAxis("y", {vertical: true});
-    chart1.addSeries("Weekly Sales", weeklySalesData, {   
+    chart1.addAxis("y", {vertical: true, dropLabels: false });
+    chart1.addSeries("Daily Sales", dailySalesData, {   
         stroke: {
-            color: "#888888",
-            width: 2
+            color: "#f39180",
+            width: 4
         },
         fill: "#123456"});
     chart1.addSeries("Total Sales", totalSalesData, {
         stroke: {
-            color: "#FFCC00",
-            width: 1
+            color: "#83B8F4",
+            width: 4
         }
     });
     chart1.addSeries("Available Units", availableUnits, {
         stroke: {
-            color: "#C0C0C0"
+            color: "#f3ea80",
+            width: 4
         }
     });
     chart1.render();
@@ -118,7 +120,131 @@ require(["dojox/charting/Chart", "dojox/charting/axis2d/Default",
     var legend = new Legend({ chart: chart1}, "legend1");    
   });
 });
+
+
+<? /* Bedroom Pie Chart */
+$bedroomSoldSql = "SELECT bedrooms, COUNT(Unit.UnitNumber) AS NumOfSales from Unit WHERE Status='" . UNIT_STATUS_SOLD . "' GROUP BY bedrooms";
+$bedroomSoldResult = mysql_query($bedroomSoldSql) or log_err_die(mysql_error(), $PHP_SELF);
+// Init var
+$bedroomSoldList     = array();   
+$bedroomNumList      = array();   
+
+
+for ($i = 0; $bedroomRow = mysql_fetch_array($bedroomSoldResult); $i++) {
+    array_push($bedroomSoldList, $bedroomRow['NumOfSales']);
+    array_push($bedroomNumList, $bedroomRow['bedrooms'] . " BR(s)");
+}
+
+//die("gedroomsSoldList length=" . count($bedroomsSoldList));
+?>
+// Pie Chart by Bedroom
+require(["dojox/charting/Chart", "dojox/charting/plot2d/Pie", "dojox/charting/action2d/Highlight",
+         "dojox/charting/action2d/MoveSlice" , "dojox/charting/action2d/Tooltip",
+         "dojox/charting/themes/MiamiNice", "dojox/charting/widget/Legend", "dojo/ready"],
+  function(Chart, Pie, Highlight, MoveSlice, Tooltip, MiamiNice, Legend, ready){
+  ready(function(){
+    var pieChartOne = new Chart("pieChartOne", {
+      title: "Bedroom Sales Report",
+      titlePos: "top",
+      titleGap: 5,
+      titleFont: "normal normal normal 15pt Arial",        
+      titleFontColor: "orange"
+    });
+    pieChartOne.setTheme(MiamiNice)
+     .addPlot("default", {
+        type: Pie,
+        font: "normal normal 11pt Tahoma",
+        fontColor: "#505050",
+        labelOffset: -30,
+        radius: 180
+    });
+    
+        //{y: 4, text: "Studio",   stroke: "#C0C0C0", tooltip: "Studio"},
+    pieChartOne.addSeries("Series A", [<?
+        for ($i=0; $i < count($bedroomSoldList); $i++){
+            if ($i > 0) print ",";
+            print "{y: " . $bedroomSoldList[$i] . ", text: \"" . $bedroomNumList[$i] . "\", stroke: \"#C0C0C0\", tooltip: \"" . $bedroomSoldList[$i] . "\"}";
+        }?>]
+    );
+    var anim_a = new MoveSlice(pieChartOne, "default");
+    var anim_b = new Highlight(pieChartOne, "default");
+    var anim_c = new Tooltip(pieChartOne, "default");
+    pieChartOne.render();
+    var legendTwo = new Legend({chart: pieChartOne}, "pieChartOneLegend");
+  });
+});
+</script>
+
+
+
+<? // Pie Chart Two 
+$dealStatusChartSql = "(SELECT DealStatus,  COUNT(User.UnitNumber) AS NumOfSales from User WHERE DealStatus='" . 
+                        DEAL_STATUS_PENDING . "' OR DealStatus='" . DEAL_STATUS_FIRM . "' GROUP BY DealStatus) " . 
+                    " UNION " . 
+                    " (select Status, count(Unit.UnitNumber) from Unit where Status='" . UNIT_STATUS_AVAILABLE . "' group by Status)";
+$dealStatusChartResult = mysql_query($dealStatusChartSql) or log_err_die(mysql_error(), $PHP_SELF);
+// Init var
+$dealStatusList     = array();   
+$dealStatusNumList  = array();   
+
+
+for ($i = 0; $dealStatusChartRow = mysql_fetch_array($dealStatusChartResult); $i++) {
+    array_push($dealStatusList, $dealStatusChartRow['DealStatus']);
+    array_push($dealStatusNumList, $dealStatusChartRow['NumOfSales']);
+}
+
+//die("gedroomsSoldList length=" . count($bedroomsSoldList));
+?>
+<script>
+// Pie Chart 2 by 
+require(["dojox/charting/Chart", "dojox/charting/plot2d/Pie", "dojox/charting/action2d/Highlight",
+         "dojox/charting/action2d/MoveSlice" , "dojox/charting/action2d/Tooltip",
+         "dojox/charting/themes/MiamiNice", "dojox/charting/widget/Legend", "dojo/ready"],
+  function(Chart, Pie, Highlight, MoveSlice, Tooltip, MiamiNice, Legend, ready){
+  ready(function(){
+    var pieChartTwo = new Chart("pieChartTwo", {
+      title: "Deal Status Sales Report",
+      titlePos: "top",
+      titleGap: 5,
+      titleFont: "normal normal normal 15pt Arial",        
+      titleFontColor: "orange"
+    });
+    pieChartTwo.setTheme(MiamiNice)
+     .addPlot("default", {
+        type: Pie,
+        font: "normal normal 11pt Tahoma",
+        fontColor: "#505050",
+        labelOffset: -30,
+        radius: 180
+    });
+    
+        //{y: 4, text: "Studio",   stroke: "#C0C0C0", tooltip: "Studio"},
+        pieChartTwo.addSeries("Series A", [<?
+        for ($i=0; $i < count($dealStatusList); $i++){
+            if ($i > 0) print ",";
+            print "{y: " . $dealStatusNumList[$i] . ", text: \"" . $dealStatusList[$i] . "\", stroke: \"#C0C0C0\", tooltip: \"" . $dealStatusNumList[$i] . "\"}";
+        }?>]
+    );
+    var anim_a = new MoveSlice(pieChartTwo, "default");
+    var anim_b = new Highlight(pieChartTwo, "default");
+    var anim_c = new Tooltip(pieChartTwo, "default");
+    pieChartTwo.render();
+    var legendTwo = new Legend({chart: pieChartTwo}, "pieChartTwoLegend");
+  });
+});
+</script>
+
+
 	</script>
-<body class="claro">
-    <div id="simplechart" style="width: 750px; height: 300px; "></div>
-    <div id="legend1"></div>
+<body width="100%" class="claro">
+    <div style="float:left;  width:40%">
+        <div id="simplechart" style="width: 700px; height: 400px; "></div>
+        <div id="legend1"></div>
+    </div>
+    <div style="float:left;  width:30%;background-color: white;">
+<? //        <div id='pieChartOneLegend' style="float:left; width: 50px; height: 250; margin: 5px auto 0px auto;"></div> ?>
+        <div id="pieChartTwo" style="width: 250px; height: 300; margin: 5px auto 0px auto;"></div>
+<? //        <div id='pieChartTwoLegend' style="float:left;width: 50px; height: 250; margin: 5px auto 0px auto;"></div> ?>
+        <div id="pieChartOne" style="width: 250px; height: 300; margin: 5px auto 0px auto;"></div>
+    </div>
+</body>
