@@ -65,19 +65,20 @@ else
 require_once "salesStatusWeeklySalesChart.phtml";
 ?> </DIV>
 
-<BR><BR>
 
-<DIV id="search" name="search">
-<?
-createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
-createCollapsibleDIV("SearchCriteriaDIV"); 
-?>
+
+
+<DIV id="search" name="search"><br><Br>
+
 	<TITLE>Sales Status</TITLE>	
 	
 	<? if ($search_date_from == "1980-01-01") //Do not display default value for $search_date_from
 	{
-		?> <H3><?= get_project_name($PHP_SELF); ?> -- Sales Status as at <?= convert_date($search_date_to, "english") ?> </H3> 
-			<TABLE>
+		?> <H3> </H3> 
+<?
+createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
+createCollapsibleDIV("SearchCriteriaDIV"); 
+?>			<TABLE>
 				<TR><TD></TD></TR>
 				<FORM NAME="form_search_by_date" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
 				<TR CLASS="blank">

@@ -144,7 +144,7 @@ require(["dojox/charting/Chart", "dojox/charting/plot2d/Pie", "dojox/charting/ac
   function(Chart, Pie, Highlight, MoveSlice, Tooltip, MiamiNice, Legend, ready){
   ready(function(){
     var pieChartOne = new Chart("pieChartOne", {
-      title: "Bedroom Sales Report",
+      title: "Bedroom (Sold) Sales Report",
       titlePos: "top",
       titleGap: 5,
       titleFont: "normal normal normal 15pt Arial",        
@@ -236,15 +236,21 @@ require(["dojox/charting/Chart", "dojox/charting/plot2d/Pie", "dojox/charting/ac
 
 
 	</script>
-<body width="100%" class="claro">
+<?// <body width="100%" height="400px" class="claro">?>
+<div style="height:450px">
     <div style="float:left;  width:40%">
-        <div id="simplechart" style="width: 700px; height: 400px; "></div>
+        <div id="simplechart" style="width: 600px; height: 400px; "></div>
         <div id="legend1"></div>
     </div>
-    <div style="float:left;  width:30%;background-color: white;">
-<? //        <div id='pieChartOneLegend' style="float:left; width: 50px; height: 250; margin: 5px auto 0px auto;"></div> ?>
-        <div id="pieChartTwo" style="width: 250px; height: 300; margin: 5px auto 0px auto;"></div>
-<? //        <div id='pieChartTwoLegend' style="float:left;width: 50px; height: 250; margin: 5px auto 0px auto;"></div> ?>
-        <div id="pieChartOne" style="width: 250px; height: 300; margin: 5px auto 0px auto;"></div>
+    <div style="float:left;  width:30%;">
+        <div id="pieChartTwo" style="width: 400px; height: 400px; margin: 5px auto 0px auto;"></div>
+        <?// <div id="filler" style="height: 10px; background-color: #FF0000"></div>?>
+        <? // <div id="pieChartTwoLegend" style="float:center; background-color: #FF0000;"></div> ?>
     </div>
-</body>
+    <div style="float:left;  width:30%; height: 400px ; background-color: #FFFFFF">
+        <div id="pieChartOne" style="width: 400px; height: 400px; margin: 5px auto 0px auto;"></div>
+        <?// <div id="filler" style="height: 50px; background-color: #FF0000"></div>?>
+        <? // <div id="pieChartOneLegend" style="float:right; background-color: #FF0000; width: 50px; height: 250px; margin: 5px auto 0px auto;"></div> ?>
+    </div>
+</div>
+<?// </body>?>
