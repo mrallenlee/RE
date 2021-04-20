@@ -58,7 +58,14 @@ else
 <HTML>
 <? print_top_frame($PHP_SELF, "./"); ?>
 
+<H3><?= get_project_name($PHP_SELF); ?> -- Sales Status as at <?= convert_date($search_date_to, "english") ?> </H3> 
 
+<? // Weekly Sales Chart
+?> <DIV id="salesChart" name="salesChart"> <?
+require_once "salesStatusWeeklySalesChart.phtml";
+?> </DIV>
+
+<BR><BR>
 
 <DIV id="search" name="search">
 <?
@@ -698,74 +705,6 @@ createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
 ?>
 </DIV>
 	<BR><BR>
-	<H4>Summary by Deal Status</H4>	
-	<TABLE>
-		<TR CLASS=head>
-			<TD>Type</TD>
-			<TD>#</TD>
-			<TD>Size(sq.ft.)</TD>
-			<TD>Sales Price</TD>
-			<TD>Avg. Price/sq. ft.</TD>
-			<TD>% by Value</TD>
-		</TR>
-<?				displayMouseOverTR("blank", "body");	 ?>
-			<TD>Firm</TD>
-			<TD><?= $TotalUnitTypeFirm; ?></TD>
-			<TD><?= $TotalFirmSize; ?></TD>
-			<TD><? display_dollar_format($TotalFirmSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalFirmSalesPrice, $TotalFirmSize));  ?></TD>
-			<TD><?= calculate_percentage($TotalFirmSalesPrice, $TotalSalesPrice); ?></TD>
-		</TR>
-<?				displayMouseOverTR("blank", "body");	 ?>
-			<TD>Pending</TD>
-			<TD><?= $TotalUnitTypePending; ?></TD>
-			<TD><?= $TotalPendingSize; ?></TD>
-			<TD><? display_dollar_format($TotalPendingSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalPendingSalesPrice, $TotalPendingSize)); ?></TD>
-			<TD><?= calculate_percentage($TotalPendingSalesPrice, $TotalSalesPrice) ; ?></TD>
-		</TR>
-<?				displayMouseOverTR("blank", "body");	 ?>
-			<TD>Corporate</TD>
-			<TD><?= $TotalUnitTypeCorporate; ?></TD>
-			<TD><?= $TotalCorporateSize; ?></TD>
-			<TD><? display_dollar_format($TotalCorporateSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalCorporateSalesPrice, $TotalCorporateSize)); ?></TD>
-			<TD><?= calculate_percentage($TotalCorporateSalesPrice, $TotalSalesPrice) ; ?></TD>
-		</TR>		
-<?				displayMouseOverTR("blank", "body");	 ?>
-			<TD>Overdue</TD>
-			<TD><?= $TotalUnitTypeOverdue; ?></TD>
-			<TD><?= $TotalOverdueSize; ?></TD>
-			<TD><? display_dollar_format($TotalOverdueSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalOverdueSalesPrice, $TotalOverdueSize)); ?></TD>
-			<TD><?= calculate_percentage($TotalOverdueSalesPrice, $TotalSalesPrice) ; ?></TD>
-		</TR>
-<?				displayMouseOverTR("blank", "body");	 ?>
-			<TD>NotReportToHeadOffice</TD>
-			<TD><?= $TotalUnitTypeNotReportToHeadOffice; ?></TD>
-			<TD><?= $TotalNotReportToHeadOfficeSize; ?></TD>
-			<TD><? display_dollar_format($TotalNotReportToHeadOfficeSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalNotReportToHeadOfficeSalesPrice, $TotalNotReportToHeadOfficeSize)); ?></TD>
-			<TD><?= calculate_percentage($TotalNotReportToHeadOfficeSalesPrice, $TotalSalesPrice) ; ?></TD>
-		</TR>
-<?				displayMouseOverTR("blank", "body");	 ?>
-			<TD>Available</TD>
-			<TD><?= $TotalUnitTypeAvailable; ?></TD>
-			<TD><?= $TotalAvailableSize; ?></TD>
-			<TD><? display_dollar_format($TotalAvailableSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalAvailableSalesPrice, $TotalAvailableSize)); ?></TD>
-			<TD><?= calculate_percentage($TotalAvailableSalesPrice, $TotalSalesPrice); ?></TD>
-		</TR>
-		<TR CLASS=tail>
-			<TD>Total</TD>
-			<TD><?= $TotalUnit; ?></TD>
-			<TD><?= $TotalSize; ?></TD>
-			<TD><? display_dollar_format($TotalSalesPrice); ?></TD>
-			<TD><? display_dollar_format(calculate_division($TotalSalesPrice, $TotalSize)); ?></TD>
-			<TD>100</TD>
-		</TR>
-	</TABLE>
-	<BR><BR>
 	
 	<? 
 	
@@ -777,7 +716,7 @@ createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
 	<?
 	createCollapsibleDIVIcon("Sales Forcast Schedule", "SalesForcastScheduleDIV");
 	createCollapsibleDIV("SalesForcastScheduleDIV"); 
-	include ("./SalesSchedule/salesForecastSchedule.phtml");
+	//include ("./SalesSchedule/salesForecastSchedule.phtml");
 	?>
 		</DIV>
 	</DIV>	
@@ -1202,11 +1141,15 @@ createCollapsibleDIV('ReportTable'  . $reportTableIndex++);
 	</TABLE>
 	
 
+
+
+
+</body>
 	<H4>Availability</H4>
 <?
-	$startPrice = 150000;
-	$endPrice = 390000;
-	$increment = 10000;
+	$startPrice = 400000;
+	$endPrice = 1000000;
+	$increment = 50000;
 ?>
 	<TABLE>
 		<TR CLASS="head">
