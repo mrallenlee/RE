@@ -1,8 +1,6 @@
 // Global variable for PDI
 
 var PDI_IMAGE_DIR = "..\/images\/PDI\/";
-var IMAGE_DIR = "../images/";
-var BLANK_IMAGE 	= IMAGE_DIR + "blank.jpg";
 
 function confirm_delete(url)
 {
@@ -80,12 +78,8 @@ function change_link(type)
 
 /**
 * Handle change event on the File Selector. Display Thumbnail on provided imag element
-* fileObjName 
-* imgObjName
-* ID - Defect ID, or 'NEW' for new defect
-* localDefectID - local defect ID added dynamacially by js i.e. 1,2,3...
 */ 
-function handleImageSelector(fileObjName, imgObjName, ID, localDefectID) {
+function handleImageSelector(fileObjName, imgObjName) {
 
 	var fileObj = document.getElementById(fileObjName);
 	var file 	= fileObj.files[0];
@@ -104,43 +98,21 @@ function handleImageSelector(fileObjName, imgObjName, ID, localDefectID) {
       	imgObj.src 	= dataURL;
     };
 
-	reader.readAsDataURL(file);
-	
-	// Call upload image function automatically
-	uploadImage(fileObjName, ID, localDefectID)
+    reader.readAsDataURL(file);
 }
 
 
 /**
- * postUploadImageFunc
- * Function to be run after image uploaded
- * @param {*} filepath - includes dir and file name 
- * @param {*} PDIDefectID
- * @param {*} localDefectID 
- */
-function postUploadImageFunc(filepath, PDIDefectID, localDefectID) {
-	// call post process function after file upload
-	var inputObj = document.getElementById("DefectImageName_" + localDefectID);
-	inputObj.value = filepath;
-
-	// alert('inputobj.value=' + inputObj.value )
-
-	var inputObj = document.getElementById("DefectHasImage_" + localDefectID);
-	inputObj.value = 1;
-} // postUploadImageFunc
-
-/**
 * Upload selected image to server via xhttp call
 * fileObjName - Obj name continas the upload file
-* ID - PDI Defect ID
-* loaclDefectID - the local defect ID i.e. 0, 1, 2, 3, etc...
+* ID - 
 */ 
-function uploadImage(fileObjName, ID, localDefectID) {
+function uploadImage(fileObjName, ID) {
 
 	var fileObj = document.getElementById(fileObjName);
 	var file 	= fileObj.files[0];
 
-	// alert("uploadImage Function called" + fileObj);	
+	alert("uploadImage Function called" + fileObj);	
 
     var uri = "upload_file.phtml";
     var xhr = new XMLHttpRequest();
@@ -159,49 +131,27 @@ function uploadImage(fileObjName, ID, localDefectID) {
 		processData: false,
 		success: function(data) {
 			// initialize the first row
-
 			if (data['status'] == 'ERROR'){
 				alert (data['status']  + " : " + data['message']);
 			} else {
-
-				postUploadImageFunc(data['filepath'], ID, localDefectID) 				
-				// call post process function after file upload
-				// var inputObj = document.getElementById("DefectImageName_" + localDefectID);
-				// inputObj.value = data['filepath'];
-				// alert("Upload " + data['status'] + " : " + data['message']);
-				// + " filepath=" + data['filepath']);
-				// TODO
-				// Update the input text file with the new file name and hasImage properties
-				alert('Image uploaded successfully');
+				alert("Upload " + data['status'] + " : " + data['message']);
 			}
 		},
 		error: function(data){
 
-			alert("Error: " + data['message']);
+			alert("Error 2: " + data['message']);
 		}
 	});    
-} // uploadImage
+}
 
 
 /**
 * Upload selected image to server
 */ 
-function deleteImage(imageObjName, PDIDefectID, localDefectID) {
+function deleteImage(fileObjName) {
 
-	var imageObj 	= document.getElementById(imageObjName);
-
-	// alert("deleteImage Function called" + imageObj + 'src=' + imageObj.src);
-	
-	// Set image to load blank image
-	imageObj.src = BLANK_IMAGE;
-	// call post process function after file upload
-	var inputObj = document.getElementById("DefectImageName_" + localDefectID);
-	inputObj.value = "";
-
-	// alert('inputobj.value=' + inputObj.value )
-
-	var inputObj = document.getElementById("DefectHasImage_" + localDefectID);
-	inputObj.value = 0;	
+	var fileObj = Document.getElementById(fileObjName);
+	alert("deleteImage Function called" + fileObj);	
 }
 
 
@@ -238,7 +188,7 @@ var generate_defect_form = function (num_of_rows, row) {
 	row["day30ReportDate"] 	= row["day30ReportDate"] || "";
 	row["month11ReportDate"]= row["month11ReportDate"] || "";
 	row["DefectDesc"] 		= row["DefectDesc"] || "";
-	row["PDIDefectID"] 		= row["PDIDefectID"] || "NEW";
+	row["PDIDefectID"] 		= row["PDIDefectID"] || "";
 	row["hasImage"] 		= row["hasImage"] || "";
 	row["imageName"] 		= row["hasImage"]==1 ? row["imageName"] : "";
 					

@@ -3,6 +3,7 @@
 .vscode/ftp-kr.sync.cache.json
 .vscode/monac.code-workspace
 .vscode/sftp.json
+.vscode/
 **/images
 **/bak
 **/backup
@@ -10,6 +11,7 @@
 *.swp
 *.cgi
 *.csv
+.user
 RealEstateDB/FloatingMenu/menu.phtml
 RealEstateDB/FloatingMenu/config.js
 RealEstateDB/config/config.phtml
@@ -40,3 +42,25 @@ RealEstateHomeOptionsDB/images/project-background-big.jpg
 RealEstateHomeOptionsDB/images/project-image-1200.jpg
 RealEstateHomeOptionsDB/images/project-logo-small.jpg
 common/images/project-background-big.jpg
+.vscode/
+#Visual Studio files
+*.[Oo]bj
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.sdf
+*.pyc

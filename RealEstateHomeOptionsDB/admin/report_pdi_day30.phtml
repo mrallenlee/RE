@@ -7,7 +7,7 @@ include "../admin/main_include.phtml";
 <head>
   <title>PDI Form</title>
   <META http-equiv="Content-Style-Type" content="text/css">
-  <link rel="stylesheet" href="./citygate.css" type="text/css">
+  <? print_stylesheet($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
 </head>
 
 <body>
@@ -176,7 +176,8 @@ $sql_Section = "SELECT SectionID, Name FROM Section
 $result_Section = mysql_query($sql_Section, $db) or die("Error : $sql_Section<br>".mysql_error());
 
 // get defect data
-$sql = "SELECT CONCAT ( PDICategory.Name, ' - ', PDIType.Name) AS DefectDesc, Section.Name, PDIDefect.day30Fixed as PDIFixed
+$sql = "SELECT CONCAT ( PDICategory.Name, ' - ', PDIType.Name) AS DefectDesc, Section.Name, 
+    PDIDefect.day30Fixed as PDIFixed, PDIDefect.hasImage, PDIDefect.imageName
 		FROM PDICategory, PDIType, PDIDefect
 		LEFT JOIN Section
 		ON PDIDefect.SectionID = Section.SectionID
@@ -236,9 +237,37 @@ while ($row_Section = mysql_fetch_array($result_Section)) {
     </td>
   </tr>
 
+
+<?
+// 4th part
+// Prepare data set, reuse from previous db sql
+mysql_data_seek($result, 0);
+?>
+  <tr><td><br><br></td></tr>
   <tr>
     <td>
-      <!--4th part: vender details & signatures-->
+      <!-- 4th part: Display defect images-->
+      <table class="report_part1_content" width="100%">
+        <tr class="report_part1_header">
+          <td>DEFECT DETAILS</td>
+        </tr>
+<?      while ($row = mysql_fetch_array($result)) { ?>
+        <tr>  
+          <td><?= $row["Name"]; ?></td>
+          <td><?= strtoupper($row["DefectDesc"]); ?></td>
+          <td><?
+            if ($row['hasImage']){
+              ?><img src="<?= $row['imageName'];?>" height=100><?
+            } ?></td>
+        <tr>
+<?      } ?>        
+      </table>
+    </td>
+  </tr>
+  <tr></td><br><br></td></tr>
+  <tr>
+    <td>
+      <!--5th part: vender details & signatures-->
       <table class="report_part1_content" width="100%">
         <tr class="report_part1_header">
           <td>VENDOR/BUILDER DETAILS AND ADDRESS INFORMATION</td>
@@ -304,6 +333,7 @@ while ($row_Section = mysql_fetch_array($result_Section)) {
             <br><img src="black.gif" width="500" height="1" border="0"><br>
           </td>
         </tr>
+        <tr><td><br><br></td></tr>
 
         <tr>
           <td>
@@ -337,16 +367,7 @@ while ($row_Section = mysql_fetch_array($result_Section)) {
     <td>
       <!--5th part: signatures-->
       <table class="report_part1_content" width="100%">
-        <tr>
-          <td align="left">
-            PURCHASER:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
-          </td>
-          <td align="left">
-            SIGNATURE:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
-          </td>
-        </tr>
+      <tr><td><br><br></td></tr>
 
         <tr>
           <td align="left">
@@ -358,6 +379,19 @@ while ($row_Section = mysql_fetch_array($result_Section)) {
             <br><img src="black.gif" width="290" height="1" border="0"><br>
           </td>
         </tr>
+        <tr><td><br><br></td></tr>
+
+        <tr>
+          <td align="left">
+            PURCHASER:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+          <td align="left">
+            SIGNATURE:
+            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          </td>
+        </tr>
+        <tr><td><br><br></td></tr>
 
         <tr>
           <td align="left">
@@ -369,6 +403,7 @@ while ($row_Section = mysql_fetch_array($result_Section)) {
             <br><img src="black.gif" width="290" height="1" border="0"><br>
           </td>
         </tr>
+        <tr><td><br><br></td></tr>
 
         <tr>
           <td align="left">

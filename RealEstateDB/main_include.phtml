@@ -1026,6 +1026,15 @@ function getOrderClause($arguments){
 	return $clause;	
 }
 
+function print_stylesheet($selfPath, $relativePath, $showBackground = true, $showMenu = true){
+	global $globalRelativePath;
+	
+	$globalRelativePath = $relativePath;
+	
+?>  <link href="<?= $relativePath; ?>config/stylesheet.css" rel="styleSheet" type="text/css" media="screen" />
+	<link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="styleSheet" type="text/css" media="print" />
+<?
+		}
 
 function print_top_frame($selfPath, $relativePath, $showBackground = true, $showMenu = true){
 	global $globalRelativePath;

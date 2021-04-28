@@ -1,0 +1,104 @@
+<?
+/**
+* Upload file to server via AJAX call
+* Arg
+* component - Where the uploaded file below to, affect the upload directory  e.g. PDI, 
+* ID - Component ID 
+*/
+include "main_include.phtml";
+
+// Return rows for messages
+$rtn_rows = array();
+
+
+// Check if query string are set properly
+if (!isset($component) || $component == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing component";
+	return $rtn_rows;
+}
+
+if (!isset($ID) || $ID == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing ID";
+	return $rtn_rows;
+}
+
+// set a var to distinguish is uploaded file for new record, which 
+// doesn't have any existing record in the DB
+$newID = false;
+
+if ($ID == "NEW") {
+	$newID = true;
+	// New record without ID provided. Generate one with timestamp
+	$ID = time();
+}
+
+// Set up directory
+if ($component == 'PDI') {
+	$dir = "../images/" . $component . "/";
+}
+
+// Check if dir exist, create otherwise
+if (!file_exists($dir)) {
+    mkdir($dir, 0775);
+}
+
+
+// Set up file name
+$filename = $component . "_" .  $ID;
+
+if (!isset($myFile) || $myFile == "none")
+{
+	//echo "Upload file invalid.";
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "File is invalid.";	
+	echo json_encode($rtn_rows);
+	return;
+}
+
+
+
+
+			
+// Upload file				
+	if (!move_uploaded_file($myFile, $dir . $filename)) {
+			//echo "Upload to $dir.$filename failed.";
+
+	 		$errors= error_get_last();
+
+			$rtn_rows['status']	= "ERROR";
+			$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+			//Upload to " . $dir . $filename . " failed.";
+	} else {
+		// TODO Allen to custoize PDI component. Need to get correct PDI ID from called
+		if ($component == 'PDI'){
+
+			// Prepare return status
+			$rtn_rows['status'] 	= "SUCCESS";
+			$rtn_rows['message']	= "Image uploaded successfully";
+			$rtn_rows['filepath'] 	= $dir . $filename;
+			$rtn_rows['filename']	= $filename;
+			$rtn_rows['dirname']	= $dir;
+
+			// update DB
+			if (!$newID){
+				$sql = "UPDATE PDIDefect" . 
+						" SET hasImage=1, imageName='" . $dir . $filename . "' WHERE " .
+						" PDIDefectID=$ID";
+				$result = mysql_query($sql);
+			
+				if (!$result) {
+					$errors= error_get_last();
+
+					$rtn_rows['status']	= "ERROR";
+					$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+				}
+			}
+		}
+
+
+			//echo "Upload Successfully.";
+	}
+echo json_encode($rtn_rows);
+?>

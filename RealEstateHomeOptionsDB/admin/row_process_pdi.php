@@ -23,6 +23,16 @@ $replace = array (
 
 
 /**
+ * Standardize name function
+ * Currently use for PDI Category, Defect Type
+ */
+function standardizeName($name){
+	$name = trim($name);
+
+	return ucfirst($name);
+}
+
+/**
  * Add new PDI Category by providing the cateogry name and category description 
  * @param unknown_type $PDICatID
  * @return new PDICatID after inserting to the database table; -1 if error
@@ -30,12 +40,28 @@ $replace = array (
 function addNewPDICategory($PDICatName, $PDICatDescription = "") {
 	global $db;
 	
-	$PDICatName 		= trim($PDICatName);
-	$PDICatDescription 	= trim($PDICatDescription);
-	
+	// Standardize the Category name, and look for existing one. 
+	// If there's one already exist, return the ID for exist one
+	$PDICatName 		= standardizeName($PDICatName);
+	$PDICatDescription 	= standardizeName($PDICatDescription);
+
+
 	if ($PDICatName == "")
 		return -1;
+
+	// Check if category already exists
+	$sql = "SELECT * FROM PDICategory where Name = '" . $PDICatName . "';";
+	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+
+	$row = mysql_fetch_array($result);
+	$returnResult = mysql_num_rows($result);
+
+	if ($returnResult > 0){
+		// Category already exist, return the category ID
+		return $row['PDICatID'];
+	}
 	
+	// No category exists, insert a new category
 	$sql = "INSERT INTO PDICategory (Name, Description) values (\"" . $PDICatName . "\", \"" . $PDICatDescription . "\");";
 	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 	//$numOfRecordsAffected = mysqli_affected_rows();
@@ -52,15 +78,29 @@ function addNewPDICategory($PDICatName, $PDICatDescription = "") {
 function addNewPDIType($PDITypeName, $PDICatID, $PDITypeDescription = "") {
 	global $db;
 	
-	$PDITypeName 		= trim($PDITypeName);
-	$PDITypeDescription = trim($PDITypeDescription);
+	$PDITypeName 		= standardizeName($PDITypeName);
+	$PDITypeDescription = standardizeName($PDITypeDescription);
 
 	if ($PDITypeName == "")
 		return -1;
 
 	if ($PDICatID <= 0)
 		return -1;
+
+
+	// Check if type already exists
+	$sql = "SELECT * FROM PDIType where Name = '" . $PDITypeName . "';";
+	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+
+	$row = mysql_fetch_array($result);
+	$returnResult = mysql_num_rows($result);
+
+	if ($returnResult > 0){
+		// Type already exist, return the type ID
+		return $row['PDITypeID'];
+	}
 	
+	// No category exists, insert a new type		
 	$sql = "INSERT INTO PDIType (Name, PDICatID, Description) values (\"" . $PDITypeName . "\"," . $PDICatID . ", \"" . $PDITypeDescription . "\");";
 	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 	$PDITypeID = mysql_insert_id();
@@ -76,7 +116,7 @@ if ($action == "get") {
 				QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 				day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 				month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-				PDICatID, PDITypeID, TradeContacted
+				PDICatID, PDITypeID, TradeContacted, hasImage, imageName
 			FROM PDIDefect
 			LEFT JOIN Section
 			ON (PDIDefect.SectionID = Section.SectionID)
@@ -165,6 +205,15 @@ if ($action == "get") {
 			$PDITypeID_name			= "PDITypeID_" . $i;
 			$PDITypeID_new_name		= "PDITypeID_New_Text_" . $i;
 			$TradeContacted_name	= "TradeContacted_" . $i;
+			$hasImage				= "DefectHasImage_" . $i;
+
+			if ($$hasImage)			$hasImage = 1;
+			else $hasImage = 0;
+
+			$imageName				= "DefectImageName_" . $i;
+			if 
+			(!($$imageName)) 		$$imageName = '';
+
 				
 
 			$DefectDesc = preg_replace($find, $replace, $$DefectDesc_name);
@@ -266,18 +315,18 @@ if ($action == "get") {
 					QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 					day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 					month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-					PDICatID, PDITypeID, TradeContacted)
+					PDICatID, PDITypeID, TradeContacted, hasImage, imageName)
 					VALUES ('$unit', '$DefectDesc', '" . $$SectionID_name . "', '" . $$ContractorID_name . "', 
 					$QADefect, '" . $$QAReportDate_name . "', $QAFixed, '" . $$QAFixedDate_name ."', 
 					$PDIDefect,  '" . $$PDIReportDate_name . "', $PDIFixed, '" . $$PDIFixedDate_name ."', $PDISignoff,
 					$day30Defect,  '" . $$day30ReportDate_name . "', $day30Fixed, '" . $$day30FixedDate_name ."', $day30Signoff, 
 					$month11Defect,  '" . $$month11ReportDate_name . "', $month11Fixed, '" . $$month11FixedDate_name ."', $month11Signoff,
-					$PDICatID, $PDITypeID, $TradeContacted)";
+					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $$imageName . "')";
 
 			$row = array();
 			$row['status'] = "ERROR";
 			$row['sql']		= $sql;
-			//die("Error : $sql<br>" . mysql_error());
+			// die("Error : $sql<br>" . mysql_error());
 //			$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 			$result = mysql_query($sql);
 			if (result) {
