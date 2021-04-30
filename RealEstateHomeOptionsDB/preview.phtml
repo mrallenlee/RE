@@ -294,6 +294,10 @@ else
 <table width="100%" cellpadding="2" cellspacing="2" >
 
 <?
+
+// Init variables
+$printGapBetweenSubsection 	= 0;
+
 // get the name of the current section
 $sql = "SELECT Name, Description, SectionID
 		FROM Section ORDER BY Name";
@@ -390,11 +394,13 @@ while ($section_row = mysql_fetch_array($section_result))
 			}
 			
 			
-			// print title if item-option is available
+			// print title if item-option is available, and mark indicator to 
+			// print gap between each Subsection
 			print $htmlCacheHeader;
 			$htmlCacheHeader = "";
 			print $htmlCache;
 			$htmlCache = "";
+			$printGapBetweenSubsection = 1;
 	
 ?>
 	<tr <?= getOptionContentStyle($mode); ?>>
@@ -445,7 +451,11 @@ while ($section_row = mysql_fetch_array($section_result))
 	</tr>
 <?			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
 		}// end of userSave loop
-?>	<tr><td><br><br></td></tr> <?
+
+		if ($printGapBetweenSubsection) {
+			?>	<tr><td><br><br></td></tr> <?
+			$printGapBetweenSubsection = 0;
+		}
 	}// end of subsection loop
 }// end of section loop
 	
