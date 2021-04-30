@@ -324,10 +324,10 @@ while ($section_row = mysql_fetch_array($section_result))
 		
 		$htmlCache = "<tr class=\"head\"><td colspan=\"4\">" . $subsection_row['Name'] . "</td></tr>";
 		$htmlCache .= "<tr class=\"tail\">";
-		$htmlCache .= "<td>Item</td>";
-		$htmlCache .= "<td>Option</td>";
-		$htmlCache .= "<td>Choice</td>";
-		$htmlCache .= "<td>Price</td>";
+		$htmlCache .= "<td width='30%'>Item</td>";
+		$htmlCache .= "<td width='40%'>Option</td>";
+		$htmlCache .= "<td width='25%'>Choice</td>";
+		$htmlCache .= "<td width='5%'>Price</td>";
 		$htmlCache .= "</tr>";
 
 
@@ -553,29 +553,29 @@ else
 ?>
 	<img src="black.gif" width="100%" height="1" alt="" border="0"></td>
 </tr>
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">
 	Total options before taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="totalBeforeTaxes" ><?= number_format($total, 2)?></span></nobr></td>
 </tr>
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="credit" ><?= number_format($credit, 2); ?></span></nobr></td>
 </tr>	
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
 </tr>	
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span id="gst"><?= number_format($gstAmount, 2)?></span></nobr></td>
 </tr>
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="total" ><?= number_format($total_with_tax, 2)?></span></nobr></td>
 </tr>	
@@ -612,6 +612,7 @@ if ($outstandingAmt != 0) {
 </tr>	
 */ ?>
 </table>
+<div id="page-break-div" ></div>
 <?
 	if ($commit)
 	{
