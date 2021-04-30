@@ -527,6 +527,23 @@ function download(dataURL, filename) {
   }
 }
 
+
+// Upload to server and store in DB
+function upload(dataURL, filename) {
+alert('calling upload');
+  $.ajax({
+          type: "POST",
+          url: "report_pdi_upload.phtml",
+          data: { 
+            imgBase64: dataURL,
+            unitNumber: <?= $unit; ?>,
+            reportType: "PDI"
+          }
+        }).done(function(o) {
+          console.log('saved'); 
+        });
+}
+
 // One could simply use Canvas#toBlob method instead, but it's just to show
 // that it can be done using result of SignaturePad#toDataURL.
 function dataURLToBlob(dataURL) {
@@ -605,7 +622,7 @@ saveSVGButton.addEventListener("click", function (event) {
     var getCanvas; // global variable
     var imageData;
 
-        $("#btn-Preview-Image").on('click', function () {
+    $("#btn-Preview-Image").on('click', function () {
             html2canvas(element, {
                 background :'#FFFFFF',  
                 onrendered: function (canvas) {
@@ -613,7 +630,7 @@ saveSVGButton.addEventListener("click", function (event) {
                     getCanvas = canvas;
                 }
             });
-        });
+    });
 
     $("#btn-Convert-Html2Image").on('click', function () {
         html2canvas(element, {
@@ -633,7 +650,29 @@ saveSVGButton.addEventListener("click", function (event) {
         // Now browser starts downloading it instead of just showing it
 //        var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
 //        $("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
-});        
+    }); // btn-convert-Html2Image.on     
+
+    $("#btn-upload-image").on('click', function () {
+          html2canvas(element, {
+            background :'#FFFFFF',
+            onrendered: function (canvas) {
+                    //$("#previewImage").append(canvas);
+                    getCanvas = canvas;
+
+                    console.log("World!"); 
+                    imgageData = getCanvas.toDataURL("image/png");
+                    upload(imgageData, "PDI-Contract.png"); 
+                    //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
+                    //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
+                }
+            });  
+          
+     
+
+    }); // btn-upload-image.on
+
+
+
 </script>
 
 
