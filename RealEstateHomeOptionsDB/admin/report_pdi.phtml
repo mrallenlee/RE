@@ -440,6 +440,7 @@ mysql_data_seek($result, 0);
 <? /* <input id="btn-Preview-Image" type="button" value="Preview" /> */ ?>
 <input id="btn-Convert-Html2Image" type="button" value="Download"/>
 <input id="btn-upload-image" type="button" value="Save"/>
+<input id="btn-upload-email-image" type="button" value="Save & Email"/>
 <? /* <a id="btn-Convert-Html2Image" href="#">Download</a> */ ?>
   <? /* Disable Preview feature
     <br />
@@ -529,20 +530,69 @@ function download(dataURL, filename) {
 
 
 // Upload to server and store in DB
-function upload(dataURL, filename) {
-alert('calling upload');
+function upload(dataURL, reportType) {
   $.ajax({
           type: "POST",
           url: "report_pdi_upload.phtml",
           data: { 
             imgBase64: dataURL,
             unitNumber: <?= $unit; ?>,
+            reportType: reportType
+          }
+        }).done(function(o) {
+          alert('message=' + o);
+        })
+        .fail(function(xhr, status, error) {
+          //Ajax request failed.
+          var errorMessage = xhr.status + ': ' + xhr.statusText
+          alert('Error - ' + errorMessage);
+        })
+
+  } // ajax
+
+
+function uploadAndEmail(dataURL, reportType){
+  // same code as upload.
+  // ALLEN TO DO find way to insert code to upload to avoid redundancy
+  $.ajax({
+          type: "POST",
+          url: "report_pdi_upload.phtml",
+          data: { 
+            imgBase64: dataURL,
+            unitNumber: <?= $unit; ?>,
+            reportType: reportType
+          }
+        }).done(function(o) {
+            alert('message=' + o);
+            // Email the signed copy to email based on the record on purchaser
+            emailPDISignedReportToPurchaser(<?= $unit;?>, 'PDI');          
+        })
+        .fail(function(xhr, status, error) {
+          //Ajax request failed.
+          var errorMessage = xhr.status + ': ' + xhr.statusText
+          alert('Error - ' + errorMessage);
+        })  
+} // uploadAndEmail
+
+  // Email from server to purchaser on the server sided contract
+  function emailPDISignedReportToPurchaser(unitNumber, reportType) {
+    $.ajax({
+          type: "POST",
+          url: "report_pdi_email.phtml",
+          data: { 
+            unitNumber: unitNumber,
             reportType: "PDI"
           }
         }).done(function(o) {
-          console.log('saved'); 
-        });
-}
+          alert('message=' + o);
+        })
+        .fail(function(xhr, status, error) {
+          //Ajax request failed.
+          var errorMessage = xhr.status + ': ' + xhr.statusText
+          alert('Error - ' + errorMessage);
+        })
+
+  } // emailPDISignedReportToPurchaser 
 
 // One could simply use Canvas#toBlob method instead, but it's just to show
 // that it can be done using result of SignaturePad#toDataURL.
@@ -639,7 +689,6 @@ saveSVGButton.addEventListener("click", function (event) {
                     //$("#previewImage").append(canvas);
                     getCanvas = canvas;
 
-                    console.log("World!"); 
                     imgageData = getCanvas.toDataURL("image/png");
                     download(imgageData, "PDI-Contract.png"); 
                     //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
@@ -659,9 +708,8 @@ saveSVGButton.addEventListener("click", function (event) {
                     //$("#previewImage").append(canvas);
                     getCanvas = canvas;
 
-                    console.log("World!"); 
                     imgageData = getCanvas.toDataURL("image/png");
-                    upload(imgageData, "PDI-Contract.png"); 
+                    upload(imgageData, '<?= 'PDI'; ?>'); 
                     //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
                     //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
                 }
@@ -671,7 +719,18 @@ saveSVGButton.addEventListener("click", function (event) {
 
     }); // btn-upload-image.on
 
+    $("#btn-upload-email-image").on('click', function () {
+          html2canvas(element, {
+            background :'#FFFFFF',
+            onrendered: function (canvas) {
+                    getCanvas = canvas;
 
+                    imgageData = getCanvas.toDataURL("image/png");
+                    // if upload is not successful, return
+                    uploadAndEmail(imgageData, '<?= 'PDI'; ?>');
+                }
+            })
+    });
 
 </script>
 
