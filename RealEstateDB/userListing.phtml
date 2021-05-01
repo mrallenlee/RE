@@ -512,8 +512,11 @@ if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF)) {
 <?			}
 ?>			day90DepositAmountObj.value		= price * <?= DEFAULT_DEPOSIT_3_PERCENTAGE; ?>;
 			day150DepositAmountObj.value	= price * <?= DEFAULT_DEPOSIT_4_PERCENTAGE; ?>;
+<?	if (PROJECT_HAS_DEPOSIT_5)	 { ?>			
 			day210DepositAmountObj.value	= price * <?= DEFAULT_DEPOSIT_5_PERCENTAGE; ?>;
+<? 	} ?>
 			occupancyDepositAmountObj.value	= price * <?= DEFAULT_OCCUPANCY_DEPOSIT_PERCENTAGE; ?> ;
+
 
 <?
 
