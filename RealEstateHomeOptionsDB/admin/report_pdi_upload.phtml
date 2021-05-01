@@ -27,16 +27,23 @@ function returnJSONMsg($rtn_rows){
  * Return json error message
  */
 function updateDBFileName($unitNumber, $component, $reportType, $filepath){
-    $sql    = "Update Unit set PDIReportFilePath='" . $filepath . "' where UnitNumber='" . $unitNumber . "'";
+
+    if ($reportType == 'PDI'){
+        $columnName     = 'PDIReportFilePath'; 
+    } else if ($reportType == 'Day30'){
+        $columnName     = 'Day30ReportFilePath'; 
+    } 
+
+    $sql    = "Update Unit set " . $columnName . "='" . $filepath . "' where UnitNumber='" . $unitNumber . "'";
 	$result = mysql_query($sql);
 			
-				if (!$result) {
-					$errors= error_get_last();
+    if (!$result) {
+        $errors= error_get_last();
 
-					$rtn_rows['status']	= "ERROR";
-					$rtn_rows['message']= "System error message from SQL " . $errors['type'] . " : " . $errors['message'];
-                    returnJSONMsg($rtn_rows);
-				}    
+        $rtn_rows['status']	= "ERROR";
+        $rtn_rows['message']= "System error message from SQL " . $errors['type'] . " : " . $errors['message'];
+        returnJSONMsg($rtn_rows);
+    }    
     return true;
 } // updateDBFileName
 
