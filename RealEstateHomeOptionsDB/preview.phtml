@@ -294,6 +294,10 @@ else
 <table width="100%" cellpadding="2" cellspacing="2" >
 
 <?
+
+// Init variables
+$printGapBetweenSubsection 	= 0;
+
 // get the name of the current section
 $sql = "SELECT Name, Description, SectionID
 		FROM Section ORDER BY Name";
@@ -320,10 +324,10 @@ while ($section_row = mysql_fetch_array($section_result))
 		
 		$htmlCache = "<tr class=\"head\"><td colspan=\"4\">" . $subsection_row['Name'] . "</td></tr>";
 		$htmlCache .= "<tr class=\"tail\">";
-		$htmlCache .= "<td>Item</td>";
-		$htmlCache .= "<td>Option</td>";
-		$htmlCache .= "<td>Choice</td>";
-		$htmlCache .= "<td>Price</td>";
+		$htmlCache .= "<td width='30%'>Item</td>";
+		$htmlCache .= "<td width='40%'>Option</td>";
+		$htmlCache .= "<td width='25%'>Choice</td>";
+		$htmlCache .= "<td width='5%'>Price</td>";
 		$htmlCache .= "</tr>";
 
 
@@ -390,11 +394,13 @@ while ($section_row = mysql_fetch_array($section_result))
 			}
 			
 			
-			// print title if item-option is available
+			// print title if item-option is available, and mark indicator to 
+			// print gap between each Subsection
 			print $htmlCacheHeader;
 			$htmlCacheHeader = "";
 			print $htmlCache;
 			$htmlCache = "";
+			$printGapBetweenSubsection = 1;
 	
 ?>
 	<tr <?= getOptionContentStyle($mode); ?>>
@@ -445,7 +451,11 @@ while ($section_row = mysql_fetch_array($section_result))
 	</tr>
 <?			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
 		}// end of userSave loop
-?>	<tr><td><br><br></td></tr> <?
+
+		if ($printGapBetweenSubsection) {
+			?>	<tr><td><br><br></td></tr> <?
+			$printGapBetweenSubsection = 0;
+		}
 	}// end of subsection loop
 }// end of section loop
 	
@@ -543,29 +553,29 @@ else
 ?>
 	<img src="black.gif" width="100%" height="1" alt="" border="0"></td>
 </tr>
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">
 	Total options before taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="totalBeforeTaxes" ><?= number_format($total, 2)?></span></nobr></td>
 </tr>
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="credit" ><?= number_format($credit, 2); ?></span></nobr></td>
 </tr>	
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
 </tr>	
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span id="gst"><?= number_format($gstAmount, 2)?></span></nobr></td>
 </tr>
-<tr>
-	<td colspan="2">
+<tr class="blank">
+	<td colspan="1">
 	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="total" ><?= number_format($total_with_tax, 2)?></span></nobr></td>
 </tr>	
@@ -602,6 +612,7 @@ if ($outstandingAmt != 0) {
 </tr>	
 */ ?>
 </table>
+<div id="page-break-div" ></div>
 <?
 	if ($commit)
 	{
