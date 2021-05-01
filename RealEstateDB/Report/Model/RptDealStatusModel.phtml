@@ -55,7 +55,11 @@ class RptDealStatusModel {
 						WHERE 	User.UnitNumber		= Unit.UnitNumber 
 						AND		User.UserID			= Unit.UserID
 						AND		User.DealStatus		= '" . $this->dealStatus . "' ";
-			
+		
+			// ALLEN TODO Fix bug for removing below SQL criteria as does not work for 
+			// Rescinded units
+			// Might not be a bug in user UserID in the User and Unit
+
 			// special handling for unit that is for color selections
 			$sql 	.= ' AND (User.FirstName <> "Colour" OR User.LastName <> "Selections") ';
 			$sql 		.= " ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . " ASC ";
