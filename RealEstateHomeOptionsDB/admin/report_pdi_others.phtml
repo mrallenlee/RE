@@ -38,7 +38,7 @@ if ($_POST["update"]) {
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
 
   <form name="form_PDIdefectByFloor" method="post" action="<?echo  $_SERVER["PHP_SELF"] . '?floor=' . $floor . '&trade=' . $trade . '&unit=' . $unit ; ?>">
-  <table cellspacing="3" cellpadding="3" border="2" width="800" style="margin-top: 1em">
+  <table width="800" style="margin-top: 1em">
 <?
 //
 // Suite report: All Defects in Unit xxx
@@ -105,6 +105,7 @@ if ($unit && !$trade)
 	{
 		// table header
 		echo "<tr class='table_header'>\n";
+		echo "  <td align='center' class='head'>Image</td>\n";
 		echo "  <td align='center' class='head'>Defect Description</td>\n";
 		echo "  <td align='center' class='head'>Defect Type</td>\n";
 		echo "  <td align='center' class='head'>Room</td>";
@@ -116,6 +117,7 @@ if ($unit && !$trade)
 		while ($row = mysql_fetch_array($result))
 		{
 			echo "<tr class='table_rec'>\n";
+			echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
 			echo "  <td>" . $row["DefectName"] . "</td>\n";
 			echo "  <td>" . $row["DefectType"] . "</td>\n";
 			echo "  <td>" . $row["SectionName"] . "</td>\n";
@@ -134,7 +136,7 @@ if ($floor && !$trade)
 {
 ?>
     <tr>
-      <td class="tail" colspan="8">
+      <td class="tail" colspan="9">
         <b>All Defects on Floor  <?= $floor ?></b><br><br>
       </td>
     </tr>
@@ -193,6 +195,7 @@ if ($floor && !$trade)
 		echo "<input type='hidden' value='".$floor."' name='floor'>";
 		echo "<tr>\n";
 		echo "  <td align='center' class='head'>Unit</td>\n";
+		echo "  <td align='center' class='head'>Image</td>\n";
 		echo "  <td align='center' class='head'>Defect Description</td>\n";
 		echo "  <td align='center' class='head'>Defect Type</td>\n";
 		echo "  <td align='center' class='head'>Room</td>";
@@ -219,6 +222,7 @@ if ($floor && !$trade)
 				
 				echo "<tr class='table_rec'>\n";
 				echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+				echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
 				echo "  <td>" . $row["DefectName"] . "</td>\n";
 				echo "  <td>" . $row["DefectType"] . "</td>\n";
 				echo "  <td>" . $row["SectionName"] . "</td>\n";
@@ -255,7 +259,8 @@ if ($floor && $trade == "all")
 
 <?
 	$sql = "SELECT PDIDefectID, PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name, 
-			PDIDefect.ContractorID, Contractor.ContractorName, PDIDefect.TradeContacted
+			PDIDefect.ContractorID, Contractor.ContractorName, PDIDefect.TradeContacted, 
+			hasImage, imageName
 			FROM PDIDefect
 			LEFT JOIN Section
 			ON PDIDefect.SectionID = Section.SectionID
@@ -311,6 +316,7 @@ if ($floor && $trade == "all")
 					// table header
 					echo "<tr class='head'>\n";
 					echo "  <td align='center'>Unit</td>\n";
+					echo "  <td align='center' class='head'>Image</td>\n";
 					echo "  <td align='center'>Defect Description</td>\n";
 					echo "  <td align='center'>Room</td>";
 					echo "  <td align='center'></td>";
@@ -333,6 +339,7 @@ if ($floor && $trade == "all")
 				
 				echo "<tr class='table_rec'>\n";
 				echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+				echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
 				echo "  <td>" . $row["DefectDesc"] . "</td>\n";
 				echo "  <td>" . $row["Name"] . "</td>\n";
 				echo "  <td align='center'><input type='checkbox' name='TradeContacted_" . $row["PDIDefectID"] . "'";
@@ -362,7 +369,8 @@ if ($defectgroup == "Z")
     </tr>
 
 <?
-	$sql = "SELECT PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name, PDIDefect.ContractorID, Contractor.ContractorName
+	$sql = "SELECT PDIDefect.UnitNumber, PDIDefect.DefectDesc, Section.Name, PDIDefect.ContractorID, Contractor.ContractorName,
+			hasImage, imageName
 			FROM PDIDefect, Section
 			LEFT JOIN Contractor
 			ON PDIDefect.ContractorID = Contractor.ContractorID
@@ -415,6 +423,7 @@ if ($defectgroup == "Z")
 				// table header
 				echo "<tr class='table_header'>\n";
 				echo "  <td align='center'>Unit</td>\n";
+				echo "  <td align='center' class='head'>Image</td>\n";
 				echo "  <td align='center'>Defect Description</td>\n";
 				echo "  <td align='center'>Room</td>";
 				echo "</tr>\n\n";
@@ -436,6 +445,7 @@ if ($defectgroup == "Z")
 			
 			echo "<tr class='table_rec'>\n";
 			echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+			echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
 			echo "  <td>" . $row["DefectDesc"] . "</td>\n";
 			echo "  <td>" . $row["Name"] . "</td>\n";
 			echo "</tr>\n\n";

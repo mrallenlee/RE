@@ -117,13 +117,13 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
               <!--1st data table-->
               <table cellspacing="0" cellpadding="5" border="0">
                 <!-- 1st data table header -->
-                <tr>
-                  <td class="head" colspan="2">&nbsp;</td>
+                <tr class="head">
+                  <td colspan="2">&nbsp;</td>
                 </tr>
 
-                <tr>
-                  <td class="head"><b>Unit</b></td>
-                  <td class="head"><b>Purchaser</b></td>
+                <tr class="tail">
+                  <td ><b>Unit</b></td>
+                  <td ><b>Purchaser</b></td>
                 </tr>
 
 <?
@@ -131,8 +131,8 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
 	{
 ?>
                 <tr>
-                  <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
-                  <td class="table_rec"><nobr><?= $row['PurchaserName'] ?>&nbsp;</nobr></td>
+                  <td ><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
+                  <td ><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><nobr><?= $row['PurchaserName'] ?></a>&nbsp;</nobr></td>
                 </tr>
 <?
 	}
@@ -144,17 +144,17 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
             <!--QA data table-->
           <td>
               <table cellspacing="0" cellpadding="5" border="0">
-                <tr>
+                <tr class="head">
                   <!-- 2nd data table header -->
-                  <td class="head" colspan="3"><b>QA</b></td>
+                  <td  colspan="3"><b>QA</b></td>
                 </tr>
 
-                <tr>
+                <tr class="tail">
                   <!-- QA data table header -->
                   <!-- For now, no signoff process for QA -->
-                  <td class="head"><b><nobr>Done</nobr></b></td>
-                  <td class="head"><b><nobr>O/S</nobr></b></td>
-                  <td class="head"><b><nobr></nobr></b></td>
+                  <td ><b><nobr>Done</nobr></b></td>
+                  <td ><b><nobr>O/S</nobr></b></td>
+                  <td ><b><nobr></nobr></b></td>
                 </tr>
 
 <?
@@ -176,16 +176,16 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
             <!--2nd data table-->
 	        <td>
               <table cellspacing="0" cellpadding="5" border="0">
-                <tr>
+                <tr class="head">
                   <!-- 2nd data table header -->
-                  <td class="head" colspan="3"><b>PDI</b></td>
+                  <td  colspan="3"><b>PDI</b></td>
                 </tr>
 
-                <tr>
+                <tr class="tail">
                   <!-- 2nd data table header -->
-                  <td class="head"><b><nobr>Done</nobr></b></td>
-                  <td class="head"><b><nobr>O/S</nobr></b></td>
-                  <td class="head"><b><nobr>Signed Off</nobr></b></td>
+                  <td><b><nobr>Done</nobr></b></td>
+                  <td><b><nobr>O/S</nobr></b></td>
+                  <td><b><nobr>Signed Off</nobr></b></td>
                 </tr>
 
 <?
@@ -207,16 +207,16 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
             <!--3rd data table-->
 	        <td>
               <table cellspacing="0" cellpadding="5" border="0">
-                <tr>
+                <tr class="head" >
                   <!-- 2nd data table header -->
-                  <td class="head" colspan="3"><b>30 Day List</b></td>
+                  <td colspan="3"><b>30 Day List</b></td>
                 </tr>
 
-                <tr>
+                <tr class="tail">
                   <!-- 2nd data table header -->
-                  <td class="head"><b><nobr>Done</nobr></b></td>
-                  <td class="head"><b><nobr>O/S</nobr></b></td>
-                  <td class="head"><b><nobr>Signed Off</nobr></b></td>
+                  <td><b><nobr>Done</nobr></b></td>
+                  <td><b><nobr>O/S</nobr></b></td>
+                  <td><b><nobr>Signed Off</nobr></b></td>
                 </tr>
 
 <?
@@ -238,16 +238,16 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
             <!--4th data table-->
 	        <td>
               <table cellspacing="0" cellpadding="5" border="0">
-                <tr>
+                <tr class="head">
                   <!-- 2nd data table header -->
-                  <td class="head" colspan="3"><b>11 Month List</b></td>
+                  <td colspan="3"><b>11 Month List</b></td>
                 </tr>
 
-                <tr>
+                <tr class="tail">
                   <!-- 2nd data table header -->
-                  <td class="head"><b><nobr>Done</nobr></b></td>
-                  <td class="head"><b><nobr>O/S</nobr></b></td>
-                  <td class="head"><b><nobr>Signed Off</nobr></b></td>
+                  <td><b><nobr>Done</nobr></b></td>
+                  <td><b><nobr>O/S</nobr></b></td>
+                  <td><b><nobr>Signed Off</nobr></b></td>
                 </tr>
 
 <?
@@ -255,10 +255,10 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
 	while ($row = mysql_fetch_array($result))
 	{
 ?>
-                <tr align="center">
-                  <td class="table_rec"><?= get_done_count($db, $row['UnitNumber'], "month11") ?></td>
-                  <td class="table_rec"><?= get_outstanding_count($db, $row['UnitNumber'], "month11") ?></td>
-                  <td class="table_rec"><?= get_signoff_count($db, $row['UnitNumber'], "month11") ?></td>
+                <tr class="blank" align="center">
+                  <td><?= get_done_count($db, $row['UnitNumber'], "month11") ?></td>
+                  <td><?= get_outstanding_count($db, $row['UnitNumber'], "month11") ?></td>
+                  <td><?= get_signoff_count($db, $row['UnitNumber'], "month11") ?></td>
                 </tr>
 <?
 	}
