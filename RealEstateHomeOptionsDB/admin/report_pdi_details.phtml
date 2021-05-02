@@ -224,8 +224,8 @@ if (!isset($search_Floor)) {
 }
 
 ?>
-    <tr>
-      <td class="tail" colspan="9">
+    <tr class="head">
+      <td colspan="9">
         <b>All Defects on Floor  <?= $floor ?></b><br><br>
       </td>
     </tr>
@@ -236,8 +236,8 @@ if (!isset($search_Floor)) {
         if (mysql_num_rows($PDIresult) == 0)
         {
 ?>
-    <tr>
-      <td class="head">
+    <tr class="head">
+      <td>
         No defect data found on the floor <?= $search_Floor ?>.
       </td>
     </tr>

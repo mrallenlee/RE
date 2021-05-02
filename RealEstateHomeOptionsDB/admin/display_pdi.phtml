@@ -48,7 +48,7 @@ JEC from below website
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
 
-  <table name="main_table" cellspacing="0" cellpadding="0" border="0" >
+  <table name="main_table">
 
 <?
 // edit page for "PDI general information"
@@ -93,7 +93,7 @@ if ($table_name == "Unit")
 	      <tr>
 	        <td valign="top">
               <!--1st data table-->
-              <table >
+              <table>
                 <tr class="head">
                   <!-- 1st data table header -->
                   <td class="head" colspan=2>Info</td>
@@ -132,9 +132,8 @@ if ($table_name == "Unit")
 
 	while ($row = mysql_fetch_array($result))
 	{
-
+      displayMouseOverTR();
 ?>
-                <tr>
                   <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
                   <td class="table_rec"><nobr><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</nobr></a></td>
   	         <td class="table_rec"><nobr><?= $row['PDIDate'] ?>&nbsp;</nobr></td>
@@ -567,7 +566,7 @@ function get_dojo_date($one_date){
 
 <script language="JavaScript" type="text/javascript">
 var PDI_TABLE_TEMPLATE_1=' \
-        <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=5" style="margin-bottom: 1em;"> \
+        <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
             <tr valign="top">\
                <td colspan=2>\
                 <table cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
@@ -598,7 +597,7 @@ var PDI_TABLE_TEMPLATE_1=' \
                   </table>\
                   </td>\
                <td colspan="9">\
-              <table width="100% cellspacing="0" cellpadding=5" style="margin-bottom: 1em;">\
+              <table width="100% cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
                 <tr valign="top">\
                   <td class="tail" colspan="10"><b>Defect Desc</b></td>\
                 </tr>\            <tr><td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
