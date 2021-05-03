@@ -1,0 +1,74 @@
+<?
+/**
+ * Control Panel for PDI for Administrive purpose
+ * $action : capitalizeDefectCategory
+ */
+
+ /**
+  * To capitalize all Defect category name, and sub tables
+  */
+
+include "main_include.phtml";
+
+function capitalizeDefectCategory(){
+    global $db;
+
+    $sql        = "UPDATE PDICategory SET Name = CONCAT(UCASE(LEFT(Name, 1)), SUBSTRING(Name, 2))";
+    $result     = mysql_query($sql,$db) or die("Error : $sql" . mysql_error());
+
+    $sql = "UPDATE PDIType SET Name = CONCAT(UCASE(LEFT(Name, 1)), SUBSTRING(Name, 2))";
+    $result     = mysql_query($sql,$db) or die("Error : $sql" . mysql_error());
+
+    echo "Update Successfully";
+    exit;
+ }
+
+
+
+if ($action=="capitalizeDefectCategory") {
+    capitalizeDefectCategory();
+    exit;
+} else if ($action=="deduplicateDefectCategory"){
+    // 
+    exit;
+}
+
+?>
+
+
+
+<HTML>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" type="text/javascript"></script>
+        <DIV>PDI Admin Control Panel</DIV>
+        <FORM>
+        <DIV><INPUT ID="btn-capitalize" TYPE="BUTTON" VALUE="Capitalize Category Name"></DIV>
+        <DIV><INPUT ID="btn-deduplicate" TYPE="BUTTON" VALUE="Remove Duplicate Category Name"></DIV>
+        </FORM>
+
+    <SCRIPT>
+
+
+        $('#btn-capitalize').on('click', function () {        
+            $.ajax({
+                type: "POST",
+                url: "PDIControlPanel.phtml",
+                data: { 
+                    action: "capitalizeDefectCategory"
+                }
+                }).done(function(o) {
+                alert('message=' + o);
+                })
+                .fail(function(xhr, status, error) {
+                //Ajax request failed.
+                var errorMessage = xhr.status + ': ' + xhr.statusText
+                alert('Error - ' + errorMessage);
+                });
+        });
+    </SCRIPT>
+
+        
+        </BODY>
+</HTML>
+
+
