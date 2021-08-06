@@ -94,7 +94,8 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 }
 
         $PDISql = "SELECT * FROM
-                                (SELECT UnitNumber, DefectName, DefectType, SectionName, ContractorName, TradeContacted, 
+                                (SELECT UnitNumber, DefectName, DefectType, SectionName, ContractorName, TradeContacted,
+                                        imageName, hasImage,
                                         (CASE   WHEN DefectType = 'QA'          THEN QAReportDate
                                                         WHEN DefectType = 'PDI'         THEN PDIReportDate
                                                         WHEN DefectType = 'DAY30'       THEN day30ReportDate
@@ -210,7 +211,7 @@ createCollapsibleDIV("SearchCriteriaDIV");
 
 
   <form name="form_PDIdefectByFloor" method="post" action="<?echo  $_SERVER["PHP_SELF"] . '?search_Floor=' . $search_Floor . '&search_ContractorID=' . $search_ContractorID . '&search_UnitNumber=' . $search_UnitNumber ; ?>">
-  <table id="report-content" name="report-content" cellspacing="0" cellpadding="5" border="1" width="800" style="margin-top: 1em">
+  <table id="report-content" name="report-content" width="800" >
 <?
 
 //
@@ -223,8 +224,8 @@ if (!isset($search_Floor)) {
 }
 
 ?>
-    <tr>
-      <td class="tail" colspan="8">
+    <tr class="head">
+      <td colspan="9">
         <b>All Defects on Floor  <?= $floor ?></b><br><br>
       </td>
     </tr>
@@ -235,8 +236,8 @@ if (!isset($search_Floor)) {
         if (mysql_num_rows($PDIresult) == 0)
         {
 ?>
-    <tr>
-      <td class="head">
+    <tr class="head">
+      <td>
         No defect data found on the floor <?= $search_Floor ?>.
       </td>
     </tr>
@@ -249,6 +250,7 @@ if (!isset($search_Floor)) {
                 echo "<input type='hidden' value='".$search_Floor."' name='search_Floor'>";
                 echo "<tr>\n";
                 echo "  <td align='center' class='head'>Unit</td>\n";
+                echo "  <td align='center' class='head'>Image</td>\n";
                 echo "  <td align='center' class='head'>Defect Description</td>\n";
                 echo "  <td align='center' class='head'>Defect Type</td>\n";
                 echo "  <td align='center' class='head'>Room</td>";
@@ -276,6 +278,7 @@ if (!isset($search_Floor)) {
 
                                 echo "<tr class='table_rec'>\n";
                                 echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+                                echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
                                 echo "  <td>" . $row["DefectName"] . "</td>\n";
                                 echo "  <td>" . $row["DefectType"] . "</td>\n";
                                 echo "  <td>" . $row["SectionName"] . "</td>\n";

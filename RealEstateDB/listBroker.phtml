@@ -121,7 +121,7 @@ if (BROKER_MODULE_ENABLED){
 else {
 	// creates selected columns and conditions, leave out table
 	// because both User & Visitor tables are selected with the same information
-	$sql_cols = "SELECT distinct BrokerAgentName, BrokerCompany, BrokerAddress, BrokerCity, BrokerPostalCode, BrokerPhoneNumber,BrokerFaxNumber, BrokerEmail";
+	$sql_cols = "SELECT distinct BrokerAgentName as AgentName, BrokerCompany, BrokerAddress, BrokerCity, BrokerPostalCode, BrokerPhoneNumber,BrokerFaxNumber, BrokerEmail";
 	
 	$sql_cond .= " WHERE BrokerAgentName <> '' ";
 }
@@ -231,7 +231,7 @@ else
 <?
 		}
 		// display Users table
-		$sql = $sql_cols . $sql_cond;
+		$sql = $sql_cols . " FROM User " . $sql_cond;
 //		print "sql=$sql<BR>";
 		$result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 		

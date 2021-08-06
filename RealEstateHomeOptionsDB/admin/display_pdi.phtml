@@ -48,7 +48,7 @@ JEC from below website
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
 
-  <table name="main_table" cellspacing="0" cellpadding="0" border="0" >
+  <table name="main_table">
 
 <?
 // edit page for "PDI general information"
@@ -75,7 +75,7 @@ if ($table_name == "Unit")
 	$sql	= "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, User.UserID,
 			date_format(PDIDate, '%e %b') As PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
 			date_format(OccupancyDate, '%e %b') As OccupancyDate, OccupancyTime, OccupancyNotified, 
-			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff
+			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff, PDIReportFilePath, PDIDay30ReportFilePath
 			FROM $table_name
 			LEFT JOIN User
 			ON ($table_name.UserID = User.UserID)
@@ -89,11 +89,11 @@ if ($table_name == "Unit")
     <tr>
       <!--4 data tables-->
       <td>
-        <table cellspacing="0" cellpadding="0" border="0">
+        <table>
 	      <tr>
 	        <td valign="top">
               <!--1st data table-->
-              <table cellspacing="0" cellpadding="5" border="0">
+              <table>
                 <tr class="head">
                   <!-- 1st data table header -->
                   <td class="head" colspan=2>Info</td>
@@ -129,10 +129,11 @@ if ($table_name == "Unit")
                 </tr>
 
 <?
+
 	while ($row = mysql_fetch_array($result))
 	{
+      displayMouseOverTR();
 ?>
-                <tr>
                   <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
                   <td class="table_rec"><nobr><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</nobr></a></td>
   	         <td class="table_rec"><nobr><?= $row['PDIDate'] ?>&nbsp;</nobr></td>
@@ -230,8 +231,11 @@ elseif ($table_name == "PDIDefect")
 
 <?
 	// Get purchaser name of the unit
-	$sql	= "SELECT User.UserID, FirstName, LastName, Address, City, Province, Country, PostalCode, BusinessPhone, PhoneNumber, CellPhone, FaxNumber
-			PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber, OccupancyDate, OccupancyTime, OccupancyNotified, OccupancyNotifiedDate
+	$sql	= "SELECT User.UserID, FirstName, LastName, Address, City, 
+      Province, Country, PostalCode, BusinessPhone, PhoneNumber, CellPhone, FaxNumber
+			PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber, OccupancyDate, 
+      OccupancyTime, OccupancyNotified, 
+      OccupancyNotifiedDate, PDIReportFilePath, PDIDay30ReportFilePath
 			FROM User, Unit
 			WHERE Unit.UnitNumber = '$unit'
 			AND Unit.UserID = User.UserID";
@@ -239,8 +243,10 @@ elseif ($table_name == "PDIDefect")
 	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
 	
 	// print out rows to the table
-	$row = mysql_fetch_array($result)
+	$row = mysql_fetch_array($result);
 
+  $PDIReportFilePath  = $row['PDIReportFilePath'];
+  $PDIDay30ReportFilePath= $row['PDIDay30ReportFilePath'];
 	// header - purchaser's information
 ?>
     <tr>
@@ -366,6 +372,15 @@ elseif ($table_name == "PDIDefect")
               <?= $row['CellPhone'] ?>
             </td>
           </tr>
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">PDI Report:
+            </td>
+            <td colspan="2" class="link_small" style="align: left;">
+              <INPUT ID="btn-download-PDI"    TYPE="BUTTON" VALUE="Download PDI Report">
+              <INPUT ID="btn-download-day30"  TYPE="BUTTON" VALUE="Download Day 30 Report">
+            </td>
+          </tr>          
         </table>
       <br>
       </td>
@@ -455,7 +470,7 @@ $floor = substr($unit, 0, strlen($unit) - 2);
       <input type=button value="Print PDI Form" onClick="window.location='report_pdi.phtml?unit=<?= $unit ?>'">
       <input type=button value="Print Day 30 Form" onClick="window.location='report_pdi_day30.phtml?unit=<?= $unit ?>'">
 	<Br><br>
-      <table class="quickLinkTable" cellspacing="0" cellpadding="5" border="1">
+      <table class="quickLinkTable" >
 	<tr>
 	<td class="head" colspan="2">Quick Report Links:</td>
 	</tr>
@@ -551,7 +566,7 @@ function get_dojo_date($one_date){
 
 <script language="JavaScript" type="text/javascript">
 var PDI_TABLE_TEMPLATE_1=' \
-        <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=5" style="margin-bottom: 1em;"> \
+        <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
             <tr valign="top">\
                <td colspan=2>\
                 <table cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
@@ -582,7 +597,7 @@ var PDI_TABLE_TEMPLATE_1=' \
                   </table>\
                   </td>\
                <td colspan="9">\
-              <table width="100% cellspacing="0" cellpadding=5" style="margin-bottom: 1em;">\
+              <table width="100% cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
                 <tr valign="top">\
                   <td class="tail" colspan="10"><b>Defect Desc</b></td>\
                 </tr>\            <tr><td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
@@ -724,5 +739,25 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
 	var UNIT = <?php echo $unit; ?>;
 </script>
 <script language="javascript" src="display_pdi.js"></script>
+<script>
+  $('#btn-download-PDI').live('click', function () {
+      filePath        = '<?= $PDIReportFilePath; ?>';
+      if (filePath == ''){
+        alert('The PDI report has yet signed. Please sign it via "Print PDI Report" below.')
+      } else {        
+        window.location = '<?= $PDIReportFilePath; ?>';             
+      }
+    });
+
+
+    $('#btn-download-day30').live('click', function () {
+      filePath        = '<?= $PDIDay30ReportFilePath; ?>';
+      if (filePath == ''){
+        alert('The Day 30 report has yet signed. Please sign it via "Print Day 30 Report" below.')
+      } else {        
+        window.location = '<?= $PDIDay30ReportFilePath; ?>';             
+      }
+    });    
+</script>
 
 </html>

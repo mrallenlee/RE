@@ -1,0 +1,115 @@
+<?
+/**
+ * Upload PDI or Day 30 signed report, and store the filepath to the DB
+ * Return JSON array on the result
+ * Image filepath is based on the PDI modules located, which is RealEstateHomeOptions/admin 
+ * or use the constant PDI_RELATIVE_PATH
+ */
+
+include "main_include.phtml";
+// Return rows for messages
+$rtn_rows = array();
+
+
+/**
+ * Print json encode message, and return
+ */
+function returnJSONMsg($rtn_rows){
+    echo json_encode($rtn_rows);
+    exit;
+    return;
+} // returnJSONMsg
+
+
+/**
+ * Update DB PDIDefect table on the new upload file
+ * Return treu if successful
+ * Return json error message
+ */
+function updateDBFileName($unitNumber, $component, $reportType, $filepath){
+
+    if ($reportType == 'PDI'){
+        $columnName     = 'PDIReportFilePath'; 
+    } else if ($reportType == 'Day30'){
+        $columnName     = 'Day30ReportFilePath'; 
+    } 
+
+    $sql    = "Update Unit set " . $columnName . "='" . $filepath . "' where UnitNumber='" . $unitNumber . "'";
+	$result = mysql_query($sql);
+			
+    if (!$result) {
+        $errors= error_get_last();
+
+        $rtn_rows['status']	= "ERROR";
+        $rtn_rows['message']= "System error message from SQL " . $errors['type'] . " : " . $errors['message'];
+        returnJSONMsg($rtn_rows);
+    }    
+    return true;
+} // updateDBFileName
+
+$component  = 'PDI';
+$reportType = $_POST['reportType'];
+$unitNumber  = $_POST['unitNumber'];
+$fileName   = $unitNumber . "_" . $reportType . "_" . time() . ".png";
+
+// Check if query string are set properly
+if (!isset($component) || $component == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing component";
+	returnJSONMsg($rtn_rows);
+}
+
+// Check if query string are set properly
+if (!isset($unitNumber) || $unitNumber == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing unitNumber";
+    returnJSONMsg($rtn_rows);
+}
+
+
+// Check if query string are set properly
+if (!isset($reportType) || $reportType == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing reportType";
+    returnJSONMsg($rtn_rows);
+}
+
+// Set up directory
+if ($component == 'PDI') {
+	$dir = "../images/" . $component . "/" . $unitNumber . "/" . $reportType . "/";
+}
+
+// Check if dir exist, create otherwise
+if (!file_exists($dir)) {
+    mkdir($dir, 0775, true);
+}
+
+$filepath = $dir . $fileName;
+
+$img        = $_POST['imgBase64'];
+$img        = str_replace('data:image/png;base64,', '', $img);
+$img        = str_replace(' ', '+', $img);
+$fileData   = base64_decode($img);
+//saving
+$result     = file_put_contents($filepath, $fileData);
+
+// $result > 0 means number of bytes written
+if ($result > 0){
+
+			// Prepare return status
+			$rtn_rows['status'] 	= "SUCCESS";
+			$rtn_rows['message']	= "Image uploaded successfully";
+			$rtn_rows['filepath'] 	= $dir . $fileName;
+			$rtn_rows['filename']	= $fileName;
+			$rtn_rows['dirname']	= $dir;
+
+    updateDBFileName($unitNumber, $component, $reportType, $filepath);
+
+} else {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+}
+
+// Set http header error
+returnJSONMsg($rtn_rows);
+?>

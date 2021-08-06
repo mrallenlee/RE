@@ -1,0 +1,104 @@
+<?
+/**
+* Email pdi report to the purchaser on file.
+* Ensure the email address is correct in the purchaser
+* Parameters: unitNumber, reportType : PDI / Day30
+* TODO ALLEN
+* 1) Add additional purchaser email
+* 2) Error return in JSON format
+*/
+
+include "main_include.phtml";
+
+// Return rows for messages
+$rtn_rows = array();
+
+
+/**
+ * Print json encode message, and return
+ */
+function returnJSONMsg($rtn_rows){
+    echo json_encode($rtn_rows);
+    exit;
+    return;
+} // returnJSONMsg
+
+
+// Check if query string are set properly
+if (!isset($unitNumber) || $unitNumber == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing unitNumber";
+	returnJSONMsg($rtn_rows);
+}
+
+// Check if query string are set properly
+if (!isset($reportType) || $reportType == "") {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "Missing reportType";
+    returnJSONMsg($rtn_rows);
+}
+
+
+
+$sql     =  "SELECT Unit.UnitNumber, PDIReportFilePath, PDIDay30ReportFilePath, User.Email, User.FirstName, User.LastName " .
+            "FROM    Unit, User " .
+            "WHERE   Unit.UnitNumber = User.UnitNumber " . 
+            "AND     User.DealStatus = '" . DEAL_STATUS_FIRM . "' " . 
+            "AND     Unit.UnitNumber = '" . $unitNumber . "'";  
+
+$result = mysql_query($sql);
+
+if (!$result) {
+    $errors= error_get_last();
+
+    $rtn_rows['status']	= "ERROR";
+    $rtn_rows['message']= "System error message from SQL " . $errors['type'] . " : " . $errors['message'];
+    returnJSONMsg($rtn_rows);
+}    
+
+$row = mysql_fetch_array($result);
+
+// $rtn_rows['sql'] = $sql;
+
+$purchaser1 = $row['FirstName'] . ' ' . $row['LastName'];
+$email1     = $row['Email'];
+
+require_once ("emailUtil.phtml");
+// Recipient 
+$to = $email1;
+ 
+// Sender 
+$from = 'admin@isat-solutions.com'; 
+$fromName = 'Demo Admin'; 
+ 
+// Email subject 
+$subject = PROJECT_NAME . ' ' . $reportType . ' Report - Unit ' . $unitNumber;  
+ 
+// Attachment file 
+if ($reportType == 'PDI'){
+    $file = $row['PDIReportFilePath']; 
+} else if ($reportType == 'Day30') {
+    $file = $row['PDIDay30ReportFilePath']; 
+}
+
+// Return error if file name is null
+if ($file == "") {
+    $rtn_rows['status']	= "ERROR";
+    $rtn_rows['message']= "Report is not available.";
+    returnJSONMsg($rtn_rows);    
+}
+ 
+// Email body content 
+$htmlContent = ' 
+    <p>Dear ' . $purchaser1 . ',</p>
+    <p>Please kindly see attached signed report according to our earlier inspection at the site. Should you have any questions or inquiries, please do not hesistate to contact our office at (647)918-1892.</p>
+    <p>Sincerely,</p>
+    <p>' . PROJECT_DEVELOPER . '</p> 
+'; 
+
+sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $file);
+
+returnJSONMsg($rtn_rows);
+return true;            
+
+?>
