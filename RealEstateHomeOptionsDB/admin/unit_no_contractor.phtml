@@ -124,9 +124,12 @@ $nonStandardSql = 	" SELECT NonStandardPO.POID, NonStandardPO.UnitNumber, -1 AS 
 					" AND NonStandardPO.ContractorID = Contractor.ContractorID " .
 					" AND NonStandardPO.SubsectionID = Subsection.SubsectionID ";
 		
-	
+$contractorIDOrderClause =  " SUBSTR(ContractorID, 11) * 1 " ;
+//$contractorIDOrderClause = " ContractorID ";	
 $unionSQL = "(" . $sql . " ) UNION (" . $nonStandardSql .
-			" ) ORDER BY ContractorID, SectionID, SubsectionID, ItemID";		 		
+			" ) ORDER BY " . $contractorIDOrderClause . "  , SectionID, SubsectionID, ItemID";		 		
+
+            
 
 $price_result = mysql_query($unionSQL,$db) or 
 					 die("Insert/update failed:\n" . mysql_error() . "\nFull SQL:<BR>" . $unionSQL . $PHP_SELF);
