@@ -49,11 +49,13 @@ if ($showDefaultCol == 1){
 $unionSQL = getPOSql($displayPOType);
 
 if ($POView == "trade;unit;rooms"){
-	$unionSQL .= "ORDER BY ContractorID, UnitNumber, SectionID, SubsectionID, ItemID";
+	$unionSQL .= "ORDER BY ContractorID, " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", SectionID, SubsectionID, ItemID";
 } else if ($POView == "trade;option;choice") {
-	$unionSQL .= "ORDER BY ContractorID, ItemID, OptionID, ChoiceID, UnitNumber, SubsectionID";		
+	$unionSQL .= "ORDER BY ContractorID, ItemID, OptionID, ChoiceID, " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", SubsectionID";		
 } else {
-	$unionSQL .= "ORDER BY UnitNumber, ContractorID, SectionID, SubsectionID, ItemID";	
+	//$unionSQL .= "ORDER BY UnitNumber, ContractorID, SectionID, SubsectionID, ItemID";	
+	$unionSQL .= "ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . " , ContractorID, SectionID, SubsectionID, ItemID";	
+//die ("unionSQL=" . $unionSQL);
 }
 
 if (!isset($MultiPageNavigationResultsPerPage) || $MultiPageNavigationResultsPerPage == ""){
