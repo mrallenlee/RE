@@ -127,6 +127,31 @@ function &executeSql($sql, $dieOnError = true){
 $db = mysql_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
 mysql_select_db(REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database " . REAL_ESTATE_DB_NAME, $PHP_SELF);
 
+// Use MysqlI for the fetch_all feature to load the result into array
+$mysqli = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD, REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
+
+/**
+ * Use MysqlI to extract all, and stores all values into an associate arrayi
+ * Must have global var $mysqli initiated
+ * Key is the first column provided in the SQL statement
+ * Value is the entire associate array return in each row
+ */
+function getSQLArray($sql){
+	global $mysqli;
+
+	$result= mysqli_query($mysqli, $sql) or die("SQL ERROR :\n".mysql_error()."<BR>Full SQL:<BR>".$sql ."<BR>".$PHP_SELF);
+	$rows = mysqli_fetch_all($result, MYSQLI_BOTH);
+
+	
+	$resultArray = array();
+	foreach ($rows as $row) {
+		$resultArray[$row[0]] = $row;
+	}
+
+	return $resultArray;
+
+} // getSQLArray
+
 // Disable any caching of php scripts
 //header ("Expires: Mon, 26 Jul 1997 05:00:00 GMT");		// Date in the past
 //header ("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");//always modified
@@ -1026,15 +1051,6 @@ function getOrderClause($arguments){
 	return $clause;	
 }
 
-function print_stylesheet($selfPath, $relativePath, $showBackground = true, $showMenu = true){
-	global $globalRelativePath;
-	
-	$globalRelativePath = $relativePath;
-	
-?>  <link href="<?= $relativePath; ?>config/stylesheet.css" rel="styleSheet" type="text/css" media="screen" />
-	<link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="styleSheet" type="text/css" media="print" />
-<?
-		}
 
 function print_top_frame($selfPath, $relativePath, $showBackground = true, $showMenu = true){
 	global $globalRelativePath;
@@ -1047,7 +1063,7 @@ function print_top_frame($selfPath, $relativePath, $showBackground = true, $show
 			}
 			?> >
     <link href="<?= $relativePath; ?>config/stylesheet.css" rel="stylesheet" type="text/css" media="screen" />
-    <link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="stylesheet" type="text/css" media="print" />
+    <link href="<?= $relativePath; ?>config/stylesheet-print_V1.css" rel="stylesheet" type="text/css" media="print" />
 	<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>javascript/utils.js"></script>
 <? if ($showMenu){ ?>
 		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/dynamicMenu.js"></script>

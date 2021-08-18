@@ -8,11 +8,111 @@ include_once "upgradeOptionAction.phtml";
 $commit = 1;
 $gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'] : getGSTRate();
 
+// SQL for extract cost for each unit, and store into an array
+$costSQL = "SELECT Unit.UnitNumber, COALESCE(SumUpgradesCost.Cost , 0) AS Cost
+FROM 
+    Unit LEFT JOIN 
+
+(SELECT AllUpgrades.UnitNumber, Sum(AllUpgrades.Cost) AS Cost
+FROM
+    ((SELECT 
+    StandardPO.POID, 
+    StandardPO.UnitNumber, 
+    StandardPO.ItemID, 
+    StandardPO.OptionID, 
+    StandardPO.ChoiceID, 
+    StandardPO.ContractorID, 
+    Section.SectionID As SectionID, 
+    Subsection.SubsectionID, 
+    '' AS Description, 
+    StandardPO.Cost, 
+    StandardPO.Issued, 
+    StandardPO.IssuedDate, 
+    Section.Name As SectionName, 
+    Subsection.Name As SubsectionName, 
+    Options.Name As OptionName, 
+    Choice.Name As ChoiceName, 
+    Item.Name As ItemName, 
+    Contractor.ContractorName, 
+    'StandardPO' AS POType 
+    FROM 
+    Contractor, 
+    Price, 
+    Item, 
+    Subsection, 
+    Section, 
+    Options, 
+    Unit, 
+    StandardPO 
+    LEFT JOIN Choice ON StandardPO.ChoiceID = Choice.ChoiceID 
+    AND StandardPO.OptionID = Choice.OptionID 
+    WHERE 
+    Cost > -9990
+    AND StandardPO.ContractorID = Contractor.ContractorID 
+    AND StandardPO.ItemID = Price.ItemID 
+    AND StandardPO.OptionID = Price.OptionID 
+    AND StandardPO.ItemID = Item.ItemID 
+    AND Item.SubsectionID = Subsection.SubsectionID 
+    AND Subsection.SectionID = Section.SectionID 
+    AND StandardPO.OptionID = Options.OptionID 
+    AND StandardPO.UnitNumber = Unit.UnitNumber 
+    AND Section.SectionID Not IN (
+        Select 
+        SectionID 
+        FROM 
+        Disable_Section_By_Unittype 
+        WHERE 
+        Disable_Section_By_Unittype.UnitType = Unit.Model
+    )
+    ) 
+    UNION 
+    (
+        SELECT 
+        NonStandardPO.POID, 
+        NonStandardPO.UnitNumber, 
+        -1 AS ItemID, 
+        -1 AS OptionID, 
+        -1 AS ChoiceID, 
+        NonStandardPO.ContractorID, 
+        NonStandardPO.SectionID, 
+        NonStandardPO.SubsectionID, 
+        NonStandardPO.Description, 
+        NonStandardPO.Cost, 
+        NonStandardPO.Issued, 
+        NonStandardPO.IssuedDate, 
+        Section.Name AS SectionName, 
+        Subsection.Name AS SubsectionName, 
+        '' AS OptionName, 
+        '' AS ChoiceName, 
+        '' AS ItemName, 
+        Contractor.ContractorName, 
+        'NonStandardPO' AS POType 
+        FROM 
+        NonStandardPO, 
+        Contractor, 
+        Section, 
+        Subsection 
+        WHERE 
+        Cost > -9990
+        AND NonStandardPO.SectionID = Section.SectionID 
+        AND NonStandardPO.ContractorID = Contractor.ContractorID 
+        AND NonStandardPO.SubsectionID = Subsection.SubsectionID
+    )) AS AllUpgrades 
+    GROUP BY
+    AllUpgrades.UnitNumber) AS SumUpgradesCost
+
+    ON Unit.UnitNumber = SumUpgradesCost.UnitNumber    
+    ORDER BY Cast(Unit.UnitNumber as SIGNED);"; // $costSQL
+
+$costArray = getSQLArray($costSQL);
+
+
 ?>
 <body>
 <table border=1>
 	<tr>
 		<td>Unit Number<t/d>
+		<td>Cost</td>
 		<td>Total Sales</td>
 		<td>Total Incentives</td>
 		<td>Total Sales exclude tax</td>
@@ -211,6 +311,7 @@ if ( $total_sales < 0 ) // Don't tax -ve values
 	$total_with_tax = $total_sales;
 }
 
+$projectCostTotal += $costArray[$UnitNumber]['Cost'];
 $projectTotal += $total;
 $projectTotalGST += $gstAmount;
 $projectTotalCredit += $credit;
@@ -224,6 +325,7 @@ $projectTotalOutAmtWithTax = $projectTotalOutstandingAmt - $projectTotalCredit;
 ?>
 	<tr>
 		<td><?= $UnitNumber; ?></td>
+		<td><?= number_format($costArray[$UnitNumber]['Cost'], 2)?></td>
 		<td><?= number_format($total, 2)?></td>
 		<td><?= number_format($credit, 2)?></td>
 		<td><?= number_format($total_sales, 2)?></td>
@@ -237,6 +339,7 @@ $projectTotalOutAmtWithTax = $projectTotalOutstandingAmt - $projectTotalCredit;
 ?>
 	<tr>
 		<td>Total</td>
+		<td><?= number_format($projectCostTotal, 2)?></td>
 		<td><?= number_format($projectTotal, 2)?></td>
 		<td><?= number_format($projectTotalCredit, 2)?></td>
 		<td><?= number_format($projectTotalSales, 2)?></td>
