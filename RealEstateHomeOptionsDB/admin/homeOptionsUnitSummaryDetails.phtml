@@ -157,52 +157,32 @@ if (mysql_num_rows($result) > 0)
 	$cashPayment = $row['CashPayment'];
 	$payByMortgage = $row['PayByMortgage'];
 	$outstandingAmt = $row['OutstandingAmt'];
+	$unitType = $row['UnitType'];
 } 
 
 ?>
 
 <?
-// get the name of the current section
-$sql = "SELECT Name, Description, SectionID
-		FROM Section ORDER BY Name";
-$section_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
-
-while ($section_row = mysql_fetch_array($section_result))
-{
-	if (section_disabled($UnitType, $section_row['SectionID']))
-		continue;
-	else
-		$sectionID = $section_row['SectionID'];
-		
-	// cache the html code for section, subsection title. The code
-	// will be printed if item-option is available
-	$htmlCacheHeader = "<tr><td colspan=\"4\" ><font size=\"4\"><b>&nbsp;<br>&nbsp;<br>" . $section_row['Name'] . "</b></font></td></tr>";
-
-	$sql = "SELECT Name, Description, SubsectionID
-			FROM Subsection
-			WHERE SectionID = '$sectionID' ORDER BY Name";
-	$subsection_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
-	while ($subsection_row = mysql_fetch_array($subsection_result))
-	{
-		$subsectionID = $subsection_row['SubsectionID'];
-		
-
-		// Since UserSave table may not have the options if user
-		// has not saved the options they choose, so standard will
-		// be display if no optionID in UserSave table. 
-		$sql = "SELECT Item.ItemID AS ItemID, Item.Name AS ItemName,
-				Options.Name AS OptionsName, Options.Choice AS OptionsChoice,
-				Choice.Name AS ChoiceName, UserSave.Price AS Price
-				FROM Item
-				LEFT JOIN UserSave 
-				ON Item.ItemID = UserSave.ItemID
-				AND UserSave.UnitNumber = '$UnitNumber'
-				LEFT JOIN Options 
-				ON UserSave.OptionID = Options.OptionID
-				LEFT JOIN Choice
-				ON UserSave.ChoiceID = Choice.ChoiceID
-				WHERE Item.SubsectionID = $subsectionID
-				ORDER BY Item.Name, Options.Name, Choice.Name";
+		// A sql to exclude disabled section
+		$sql = " SELECT Item.ItemID AS ItemID, Item.Name AS ItemName,
+			Options.Name AS OptionsName, Options.Choice AS OptionsChoice,
+			Choice.Name AS ChoiceName, UserSave.Price AS Price, Section.SectionID, 
+			Subsection.SubsectionID, Section.Name as SectionName,
+			Subsection.Name as SubsectionName, UnitNumber
+			FROM Section, Subsection, Item
+			LEFT JOIN UserSave 
+			ON Item.ItemID = UserSave.ItemID
+			AND UserSave.UnitNumber = '" . $UnitNumber . "'
+			LEFT JOIN Options 
+			ON UserSave.OptionID = Options.OptionID
+			LEFT JOIN Choice
+			ON UserSave.ChoiceID = Choice.ChoiceID
+			WHERE Item.SubsectionID = Subsection.SubsectionID
+			AND Section.SectionID = Subsection.SectionID
+			AND Section.SectionID NOT IN (Select SectionID from 
+										Disable_Section_By_Unittype 
+										WHERE Disable_Section_By_Unittype.UnitType = '" . $unitType . "')
+			;";
 
 		$userSave_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
 		while ($userSave_row = mysql_fetch_array($userSave_result))
@@ -276,8 +256,7 @@ while ($section_row = mysql_fetch_array($section_result))
 
 			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
 		}// end of userSave loop
-	}// end of subsection loop
-}// end of section loop
+
 	
 $sql = "SELECT Description, Price
 		FROM UserOption
