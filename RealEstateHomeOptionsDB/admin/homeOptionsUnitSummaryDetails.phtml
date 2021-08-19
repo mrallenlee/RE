@@ -122,43 +122,35 @@ $costArray = getSQLArray($costSQL);
 <?
 
 
-// Start the unit loop
-// Includes both sold and unsold unit
 
-$unitSql = "SELECT * FROM Unit ORDER BY " . getOrderClause(array("columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
-$unitResult = mysql_query($unitSql,$db) or handleError("", "SQL=$unitSql <br>Error=" . mysql_error(), SQL_ERROR, true);	
-while ($unitRow = mysql_fetch_array($unitResult))
-{
-
-// Set default values
-$UnitNumber 	= 0;
-$total 		= 0;
-$credit 	= 0;
-$outstandingAmt = 0;
-
-$userID 	= -1;
-$cashPayment 	= 0;
-$payByMortgage 	= 0;
-$outstandingAmt = 0;
-
-$UnitNumber = $unitRow['UnitNumber'];
-$sql = "SELECT User.UserID, FirstName, LastName, CashPayment, PayByMortgage, OutstandingAmt, UnitType
+$sql = "SELECT User.UserID, FirstName, LastName, CashPayment, PayByMortgage, OutstandingAmt, Unit.UnitNumber, UnitType
 		FROM Unit
 		LEFT JOIN User
 		ON User.UnitNumber=Unit.UnitNumber
 		AND User.DealStatus IN (" . DEAL_STATUS_PURCHASE_INCLUDE_LIST . ") 
-		WHERE Unit.UnitNumber = '" . $UnitNumber ."'";
+		ORDER BY " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 $result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Error=" . mysql_error(), SQL_ERROR, true);	
 
-if (mysql_num_rows($result) > 0)
+while ($row = mysql_fetch_array($result))
 {
-	$row = mysql_fetch_array($result);
+
+	// Set default values
+	$UnitNumber 	= 0;
+	$total 		= 0;
+	$credit 	= 0;
+	$outstandingAmt = 0;
+
+	$userID 	= -1;
+	$cashPayment 	= 0;
+	$payByMortgage 	= 0;
+	$outstandingAmt = 0;
+
 	$userID = $row['UserID'];
 	$cashPayment = $row['CashPayment'];
 	$payByMortgage = $row['PayByMortgage'];
 	$outstandingAmt = $row['OutstandingAmt'];
 	$unitType = $row['UnitType'];
-} 
+	$UnitNumber = $row['UnitNumber'];
 
 ?>
 
