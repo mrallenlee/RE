@@ -33,7 +33,7 @@ function padSpace($input, $length, $spaceAlign = "left"){
 /**
  * Multi-Arg function
  * $pdfMaker: must be the first argument.
- * Args: $cost, $gst, $unitNumber, $issuedDate, $PONumber,
+ * Args: $cost, $gst, $unitNumber, $issuedDate, $PONumber, $POIssuedID,
  * contractorName, contractorContactName, contractorPhone, contractorAddress,
  * contractorCity, contractorCountry, contractorPostalCode
  */
@@ -43,6 +43,7 @@ function printPDFInvoice($pdfMaker, &$descriptionArray){
 	$cost = 0.00;
 	$issuedDate = "";
 	$PONumber = "";
+	$POIssuedID = "";
 	$contractorName = "";
 	$contractorContactName = "";
 	$contractorPhone = "";
@@ -65,9 +66,11 @@ function printPDFInvoice($pdfMaker, &$descriptionArray){
 	$revisedText = "REVISED";
 	$date = date("M d, Y");
 	$total = $cost + $gst;
-	$companyAddress = "Highlight Development 
-";
-	$invoiceIDText = "PO #: $PONumber";
+	$companyAddress = "Hazelton Developments
+	3000 Steeles Avenue East, Suite #204 
+	Markham, Ontario 
+	L3R 8T3";
+	$invoiceIDText = "PO Issued ID: $POIssuedID\n PO #: $PONumber";
 	$issuedDateText = "Issued Date: $issuedDate";
 	
 	

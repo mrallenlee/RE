@@ -57,7 +57,7 @@ class POListPdfFormat extends POListFormat {
 				// print the invoice
 //print "calling PDFInvoice $cost $unitNumber $issuedDAte $description $invoiceID $POType $debugLevel<BR>";		 
 			printPDFInvoice($pdfMaker, $this->description, "cost=" . $this->cost, $this->unitNumber, 
-							$this->issuedDate, $this->PONumber, $this->contractorName,
+							$this->issuedDate, $this->PONumber, $this->POIssuedID, $this->contractorName,
 							$this->contractorContactName, $this->contractorPhone,
 							$this->contractorAddress, $this->contractorCity,
 							$this->contractorCountry, $this->contractorPostalCode,
@@ -80,6 +80,7 @@ class POListPdfFormat extends POListFormat {
 		$this->contractorPostalCode 	= "contractorPostalCode=" . $PODataRow['ContractorPostalCode'];
 		
 		$this->PONumber 	= "PONumber=" . $PODataRow['PONumber'];
+		$this->POIssuedID 	= "POIssuedID=" . $PODataRow['POIssuedID'];
 		$displayCost 		= convertPriceConstantToString($PODataRow['Cost']);
 		$validCost 			= convertPriceConstantToValidNumber($PODataRow['Cost']);
 		$this->cost			+= $validCost;
