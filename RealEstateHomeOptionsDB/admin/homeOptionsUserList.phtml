@@ -523,7 +523,7 @@ $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 
 				></CENTER></TD>
 
-				<TD><CENTER><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_Commit"
+				<TD><CENTER><INPUT TYPE="checkbox" name="<?= encodeURL($row['UnitNumber'])?>_Commit"
 
 <?
 
@@ -613,7 +613,7 @@ $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 ?>
 
 				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UserID']?>_UserID" VALUE="<?= $row['UserID']?>"></TD>
-				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UnitNumber']?>_UnitNumber" VALUE="<?= $row['UnitNumber']?>"></TD>
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= encodeURL($row['UnitNumber']);?>_UnitNumber" VALUE="<?= $row['UnitNumber']?>"></TD>
 
 			</TR>
 

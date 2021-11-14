@@ -188,7 +188,7 @@ $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 			displayMouseOverTR();
 ?>
 
-				<TD><CENTER><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_Commit"
+				<TD><CENTER><INPUT TYPE="checkbox" name="<?= encodeURL($row['UnitNumber'])?>_Commit"
 <?
 				if ($row['Commit'] == 1) 
 				{
@@ -215,7 +215,7 @@ $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 				<TD><INPUT TYPE="BUTTON" value="Select Upgrades"
 				onClick="window.location='loadUnitSession.phtml?UnitNumber=<?= $row['UnitNumber']; ?>'" ></TD>
 <?				} ?>
-				<TD><INPUT TYPE="HIDDEN" NAME="<?= $row['UnitNumber']?>_UnitNumber" VALUE="<?= $row['UnitNumber']?>"></TD>
+				<TD><INPUT TYPE="HIDDEN" NAME="<?= encodeURL($row['UnitNumber']);?>_UnitNumber" VALUE="<?= $row['UnitNumber']?>"></TD>
 
 			</TR>
 

@@ -545,16 +545,20 @@ function decode_special_url_char($url){
 	return decode_dot($url);	
 }
 
+
 /**
  * Encode whole url by this method. Using built-in urleoncde
  * introduces bug if data contains space.
  */
 function encodeURL($url){
-	return encode_special_url_char(urlencode($url));
+	//return encode_special_url_char(urlencode($url));
+	// reverse the order to fix the prev bug when space is encountered
+	return urlencode(encode_special_url_char($url));
 }
 
 function decodeURL($url){
-	return decode_dot(urldecode($url));
+	//return decode_dot(urldecode($url));
+	return decode_special_url_char(urldecode($url));
 }
 
 $db_find = array (

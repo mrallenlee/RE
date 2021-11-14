@@ -16,7 +16,6 @@ $UserReport = "0";
 
 while (list($key, $value) = each ($HTTP_POST_VARS))
 {
-	
 	list($UID, $name) = retrieve_data($key);
 
 	if ($name == "UserID" || $name == "ContractorReport" || $name == "UserReport")
@@ -24,8 +23,8 @@ while (list($key, $value) = each ($HTTP_POST_VARS))
 		$UserID = $UID;
 	}
 	else if ($name == "UnitNumber" || $name == "Commit")
-	{
-		$UnitNumber = $UID;
+	{	// special encoding on the Unit Number for the form name
+		$UnitNumber = decodeURL($UID);
 	}
 	
 	if ($UserID != $prevUserID || $UnitNumber != $prevUnitNumber)
@@ -79,7 +78,6 @@ while (list($key, $value) = each ($HTTP_POST_VARS))
 	{
 		updateUserUpgradeOptionStatus($prevUnitNumber, $Commit);
 	}
-
 ?>
 <script language="JavaScript">
 <!--
