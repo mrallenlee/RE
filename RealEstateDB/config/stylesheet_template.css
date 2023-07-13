@@ -1,101 +1,123 @@
 .headXXX 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: center;
+			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
 			background: #fcc23d url(/lmark/SalesDemo/common/images/title-background.jpg) repeat-x; color: #888888;  }
 
 .head 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: center;
+			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
 			color: #888888; border-spacing: 0px; border-collapse: separate;
 			}
 
+tr.head th {
+			border-bottom: 2px solid #888888;
+			border-top: 2px solid #888888;
+			padding: 5px;
+			spacing: 5px;
+			}
 tr.head td {
 			border-bottom: 2px solid #888888;
 			border-top: 2px solid #888888;
-			padding: 10px;
+			padding: 5px;
 			}
 
 .head-left 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: left;
-			background: #fcc23d url(/lmark/SalesDemo/common/images/title-background.jpg) repeat-x; color: #888888;  }
+			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left;
+			color: #888888;  }
 
 .head-right 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: right;
-			background: #fcc23d url(/lmark/SalesDemo/common/images/title-background.jpg) repeat-x; color: #888888;  }
+			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right;
+			color: #888888;  }
 
 .big-head 	{ 	height: 20; 
 			font-family: Verdana, Arial, sans-serif; font-size: 15pt; font-weight: bold; text-align: center;
 			color: #777777;  }
 
+	tr.head tr.head-left tr.head-right tr.big-head th {
+			border-bottom: 2px solid #888888;
+			border-top: 2px solid #888888; 
+			padding: 5px;
+			}
+
+	tr.head tr.head-left tr.head-right tr.big-head td {
+			border-bottom: 2px solid #888888;
+			border-top: 2px solid #888888; 
+			padding: 5px;
+			}
+
 .subheadXXX 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: center;
+			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
 			background: #F7D642 url(/lmark/SalesDemo/common/images/subtitle-background.jpg) repeat-x; color: #000000;  }
 
 .subhead 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: center;
+			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
 			color: #888888; border-spacing: 0px; border-collapse: separate; }
 
-	tr.subhead td {
-			border-bottom: 2px solid #888888;
-			border-top: 0px solid #888888; 
-			padding: 10px;
-			}
 				
 
 .subhead-left 	{ 	height: 20; 
-font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: left;
-background: #F7D642 url(/lmark/SalesDemo/common/images/subtitle-background.jpg) repeat-x; color: #888888;  }
+				font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left;
+				color: #888888;  }
 
 .subhead-left-med 	{ height: 20; 
-	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold; 
-	background: #F7D642 url(/lmark/SalesDemo/common/images/subtitle-background.jpg) repeat-x; 
-	color: #888888;  text-align: left}
+					font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold; 
+					color: #888888;  text-align: left}
 
 .subhead-right 	{ 	height: 20; 
-font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: right;
-background: #F7D642 url(/lmark/SalesDemo/common/images/subtitle-background.jpg) repeat-x; color: #0;  }
+				font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right;
+				color: #888888;  }
 
 
-
-.body 				{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; 
+	tr.subhead tr.subhead-left tr.subhead-right  td {
+			border-bottom: 2px solid #888888;
+			border-top: 0px solid #888888; 
+			padding: 5px;
+			}
+  
+.body 				{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; 
 			background-color: #FFFFFF; color: #888888; }
 
-.body-right			{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: right;
+.body-right			{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right;
 			background-color: #FFFFFF; color: #888888; }
 
-.body-highlight 	{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; 
+.body-highlight 	{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; 
 			color: #888888; background:  #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
 
-.body-green 		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888;
+.body-green 		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;
 			background-color: #FFFFFF; }
 
-.body-blue			{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888;
+.body-blue			{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;
 						background-color: #FFFFFF; }
 
-.body-yellow		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888;
+.body-yellow		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;
 						background-color: #FFFFFF;  }
 
-.tail 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: center}
-.tail-left 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: left}
+.tail 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: center}
+.tail-left 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: left}
 .tail-left-med 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: left}
-.tail-right 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: right}
+.tail-right 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: right}
 
-.error 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #ff0000; }
-.blank 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #FF0000;}
-.blank-highlight {  font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888;  background: #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
-.blank-right		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt;
+.error 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #BB0000; }
+.blank 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #444444;}
+.blank-highlight {  font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;  background: #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
+.blank-right		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt;
 						font-weight: bold; text-align: right; color: #444444;}
-
-.blankL { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-align: left}
-.open 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; color: #ff0000; background-color: #FFFFCC }
-.closed { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; color: #888888; background-color: #FFFFCC }
-.btn 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; height: 26px; width: 80px;}
+.blankL { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left}
 
 
-.font-highlight		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #DF5337; }
+tr.blank tr.blank-highlight tr.blank-right tr.blankL tr.body tr.body-highlight td {
+	padding: 5px;
+	}
+
+.open 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #ff0000; background-color: #FFFFCC }
+.closed { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #888888; background-color: #FFFFCC }
+.btn 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; height: 26px; width: 80px;}
+
+
+.font-highlight		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #DF5337; }
 
 .tab-table  { border-color: #FF0000 }
 
 .largetitle {	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 12pt; color: #666666;	font-weight: bold;	margin-top: 11px;	margin-bottom: 4px;	}
-.smalltitle {	margin-top: 6px;	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold;	color: #666666;	}
+.smalltitle {	margin-top: 6px;	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold;	color: #666666;	}
 
 .borderbot { height: 1px; line-height: 1px; font-size: 1px; margin: 0px; padding: 0px; background: url(/images/dots.gif) repeat-x; }
 .borderbotlight { height: 1px; margin: 0px; padding: 0px; background: url(/images/dots_light.gif) repeat-x; }
@@ -103,7 +125,7 @@ background: #F7D642 url(/lmark/SalesDemo/common/images/subtitle-background.jpg) 
 .popupDiv 		{ padding: 5px; background-color: #FFFFFF; border: 5px solid #777777; }
 .popupDivTitle 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; color: #E6ECC0; }
 
-a 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; text-decoration:none}
+a 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-decoration:none}
 a:visited { color:#888888 }
 a:link 		{ color:#888888 }
 a:hover 	{color: #F2862F }
@@ -113,7 +135,7 @@ a:hover 	{color: #F2862F }
 
 .tr-header { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: bolder; color: #888888; background-color: #F7D642; }
 
-.calendar-div { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt;  background-color: #FFFFFF; }
+.calendar-div { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt;  background-color: #FFFFFF; }
 .image-link { text-decoration:none; border:none; }
 .image-link:visited { color:#888888 }
 .image-link:link 		{ color:#888888 }
@@ -122,7 +144,7 @@ a:hover 	{color: #F2862F }
 
 .image 		{ border: 2px; border-color: #A7B518; }
 
-.table_rec	{font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888}
+.table_rec	{font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888}
 
 .print-tr, .print-td, .print-hr, .print-div {
 	display: none;
@@ -130,24 +152,25 @@ a:hover 	{color: #F2862F }
 
 
 body { background-color: #FFFFFF }
-div { background-color: #FFFFFF }
+/* div { background-color: #FFFFFF } */
 table { background-color: #FFFFFF; border: 0px; border-spacing: 0px; border-collapse: separate; }
 tr { background-color: #FFFFFF }
-span { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #000000}
-.td-upper { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888; text-transform: uppercase}
-td { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; vertical-align: top; color: #888888}
+span { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #000000}
+.td-upper { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888; text-transform: uppercase}
+td { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; vertical-align: top; color: #888888}
 .tdI { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 9pt; font-weight: bold; font-style: italic;  vertical-align: top; color: #888888}
-th { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; font-weight: bold; color: #888888}
+th { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888}
 h1 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
 h2 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
 h3 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
 h4 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
 h5 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
 
-input 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; }
-select 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; }
-textarea 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; }
-error		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10pt; color: red}
+input 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right; color: #888888; accent-color: #BBBBBB }
+button 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #888888; accent-color: #BBBBBB;}
+select 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left; color: #888888; accent-color: #BBBBBB}
+textarea 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left; color: #888888; accent-color: #BBBBBB}
+error		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #BB0000}
 
 .dojoDialog {
 	background : #eee;
@@ -156,3 +179,18 @@ error		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 10
 	padding : 4px;
 }
 
+input[type=radio]#Yellow {
+	accent-color: pink;
+}
+
+input[type=radio]#Green {
+	accent-color: rgb(0, 255, 0);
+}
+
+input[type=radio]#auto {
+	accent-color: auto;
+}
+
+input[type=radio]#Red {
+	accent-color: #FF0000;
+}
