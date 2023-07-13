@@ -5,9 +5,11 @@
  * Includes main_include.phtml at the upper level
  */
 define ("SUB_FOLDER_INVERT_RELATIVE_PATH", ".."); 
+// MUST define this LOCAL_CONFIG_FOLDER before including the main_include, which also defines the same 
+// constant
+define ("LOCAL_CONFIG_FOLDER", "../homeOptionsConfig");
 include_once SUB_FOLDER_INVERT_RELATIVE_PATH . "/main_include.phtml"; 
 
-define ("LOCAL_CONFIG_FOLDER", "../homeOptionsConfig");
 
 /**
  * Calculate ACTUAL number of contractor

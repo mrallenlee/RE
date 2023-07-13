@@ -17,6 +17,28 @@
  		$this->logFilePath = $pathToLogFile;
  	}
  	
+	// encode function	 
+	function encode($data){
+		$encodedData = base64_encode($data); 
+		// Adding additional char replacement to pass base64 encoding in query string
+		$encodedData = preg_replace("/\+/", ".", $encodedData);
+		$encodedData = preg_replace("/\//", "_", $encodedData);
+		$encodedData = preg_replace("/\=/", "-", $encodedData);
+
+		return $encodedData;
+
+	} // encode
+
+	function decode($encodedData){
+
+		// Adding additional char replacement to pass base64 encoding in query string
+		$encodedData = preg_replace("/\-/", "=", $encodedData);
+		$encodedData = preg_replace("/\_/", "/", $encodedData);
+		$encodedData = preg_replace("/\./", "+", $encodedData);
+
+		return base64_decode($encodedData);
+	} // decode
+
  	/**
  	 * Handler error
  	 */
@@ -57,7 +79,7 @@
 			if ($appendToLog){
 				$urlContent .= " Reference Number: $id";	
 			}
-			$url .= base64_encode($urlContent);
+			$url .= $this->encode($urlContent);
 			$this->gotoURL($url); 				
  		}
  	}
@@ -69,7 +91,7 @@
 		if (file_exists($configFilePath)){
 			require "$configFilePath";				
 		} else {
-			throw new Exception("Error: ErrorHandler.loadErrorDataFile cannot find $configFilePath");
+			throw new Exception("Error: ErrorHandler.loadErrorDataFile cannot find $configFilePath.");
 		} 
 	}
  	
@@ -90,7 +112,7 @@
  	 */
  	function appendToLog($id, $externalErrorMsg, $internalErrorMsg, $errorType){
  		global $_SERVER;
- 		
+ 	
  		$logFile = fopen($this->logFilePath, 'a');
  		$errorMsg = $this->br2nl($errorMsg);
  		$error = date("Y/m/d H:i:s") . ": ID:$id\nFILE:" . $_SERVER['PHP_SELF'] . 
@@ -126,7 +148,7 @@
 	?>
 		<DIV class="error" name="ErrorHandlerErrorDIV" id="ErrorHandlerErrorDIV">
 		
-		<?= base64_decode($ErrorHandlerErrorMsg); ?>
+		<?= $this->decode($ErrorHandlerErrorMsg); ?>
 		</DIV>
 	<?	
 	}
