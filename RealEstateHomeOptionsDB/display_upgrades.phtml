@@ -2,6 +2,16 @@
 include "main_include.phtml";
 include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/UserPackageHandler.phtml";
 
+if (!isset($PageWidthPercentage)){
+	$PageWidthPercentage = intval(PAGE_WIDTH_PERCENTAGE);
+}
+
+if (!isset($ShowProjectLogo)){
+	$ShowProjectLogo = true;
+} else {
+	$ShowProjectLogo = ($ShowProjectLogo == "true");
+}
+
 $UnitNumber = getUnitNumber();
 //die ("$UnitNumber");
 if ($UnitNumber == -1) {
@@ -43,9 +53,10 @@ if ($SectionID == "") {
 // this var will increment for each radio group
 $noOfInput = 0;
 
-function generate_navigation($showComboBox = true) {
+function generate_navigation($showComboBox = true, $showFloorPlan = false) {
 	global $PHP_SELF;
 	global $SectionID;
+	global $UnitNumber;
 
 	
 	$UnitType = getUnitType();
@@ -63,6 +74,19 @@ function generate_navigation($showComboBox = true) {
 	</tr>
 	<tr>
 		<td>		
+<?		if ($showFloorPlan){ ?>
+			<img height="150" src="images/floorplan/floorplan-<?= $UnitNumber; ?>.jpg" usemap="#image_map">
+				<map name="image_map">
+					<area alt="bedroom" title="bedroom" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=5" coords="71,35,163,136" shape="rect">
+					<area alt="powder room" title="powder room" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=33" coords="5,35,71,83" shape="rect">
+					<area alt="living room" title="living room" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=35" coords="48,139,162,248" shape="rect">
+					<area alt="kitchen" title="kitchen" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=4" coords="6,130,48,211" shape="rect">
+					<area alt="appliance" title="appliance" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=18" coords="5,84,71,127" shape="rect">
+				</map>
+				<BR><BR>
+		<? } ?>
+			
+
 <?		if ($showComboBox){ ?>
 			<select name="SectionID" id="SectionID" onChange='form.submit();'>
 <?
@@ -100,7 +124,8 @@ function generate_navigation($showComboBox = true) {
 	<?
 
 
-}
+} // generate_navigation
+
 //<div align="right">
 //
 //<input type="button" onClick="javascript:location.href='preview.phtml'" value="Preview My Selections">
@@ -381,14 +406,16 @@ function hideOptionsPhotoDIV(){
 <body onLoad="calc_total();">
 
 <center>
-<table cellspacing="0" cellpadding="0" border="0" width="90%">
+<!-- Page Width to be implemented -->
+<table cellspacing="0" cellpadding="0" border="0" width="<?= $PageWidthPercentage; ?>%">
   <tr>
       <td>
           <table width="100%" border="0" cellspacing="0" cellpadding="5" >
+		  <? if ($ShowProjectLogo){?>
 			<tr>
 			<td colspan=100 align="left"><img src="./images/project-logo-small.jpg"></td>
 			</tr>
-          
+			<? }?>			
             <tr>
 <!--            <th class="big-head"><?echo $SectionName;?>&nbsp;&nbsp;&nbsp;&nbsp;<?if ($SectionDesc != "") echo "(" . $SectionDesc . ")";?></th> //-->
               <td class="big-head">Options and Upgrades for Unit <?= $UnitNumber;?></td>
@@ -475,10 +502,19 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 		<td class="head" border="0" align=right>
 <?
 
+	// echo "<img src='https://images.unsplash.com/photo-1600566752229-250ed79470f8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3839&q=80' height='300' width=100%>";
+	echo "<BR><BR>"; 
+	echo "<font size=5 face=\"Verdana, Arial, Helvetica, sans-serif\" color=\"#888888\"><b>$SubsectionName</b></font>";
 
-	echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\"><b>$SubsectionName</b></font>";
+	$sectionImagePath = "images/sections/section_" . $SubsectionID . ".jpg";
+	if (CLIENT_SHOW_SECTION_IMAGE && file_exists($sectionImagePath)){
+		echo "<BR><BR>";
+		echo "<img src='$sectionImagePath' height='300' width=100%>";
+	}
+	echo "<BR><BR>"; 
+
 	if ($SubsectionDesc != "") {
-		echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\"> - $SubsectionDesc</font><br>";
+		echo "<font size=2 face=\"Verdana, Arial, Helvetica, sans-serif\" color=\"#888888\"> - $SubsectionDesc</font><br>";
 	}
 ?>		
 		</td>
@@ -697,6 +733,7 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 						echo "\t\t\t\t\t\tImageHeight_array[\"".$OptionID."_".$ChoiceID."\"] = \"".$imageOfChoiceHeight."\";\n";
 						echo "\t\t\t\t\t</script>\n";
 						// End by Cindy
+
 						//retrieve choiceID from database and show it on the page
 						//if the user has select the choice before
 						echo "\t\t\t\t\t<option value=\"$ChoiceID\"";
@@ -729,9 +766,9 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 				// if size is 250*250, pop up small window
 				// if size is 640*480, pop up large window
 				$size = getimagesize($imageForDisplay);
-//die("choiceHasImage=$choiceHasImage optionHasImage=$optionHasImage<BR>");
+//print "choiceHasImage=$choiceHasImage optionHasImage=$optionHasImage<BR>";
 				if ($showSelectedChoiceImage){
-?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left" title="Click here to choose choices"
+?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left" 
 					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>,  <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
 					onMouseOut="hideOptionsPhotoDIV()" 
 					valign="center" border=0 src="<?= $imageForDisplay;?>" width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
@@ -744,13 +781,13 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" 
 					align="left" valign="center" border=0 src="<?= $imageForDisplay;?>" 
 					width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
-					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)" onClick="XXXchooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)" 
+					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
 					onMouseOut="hideOptionsPhotoDIV()" >
 <?				}
  				else if ($choiceHasImage){
 					// if option doesn't have image, and one of the choice has image,
 					// use the default option image to ask user to click 
-?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left"  title="Click here to choose choices"
+?>					<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" align="left"
  					onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, -1, -1)"
 					onMouseOut="hideOptionsPhotoDIV()" valign="center" border=0 
 					width="<?= DEFAULT_ITEM_OPTION_THUMBNAIL_WIDTH ;?>" 
@@ -878,7 +915,7 @@ if (result){
 
 
 // send $noOfInput to save database page
-generate_navigation(false);
+generate_navigation(false, false);
 ?>
 <input type="hidden" name="noOfInput" value="<?= $noOfInput;?>">
 </form>
@@ -886,7 +923,7 @@ generate_navigation(false);
 </td>
 </tr>
 <tr>
-<td colspan=100 align="right"><img width=200 src="./images/company-logo-small.jpg"></td>
+<td colspan=100 align="right"><BR><BR><img width=200 src="./images/company-logo-small.jpg"></td>
 </tr>
 </table>
   <br>

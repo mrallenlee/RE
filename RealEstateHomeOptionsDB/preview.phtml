@@ -6,6 +6,8 @@ include_once "upgradeOptionAction.phtml";
 
 define('ADDITIONAL_CHANGE_TABLE_PREFIX',"additionalChangeTableRow_");
 
+$PageWidthPercentage = intval(PAGE_WIDTH_PERCENTAGE);
+
 //----------------------------------------------------------------------------------------------
 //Var
 $UnitNumber = getUnitNumber();
@@ -42,7 +44,7 @@ $gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'
 //----------------------------------------------------------------------------------------------
 function generate_navigation()
 {
-?>	<input type="button" class="nav" onClick="javascript:window.location='display_upgrades.phtml'" value="Back to Options and Upgrades">
+?>	<input type="button" onClick="javascript:window.location='display_upgrades.phtml'" value="Back to Options and Upgrades">
 <? }
 
 
@@ -83,9 +85,8 @@ function getTitle($commit){
  * Subsection style
  */
 function getSubsectionStyle($mode){
-	return "";
 	if ($mode == "print"){
-		return "bgcolor=\"#bbbbbb\"";		
+		return "class=\"head\"";
 	} else{	
 		return "class=\"head\"";
 	}
@@ -95,9 +96,8 @@ function getSubsectionStyle($mode){
  * header style
  */
 function getOptionHeaderStyle($mode){
-	return "";
 	if ($mode == "print"){
-		return "bgcolor=\"#CCCCCC\" border=5";	
+		return "class=\"tail\"";
 	} else {	
 		return "class=\"tail\"";
 	}
@@ -108,15 +108,17 @@ function getOptionHeaderStyle($mode){
  * option content style
  */
 function getOptionContentStyle($mode){
-	return "class=\"blank\" onmouseover=\"this.className='blank-highlight'\" " .
-		"onmouseout=\"this.className='blank'\"";	
-
+	if ($mode == "print"){
+		return "class=\"blank\"";	
+	} else {
+		return "class=\"blank\" onmouseover=\"this.className='blank-highlight'\" " .
+			"onmouseout=\"this.className='blank'\"";	
+	}	
 }	
 
 function getSummaryContentStyle($mode){
-	return "";
 	if ($mode == "print"){
-		return "bgcolor=\"#eeeeee\"";
+		return "class=\"blank\"";	
 	} else {
 		return "class=\"blank\"";	
 	}	
@@ -137,6 +139,57 @@ function getAdminEditPrice($priceType) {
 
 <head>
 	<style type="text/css">
+		button {width: 100px;}
+
+		#pane_grid {
+			overflow: auto;
+		}
+		
+		#pane_grid table {
+			font-family:Lucida Grande, Verdana;
+			font-size:0.8em;
+			width:100%;
+			border:1px solid #ccc;
+			border-collapse:collapse;
+			cursor:default;
+			position: absolute; 
+			left: 0; 
+			top: 0;
+		}
+		#pane_grid table td,
+		#pane_grid table th{
+			padding:2px;
+			font-weight:normal;
+		}
+		
+		#pane_grid table thead td, table thead th {
+			background-image:url(images/ft-head.gif);
+			background-repeat:no-repeat;
+			background-position:top right;
+		}
+		#pane_grid table thead td.selectedUp, table thead th.selectedUp {
+			background-image:url(images/ft-headup.gif);
+		}
+		#pane_grid table thead td.selectedDown, table thead th.selectedDown {
+			background-image:url(images/ft-headdown.gif);
+		}
+		
+		#pane_grid table tbody tr td{
+			border-bottom:1px solid #ddd;
+		}
+		#pane_grid table tbody tr.alt td{
+			background: #e3edfa;
+		}
+		#pane_grid table tbody tr.selected td{
+			background: yellow;
+		}
+		#pane_grid table tbody tr:hover td{
+			background: #a6c2e7;
+		}
+		#pane_grid table tbody tr.selected:hover td{
+			background:#ff9;
+		}
+
 		/* group multiple buttons in a row */
 		.box {
 			display: block;
@@ -237,11 +290,11 @@ function hideWaitingDIV(){
 }
 </script>
 
-<title class"page-title"><?= getTitle($commit); ?>></title>
+<title><?= getTitle($commit); ?>></title>
 </head>
 <? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", $mode != "print", false); ?>
 <body>
-<table cellpadding="2" cellspacing="0" ID="previewTable">
+<table cellpadding="2" cellspacing="0" ID="previewTable" width="<?= $PageWidthPercentage; ?>%" align="center">
 	<tr>
 		<td>
           <table width="100%" border="0" cellspacing="0" cellpadding="5" >
@@ -253,6 +306,9 @@ function hideWaitingDIV(){
               <td class="big-head"><?= getTitle($commit); ?></td>
             </tr>
           </table>
+		</td>
+	</tr>
+
 	<tr>
 		<td colspan=100 align="right">
 <?
@@ -292,12 +348,15 @@ else
 
 ?>
 <table width="100%" cellpadding="2" cellspacing="2" >
+	<tr><td><br><br></td></tr>
+	<div >
+	<tr >
+		<td colspan=10 align="center"><img id="banner-image" height="300" width="100%" src="images/preview_background.jpg"></td>
+	</tr>
+	</div>
+
 
 <?
-
-// Init variables
-$printGapBetweenSubsection 	= 0;
-
 // get the name of the current section
 $sql = "SELECT Name, Description, SectionID
 		FROM Section ORDER BY Name";
@@ -312,7 +371,7 @@ while ($section_row = mysql_fetch_array($section_result))
 		
 	// cache the html code for section, subsection title. The code
 	// will be printed if item-option is available
-	$htmlCacheHeader = "<tr><td class=\"header3\" colspan=\"4\" >" . $section_row['Name'] . "</td></tr><tr><td><br><br></td></tr>";
+	$htmlCacheHeader = "<tr><td colspan=\"4\" ><font size=\"4\"><b>&nbsp;<br>&nbsp;<br>" . $section_row['Name'] . "</b></font></td></tr>";
 
 	$sql = "SELECT Name, Description, SubsectionID
 			FROM Subsection
@@ -322,12 +381,13 @@ while ($section_row = mysql_fetch_array($section_result))
 	{
 		$subsectionID = $subsection_row['SubsectionID'];
 		
-		$htmlCache = "<tr class=\"head\"><td colspan=\"4\">" . $subsection_row['Name'] . "</td></tr>";
-		$htmlCache .= "<tr class=\"tail\">";
-		$htmlCache .= "<td width='30%'>Item</td>";
-		$htmlCache .= "<td width='40%'>Option</td>";
-		$htmlCache .= "<td width='25%'>Choice</td>";
-		$htmlCache .= "<td width='5%'>Price</td>";
+		$htmlCache = "<tr><td colspan=\"5\"" . getSubsectionStyle($mode) . "><b>" . $subsection_row['Name'] . "</b></td></tr>";
+		$htmlCache .= "<tr>";
+		$htmlCache .= "<td bgcolor=\"#FFFFFF\">&nbsp;</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Item</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Option</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Choice</td>";
+		$htmlCache .= "<td " . getOptionHeaderStyle($mode) . ">Price</td>";
 		$htmlCache .= "</tr>";
 
 
@@ -394,16 +454,15 @@ while ($section_row = mysql_fetch_array($section_result))
 			}
 			
 			
-			// print title if item-option is available, and mark indicator to 
-			// print gap between each Subsection
+			// print title if item-option is available
 			print $htmlCacheHeader;
 			$htmlCacheHeader = "";
 			print $htmlCache;
 			$htmlCache = "";
-			$printGapBetweenSubsection = 1;
 	
 ?>
 	<tr <?= getOptionContentStyle($mode); ?>>
+		<td bgcolor="#FFFFFF">&nbsp;</td>
 		<td ><?= $userSave_row['ItemName'];?></td>
 		<td >
 		<? if ($userSave_row['OptionsName'] != "" && $userSave_row['Price'] != -9999)
@@ -412,14 +471,14 @@ while ($section_row = mysql_fetch_array($section_result))
 			}
 			else
 			{
-				echo "<font color=\"#ff0000\"><center>no selection saved</center></font>";
+				echo "<font class=\"error\"><center>no selection saved</center></font>";
 				$incomplete = 1;
 			}
 			$userSave_row['OptionsName'];
 		?></td>
 <?			if ($userSave_row['OptionsChoice'] != "")		
 			{
-?>		<td ><i><?= $userSave_row['OptionsChoice'];?>:</i><?= $userSave_row['ChoiceName'];?></td>
+?>		<td ><i><?= $userSave_row['OptionsChoice'];?>:</i> <nobr><?= $userSave_row['ChoiceName'];?></nobr></td>
 <?			}
 			else
 			{
@@ -451,11 +510,6 @@ while ($section_row = mysql_fetch_array($section_result))
 	</tr>
 <?			//$userSave_row['OptionsName'] $userSave_row['OptionsChoice'] $userSave_row['ChoiceName']<br>";
 		}// end of userSave loop
-
-		if ($printGapBetweenSubsection) {
-			?>	<tr><td><br><br></td></tr> <?
-			$printGapBetweenSubsection = 0;
-		}
 	}// end of subsection loop
 }// end of section loop
 	
@@ -476,18 +530,20 @@ $useroption_result = mysql_query($sql,$db) or handleError("", "SQL=$sql <br>Erro
 ?>
 <tr><td><BR></td></tr>
 <tr ID="<?= ADDITIONAL_CHANGE_TABLE_PREFIX . "HEADER";?>" >
-<td class="header3" colspan=4 >Additional Changes</td>
+<td colspan=4 ><font size=\"4\"><b>Additional Changes</b></font></td>
 </tr>
 
+<tr <?= getOptionContentStyle($mode); ?>>
+</tr>
 <?
 $numOfAddChange = 0;
 
 if (mysql_num_rows($useroption_result) > 0)
 {
 ?>
-<tr class="head" >
-	<td colspan="4">Option</td>
-	<td>Price</td>
+<tr>
+<td colspan="4" <?= getOptionHeaderStyle($mode); ?>>Option</td>
+<td <?= getOptionHeaderStyle($mode); ?>>Price</td>
 </tr>
 <?
 	for ($i=0;$useroption_row = mysql_fetch_array($useroption_result);$i++)
@@ -553,66 +609,33 @@ else
 ?>
 	<img src="black.gif" width="100%" height="1" alt="" border="0"></td>
 </tr>
-<tr class="blank">
-	<td colspan="1">
-	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">
 	Total options before taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="totalBeforeTaxes" ><?= number_format($total, 2)?></span></nobr></td>
 </tr>
-<tr class="blank">
-	<td colspan="1">
-	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">Less credit:</td>
 	<td <?= getSummaryContentStyle($mode); ?> ><nobr>$<span ID="credit" ><?= number_format($credit, 2); ?></span></nobr></td>
 </tr>	
-<tr class="blank">
-	<td colspan="1">
-	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">Total Sales:</td>
+	<td <?= getSummaryContentStyle($mode); ?>><nobr>$ <span ID="totalSales" ><?= number_format($total_sales, 2)?></span></nobr></td>
 </tr>	
-<tr class="blank">
-	<td colspan="1">
-	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">HST: </td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span id="gst"><?= number_format($gstAmount, 2)?></span></nobr></td>
 </tr>
-<tr class="blank">
-	<td colspan="1">
-	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
+<tr>
+	<td colspan="3">
+	<td <?= getSummaryContentStyle($mode); ?> align="right">Total including taxes:</td>
 	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="total" ><?= number_format($total_with_tax, 2)?></span></nobr></td>
 </tr>	
-
-<? /** Disable in this project
-<tr>
-	<td colspan="2">
-	<td colspan="2"<?= getSummaryContentStyle($mode); ?> align="right" ID="CashPayment_desc">Cash payment:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="CashPayment" <?
-	echo getAdminEditPrice("CashPayment"); ?>><?= number_format($cashPayment, 2)?></span></nobr></td>
-</tr>	
-*/ ?>
-<? /** Disable in this project
-<tr>
-	<td colspan="2">
-	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right" ID="PayByMortgage_desc">Pay by mortgage:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="PayByMortgage" <?
-	echo getAdminEditPrice("PayByMortgage"); ?>><?= number_format($payByMortgage, 2)?></span></nobr></td>
-</tr>	
-*/ ?>
-<?php
-if ($outstandingAmt != 0) {
-	$outstandingAmt_to_display = $outstandingAmt;
-} else {
-	$outstandingAmt_to_display = $total_with_tax - $cashPayment - $payByMortgage;
-}
-?>
-<? /** Disable in this project
-<tr>
-	<td colspan="2">
-	<td colspan="2" <?= getSummaryContentStyle($mode); ?> align="right" ID="OutstandingAmt_desc">Outstanding amount:</td>
-	<td <?= getSummaryContentStyle($mode); ?>><nobr>$<span ID="OutstandingAmt" <?
-	// echo getAdminEditPrice("OutstandingAmt"); ?>><?= number_format($outstandingAmt_to_display, 2)?></span></nobr></td>
-</tr>	
-*/ ?>
 </table>
-<div id="page-break-div" ></div>
 <?
 	if ($commit)
 	{
@@ -737,7 +760,7 @@ if ($mode != "print")
 <!--
 function commit()
 {
-	var displayText = "If you continue, you will LOCK IN your selections. No further changes can be made after this. \nIt is preferable to wait until your final meeting with Marlene when she will lock in your selections with you.\n\nClick OK only you are sure you want to lock in.";
+	var displayText = "If you continue, you will LOCK IN your selections. No further changes can be made after this. \nIt is preferable to wait until your final meeting with Home Options Representativee when she will lock in your selections with you.\n\nClick OK only you are sure you want to lock in.";
 
 	if (confirm(displayText))
 	{
