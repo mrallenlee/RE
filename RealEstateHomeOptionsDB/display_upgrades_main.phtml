@@ -1,0 +1,25 @@
+<? $UnitNumber=202; ?>
+
+<style>
+.menu {
+  text-align:right;
+  width: 250px;;
+  min-height: 100vh;
+  border:0;
+}
+.mainContent {
+  text-align:left;
+  width:900px;
+  min-height:100vh;
+  border:0;
+}
+</style>
+
+
+<html >
+    <body align="center" width="80%">
+
+        <iframe id="choices" class="menu" name="choices" src="display_upgrades_navigation.phtml?UnitNumber=<?= $UnitNumber; ?>&SectionID=<?= $SectionID; ?>"></iframe>
+        <iframe id="main" class="mainContent" name="main" src="display_upgrades.phtml?SectionID=<?= $SectionID; ?>&PageWidthPercentage=100&ShowProjectLogo=false"></iframe>
+    </body>
+</html>

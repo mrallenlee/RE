@@ -1,0 +1,58 @@
+<?
+// display_upgrades Floor plan navigation ftp_rename
+// place at locale_filter_matches
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/UserPackageHandler.phtml";
+include "floorplanUtil.phtml";
+
+
+$url = "display_upgrades.phtml?PageWidthPercentage=100&ShowProjectLogo=false&SectionID=";
+$targetWin  = "target=\"main\"";
+
+
+// If our SectionID isn't set then set it to be the first one 
+//$UnitType = getUnitType();
+$unitInfoArray = getUnitInfo();
+$UnitType = $unitInfoArray['UnitType'];
+$UnitNumber = $unitInfoArray['UnitNumber'];
+
+$showFloorPlan = true; 
+
+
+$unitTypeSection = getUnitTypeSection($UnitType);
+// print ("array unitTypeSection=");
+// print_r($unitTypeSection);
+
+$floorplanInfo = getFloorPlanInfo($UnitNumber);
+
+$imageMap   = $floorplanInfo['ImageMap'];
+
+// replace {TARGET} to the actual target
+$imageMap   = preg_replace("{\{TARGET\}}", $targetWin, $imageMap);
+
+foreach ($unitTypeSection as $name=>$sectionID){
+    // print ("uts name=$name sectionID=$sectionID");
+    
+    // replace the name with the actual URL
+    // $imageMap = preg_replace("/" . $name . "/", $url . $sectionID, $imageMap);    
+
+    $imageMap = preg_replace("{\{" . preg_quote($name, '/') . "\}}", $url . $sectionID, $imageMap);    
+}
+?>
+<? print_top_frame($selfPath, WEB_RESOURCE_INVERT_RELATIVE_PATH . "/", true, false); ?>
+
+<html>
+<table width="100%" border="0" cellspacing="0" cellpadding="5" >
+			<tr>
+			<td colspan=100 align="left"><img src="./images/project-logo-small.jpg"></td>
+			</tr>
+</table>
+
+<?		if ($showFloorPlan){ ?>
+    <img height="400" src="images/floorplan/<?= $floorplanInfo['ImagePath']; ?>" usemap="#image_map">
+    <?= $imageMap;?>
+        <BR><BR>
+<? } ?>
+    
+</html>
+

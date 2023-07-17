@@ -2,6 +2,12 @@
 include "main_include.phtml";
 include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/UserPackageHandler.phtml";
 
+
+if (FLOORPLAN_NAVIGATION){
+	$PageWidthPercentage 	= 100;
+	$ShowProjectLogo		= false;
+}
+
 if (!isset($PageWidthPercentage)){
 	$PageWidthPercentage = intval(PAGE_WIDTH_PERCENTAGE);
 }
@@ -53,6 +59,7 @@ if ($SectionID == "") {
 // this var will increment for each radio group
 $noOfInput = 0;
 
+
 function generate_navigation($showComboBox = true, $showFloorPlan = false) {
 	global $PHP_SELF;
 	global $SectionID;
@@ -65,7 +72,8 @@ function generate_navigation($showComboBox = true, $showFloorPlan = false) {
 
 	$result_nav = mysql_query($sql_nav) or 	handleError ("", "$sql_nav <br>".mysql_error(), SQL_ERROR, true);
 ?>	
-	<form method="get" action="<?= $PHP_SELF ?>">
+
+	<form method="get"   action="<?= $PHP_SELF ?>">
 	<table width="100%" >
 	<tr>
 <?		if ($showComboBox){ ?>
@@ -110,10 +118,10 @@ function generate_navigation($showComboBox = true, $showFloorPlan = false) {
 		</td>
 		<td colspan="100" align="right">
 			<input type="button" value="Save" onClick="javascript:save()">
-			<input type="button" align = "right" onClick="javascript:location.href='preview.phtml'" value="Preview My Selections">
+			<input type="button" align = "right" onClick="window.<?= FLOORPLAN_NAVIGATION ? "parent." : ""; ?>location='preview.phtml'" value="Preview My Selections">
 <?		if (isAdmin()){
-?>			<input type="button" align = "right" onClick="window.location='admin/homeOptionsUserList.phtml?mode=purchaser&listall=1'" value="Back to Purchaser List">
-				<input type="button" align = "right" onClick="window.location='admin/homeOptionsVacantUnitList.phtml?listall=1'" value="Back to Vacant Unit List">
+?>			<input type="button" align = "right" onClick="window.<?= FLOORPLAN_NAVIGATION ? "parent." : ""; ?>location='admin/homeOptionsUserList.phtml?mode=purchaser&listall=1'" value="Back to Purchaser List">
+				<input type="button" align = "right" onClick="window.<?= FLOORPLAN_NAVIGATION ? "parent." : ""; ?>location='admin/homeOptionsVacantUnitList.phtml?listall=1'" value="Back to Vacant Unit List">
 <?		} else { 			
 ?>			<input type="button" align = "right" onClick="javascript:logout()" value="Logout">
 <?		}			
@@ -904,7 +912,7 @@ function logout()
 var result = confirm("Are you sure you want to logout?")
 
 if (result){
-	location.href='logout.phtml?url=index.phtml';
+	window.<?= FLOORPLAN_NAVIGATION ? "parent." : ""; ?>location='logout.phtml?url=index.phtml';
 }
 }
 //-->
