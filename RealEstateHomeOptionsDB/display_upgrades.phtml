@@ -782,6 +782,18 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 					valign="center" border=0 src="<?= $imageForDisplay;?>" width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
 					onClick="chooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)">
 <?				}
+				// Handle case that open has image AND choice has image. Display the option image, and make it clickable to display choice image
+				else if ($optionHasImage && $choiceHasImage) {
+					?>					 
+						<img name="OptionImage<?= $OptionID;?>" id="OptionImage<?= $OptionID;?>" 
+						align="left" valign="center" border=0 src="<?= $imageForDisplay;?>" 
+						width="<?= $imageForDisplayWidth;?>" height="<?= $imageForDisplayHeight; ?>"
+						onMouseOver="displayOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>, <?= $size[0]; ?>, <?= $size[1]; ?>)"
+						onMouseOut="hideOptionsPhotoDIV()" 
+						onClick="chooseOptionsPhotoDIV('OptionImage<?= $OptionID; ?>', <?= $OptionID; ?>, <?= $ItemID; ?>)"					
+										>
+					<?				
+				}
 				// if choice doesn't have image, and option has image, 
 				// display this single image 
 				else if ($optionHasImage) {
