@@ -126,7 +126,18 @@
 	?>
 		<script language="JavaScript">
 		<!--
-			window.location = "<?echo $url;?>"
+
+
+		// Function to check whether webpage is in iFrame
+		function iniFrame() {  
+			return (window.self !== window.top)
+		}
+  
+			if (iniFrame()) {
+				window.parent.location = "<?echo $url;?>";
+			} else {
+				window.location = "<?echo $url;?>"
+			}
 		//-->
 		</script>
 	<?
