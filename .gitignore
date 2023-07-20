@@ -4,7 +4,7 @@
 .vscode/monac.code-workspace
 .vscode/sftp.json
 .vscode/
-**/images
+**/images/**
 **/bak
 **/backup
 *.jpg
@@ -12,6 +12,7 @@
 *.cgi
 *.csv
 .user
+**.DS_Store
 RealEstateDB/FloatingMenu/menu.phtml
 RealEstateDB/FloatingMenu/config.js
 RealEstateDB/config/config.phtml
