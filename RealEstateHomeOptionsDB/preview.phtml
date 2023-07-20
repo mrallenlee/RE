@@ -44,7 +44,7 @@ $gstRate = $upgradeOptionStatus['GSTRate'] > 0 	? $upgradeOptionStatus['GSTRate'
 //----------------------------------------------------------------------------------------------
 function generate_navigation()
 {
-?>	<input type="button" onClick="javascript:window.location='display_upgrades.phtml'" value="Back to Options and Upgrades">
+?>	<input type="button" onClick="javascript:window.location='<?= (FLOORPLAN_NAVIGATION? "display_upgrades_main.phtml" : "display_upgrades.phtml")?>'" value="Back to Options and Upgrades">
 <? }
 
 
