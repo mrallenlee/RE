@@ -226,7 +226,7 @@ if ($row = mysql_fetch_array($result)) {
 	$row_select = mysql_fetch_array($result_select);
 
 	if ($row_select['num'] == 0) {
-		handleError("Sorry, there are no options/items listed for your unit.<br>Try logging in later.",
+		handleError("Sorry, there are no options/items listed for your unit.<br>Please kindly contact administrator to add in Options under this section.",
 		 	"SQL=$sql_select", GENERAL_ERROR, true);			
 	}
 
@@ -517,7 +517,7 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 	$sectionImagePath = "images/sections/section_" . $SubsectionID . ".jpg";
 	if (CLIENT_SHOW_SECTION_IMAGE && file_exists($sectionImagePath)){
 		echo "<BR><BR>";
-		echo "<img src='$sectionImagePath' height='300' width=100%>";
+		echo "<img src='$sectionImagePath' height='250' width=100%>";
 	}
 	echo "<BR><BR>"; 
 
