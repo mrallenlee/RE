@@ -97,17 +97,31 @@ function debug($msg, $level=5){
 // make a connection to the database
 global $SERVER_NAME, $PHP_SELF;
 
+
+/**
+ * Internal mysql wrapper to support legacy code
+ */
+
+function mysql_query111($sql, $db){
+	global $mysqli;
+
+	$result = mysqli_query($mysqli,$sql);
+
+	return $result;
+ }
+
 /**
  * Centralize function to execute sql, and log the action
- * @return object returned by mysql_query 
+ * @return object returned by mysqli_query 
  */
 function &executeSql($sql, $dieOnError = true){
 	global $_SERVER;
 	global $db;
+	global $mysqli;
 		
 	if ($dieOnError){
 		$errorHappened = 0;
-		$result = mysql_query($sql) or ($errorHappened = 1);
+		$result = mysqli_query($mysqli,$sql) or ($errorHappened = 1);
 		
 		if ($errorHappened){
 			if (ERROR_HANDLER_ENABLED){
@@ -118,14 +132,14 @@ function &executeSql($sql, $dieOnError = true){
 		}
 	}
 	else {
-		$result = mysql_query($sql);
+		$result = mysqli_query($sql);
 	}
 	return $result;
 }
 
 
-$db = mysql_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
-mysql_select_db(REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database " . REAL_ESTATE_DB_NAME, $PHP_SELF);
+// $db = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
+// mysql_select_db(REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database " . REAL_ESTATE_DB_NAME, $PHP_SELF);
 
 // Use MysqlI for the fetch_all feature to load the result into array
 $mysqli = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD, REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
@@ -309,14 +323,17 @@ function isHex($data){
 
 
 // A helper function used by en/de crypt routines
-function hex2bin($data)
-{
-	if (isHex($data)){
-		$len = strlen($data);
-		return pack("H" . $len, $data);
+if (!function_exists(hex2bin)){
+	function hex2bin($data)
+	{
+		if (isHex($data)){
+			$len = strlen($data);
+			return pack("H" . $len, $data);
+		}
+		else return "";
 	}
-	else return "";
-}
+} // if !function_exists(hex2bin)
+
 
 function getNum2Words($num){
 	$numClass = new num2words;
@@ -789,8 +806,8 @@ if (!function_exists("section_disabled")){
 		$sql_disabled = "SELECT SectionID FROM Disable_Section_by_Unittype 
 				WHERE UnitType = '" . $UnitType . "' " .
 				"AND SectionID = " . $SectionID;
-		$result_disabled = mysql_query($sql_disabled) or die("ERROR : $sql_disabled <br>" . mysql_error());
-		$row_disabled = mysql_fetch_array($result_disabled);
+		$result_disabled = mysqli_query($sql_disabled) or die("ERROR : $sql_disabled <br>" . mysql_error());
+		$row_disabled = mysqli_fetch_array($result_disabled);
 	
 		if ($row_disabled['SectionID'] == $SectionID)
 			return 1;

@@ -12,8 +12,9 @@
  	var $logFilePath = "";
  	var $errorMap = array();
  	
- 	
- 	function ErrorHandler($pathToLogFile = ""){
+
+	
+ 	public function __construct($pathToLogFile = ""){
  		$this->logFilePath = $pathToLogFile;
  	}
  	
@@ -134,7 +135,7 @@
  
  Class ErrorData {
  	var $errorType, $errorURL, $errorMsg;
- 	function ErrorData($errorType, $errorURL, $errorMsg){
+ 	public function __construct($errorType, $errorURL, $errorMsg){
  		$this->errorType 	= $errorType;
  		$this->errorURL 	= $errorURL;
  		$this->errorMsg		= $errorMsg; 

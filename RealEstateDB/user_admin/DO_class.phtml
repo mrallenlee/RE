@@ -60,31 +60,34 @@ Class DOFactory {
 		//print $sql . "<br>";
 		
 		// Connecting, selecting database
-		$link = mysql_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD);
-		mysql_select_db(DB_NAME);
+		// $link = mysql_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD);
+		// mysql_select_db(DB_NAME);
+		
+		// Use MysqlI for the fetch_all feature to load the result into array
+		$mysqli = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD, REAL_ESTATE_DB_NAME) or log_err_die(mysqli_error()  . " Error : Cannot connet to database", $PHP_SELF);
 
 		// Performing SQL query
-		$result = mysql_query($sql)  or die('Query failed: ' . mysql_error());
+		$result = mysqli_query($mysqli, $sql)  or die('Query failed: ' . $sql  . mysqli_error());
 		
 		if (substr($sql,0,6) != 'select') {
-			mysql_close($link);
+			mysqli_close($link);
 			return $result;
 		}
 
 		// Printing results in HTML
 		$rows = array();
-		while ($line = mysql_fetch_assoc($result)) {
+		while ($line = mysqli_fetch_assoc($result)) {
 			$rows[] = $line;
 			
 			if (count($rows) > $rowSize) break;
 		}
 
 		// Free resultset
-		mysql_free_result($result);
+		mysqli_free_result($result);
 
 		// Closing connection
-		mysql_close($link);
-		
+		mysqli_close($link);
+	
 		return $rows;
 		
 		/*
