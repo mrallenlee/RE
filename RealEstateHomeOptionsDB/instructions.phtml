@@ -23,7 +23,7 @@ include "main_include.phtml";
 				<tr><td><br></td></tr>
 				<tr><td colspan=5 align="right"><img src="images/orange-bar.jpg"></td></tr>
 				<tr>
-					<td width=230 valign="top" align="right"><img width=230 src="images/project-building-side.jpg"></td>
+					<td width=230 valign="top" align="right"><? if (file_exists("images/project-building-side.jpg")) { ?><img width=230 src="images/project-building-side.jpg"><? } ?></td>
 					<td valign="top"align="left" width=470>
 						<table cellspacing="0" cellpadding="0" border="0" width="100%" height="10">
 							<tr>
@@ -55,7 +55,7 @@ include "main_include.phtml";
 	<font class="body-blue">If you chose to include it - THE PRICES ARE SHOWN INCLUDES PST IF APPLICABLE. GST IS EXTRA.</font> 
 	<br>
 	<br>
-	<font size="3" color="#FED82F" ><b>How do you select?<b></font> Click on each main Section (Lobby, Dining Area, Main Bedroom etc…) - then work through each of the Sub Sections available (Floor, Walls Ceiling etc…). You will see a range of alternatives we are offering - click on each main Group (Hardwood, Tile …etc) and you will see the various stages of Upgrade. To select an Option, Click on the Button and, if you see a drop down box, click on the down arrow to see the range of colours or styles. Here is an example:
+	<font size="3" color="#FED82F" ><b>How do you select?<b></font> Click on each main Section (Lobby, Dining Area, Main Bedroom etcï¿½) - then work through each of the Sub Sections available (Floor, Walls Ceiling etcï¿½). You will see a range of alternatives we are offering - click on each main Group (Hardwood, Tile ï¿½etc) and you will see the various stages of Upgrade. To select an Option, Click on the Button and, if you see a drop down box, click on the down arrow to see the range of colours or styles. Here is an example:
 											</td>
 										</tr>
 										<tr>
@@ -95,7 +95,7 @@ include "main_include.phtml";
 										</tr>
 										<tr>
 											<td align="center">
-												<form action="display_upgrades.phtml" method="post" name="OptionsUpgrades">
+												<form action="display_upgrades_main.phtml" method="post" name="OptionsUpgrades">
 												<input type="hidden" name="SectionID" value="<?echo $SectionID;?>">
 												<input type="submit" name="submit" value="Proceed to Options and Upgrades"><br>
 												</form>

@@ -12,5 +12,9 @@ include_once "main_include.phtml";
 setUnitNumber($UnitNumber);
 setIdentity(ADMIN);
 
-goto_url("../display_upgrades.phtml");
+if (FLOORPLAN_NAVIGATION){
+    goto_url("../display_upgrades_main.phtml");
+} else {
+    goto_url("../display_upgrades.phtml");
+}
 ?>

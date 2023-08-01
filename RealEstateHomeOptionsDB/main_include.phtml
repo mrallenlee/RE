@@ -199,6 +199,28 @@ function getUnitInfo()
 	else return -1;
 }
 
+/**
+ * Get the section ID for each Unit Type, sorted by section name
+ */
+function getUnitTypeSection($UnitType){
+	$unitTypeSection = array();
+
+	$sql_nav = "SELECT * FROM Section ORDER BY Name";
+
+	$result_nav = mysql_query($sql_nav) or 	handleError ("", "$sql_nav <br>".mysql_error(), SQL_ERROR, true);
+
+	while ($row = mysql_fetch_array($result_nav)) {
+		if (!section_disabled($UnitType, $row['SectionID'])) {
+			$name 		= $row['Name'];
+			$sectionID 	= $row['SectionID'];
+			$unitTypeSection[$name] 	= $sectionID;
+		}
+	}
+
+	return $unitTypeSection;
+
+} // getUnitType Section array
+
 // Used to check if user has made their commitment to their changes
 // Return Commit (either 1 or 0) when user has been logged in, -1 otherwise
 function getCommit()

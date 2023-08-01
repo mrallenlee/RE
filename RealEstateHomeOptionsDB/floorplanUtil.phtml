@@ -1,0 +1,15 @@
+<?
+/**
+ * get Floorplan info by the UnitNumber
+ * Return ImagePath, ImageMap, UnitNumber in the returned array
+ */
+function getFloorplanInfo($UnitNumber){
+    // retrieve image floorplan and image map from DB
+    $sql = "select Unit.UnitNumber, ImagePath, ImageMap from Unit, Floorplan where Unit.UnitNumber = $UnitNumber AND Unit.FPID = Floorplan.FPID";
+    $result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+    $row = mysql_fetch_array($result);
+
+    return $row;
+} // getFloorplanInfo
+
+?>

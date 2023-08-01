@@ -338,7 +338,7 @@ elseif ($table_name == "Item_Options") {
 	}
 
 	// listbox on the 'Add' form is generated using this
-	$listbox_Options = "\n<select name=\"OptionID[]\" multiple=\"multiple\">\n";
+	$listbox_Options = "\n<select name=\"OptionID[]\" size=30 multiple=\"multiple\">\n";
 
 	// get all Options names
 	$sql = "SELECT OptionID, Name
@@ -370,7 +370,7 @@ elseif ($table_name == "Item_Options") {
 	echo "<td><input type=\"submit\" name=\"submit\" value=\"Add\"></td>\n";
 	echo "</tr>\n";
 	echo "<tr>\n";
-	echo "<td>&lt;<a href=\"display_table.phtml?table_name=Options&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID\">add more Options to the list</a>&gt;&nbsp;&nbsp;</td>\n";
+	echo "<td><input type=\"button\" value=\"Add more options\" onClick=\"window.location='display_table.phtml?table_name=Options&mode=$mode&SectionID=$SectionID&SubsectionID=$SubsectionID&ItemID=$ItemID'\">&nbsp;&nbsp;</td>\n";
 	echo "<td>&nbsp;</td>\n";
 	echo "</tr>\n";
 	echo "</form>\n";
