@@ -4,9 +4,35 @@ include LOCAL_CONFIG_FOLDER . "/config.phtml";
 
 if (session_id() == ""){
 	session_start();
-	session_register("sesUserID");
-	session_register("sesUnitNumber");
-	session_register("sesIsAdmin");
+	// session_register("sesUserID");
+	// session_register("sesUnitNumber");
+	// session_register("sesIsAdmin");
+}
+
+
+function setSessionUnitNumber($unitNumber){
+	$_SESSION["USER.UNIT_NUMBER"] = $unitNumber;
+} // setSessionUnitNumber
+
+
+function getSessionUnitNumber(){
+	return $_SESSION["USER.UNIT_NUMBER"];
+}
+
+function setSessionUserID($userID){
+	$_SESSION["USER.ID"] = $userID;
+} // setSessionUserID
+
+function getSessionUserID(){
+	return $_SESSION["USER.ID"];
+} // setSessionUserID
+
+function setSessionIsAdmin($isAdmin){
+	$_SESSION['USER.IS_ADMIN'] = $isAdmin;
+}
+
+function getSessionIsAdmin(){
+	return $_SESSION['USER.IS_ADMIN'];
 }
 
 include SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/main_include.phtml";
@@ -54,22 +80,23 @@ $no_of_contractor = 40;
 // Return user ID when password is correct, -1 otherwise
 function loginSession($loginName, $password)
 {
-	global $sesUserID;
+	global $mysqli;
 
 	if (!isset($loginName) || $loginName == "") { return -1;}
 	
 	$sql = "SELECT * " .
 			"FROM User " .
 			"WHERE Login='" . strtolower($loginName) . "'AND BINARY Passwd='$password' AND User.DealStatus <> 'Rescinded';";
-	$result = mysql_query($sql) or log_err_die(mysql_error(). "\nFull SQL : \n$sql");
+	$result = mysqli_query($mysqli, $sql) or log_err_die(mysql_error(). "\nFull SQL : \n$sql");
 
-	if (mysql_num_rows($result) <= 0)
+	if (mysqli_num_rows($result) <= 0)
 	{
 		// No match, invalid password
-		$sesUserID = -1;
+		setSessionUnitNumber(-1);
+		// $sesUserID = -1;
 		return -1;	
 	}
-	$row = mysql_fetch_array($result);
+	$row = mysqli_fetch_array($result, $mysqli);
 	setUnitNumber($row['UnitNumber']);
 	return $row['UserID'];
 }
@@ -101,23 +128,26 @@ function loginSession($loginName, $password)
 
 // Set unit number into session vars
 function setUnitNumber($unitNumber){
-	global $sesUnitNumber;
+
 	if ((isNumeric($unitNumber) && $unitNumber <= 0) || $unitNumber == ""){
 		// No match, invalid password
-		$sesUnitNumber = -1;
+		setSessionUnitNumber(-1);
 		return -1;			
 	} else {
-		$sesUnitNumber = encrypt_data($unitNumber);
+		setSessionUnitNumber(encrypt_data($unitNumber));
 		return $unitNumber;
 	}	
 }
+
+
+
 
 // Return the user ID from session.
 // Decrypt the data stored in session
 // Return user ID when user has been logged in, -1 otherwise
 function getUnitNumber()
 {
-	global $sesUnitNumber;
+	$sesUnitNumber = getSessionUnitNumber();
 	if (isSet($sesUnitNumber) && $sesUnitNumber != -1)
 	{
 		return trim(decrypt_data($sesUnitNumber));
@@ -131,21 +161,19 @@ function getUnitNumber()
 // in this section. Need a session var to identify the admin
 // privilege
 function setIdentity($accessLevel){
-	global $sesIsAdmin;
-
-	$sesIsAdmin = $accessLevel;	
+	return setSessionIsAdmin($accessLevel);
 }
 
 // Check the priviliege of the user 
 function isAdmin(){
-	global $sesIsAdmin;
-
-	return $sesIsAdmin; 		
+	return getSessionIsAdmin();
 }
 
 // get UserInfo
 function getUserID()
 {
+	global $mysqli;
+
 	$unitNumber = getUnitNumber();
 	
 	if ($unitNumber != -1)
@@ -154,8 +182,8 @@ function getUserID()
 				" FROM User " .
 				" WHERE UnitNumber = '". strval($unitNumber) . "'";
 
-		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($mysqli, $sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysqli_fetch_array($result);
 
 		return $row['UserID'];
 	}
@@ -165,6 +193,8 @@ function getUserID()
 // Return UnitType ID when user has been logged in, -1 otherwise
 function getUnitType()
 {
+	global $mysqli;
+
 	$unitNumber = getUnitNumber();
 	
 	if ($unitNumber != -1)
@@ -173,8 +203,8 @@ function getUnitType()
 				" FROM Unit " .
 				" WHERE UnitNumber = '" . strval($unitNumber) . "'";
 		
-		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($mysqli, $sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysqli_fetch_array($result);
 		return $row['Model'];
 	}
 	else return -1;
@@ -183,6 +213,8 @@ function getUnitType()
 // Return array contains UnitType, UnitNumber
 function getUnitInfo()
 {
+	global $mysqli;
+	
 	$unitNumber = getUnitNumber();
 	
 	if ($unitNumber != -1)
@@ -191,8 +223,8 @@ function getUnitInfo()
 				" FROM Unit " .
 				" WHERE UnitNumber = '" . strval($unitNumber) . "'";
 
-		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($mysqli, $sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysqli_fetch_array($result);
 		$resultArray = array("UnitType"=>$row['Model'], "UnitNumber"=>$row['UnitNumber']);
 		return $resultArray;
 	}
@@ -225,6 +257,8 @@ function getUnitTypeSection($UnitType){
 // Return Commit (either 1 or 0) when user has been logged in, -1 otherwise
 function getCommit()
 {
+	global $mysqli;
+
 	$UnitNumber = getUnitNumber();
 
 	if ($UnitNumber != -1)
@@ -233,8 +267,8 @@ function getCommit()
 					"FROM UserUpgradeOptionStatus " .
 					"WHERE UnitNumber = '" . strval($UnitNumber) . "'";
 
-		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
-		$row = mysql_fetch_array($result);
+		$result = mysqli_query($mysqli, $sql) or die("ERROR : $sql <br>" . mysql_error());
+		$row = mysqli_fetch_array($result);
 		return $row['Commit'];
 	}
 	else return -1;
@@ -245,17 +279,19 @@ function getCommit()
  */
 function isCommittedBefore($UnitNumber)
 {
+	global $mysqli;
+
 	if ($UnitNumber != -1)
 	{
 		$sql	= "SELECT Commit, CommitDate " .
 					"FROM UserUpgradeOptionStatus " .
 					"WHERE UnitNumber = '" . strval($UnitNumber) ."'";
-		$result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+		$result = mysqli_query($mysqli, $sql) or die("ERROR : $sql <br>" . mysql_error());
 		// if no row in db, then return false
 		if (mysql_num_rows($result) <= 0){
 			return 0;
 		}
-		$row = mysql_fetch_array($result);
+		$row = mysqli_fetch_array($result);
 		return $row['CommitDate'] > 0; 
 	}
 	else return -1;	
@@ -265,13 +301,15 @@ function isCommittedBefore($UnitNumber)
 // Input : UnitType, SectionID
 function section_disabled($UnitType, $SectionID)
 {
+	global $mysqli;
+
 	// Exclude disabled sections from being displayed, which are stored in Disable_Section_by_Unittype
 	$sql_disabled = "SELECT SectionID " .
 			"FROM Disable_Section_By_Unittype " .
 			"WHERE UnitType = '" . $UnitType . "' " .
 			"AND SectionID = " . $SectionID;
-	$result_disabled = mysql_query($sql_disabled) or die("ERROR : $sql_disabled <br>" . mysql_error());
-	$row_disabled = mysql_fetch_array($result_disabled);
+	$result_disabled = mysqli_query($mysqli, $sql_disabled) or die("ERROR : $sql_disabled <br>" . mysql_error());
+	$row_disabled = mysqli_fetch_array($result_disabled);
 
 	if ($row_disabled['SectionID'] == $SectionID)
 		return 1;
@@ -282,8 +320,6 @@ function section_disabled($UnitType, $SectionID)
 // Logout session, destroy the session data in the server
 function logoutSession()
 {
-	global $sesUserID;
-
 	session_destroy();
 }
 
