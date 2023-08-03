@@ -245,8 +245,8 @@ else
 
 $multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
 $pageSql = $multiPageNavigation->getSQLForCurrentPage();
-//echo "<br><br>pageSql=$pageSql<BR>";  	
-//die();
+ echo "<br><br>pageSql=$pageSql<BR>";  	
+ die("XXXX");
 $result = mysql_query($pageSql) or log_err_die(mysql_error() . "<BR>SQL=$pageSql", $PHP_SELF);	
 
 ?>
@@ -451,7 +451,7 @@ createCollapsibleDIV("SearchCriteriaDIV");
 
 <?
 		$totalSoldPrice = 0;
-		while ($row = mysql_fetch_array($result))
+		while ($row = mysqli_fetch_array($result))
 		{
 			$tempSearchCriterion = $PHP_SELF . "?" . $search_criterion . "&mode=$mode&MultiPageNavigationResultsPerPage=$MultiPageNavigationResultsPerPage";
 

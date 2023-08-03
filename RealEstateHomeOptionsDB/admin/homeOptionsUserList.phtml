@@ -46,8 +46,7 @@ function listOrderBy(orderBy){
 //-->
 </script>
 
-	<H3><?= get_project_name($PHP_SELF); ?></H3>
-
+<H3><?= get_project_name($PHP_SELF); ?></H3>
 	<H4>Search <?= $mode=="purchaser" ? "Purchaser" : "Visitor"; ?></H4>
 
 	<FORM NAME="search_purchaser" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
@@ -135,7 +134,6 @@ function listOrderBy(orderBy){
 	</FORM>
 
 <?
-
 // init var
 
 $searchFor = "";
@@ -202,14 +200,13 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 
 {
 
-	$values=$HTTP_GET_VARS;
+	$values=$_GET;
 
 	$search_criterion = "";
 
 	$hasSearchValue = false;
 
 	//loop that adds the field names and values
-
 	foreach($values as $key=>$val)
 
 	{
@@ -288,7 +285,7 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 
 	{
 
-		die();
+		die("");
 
 	}
 
@@ -325,9 +322,7 @@ else
 	$sql .= " ORDER BY " . getOrderClause(array("columnName"=>"User.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)) . ", LastName, FirstName";
 
 }
-
-
-
+// die ("SQL =" . $sql);
 $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 
 
@@ -447,8 +442,7 @@ $result = mysql_query($sql) or log_err_die(mysql_error(),$PHP_SELF);
 		<form name="update_purchaser" action="update_purchaser.phtml" method="post">
 
 <?
-
-		while ($row = mysql_fetch_array($result))
+		while ($row = mysqli_fetch_array($result))
 
 		{				
 			$url = SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/userListing.phtml?action=display&mode=$mode&";
