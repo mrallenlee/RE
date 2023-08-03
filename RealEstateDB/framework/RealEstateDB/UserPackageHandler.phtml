@@ -13,7 +13,7 @@ Class UserPackageHandler{
 	// number of packages for this user
 	var $numOfUserPackage;
 	
-	function UserPackageHandler($db, $userID){
+	public function __construct($db, $userID){
 		$this->userID = $userID;
 		// get user incentive package
 		$user_package_sql = "SELECT Package.PackageID, Package.PackageName FROM UserPackage, Package " .

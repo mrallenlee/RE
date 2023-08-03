@@ -39,6 +39,23 @@ define("BROKER_COMMISSION_TYPE_FLAT_RATE", "FLAT_RATE");
 define("BROKER_COMMISSION_TYPE_PERCENTAGE_DISPLAY", "Percentage (%)");
 define("BROKER_COMMISSION_TYPE_FLAT_RATE_DISPLAY", "Flat Rate ($)");
 
+
+
+//--------------------------------------------------------------------------------------
+// PHP 7 Migration
+// To convert all GET POST variables to global variables 
+//--------------------------------------------------------------------------------------
+if (version_compare (phpversion(), "6.0", ">=")){
+
+	$parameters = $_REQUEST;
+	// print_r(json_encode($parameters));
+
+	//loop that adds the field names and values
+	foreach($parameters as $key=>$val) {
+		${$key} 	= $val;
+	}
+}
+
 //--------------------------------------------------------------------------------------
 // ErrorHandler function
 //--------------------------------------------------------------------------------------
@@ -101,15 +118,38 @@ global $SERVER_NAME, $PHP_SELF;
 /**
  * Internal mysql wrapper to support legacy code
  */
+if (!function_exists("mysql_query")){
+	function mysql_query($sql, $db=""){
+		global $mysqli;
 
-function mysql_query111($sql, $db){
-	global $mysqli;
+		$result = mysqli_query($mysqli,$sql);
 
-	$result = mysqli_query($mysqli,$sql);
+		return $result;
+	}
+}
 
-	return $result;
- }
+if (!function_exists("mysql_error")){
+	function mysql_error(){
+		global $mysqli;
 
+		return mysqli_error($mysqli);
+ 	}
+}
+
+if (!function_exists("mysql_fetch_array")){
+	function mysql_fetch_array($result, $arrayType = MYSQLI_ASSOC){
+
+		return $result->fetch_array($arrayType);
+ 	}
+}
+
+
+if (!function_exists("mysql_num_rows")){
+	function mysql_num_rows($result){
+
+		return $result->num_rows;
+ 	}
+}
 /**
  * Centralize function to execute sql, and log the action
  * @return object returned by mysqli_query 
@@ -323,7 +363,7 @@ function isHex($data){
 
 
 // A helper function used by en/de crypt routines
-if (!function_exists(hex2bin)){
+if (!function_exists("hex2bin")){
 	function hex2bin($data)
 	{
 		if (isHex($data)){
@@ -509,33 +549,11 @@ function printNum2Words($num){
   };                                       
   
 function encrypt_data($data){
-	global $key;
-
-	if (is_mcrypt_enabled()){
-		//var for encryption
-		$td = mcrypt_module_open (MCRYPT_TripleDES, "", MCRYPT_MODE_ECB, "");
-		$iv = mcrypt_create_iv (mcrypt_enc_get_iv_size ($td), MCRYPT_RAND);
-		return bin2hex(mcrypt_ecb(MCRYPT_TripleDES, $key, $data, MCRYPT_ENCRYPT,$iv));
-	} else {
-		return $data;
-	}
+	return openssl_encrypt($data, ENCRYPTION_CIPHERING, ENCRYPTION_KEY, 0, ENCRYPTION_IV);
 }
 
 function decrypt_data($data){
-	global $key;
-
-	if (is_mcrypt_enabled()){
-		//var for encryption
-		//for different version of php
-		$td = mcrypt_module_open (MCRYPT_TripleDES, "", MCRYPT_MODE_ECB, "");
-		$iv = mcrypt_create_iv (mcrypt_enc_get_iv_size ($td), MCRYPT_RAND);
-		$data = hex2bin($data);
-		if ($data=="") return "";
-		if (!is_string($data)) return "";
-		return mcrypt_ecb(MCRYPT_TripleDES,$key ,$data,MCRYPT_DECRYPT,$iv);
-	} else {
-		return $data;	
-	}
+	return openssl_decrypt($data, ENCRYPTION_CIPHERING, ENCRYPTION_KEY, 0, ENCRYPTION_IV);
 }
 
 function encode_dot($string)
@@ -1084,7 +1102,7 @@ function print_top_frame($selfPath, $relativePath, $showBackground = true, $show
 			}
 			?> >
     <link href="<?= $relativePath; ?>config/stylesheet.css" rel="stylesheet" type="text/css" media="screen" />
-    <link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="stylesheet" type="text/css" media="print" />
+    <link href="<?= $relativePath; ?>config/stylesheet-print_V1.css" rel="stylesheet" type="text/css" media="print" />
 	<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>javascript/utils.js"></script>
 <? if ($showMenu){ ?>
 		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/dynamicMenu.js"></script>
