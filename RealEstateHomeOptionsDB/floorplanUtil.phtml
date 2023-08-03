@@ -4,9 +4,11 @@
  * Return ImagePath, ImageMap, UnitNumber in the returned array
  */
 function getFloorplanInfo($UnitNumber){
+    global $mysqli;
+
     // retrieve image floorplan and image map from DB
     $sql = "select Unit.UnitNumber, ImagePath, ImageMap from Unit, Floorplan where Unit.UnitNumber = $UnitNumber AND Unit.FPID = Floorplan.FPID";
-    $result = mysql_query($sql) or die("ERROR : $sql <br>" . mysql_error());
+    $result = mysqli_query($mysqli, $sql) or die("ERROR : $sql <br>" . mysql_error());
     $row = mysql_fetch_array($result);
 
     return $row;
