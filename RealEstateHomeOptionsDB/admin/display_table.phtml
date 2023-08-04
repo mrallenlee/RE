@@ -530,7 +530,8 @@ elseif ($table_name == "Choice") {
 elseif ($table_name == "Price") {
 	// drop the temporary table
 	$sql_droptbl = "DROP TABLE IF EXISTS Item_Options_UnitType";
-	$result = mysql_query($sql_droptbl, $db) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_droptbl.$PHP_SELF);
+	// use mysqli to drop table. For some reason, the mysql_query wrapper doesn't work for dropping table
+	$result = mysqli_query($mysqli, $sql_droptbl) or die("Insert/update failed:\n".mysql_error()."\nFull SQL:\n".$sql_droptbl.$PHP_SELF);
 
 	// create temporary table
 	$sql_temp = "CREATE TEMPORARY TABLE Item_Options_UnitType
