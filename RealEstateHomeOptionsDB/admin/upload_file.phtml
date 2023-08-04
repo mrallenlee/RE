@@ -50,10 +50,10 @@ if ($action == "delete-image" && $table_name == "Options"){
 
 
 
-if (!isset($File) || $File == "none")
+if (!isset($_FILES) || $_FILES['File']['name'] == "none")
 {
 	$user_message=$user_message ."[ <font color=#009900><b>Please choose file for uploading.</b></font> ]";
-	goto_main_page($table_name, $user_message, $UserID, $mode, $OptionID, $ChoiceID);
+	goto_main_page($table_name, $user_message, $UserID, $mode, 0,0,0, $OptionID, $ChoiceID);
 }
 
 if ($table_name == "Options" || $table_name == "Choice")
@@ -64,8 +64,10 @@ if ($table_name == "Options" || $table_name == "Choice")
 		$filename = $OptionID. "_-9999";
 	elseif ($table_name == "Choice")
 		$filename = $OptionID ."_". $ChoiceID;
-		
-	if (!copy($File, $dir.$filename))
+	
+	$uploaded_file_path = $_FILES['File']['tmp_name'];
+	// die("file name=" . $uploaded_file_path . " target dir=" .  $dir. $filename . " files size=" . $_FILES['File']['size']);
+	if (!copy($uploaded_file_path, $dir.$filename))
 		$user_message = $user_message ."[ <font color=#009900><b>Unable to copy ". $File_name ." to server.</b></font> ]";
 	else {
 		if ($table_name == "Choice"){
