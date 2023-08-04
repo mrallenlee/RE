@@ -36,7 +36,7 @@ function display_PO_view_list($inputName, $currentValue){
   * Get list PO sql with search criteria appends to the end 
   * of the sql
   */
- function getPOSql($displayPOType){
+ function getPOSql($displayPOType = ""){
 	if ($displayPOType == "standardPO"){
 		$unionSQL = getStandardPOSql();	
 	} else if ($displayPOType == "nonStandardPO"){

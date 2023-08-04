@@ -529,7 +529,8 @@ function createPOIssuedRecord(){
 	$result = 	executeSql($sqlSELECT);
 	
 	$row = mysql_fetch_array($result);
-	$invoiceID = $row[0];
+	// $invoiceID = $row[0];
+	$invoiceID = $row['POIssuedID'];
 	return $invoiceID;
 }
 /**
@@ -546,8 +547,9 @@ function createPOIssuedRecord(){
  		$POID = $row['POID'];
  		$POType = $row['POType'];
  		$unitNumber = $row['UnitNumber'];
- 		$contractorID = $row['ContractorID'];
- 		$contractorID = ereg_replace("[Cc]ontractor", "", $contractorID);
+ 		$orgContractorID = $row['ContractorID'];
+ 		$contractorID = preg_replace("/[Cc]ontractor/", "", $orgContractorID);
+		// die("orgContractorID=" . $orgContractorID . " contractorID=" . $contractorID);
  		$projectName = get_project_short_name();
  		$PONumber = $projectName . "-" . $unitNumber . "-" . $contractorID;
  		$sql =  "UPDATE " . $POType . 
