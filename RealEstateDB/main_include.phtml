@@ -114,6 +114,13 @@ function debug($msg, $level=5){
 // make a connection to the database
 global $SERVER_NAME, $PHP_SELF;
 
+// $db = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
+// mysql_select_db(REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database " . REAL_ESTATE_DB_NAME, $PHP_SELF);
+
+// Use MysqlI for the fetch_all feature to load the result into array
+$mysqli = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD, REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
+
+
 
 /**
  * Internal mysql wrapper to support legacy code
@@ -125,6 +132,14 @@ if (!function_exists("mysql_query")){
 		$result = mysqli_query($mysqli,$sql);
 
 		return $result;
+	}
+}
+
+if (!function_exists("mysql_data_seek")){
+	function mysql_data_seek($result, $offset){
+		global $mysqli;
+
+		return $result->data_seek($offset);
 	}
 }
 
@@ -143,6 +158,12 @@ if (!function_exists("mysql_fetch_array")){
  	}
 }
 
+if (!function_exists("mysql_fetch_row")){
+	function mysql_fetch_row($result, $arrayType = MYSQLI_ASSOC){
+
+		return $result->fetch_row($arrayType);
+ 	}
+}
 
 if (!function_exists("mysql_num_rows")){
 	function mysql_num_rows($result){
@@ -178,11 +199,6 @@ function &executeSql($sql, $dieOnError = true){
 }
 
 
-// $db = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
-// mysql_select_db(REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database " . REAL_ESTATE_DB_NAME, $PHP_SELF);
-
-// Use MysqlI for the fetch_all feature to load the result into array
-$mysqli = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ESTATE_DB_PASSWORD, REAL_ESTATE_DB_NAME) or log_err_die(mysql_error()  . " Error : Cannot connet to database", $PHP_SELF);
 
 /**
  * Use MysqlI to extract all, and stores all values into an associate arrayi
@@ -913,33 +929,26 @@ function get_page_mode($customerType){
 	}	
 }
 
-function get_project_name($selfPath){
+function get_project_name($selfPath = ""){
 	// Initialize heading to display
 	return PROJECT_NAME;	
 } // get_project_name
 
-function get_project_short_name($selfPath){
+function get_project_short_name($selfPath = ""){
 	// Initialize heading to display
 	return PROJECT_SHORT_NAME;	
 } // get_project_name
 
-function get_internal_project_name($selfPath){
+function get_internal_project_name($selfPath = ""){
 	// Initialize heading to display
 	return PROJECT_INTERNAL_NAME;	
 } // get_internal_project_name
 
-function get_project_developer_name($selfPath){
+function get_project_developer_name($selfPath = ""){
 	// Initialize heading to display
 	return PROJECT_DEVELOPER;	
 } // get_project_name
-function is_mcrypt_enabled(){
-	global $SERVER_NAME;
-	
-	if (strstr($SERVER_NAME, "localhost") || strstr($SERVER_NAME, "supernova") || strstr($SERVER_NAME, "allen-lee.is-a-chef.com")){
-		return false;
-	}
-	return true;	
-}
+
 
 // return "where" clause for range or non-range value.
 // $columnName: column name in where clause
