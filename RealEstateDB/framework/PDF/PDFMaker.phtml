@@ -392,7 +392,7 @@ $this->debug("drawRect x=$startX y=$bottomLeftY, width=$width height=$height");
 	*/
 	function parseLines($text, $width = -1){
 		// parse text and wrap the text if it's too long
-		$text = ereg_replace("\n", " \n", $text); 
+		$text = preg_replace("/\n/", " \n", $text); 
 		$lines = explode("\n",$text);
 		$wordWrappedLines = $this->constructWordWrapLines($lines, $width);
 
