@@ -5,7 +5,60 @@
  * Contain generic interface code 
  */
  
+// include_once WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/MysqlWrapper.phtml";
 include_once "guiUtil_v2.phtml";
+
+
+/**
+ * Internal mysql wrapper to support legacy code
+ */
+if (!function_exists("mysql_query")){
+	function mysql_query($sql, $db=""){
+		global $mysqli;
+
+		$result = mysqli_query($mysqli,$sql);
+
+		return $result;
+	}
+}
+
+if (!function_exists("mysql_data_seek")){
+	function mysql_data_seek($result, $offset){
+		global $mysqli;
+
+		return $result->data_seek($offset);
+	}
+}
+
+if (!function_exists("mysql_error")){
+	function mysql_error(){
+		global $mysqli;
+
+		return mysqli_error($mysqli);
+ 	}
+}
+
+if (!function_exists("mysql_fetch_array")){
+	function mysql_fetch_array($result, $arrayType = MYSQLI_ASSOC){
+
+		return $result->fetch_array($arrayType);
+ 	}
+}
+
+if (!function_exists("mysql_fetch_row")){
+	function mysql_fetch_row($result, $arrayType = MYSQLI_ASSOC){
+
+		return $result->fetch_row($arrayType);
+ 	}
+}
+
+
+if (!function_exists("mysql_num_rows")){
+	function mysql_num_rows($result){
+
+		return $result->num_rows;
+ 	}
+}
 
 // returns 0i if i < 10 (useful with photo file naming convention)
 function no_format($no){
@@ -115,9 +168,9 @@ function create_edittable_list($result_in, $field_name, $curr_value, $prefix, $s
 
 
 	// reset mysql pointer to reselect from 1st record
-	mysql_data_seek($result_in, 0);
+	$result_in->data_seek(0);
 
-	while ($row_in = mysql_fetch_array($result_in)) {
+	while ($row_in = $result_in->fetch_array()) {
 ?>
           <OPTION VALUE='<?= $row_in["$field_name"]; ?>' 
           <? if ($row_in["$field_name"] == $curr_value) print " SELECTED"; ?>
