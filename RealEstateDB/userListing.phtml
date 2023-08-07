@@ -492,7 +492,8 @@ while ($packageRow = mysql_fetch_array($packageResult)) {
 		price 						= priceObj.value;
 <?
 
-if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF)) {
+if (false) { // add special condition for specific project)
+// is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF)) {
 ?>
 			agreementDepositAmountObj.value	= 1000;
 			day30DepositAmountObj.value		= fivePercentOfPrice - 1000;
