@@ -245,8 +245,6 @@ else
 
 $multiPageNavigation = new MultiPageNavigation($sql, $MultiPageNavigationResultsPerPage, $MultiPageNavigationPage);
 $pageSql = $multiPageNavigation->getSQLForCurrentPage();
- echo "<br><br>pageSql=$pageSql<BR>";  	
- die("XXXX");
 $result = mysql_query($pageSql) or log_err_die(mysql_error() . "<BR>SQL=$pageSql", $PHP_SELF);	
 
 ?>
