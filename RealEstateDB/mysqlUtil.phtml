@@ -28,14 +28,14 @@ if (!function_exists("mysql_error")){
 }
 
 if (!function_exists("mysql_fetch_array")){
-	function mysql_fetch_array($result, $arrayType = MYSQLI_ASSOC){
+	function mysql_fetch_array($result, $arrayType = MYSQLI_BOTH){
 
 		return $result->fetch_array($arrayType);
  	}
 }
 
 if (!function_exists("mysql_fetch_row")){
-	function mysql_fetch_row($result, $arrayType = MYSQLI_ASSOC){
+	function mysql_fetch_row($result, $arrayType = MYSQLI_BOTH){
 
 		return $result->fetch_row($arrayType);
  	}
@@ -56,6 +56,35 @@ if (!function_exists("mysql_escape_string")){
 
 		return mysqli_real_escape_string($mysqli, $string);
 	}
+}
+
+if (!function_exists("mysql_insert_id")){
+    function mysql_insert_id(){
+        global $mysqli;
+
+        return mysqli_insert_id($mysqli);
+    }
+}
+
+if (!function_exists("mysql_num_fields")){
+    function mysql_num_fields($result){
+       return mysqli_num_fields($result);
+    }
+}
+
+if (!function_exists("mysql_field_name")){
+    function mysql_field_name($result, $field_offset){
+       return mysqli_field_name($result, $field_offset);
+    }
+}
+
+if (!function_exists("mysqli_field_name")){
+    function mysqli_field_name($result, $field_offset)
+    {
+        $properties = mysqli_fetch_field_direct($result, $field_offset);
+        return is_object($properties) ? $properties->name : null;
+    }
+
 }
 
 /**
