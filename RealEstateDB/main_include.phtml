@@ -54,6 +54,8 @@ if (version_compare (phpversion(), "6.0", ">=")){
 	foreach($parameters as $key=>$val) {
 		${$key} 	= $val;
 	}
+
+	$PHP_SELF = $_SERVER['PHP_SELF'];
 }
 
 //--------------------------------------------------------------------------------------
@@ -128,7 +130,7 @@ $mysqli = mysqli_connect(REAL_ESTATE_DB_SERVER, REAL_ESTATE_DB_USERNAME, REAL_ES
 if (!function_exists("mysql_query")){
 	function mysql_query($sql, $db=""){
 		global $mysqli;
-
+		// debug_print_backtrace();
 		$result = mysqli_query($mysqli,$sql);
 
 		return $result;
@@ -171,6 +173,15 @@ if (!function_exists("mysql_num_rows")){
 		return $result->num_rows;
  	}
 }
+
+
+if (!function_exists("mysql_escape_string")){
+	function mysql_escape_string($string){
+		global $mysqli;
+
+		return mysqli_real_escape_string($mysqli, $string);
+	}
+}
 /**
  * Centralize function to execute sql, and log the action
  * @return object returned by mysqli_query 
@@ -179,6 +190,8 @@ function &executeSql($sql, $dieOnError = true){
 	global $_SERVER;
 	global $db;
 	global $mysqli;
+	
+	// debug_print_backtrace();
 		
 	if ($dieOnError){
 		$errorHappened = 0;

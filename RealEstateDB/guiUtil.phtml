@@ -15,7 +15,6 @@ include_once "guiUtil_v2.phtml";
 if (!function_exists("mysql_query")){
 	function mysql_query($sql, $db=""){
 		global $mysqli;
-
 		$result = mysqli_query($mysqli,$sql);
 
 		return $result;
@@ -58,6 +57,15 @@ if (!function_exists("mysql_num_rows")){
 
 		return $result->num_rows;
  	}
+}
+
+
+if (!function_exists("mysql_escape_string")){
+	function mysql_escape_string($string){
+		global $mysqli;
+
+		return mysqli_real_escape_string($mysqli, $string);
+	}
 }
 
 // returns 0i if i < 10 (useful with photo file naming convention)
