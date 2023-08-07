@@ -46,8 +46,8 @@ if (!file_exists($dir)) {
 
 
 // Set up file name
-$filename = $component . "_" .  $ID;
-
+$filename 	= $component . "_" .  $ID;
+$myFile 	= $_FILES['myFile']['tmp_name'];
 if (!isset($myFile) || $myFile == "none")
 {
 	//echo "Upload file invalid.";
