@@ -78,7 +78,7 @@ $sqlWhere = " (SalesRepID=$currSalesRepID OR SalesRepID1=$currSalesRepID)";
 $sql_cond = "";
  if (!isSet($listall)) // if not list all records, use the search criteria to do the search
 {
-	$values=$HTTP_GET_VARS;
+	$values=$_GET;
 	$hasSearchValue = false;	
 	//loop that adds the field names and values
 	foreach($values as $key=>$val)

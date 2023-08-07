@@ -28,7 +28,7 @@ else
 	{
 		$sqlPrefix = "UPDATE " . $table . "_list SET ";
 		
-		$values=$HTTP_POST_VARS;
+		$values=$_POST;
 		//loop that adds the field names and values
 		foreach($values as $key=>$val)
 		{

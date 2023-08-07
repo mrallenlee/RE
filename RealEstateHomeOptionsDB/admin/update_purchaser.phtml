@@ -14,7 +14,7 @@ $Commit = 0;
 $ContractorReport = "0";
 $UserReport = "0";
 
-while (list($key, $value) = each ($HTTP_POST_VARS))
+while (list($key, $value) = each ($_POST))
 {
 	list($UID, $name) = retrieve_data($key);
 

@@ -40,7 +40,7 @@ if (!isset($UnitNumber) || $UnitNumber == ""){
 
 // only updates issued flag
 if ($poType == "mix" && $editType == "issued"){
-	$values=$HTTP_POST_VARS;
+	$values=$_POST;
 	//loop that adds the field names and values
 	foreach($values as $key=>$val)
 	{
