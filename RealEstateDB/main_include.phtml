@@ -1050,6 +1050,15 @@ function print_top_frame($selfPath, $relativePath, $showBackground = true, $show
 <? } 
 }// print_top_frame
 
+function print_stylesheet($selfPath, $relativePath, $showBackground = true, $showMenu = true){
+	global $globalRelativePath;
+
+	$globalRelativePath = $relativePath;
+
+?>  <link href="<?= $relativePath; ?>config/stylesheet.css" rel="styleSheet" type="text/css" media="screen" />
+	<link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="styleSheet" type="text/css" media="print" />
+<?
+}
 
 // return GST_RATE 13
 function getGSTRate($date = ""){	
