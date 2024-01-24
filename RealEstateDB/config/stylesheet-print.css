@@ -89,5 +89,7 @@
 
 	#page-break-div {page-break-after: always;}
 
-
+	.page-break { 
+		clear: both;
+		page-break-after: always; }
 }

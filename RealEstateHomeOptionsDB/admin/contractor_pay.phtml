@@ -229,7 +229,7 @@ $row = mysql_fetch_array($result);
 $total_credits = $row['total_credits'];
 
 
-if ($USE_UPGRADE_PaCKAGE) {
+if ($USE_UPGRADE_PACKAGE) {
 // If the project use upgrade package to link the options for free upgrade, enable this section.
 // otherwise, automatically sum up all negative UserOption as credit to the purchaser
 $sql = "SELECT Package.PackageName, SUM(UserPackage.Note) total_incentive " .
@@ -345,7 +345,7 @@ $total_incentive = $total_credits;
 	</tr>
 
 	<tr>
-		<td colspan="2">Profit Summary</td>
+		<td colspan="2">Profit Summary for Home Options Team</td>
 	</tr>
 	<tr class="head">
 		<td>Description</td>
@@ -381,7 +381,7 @@ $total_incentive = $total_credits;
 	
 
 
-	<tr><td><br><br><br></td></tr>
+	<tr><td><br><br><br></td></tr> 
 	<tr>
                 <td colspan="2">Payment Summary</td>
         </tr>
@@ -393,16 +393,16 @@ $total_incentive = $total_credits;
 		<td>Total Sales : </td>
 		<td align="right">$<?= number_format($projectTotal, 2); ?></td>
 	<tr>
-		<td>Total Incentives: </td>
+		<td>Total Project Incentives: </td>
 		<td align="right">$<?= number_format($projectTotalCredit, 2); ?></td>
 	</tr>	
 
 	<tr>
-		<td><BR>Net Total Sales: (*Total Sales - Total Incentives) </td>
+		<td>Net Total Sales: (*Total Sales - Total Incentives on committed unit) </td>
 		<td align="right">$<?= number_format($projectTotalSales, 2); ?></td>
 	</tr>	
 	<tr>
-		<td><BR>HST Amount: (*Net Total Sales x HST Rate) </td>
+		<td>HST Amount: (*Net Total Sales x HST Rate) </td>
 		<td align="right">$<?= number_format($projectTotalGST, 2); ?></td>
 	</tr>
 	<tr><td><br></td></tr>	

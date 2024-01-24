@@ -272,6 +272,8 @@ if (mysql_num_rows($useroption_result) > 0)
 }
 
 $total_sales = $total + $credit;
+// Set total sales to 0 if is negative because of higher incentive value
+$total_sales = $total_sales > 0 ? $total_sales : 0;
 $gstAmount = $total_sales * $gstRate;
 $total_with_tax = $total_sales + $gstAmount;
 

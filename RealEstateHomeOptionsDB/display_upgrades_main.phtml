@@ -1,9 +1,12 @@
-<? $UnitNumber=202; ?>
+<?php
+include "main_include.phtml";
+include WEB_RESOURCE_INVERT_RELATIVE_PATH . "/framework/RealEstateDB/UserPackageHandler.phtml";
+?>
 
 <style>
 .menu {
   text-align:right;
-  width: 250px;;
+  width: 390px;;
   min-height: 100vh;
   border:0;
 }
@@ -14,8 +17,12 @@
   border:0;
 }
 </style>
-
-
+<?
+if (getCommit() == 1) {
+	//handleError ("", "", COMMIT_ALREADY);
+	goto_url("preview.phtml");
+}
+?>
 <html >
     <body align="center" width="80%">
 

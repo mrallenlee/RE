@@ -82,19 +82,6 @@ function generate_navigation($showComboBox = true, $showFloorPlan = false) {
 	</tr>
 	<tr>
 		<td>		
-<?		if ($showFloorPlan){ ?>
-			<img height="150" src="images/floorplan/floorplan-<?= $UnitNumber; ?>.jpg" usemap="#image_map">
-				<map name="image_map">
-					<area alt="bedroom" title="bedroom" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=5" coords="71,35,163,136" shape="rect">
-					<area alt="powder room" title="powder room" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=33" coords="5,35,71,83" shape="rect">
-					<area alt="living room" title="living room" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=35" coords="48,139,162,248" shape="rect">
-					<area alt="kitchen" title="kitchen" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=4" coords="6,130,48,211" shape="rect">
-					<area alt="appliance" title="appliance" href="https://yasur.pair.com/lmark/demo/RealEstateHomeOptionsDB/display_upgrades.phtml?SectionID=18" coords="5,84,71,127" shape="rect">
-				</map>
-				<BR><BR>
-		<? } ?>
-			
-
 <?		if ($showComboBox){ ?>
 			<select name="SectionID" id="SectionID" onChange='form.submit();'>
 <?
@@ -155,7 +142,6 @@ var Image_array = new Array();
 var ImageWidth_array = new Array();
 var ImageHeight_array = new Array();
 
-</script>
 <?
 
 $userPackage = new UserPackageHandler($db, getUserID());
@@ -205,7 +191,7 @@ if ($row = mysql_fetch_array($result)) {
 		} else {
 			$Price = 0;
 		}
-		//echo "price[\"Item_array[".$row['ItemID']."]_".$row['OptionID']."\"] = ".$Price.";\n";
+		echo "price[\"Item_array[".$row['ItemID']."]_".$row['OptionID']."\"] = ".$Price.";\n";
 	} while ($row = mysql_fetch_array($result));
 } else {
 	$sql_select = "SELECT count(*) num FROM UnitType WHERE Type = '$UnitType'";
@@ -226,7 +212,7 @@ if ($row = mysql_fetch_array($result)) {
 	$row_select = mysql_fetch_array($result_select);
 
 	if ($row_select['num'] == 0) {
-		handleError("Sorry, there are no options/items listed for your unit.<br>Try logging in later.",
+		handleError("Sorry, there are no options/items listed for your unit.<br>Please kindly contact administrator to add in Options under this section.",
 		 	"SQL=$sql_select", GENERAL_ERROR, true);			
 	}
 
@@ -248,7 +234,6 @@ $SectionName = $row['Name'];
 $SectionDesc = $row['Description'];
 ?>
 
-<script language="javascript">
 
 // calculates the total for an item (radio group) in a
 // subsection group
@@ -261,6 +246,8 @@ function item_total(itemGroup)
 	{
 		if (document.forms['user_save'].elements[itemGroup][i].checked == true)
 		{
+			// alert("Debug: item checked i=" + i + " value=" + document.forms['user_save'].elements[itemGroup][i].value);
+			// alert("Debug: price = " + price[itemGroup + '_' + document.forms['user_save'].elements[itemGroup][i].value] );
 			itemTotal = price[itemGroup + '_' + document.forms['user_save'].elements[itemGroup][i].value];
 			if (itemTotal == <?= OPTION_IS_A_STANDARD; ?> || itemTotal == <?= OPTION_IS_NOT_AVAILABLE; ?>
 				|| itemTotal == <?= OPTION_IS_INCENTIVE; ?> ){
@@ -517,7 +504,7 @@ while ($row = mysql_fetch_array($result_Subsection)) {
 	$sectionImagePath = "images/sections/section_" . $SubsectionID . ".jpg";
 	if (CLIENT_SHOW_SECTION_IMAGE && file_exists($sectionImagePath)){
 		echo "<BR><BR>";
-		echo "<img src='$sectionImagePath' height='300' width=100%>";
+		echo "<img src='$sectionImagePath' height='250' width=100%>";
 	}
 	echo "<BR><BR>"; 
 
