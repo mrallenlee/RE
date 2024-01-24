@@ -80,7 +80,7 @@ class POListHtmlFormat extends POListFormat {
 				$CSSClass = "subhead-left";
 							
 ?>		
-			<tr><td><br><br></td></tr>
+			<tr><td colspan=100><div id="page-break-div"></td></tr>
 <?			}
 	
 			$this->printHorizontalLine();			
@@ -89,6 +89,7 @@ class POListHtmlFormat extends POListFormat {
 <?		 	if ($this->displaySelectionCol){ ?>
 				<TD  class="<?= $CSSClass; ?>"><INPUT TYPE="CHECKBOX"  name="DUMMY-CHECKBOX" ONCLICK="tool.input.checkbox.selectSubLevel(this,this.parentNode.parentNode, this.checked);"></TD>					
 <? 			} ?>						
+				
 				<td colspan=100 class="<?= $CSSClass; ?>">Unit Number: <?= $unitNumber ;?></td>
 			</tr>
 <?		}
@@ -417,6 +418,7 @@ class POListHtmlFormat extends POListFormat {
 	
 	// print horizontal line inside a table
 	function printHorizontalLine(){
+		
 ?>		<tr class="print-tr"><td class="print-td" colspan=100><hr class="print-hr"></td></tr> 				
 <?		
 	}

@@ -85,4 +85,8 @@ error		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8p
 
 
 #page-break-div {page-break-after: always;}
+
+.page-break { 
+	clear: both;
+	page-break-after: always;  }
 }
