@@ -75,10 +75,13 @@ if ($table_name == "Unit")
 	$sql	= "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, User.UserID,
 			date_format(PDIDate, '%e %b') As PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
 			date_format(OccupancyDate, '%e %b') As OccupancyDate, OccupancyTime, OccupancyNotified, 
-			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff, PDIReportFilePath, PDIDay30ReportFilePath
+			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff, PDIReportFilePath, PDIDay30ReportFilePath,
+            ApptDate, ApptStartTime, ApptEndTime, ApptStatus, MeetingURL, RescheduleURL
 			FROM $table_name
 			LEFT JOIN User
 			ON ($table_name.UserID = User.UserID)
+            LEFT JOIN Appointment
+            ON (User.UserID = Appointment.UserID)
 			ORDER BY " . getOrderClause(array("columnName"=>"$table_name.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 	
 	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
@@ -97,8 +100,8 @@ if ($table_name == "Unit")
                 <tr class="head">
                   <!-- 1st data table header -->
                   <td class="head" colspan=2>Info</td>
-	          <td class="head" colspan="3"><b>PDI</b></td>
-		  <td class="head" colspan="3"><b>Occupancy</b></td>
+	          <td class="head" padding="15" colspan="3"><b>PDI</b></td>
+		  <td class="head" padding="15" colspan="3"><b>Occupancy</b></td>
 		  <td class="head"><b>QA</b></td>
                   <td class="head"><b>PDI</b></td>
                   <td class="head"><b>PDI</b></td>
@@ -111,13 +114,18 @@ if ($table_name == "Unit")
                   <td class="subhead"><b>Unit</b></td>
                   <td class="subhead"><b><nobr>Purchaser</nobr></b></td>
             <!-- 2nd data table header -->
+            <? if (CALENDLY_APPT_ENABLED == 0) { ?>
                   <td class="subhead"><b><nobr>Date</nobr></b></td>
                   <td class="subhead"><b><nobr>Time</nobr></b></td>
+            <? } else { ?>
+                  <td class="subhead"><b><nobr>Date / Time</nobr></b></td>
+                  <td class="subhead"><b><nobr>Calendly</nobr></b></td>
+            <? } ?>
                   <td class="subhead"><b><nobr>Notified</nobr></b></td>
 
            <!-- 3rd data table header -->
-                  <td class="subhead"><b><nobr>Date</nobr></b></td>
-                  <td class="subhead"><b><nobr>Time</nobr></b></td>
+                  <td class="subhead" spacing="15" ><b><nobr>Date / Time </nobr></b></td>
+                  <!-- <td class="subhead"><b><nobr>Time</nobr></b></td> -->
                   <td class="subhead"><b><nobr>Notified</nobr></b></td>
 
 	    <!-- 4th data table header -->
@@ -136,8 +144,14 @@ if ($table_name == "Unit")
 ?>
                   <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
                   <td class="table_rec"><nobr><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</nobr></a></td>
-  	         <td class="table_rec"><nobr><?= $row['PDIDate'] ?>&nbsp;</nobr></td>
-                  <td class="table_rec"><nobr><?= $row['PDITime'] ?>&nbsp;</nobr></td>
+                  <? if (CALENDLY_APPT_ENABLED == 0) { ?>
+                    <td class="table_rec"><nobr><?= $row['PDIDate'] ?>&nbsp;</nobr></td>
+                    <td class="table_rec"><nobr><?= $row['PDITime'] ?>&nbsp;</nobr></td>
+                    <td class="table_rec"><nobr><?= $row['ApptDate'] ?>&nbsp;</nobr></td>
+                  <? } else { ?>
+                    <td class="table_rec"><nobr><?= $row['ApptStartTime'] ?>&nbsp;</nobr></td>
+                    <td class="table_rec" align="center"><nobr><? if ($row['PDITime'] > 0) { ?><a href="<?= $row['RescheduleURL'] ?>" target="_blank"><Img height="20" src="../images/calendly.png"></img></a><? }?></nobr></td>
+                  <? } ?>
                   <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDINotified" DISABLED
 <?
                                 if ($row['PDINotified'] == 1)
