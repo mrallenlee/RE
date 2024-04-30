@@ -1,0 +1,71 @@
+<?php
+include "emailUtil.phtml";
+include "main_include.phtml";
+
+// Test out email feature
+
+echo "Testing";
+
+
+function convertTimezone ($date, $timezone = 'UTC'){
+    $date = new DateTime($date, new DateTimeZone('UTC'));
+    $date->setTimezone(new DateTimeZone('America/New_York'));
+    return $date->format('Y-m-d H:i:s');
+
+}
+// $json = file_get_contents('php://input');
+
+$json = '{"created_at":"2024-04-29T14:53:21.000000Z","created_by":"https://api.calendly.com/users/6d0740c4-f059-4566-a1fe-94dd83b60758","event":"invitee.created","payload":{"cancel_url":"https://calendly.com/cancellations/d0cfd432-d15f-4350-8e5a-95149551ba9b","created_at":"2024-04-29T14:53:20.434013Z","email":"allen.lee@isat-solutions.com","event":"https://api.calendly.com/scheduled_events/63792574-3fbd-4bf4-8c85-27f6c478f74f","first_name":null,"invitee_scheduled_by":"https://api.calendly.com/users/6d0740c4-f059-4566-a1fe-94dd83b60758","last_name":null,"name":"Allen Test 4","new_invitee":null,"no_show":null,"old_invitee":null,"payment":null,"questions_and_answers":[{"answer":"Allen Test 4 after paid to STANDARD webhook","position":0,"question":"Please share anything that will help prepare for our meeting."}],"reconfirmation":null,"reschedule_url":"https://calendly.com/reschedulings/d0cfd432-d15f-4350-8e5a-95149551ba9b","rescheduled":false,"routing_form_submission":null,"scheduled_event":{"created_at":"2024-04-29T14:53:20.415733Z","end_time":"2024-05-01T16:00:00.000000Z","event_guests":[],"event_memberships":[{"user":"https://api.calendly.com/users/6d0740c4-f059-4566-a1fe-94dd83b60758","user_email":"allen.lee@isat-solutions.com","user_name":"Allen Lee"}],"event_type":"https://api.calendly.com/event_types/e21df9db-4a58-44d9-86be-501b2d694d63","invitees_counter":{"total":1,"active":1,"limit":1},"location":{"join_url":"https://calendly.com/events/63792574-3fbd-4bf4-8c85-27f6c478f74f/google_meet","status":"processing","type":"google_conference"},"meeting_notes_html":null,"meeting_notes_plain":null,"name":"A testing event","start_time":"2024-05-01T15:30:00.000000Z","status":"active","updated_at":"2024-04-29T14:53:20.415733Z","uri":"https://api.calendly.com/scheduled_events/63792574-3fbd-4bf4-8c85-27f6c478f74f"},"scheduling_method":null,"status":"active","text_reminder_number":null,"timezone":"America/New_York","tracking":{"utm_campaign":null,"utm_source":null,"utm_medium":null,"utm_content":null,"utm_term":null,"salesforce_uuid":null},"updated_at":"2024-04-29T14:53:20.434013Z","uri":"https://api.calendly.com/scheduled_events/63792574-3fbd-4bf4-8c85-27f6c478f74f/invitees/d0cfd432-d15f-4350-8e5a-95149551ba9b"}}';
+// $json = '{"Peter":35,"Ben":37,"Joe":43}';        
+$data = json_decode($json,true);
+
+
+
+$landingSql = "INSERT INTO CalendlyLanding (OrgJSON) VALUES ('" . $json . "')";
+$result = mysql_query($landingSql) or log_err_die(mysql_error() . "<BR>SQL=$landingSql", $PHP_SELF);	
+
+
+// var_dump($data);
+
+$createdTimestamp   = convertTimezone($data["created_at"]);
+$startTime          = convertTimezone($data["payload"]["scheduled_event"]["start_time"]);
+$endTime            = convertTimezone($data["payload"]["scheduled_event"]["end_time"]);
+$status             = $data["payload"]["scheduled_event"]["status"];
+$meetingURL         = $data["payload"]["scheduled_event"]["location"]["join_url"];
+$rescheduleURL      = $data["payload"]["reschedule_url"];
+$email              = $data["payload"]["email"];
+
+
+// search the corresponded User ID by email
+$searchSQL      = "SELECT UserID from User where email = '". $email . "' AND DealStatus != 'Rescinded'";
+$result         = mysql_query($searchSQL) or log_err_die(mysql_error() . "<BR>SQL=$searchSQL", $PHP_SELF);	
+
+if (mysql_num_rows($result) <= 0) {
+    echo "Error: Cannot find associated email";
+    exit;
+}
+
+$row            = mysqli_fetch_array($result);
+$userID         = $row['UserID'];
+
+echo "<BR><BR>";
+echo "createdTimeStamp={$createdTimestamp} startTime={$startTime} endTime={$endTime} status={$status} mail={$email} UserID={$userID}";
+
+$insertSQL      = "INSERT INTO Appointment (OrgJSON, UserID, Email, ApptPlatform, ApptType, ApptDate, ApptStartTime, ApptEndTime, ApptStatus, MeetingURL, RescheduleURL, UpdatedBy) VALUES ('$json', '$userID', '$email', 'Calendly', 'PDI', '$startTime', '$startTime', '$endTime', '$status', '$meetingURL', '$rescheduleURL', 'calendlyAuth.phtml')";
+$result         = mysql_query($insertSQL) or log_err_die(mysql_error() . "<BR>SQL=$insertSQL", $PHP_SELF);	
+
+
+$json_string = json_encode($data, JSON_PRETTY_PRINT);
+echo "<BR><BR>";
+echo $json_string;
+
+$from = "allen.lee.wealthy@gmail.com";
+$subject = "Calendly Connected";
+$headers = "From: $fromName"." <".$from.">"; 
+$message = "Calendly webhook connected data={" . $data . "} json={" . $json . "}";
+// $result = @mail("allen.lee@isat-solutions.com", $subject, $message, $headers, $returnpath);  
+
+// echo "Finish sending email result=$result";
+
+
+?>
