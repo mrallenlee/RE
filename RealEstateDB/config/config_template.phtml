@@ -1,4 +1,4 @@
-<?
+/<?
 /* This script includes configurations for RealEstateDB */
 define('ERROR_REPORTING', E_ALL ^ E_NOTICE); // default is E_ALL ^ E_NOTICE, use E_ALL or E_ALL + E_STRICT for developing
 error_reporting(ERROR_REPORTING);
@@ -22,6 +22,9 @@ define("USER_MANAGEMENT_ENABLED", 1);
 define("ERROR_HANDLER_ENABLED", 1);
 define("ERROR_CONFIG_FILE", "config/errorConfig.phtml");
 define("ERROR_LOG_FILE", "errorLog/error.log");
+
+// Calendly module
+define("CALENDLY_APPT_ENABLED", 0);
 
 // Cheque module enabled
 define("CHEQUE_MODULE_ENABLED", 1);
