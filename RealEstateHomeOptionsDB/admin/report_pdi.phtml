@@ -540,7 +540,12 @@ function upload(dataURL, reportType) {
             reportType: reportType
           }
         }).done(function(o) {
-          alert('message=' + o);
+          returnObj = JSON.parse(o)
+          if (returnObj.status == 'SUCCESS')
+            alert('Upload successfully');
+          else
+            alert("Upload failed - Error Message = " + o);
+          // alert('Upload successfully' + o);
         })
         .fail(function(xhr, status, error) {
           //Ajax request failed.
@@ -563,9 +568,14 @@ function uploadAndEmail(dataURL, reportType){
             reportType: reportType
           }
         }).done(function(o) {
-            alert('message=' + o);
+          returnObj = JSON.parse(o)
+          if (returnObj.status == 'SUCCESS')
             // Email the signed copy to email based on the record on purchaser
             emailPDISignedReportToPurchaser(<?= $unit;?>, 'PDI');          
+            // alert('Upload successfully');
+          else
+            alert("Upload failed - Error Message = " + o);
+          // alert('Upload successfully' + o);
         })
         .fail(function(xhr, status, error) {
           //Ajax request failed.
@@ -584,7 +594,14 @@ function uploadAndEmail(dataURL, reportType){
             reportType: "PDI"
           }
         }).done(function(o) {
-          alert('message=' + o);
+            // Email the signed copy to email based on the record on purchaser
+          // alert('message=' + o);
+          returnObj = JSON.parse(o)
+          if (returnObj.status == 'SUCCESS')
+            alert('Email successfully');
+          else
+            alert("Email failed - Error Message = " + o);
+          // alert('Upload successfully' + o);          
         })
         .fail(function(xhr, status, error) {
           //Ajax request failed.
