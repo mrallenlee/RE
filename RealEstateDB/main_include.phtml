@@ -1014,10 +1014,16 @@ function expandSearchCriteria($arguments){
 function getOrderClause($arguments){
 	$columnName = $arguments['columnName'];
 	$sortMethod = $arguments['sortMethod'];
+	$tableName 	= $arguments['tableName'];
 
 	// ALLEN Disable using cast method as no longer works
 	// could be the new version of mysql
-	// revert to use original way to sort	
+	// revert to use original way to sort
+	
+	if ($tableName != ''){
+		$columnName = $tableName. '.' . $columnName;
+	}
+	
 	if ($sortMethod == DB_SORT_METHOD_VARCHAR_AS_NUMBER){
 		$clause = " cast(" . $columnName . " as signed) ";
 		//$clause = " " . $columnName;
