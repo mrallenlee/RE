@@ -79,7 +79,7 @@ if ($table_name == "Unit")
 			FROM $table_name
 			LEFT JOIN User
 			ON ($table_name.UserID = User.UserID)
-			ORDER BY UnitNumber";
+			ORDER BY " . getOrderClause(array("columnName"=>"$table_name.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 	
 	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
 ?>
