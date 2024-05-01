@@ -112,6 +112,7 @@ $costArray = getSQLArray($costSQL);
 <table border=1>
 	<tr>
 		<td>Unit Number<t/d>
+		<td>Name<t/d>
 		<td>Cost</td>
 		<td>Total Sales</td>
 		<td>Total Incentives</td>
@@ -146,6 +147,8 @@ while ($row = mysql_fetch_array($result))
 	$outstandingAmt = 0;
 
 	$userID = $row['UserID'];
+	$firstName = $row['FirstName'];
+	$lastName = $row['LastName'];
 	$cashPayment = $row['CashPayment'];
 	$payByMortgage = $row['PayByMortgage'];
 	$outstandingAmt = $row['OutstandingAmt'];
@@ -298,6 +301,7 @@ $projectTotalOutAmtWithTax = $projectTotalOutstandingAmt - $projectTotalCredit;
 ?>
 	<tr>
 		<td><?= $UnitNumber; ?></td>
+		<td><?= $firstName . " " . $lastName; ?></td>	 	
 		<td><?= number_format($costArray[$UnitNumber]['Cost'], 2)?></td>
 		<td><?= number_format($total, 2)?></td>
 		<td><?= number_format($credit, 2)?></td>
@@ -312,6 +316,7 @@ $projectTotalOutAmtWithTax = $projectTotalOutstandingAmt - $projectTotalCredit;
 ?>
 	<tr>
 		<td>Total</td>
+		<td></td>
 		<td><?= number_format($projectCostTotal, 2)?></td>
 		<td><?= number_format($projectTotal, 2)?></td>
 		<td><?= number_format($projectTotalCredit, 2)?></td>
@@ -322,3 +327,4 @@ $projectTotalOutAmtWithTax = $projectTotalOutstandingAmt - $projectTotalCredit;
 	</tr>
 
 </table>
+
