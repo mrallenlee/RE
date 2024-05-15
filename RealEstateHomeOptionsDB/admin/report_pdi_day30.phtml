@@ -9,6 +9,7 @@ include "../admin/main_include.phtml";
   <META http-equiv="Content-Style-Type" content="text/css">
   <? print_stylesheet($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
 
 <body>
 
@@ -30,6 +31,7 @@ $row = mysql_fetch_array($result);
 
 $OccupancyDate = $row['OccupancyDate_nodayformat'];
 ?>
+<div id="html-content-holder" style="background-color: #FFFFFF;">
 <table align="center" width="670">
 <b>
   <tr>
@@ -336,11 +338,16 @@ mysql_data_seek($result, 0);
         <tr><td><br><br></td></tr>
 
         <tr>
-          <td>
-	    VENDOR REP.:
-            ___________________________
-            SIGNATURE:
-            ____________________________
+          <td><div id="signature-pad" class="signature-pad">
+              <div class="signature-pad--body">
+
+  
+            SIGNATURE: <canvas id="canvas" width="230" height="80"></canvas>
+            <br><img src="black.gif" width="300" height="1" border="0"><br>
+            <BR><BR>VENDOR REP.: Allen Lee
+            <br><img src="black.gif" width="300" height="1" border="0"><br>
+              </div>
+            </div>
           </td>
         </tr>
 
@@ -363,6 +370,8 @@ mysql_data_seek($result, 0);
     </td>
   </tr>
 
+
+
   <tr>
     <td>
       <!--5th part: signatures-->
@@ -371,28 +380,31 @@ mysql_data_seek($result, 0);
 
         <tr>
           <td align="left">
-            PURCHASER:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
+              <div id="sign-pad-purchaser-1" class="signature-pad">
+                  <div class="signature-pad--body">
+            
+                SIGNATURE: <canvas id="canvas-purchaser-1" width="230" height="80"></canvas>
+                <br><img src="black.gif" width="300" height="1" border="0"><br>
+                  </div>
+                </div> 
+                <BR><BR>PURCHASER:&nbsp;&nbsp; <?= $purchaser1; ?>
+                <br><img src="black.gif" width="300" height="1" border="0"><br>          
           </td>
+           
           <td align="left">
-            SIGNATURE:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
+              <div id="sign-pad-purchaser-2" class="signature-pad">
+                  <div class="signature-pad--body">
+            
+                SIGNATURE: <canvas id="canvas-purchaser-2" width="230" height="80"></canvas>
+                <br><img src="black.gif" width="300" height="1" border="0"><br>
+                  </div>
+                </div> 
+                <BR><BR>PURCHASER:&nbsp;&nbsp; <?= $purchaser2; ?>
+                <br><img src="black.gif" width="300" height="1" border="0"><br>          
           </td>
         </tr>
-        <tr><td><br><br></td></tr>
-
-        <tr>
-          <td align="left">
-            PURCHASER:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
-          </td>
-          <td align="left">
-            SIGNATURE:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
-          </td>
-        </tr>
-        <tr><td><br><br></td></tr>
-
+     
+      <? /*
         <tr>
           <td align="left">
             DESIGNATE*:
@@ -404,7 +416,8 @@ mysql_data_seek($result, 0);
           </td>
         </tr>
         <tr><td><br><br></td></tr>
-
+        */ ?>
+        <tr><td><br><br></td></tr>
         <tr>
           <td align="left">
             DATE:
@@ -438,6 +451,329 @@ mysql_data_seek($result, 0);
 
 </b>
 </table>
+</div>
+<div align="center">
+<BR><BR>
+<? /* <input id="btn-Preview-Image" type="button" value="Preview" /> */ ?>
+<input id="btn-Convert-Html2Image" type="button" value="Download"/>
+<input id="btn-upload-image" type="button" value="Save"/>
+<input id="btn-upload-email-image" type="button" value="Save & Email"/>
+<? /* <a id="btn-Convert-Html2Image" href="#">Download</a> */ ?>
+  <? /* Disable Preview feature
+    <br />
+    <h3>Preview :</h3>
+  <div id="previewImage">
+  </div> */ ?>
+</div>
+<script>
+// for Signature Pad
+var wrapper = document.getElementById("signature-pad");
+var clearButton = wrapper.querySelector("[data-action=clear]");
+var changeColorButton = wrapper.querySelector("[data-action=change-color]");
+var undoButton = wrapper.querySelector("[data-action=undo]");
+var savePNGButton = wrapper.querySelector("[data-action=save-png]");
+var saveJPGButton = wrapper.querySelector("[data-action=save-jpg]");
+var saveSVGButton = wrapper.querySelector("[data-action=save-svg]");
+var canvas = wrapper.querySelector("canvas");
+var signaturePad = new SignaturePad(canvas, {
+  // It's Necessary to use an opaque color when saving image as JPEG;
+  // this option can be omitted if only saving as PNG or SVG
+  backgroundColor: 'rgb(255, 255, 224)'
+});
+
+var wrapperPurchaser1 = document.getElementById("sign-pad-purchaser-1");
+var canvasPurchaser1 = wrapperPurchaser1.querySelector("canvas");
+var signaturePad = new SignaturePad(canvasPurchaser1, {
+  // It's Necessary to use an opaque color when saving image as JPEG;
+  // this option can be omitted if only saving as PNG or SVG
+  backgroundColor: 'rgb(255, 255, 224)'
+});
+
+var wrapperPurchaser2 = document.getElementById("sign-pad-purchaser-2");
+var canvasPurchaser2 = wrapperPurchaser2.querySelector("canvas");
+var signaturePad = new SignaturePad(canvasPurchaser2, {
+  // It's Necessary to use an opaque color when saving image as JPEG;
+  // this option can be omitted if only saving as PNG or SVG
+  backgroundColor: 'rgb(255, 255, 224)'
+});
+
+// Adjust canvas coordinate space taking into account pixel ratio,
+// to make it look crisp on mobile devices.
+// This also causes canvas to be cleared.
+function resizeCanvas() {
+  // When zoomed out to less than 100%, for some very strange reason,
+  // some browsers report devicePixelRatio as less than 1
+  // and only part of the canvas is cleared then.
+  var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+
+  // This part causes the canvas to be cleared
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  canvas.getContext("2d").scale(ratio, ratio);
+
+  // This library does not listen for canvas changes, so after the canvas is automatically
+  // cleared by the browser, SignaturePad#isEmpty might still return false, even though the
+  // canvas looks empty, because the internal data of this library wasn't cleared. To make sure
+  // that the state of this library is consistent with visual state of the canvas, you
+  // have to clear it manually.
+  signaturePad.clear();
+}
+
+// On mobile devices it might make more sense to listen to orientation change,
+// rather than window resize events.
+//window.onresize = resizeCanvas;
+//resizeCanvas();
+
+function download(dataURL, filename) {
+  // Disable the first option
+  alert('In Download');
+  if (0 && navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+    alert('first window.open');
+    window.open(dataURL);
+  } else {
+    var blob = dataURLToBlob(dataURL);
+    var url = window.URL.createObjectURL(blob);
+
+    var a = document.createElement("a");
+    a.style = "display: none";
+    a.href = url;
+    a.download = filename;
+
+    document.body.appendChild(a);
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+  }
+}
+
+
+// Upload to server and store in DB
+function upload(dataURL, reportType) {
+  $.ajax({
+          type: "POST",
+          url: "report_pdi_upload.phtml",
+          data: { 
+            imgBase64: dataURL,
+            unitNumber: <?= $unit; ?>,
+            reportType: reportType
+          }
+        }).done(function(o) {
+          returnObj = JSON.parse(o)
+          if (returnObj.status == 'SUCCESS')
+            alert('Upload successfully');
+          else
+            alert("Upload failed - Error Message = " + o);
+          // alert('Upload successfully' + o);
+        })
+        .fail(function(xhr, status, error) {
+          //Ajax request failed.
+          var errorMessage = xhr.status + ': ' + xhr.statusText
+          alert('Error - ' + errorMessage);
+        })
+
+  } // ajax
+
+
+function uploadAndEmail(dataURL, reportType){
+  // same code as upload.
+  // ALLEN TO DO find way to insert code to upload to avoid redundancy
+  $.ajax({
+          type: "POST",
+          url: "report_pdi_upload.phtml",
+          data: { 
+            imgBase64: dataURL,
+            unitNumber: <?= $unit; ?>,
+            reportType: reportType
+          }
+        }).done(function(o) {
+          returnObj = JSON.parse(o)
+          if (returnObj.status == 'SUCCESS')
+            // Email the signed copy to email based on the record on purchaser
+            emailPDISignedReportToPurchaser(<?= $unit;?>, 'PDI');          
+            // alert('Upload successfully');
+          else
+            alert("Upload failed - Error Message = " + o);
+          // alert('Upload successfully' + o);
+        })
+        .fail(function(xhr, status, error) {
+          //Ajax request failed.
+          var errorMessage = xhr.status + ': ' + xhr.statusText
+          alert('Error - ' + errorMessage);
+        })  
+} // uploadAndEmail
+
+  // Email from server to purchaser on the server sided contract
+  function emailPDISignedReportToPurchaser(unitNumber, reportType) {
+    $.ajax({
+          type: "POST",
+          url: "report_pdi_email.phtml",
+          data: { 
+            unitNumber: unitNumber,
+            reportType: "PDI"
+          }
+        }).done(function(o) {
+            // Email the signed copy to email based on the record on purchaser
+          // alert('message=' + o);
+          returnObj = JSON.parse(o)
+          if (returnObj.status == 'SUCCESS')
+            alert('Email successfully');
+          else
+            alert("Email failed - Error Message = " + o);
+          // alert('Upload successfully' + o);          
+        })
+        .fail(function(xhr, status, error) {
+          //Ajax request failed.
+          var errorMessage = xhr.status + ': ' + xhr.statusText
+          alert('Error - ' + errorMessage);
+        })
+
+  } // emailPDISignedReportToPurchaser 
+
+// One could simply use Canvas#toBlob method instead, but it's just to show
+// that it can be done using result of SignaturePad#toDataURL.
+function dataURLToBlob(dataURL) {
+  // Code taken from https://github.com/ebidel/filer.js
+  var parts = dataURL.split(';base64,');
+  var contentType = parts[0].split(":")[1];
+  var raw = window.atob(parts[1]);
+  var rawLength = raw.length;
+  var uInt8Array = new Uint8Array(rawLength);
+
+  for (var i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+
+  return new Blob([uInt8Array], { type: contentType });
+}
+
+clearButton.addEventListener("click", function (event) {
+  signaturePad.clear();
+});
+
+undoButton.addEventListener("click", function (event) {
+  var data = signaturePad.toData();
+
+  if (data) {
+    data.pop(); // remove the last dot or line
+    signaturePad.fromData(data);
+  }
+});
+
+changeColorButton.addEventListener("click", function (event) {
+  var r = Math.round(Math.random() * 255);
+  var g = Math.round(Math.random() * 255);
+  var b = Math.round(Math.random() * 255);
+  var color = "rgb(" + r + "," + g + "," + b +")";
+
+  signaturePad.penColor = color;
+});
+
+savePNGButton.addEventListener("click", function (event) {
+  if (signaturePad.isEmpty()) {
+    alert("Please provide a signature first.");
+  } else {
+    var dataURL = signaturePad.toDataURL();
+    download(dataURL, "signature.png");
+  }
+});
+
+saveJPGButton.addEventListener("click", function (event) {
+  if (signaturePad.isEmpty()) {
+    alert("Please provide a signature first.");
+  } else {
+    var dataURL = signaturePad.toDataURL("image/jpeg");
+    download(dataURL, "signature.jpg");
+  }
+});
+
+saveSVGButton.addEventListener("click", function (event) {
+  if (signaturePad.isEmpty()) {
+    alert("Please provide a signature first.");
+  } else {
+    var dataURL = signaturePad.toDataURL('image/svg+xml');
+    download(dataURL, "signature.svg");
+  }
+});
+
+</script>
+
+
+
+</b>
+</table>
+
+
+<script src="https://code.jquery.com/jquery-2.1.1.min.js" type="text/javascript"></script>
+<?// <script src="../../common/framework/html2canvas/html2canvas.min.js" type="text/javascript"></script> ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>
+<script>
+    // for HTML2Canvas
+    var element = $("#html-content-holder"); // global variable
+    var getCanvas; // global variable
+    var imageData;
+
+    $("#btn-Preview-Image").on('click', function () {
+            html2canvas(element, {
+                background :'#FFFFFF',  
+                onrendered: function (canvas) {
+                    $("#previewImage").append(canvas);
+                    getCanvas = canvas;
+                }
+            });
+    });
+
+    $("#btn-Convert-Html2Image").on('click', function () {
+        html2canvas(element, {
+            background :'#FFFFFF',
+            onrendered: function (canvas) {
+                    //$("#previewImage").append(canvas);
+                    getCanvas = canvas;
+
+                    imgageData = getCanvas.toDataURL("image/png");
+                    download(imgageData, "DAY30-Contract.png");
+                    //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
+                    //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
+                }
+            });  
+//        var imgageData = getCanvas.toDataURL("image/jpg");
+        // Now browser starts downloading it instead of just showing it
+//        var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
+//        $("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
+    }); // btn-convert-Html2Image.on     
+
+    $("#btn-upload-image").on('click', function () {
+          html2canvas(element, {
+            background :'#FFFFFF',
+            onrendered: function (canvas) {
+                    //$("#previewImage").append(canvas);
+                    getCanvas = canvas;
+
+                    imgageData = getCanvas.toDataURL("image/png");
+                    upload(imgageData, '<?= 'DAY30'; ?>'); 
+                    //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
+                    //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
+                }
+            });  
+          
+     
+
+    }); // btn-upload-image.on
+
+    $("#btn-upload-email-image").on('click', function () {
+          html2canvas(element, {
+            background :'#FFFFFF',
+            onrendered: function (canvas) {
+                    getCanvas = canvas;
+
+                    imgageData = getCanvas.toDataURL("image/png");
+                    // if upload is not successful, return
+                    uploadAndEmail(imgageData, '<?= 'DAY30'; ?>');
+                }
+            })
+    });
+
+</script>
+
 
 </body>
 </html>
