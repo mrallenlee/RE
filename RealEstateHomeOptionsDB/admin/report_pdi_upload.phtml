@@ -31,7 +31,7 @@ function updateDBFileName($unitNumber, $component, $reportType, $filepath){
     if ($reportType == 'PDI'){
         $columnName     = 'PDIReportFilePath'; 
     } else if ($reportType == 'Day30'){
-        $columnName     = 'Day30ReportFilePath'; 
+        $columnName     = 'PDIDay30ReportFilePath'; 
     } 
 
     $sql    = "Update Unit set " . $columnName . "='" . $filepath . "' where UnitNumber='" . $unitNumber . "'";
@@ -41,7 +41,7 @@ function updateDBFileName($unitNumber, $component, $reportType, $filepath){
         $errors= error_get_last();
 
         $rtn_rows['status']	= "ERROR";
-        $rtn_rows['message']= "System error message from SQL " . $errors['type'] . " : " . $errors['message'];
+        $rtn_rows['message']= "System error message from SQL [$sql] " . $errors['type'] . " : " . $errors['message'];
         returnJSONMsg($rtn_rows);
     }    
     return true;

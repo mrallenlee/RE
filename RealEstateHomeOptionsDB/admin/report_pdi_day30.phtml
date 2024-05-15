@@ -589,7 +589,7 @@ function uploadAndEmail(dataURL, reportType){
           returnObj = JSON.parse(o)
           if (returnObj.status == 'SUCCESS')
             // Email the signed copy to email based on the record on purchaser
-            emailPDISignedReportToPurchaser(<?= $unit;?>, 'PDI');          
+            emailPDISignedReportToPurchaser(<?= $unit;?>, 'Day30');          
             // alert('Upload successfully');
           else
             alert("Upload failed - Error Message = " + o);
@@ -609,7 +609,7 @@ function uploadAndEmail(dataURL, reportType){
           url: "report_pdi_email.phtml",
           data: { 
             unitNumber: unitNumber,
-            reportType: "PDI"
+            reportType: reportType
           }
         }).done(function(o) {
             // Email the signed copy to email based on the record on purchaser
@@ -730,7 +730,7 @@ saveSVGButton.addEventListener("click", function (event) {
                     getCanvas = canvas;
 
                     imgageData = getCanvas.toDataURL("image/png");
-                    download(imgageData, "DAY30-Contract.png");
+                    download(imgageData, "Day30-Contract.png");
                     //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
                     //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
                 }
@@ -749,7 +749,7 @@ saveSVGButton.addEventListener("click", function (event) {
                     getCanvas = canvas;
 
                     imgageData = getCanvas.toDataURL("image/png");
-                    upload(imgageData, '<?= 'DAY30'; ?>'); 
+                    upload(imgageData, '<?= 'Day30'; ?>'); 
                     //var newData = imgageData.replace(/^data:image\/png/, "data:application/octet-stream");
                     //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
                 }
@@ -767,7 +767,7 @@ saveSVGButton.addEventListener("click", function (event) {
 
                     imgageData = getCanvas.toDataURL("image/png");
                     // if upload is not successful, return
-                    uploadAndEmail(imgageData, '<?= 'DAY30'; ?>');
+                    uploadAndEmail(imgageData, '<?= 'Day30'; ?>');
                 }
             })
     });
