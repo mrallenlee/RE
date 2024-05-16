@@ -26,6 +26,7 @@ JEC from below website
 <//script src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery.jec.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
+<script src="pdi_util.js"></script>
 
 
 
@@ -82,6 +83,7 @@ if ($table_name == "Unit")
 			ON ($table_name.UserID = User.UserID)
             LEFT JOIN Appointment
             ON (User.UserID = Appointment.UserID)
+            AND Appointment.Status = 'ACTIVE'
 			ORDER BY " . getOrderClause(array("columnName"=>"$table_name.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 	
 	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
@@ -150,7 +152,7 @@ if ($table_name == "Unit")
                     <td class="table_rec"><nobr><?= $row['ApptDate'] ?>&nbsp;</nobr></td>
                   <? } else { ?>
                     <td class="table_rec"><nobr><?= $row['ApptStartTime'] ?>&nbsp;</nobr></td>
-                    <td class="table_rec" align="center"><nobr><? if ($row['PDITime'] > 0) { ?><a href="<?= $row['RescheduleURL'] ?>" target="_blank"><Img height="20" src="../images/calendly.png"></img></a><? }?></nobr></td>
+                    <td class="table_rec" align="center"><nobr><? if ($row['ApptStartTime'] > 0) { ?><a href="<?= $row['RescheduleURL'] ?>" target="_blank"><Img height="20" src="../images/calendly.png"></img></a><? }?></nobr></td>
                   <? } ?>
                   <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDINotified" DISABLED
 <?
@@ -211,7 +213,10 @@ LED
                   ></td>
       <td style="font-family: Arial,Verdana,Helvetica; font-size: 13px; height: 22px;">
       					<input type="button" value="PDI Defect List" onClick="window.location='display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>'">
-                        <input type="button" value="Edit" onClick="window.location='row_edit_pdi.phtml?table_name=<?= $table_name ?>&unit=<?= $row['UnitNumber'] ?>'">
+                <input type="button" value="Edit" onClick="window.location='row_edit_pdi.phtml?table_name=<?= $table_name ?>&unit=<?= $row['UnitNumber'] ?>'">
+                <? if (PDI_BOOK_APPT_EMAIL_ENABLED == 1) {?>
+                <input type="button" value="Book PDI Appt" onClick="emailBookPDIAppt('<?= $row['UnitNumber'] ?>', '<?= $row['UserID'];?>')">
+                <? } // PDI_BOOK_APPOINTMENT_VIA_EMAIL_ENABLED ?>
                     </td>
 
                 </tr>
