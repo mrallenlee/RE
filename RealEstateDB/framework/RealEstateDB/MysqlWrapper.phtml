@@ -1,0 +1,49 @@
+<?
+/**
+* Mysql wrapper to retrofit old mysql function to mysqli
+*/
+
+/**
+ * Internal mysql wrapper to support legacy code
+ */
+if (!function_exists("mysql_query")){
+	function mysql_query($sql, $db=""){
+		global $mysqli;
+
+		$result = mysqli_query($mysqli,$sql);
+
+		return $result;
+	}
+}
+
+if (!function_exists("mysql_data_seek")){
+	function mysql_data_seek($result, $offset){
+		global $mysqli;
+
+		return $result->data_seek($offset);
+	}
+}
+
+if (!function_exists("mysql_error")){
+	function mysql_error(){
+		global $mysqli;
+
+		return mysqli_error($mysqli);
+ 	}
+}
+
+if (!function_exists("mysql_fetch_array")){
+	function mysql_fetch_array($result, $arrayType = MYSQLI_ASSOC){
+
+		return $result->fetch_array($arrayType);
+ 	}
+}
+
+
+if (!function_exists("mysql_num_rows")){
+	function mysql_num_rows($result){
+
+		return $result->num_rows;
+ 	}
+}
+?>
