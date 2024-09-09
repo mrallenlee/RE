@@ -1,0 +1,777 @@
+<?
+//include "../admin/main_include.phtml";
+include "main_include.phtml";
+
+check_auth(HOMEOPTIONS);
+
+// This script creates main page to edit PDI general information and 
+// PDI defect list.
+
+?>
+
+<script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>javascript/dynamicWindow.js" type="text/javascript"></script>
+<script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>javascript/dynamicWindowUtils.js" type="text/javascript"></script>
+
+<!--  JQuery has been uploaded to the server due to the https security warning from IPAD, IE8, Android mobile device
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<script src="http://code.jquery.com/jquery-latest.js" type="text/javascript">
+
+JEC from below website
+<script src="http://stuff.rajchel.pl/jec/jquery.jec.js" type="text/javascript">
+//-->
+<link rel="stylesheet" href="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/themes/base/jquery-ui.css" />
+<script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery-1.8.3.js"></script>
+<//script src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
+<script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery.jec.js"></script>
+<script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
+
+
+
+
+<!-- <script src="scripts.js" type="text/javascript"> //-0>
+
+<!-- <script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/dojo/dojo.js"></script>
+<script language="javascript">
+    dojo.require("dojo.widget.DatePicker");
+    dojo.require("dojo.widget.DropdownDatePicker");
+</script>
+ -->
+<html>
+<? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
+
+
+<head>
+  <title>PDI General Information</title>
+</head>
+
+<body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
+
+  <table name="main_table">
+
+<?
+// edit page for "PDI general information"
+if ($table_name == "Unit")
+{
+?>
+
+
+
+  <h4>PDI General Information</h4>
+
+     <tr>
+      <td class="link_small">
+      	<input type="button" value="Download in CSV" onClick="window.location='display_pdi_CSV.phtml?table_name=<?= $table_name; ?>'">
+      </td>
+    </tr>
+	<tr><td>&nbsp;</td></tr>
+<?    
+	if ($user_message)
+	{
+		echo "<tr><td><span class='user_message'>" . $user_message . "</span></td></tr>\n";
+	}
+
+	$sql	= "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, User.UserID,
+			date_format(PDIDate, '%e %b') As PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
+			date_format(OccupancyDate, '%e %b') As OccupancyDate, OccupancyTime, OccupancyNotified, 
+			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff, PDIReportFilePath, PDIDay30ReportFilePath,
+            ApptDate, ApptStartTime, ApptEndTime, ApptStatus, MeetingURL, RescheduleURL
+			FROM $table_name
+			LEFT JOIN User
+			ON ($table_name.UserID = User.UserID)
+            LEFT JOIN Appointment
+            ON (User.UserID = Appointment.UserID)
+			ORDER BY " . getOrderClause(array("columnName"=>"$table_name.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+?>
+
+    <form name="frm_update_pdi" action="row_add_pdi.phtml" method="post">
+	<input type="hidden" name="table_name" value="<?= $table_name ?>">
+    <tr>
+      <!--4 data tables-->
+      <td>
+        <table>
+	      <tr>
+	        <td valign="top">
+              <!--1st data table-->
+              <table>
+                <tr class="head">
+                  <!-- 1st data table header -->
+                  <td class="head" colspan=2>Info</td>
+	          <td class="head" padding="15" colspan="3"><b>PDI</b></td>
+		  <td class="head" padding="15" colspan="3"><b>Occupancy</b></td>
+		  <td class="head"><b>QA</b></td>
+                  <td class="head"><b>PDI</b></td>
+                  <td class="head"><b>PDI</b></td>
+                  <td class="head"><b>ACTION</b></td>
+                  
+                </tr>
+
+                <tr class="subhead">
+                  <!-- 1st data table header -->
+                  <td class="subhead"><b>Unit</b></td>
+                  <td class="subhead"><b><nobr>Purchaser</nobr></b></td>
+            <!-- 2nd data table header -->
+            <? if (CALENDLY_APPT_ENABLED == 0) { ?>
+                  <td class="subhead"><b><nobr>Date</nobr></b></td>
+                  <td class="subhead"><b><nobr>Time</nobr></b></td>
+            <? } else { ?>
+                  <td class="subhead"><b><nobr>Date / Time</nobr></b></td>
+                  <td class="subhead"><b><nobr>Calendly</nobr></b></td>
+            <? } ?>
+                  <td class="subhead"><b><nobr>Notified</nobr></b></td>
+
+           <!-- 3rd data table header -->
+                  <td class="subhead" spacing="15" ><b><nobr>Date / Time </nobr></b></td>
+                  <!-- <td class="subhead"><b><nobr>Time</nobr></b></td> -->
+                  <td class="subhead"><b><nobr>Notified</nobr></b></td>
+
+	    <!-- 4th data table header -->
+                  <td class="subhead"><b><nobr>Done?</nobr></b></td>
+                  <td class="subhead"><b><nobr>Done?</nobr></b></td>
+                  <td class="subhead"><b><nobr>Sign Off?</nobr></b></td>
+                  <td class="subhead"><b>&nbsp;</b></td>
+                  
+                </tr>
+
+<?
+
+	while ($row = mysql_fetch_array($result))
+	{
+      displayMouseOverTR();
+?>
+                  <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
+                  <td class="table_rec"><nobr><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</nobr></a></td>
+                  <? if (CALENDLY_APPT_ENABLED == 0) { ?>
+                    <td class="table_rec"><nobr><?= $row['PDIDate'] ?>&nbsp;</nobr></td>
+                    <td class="table_rec"><nobr><?= $row['PDITime'] ?>&nbsp;</nobr></td>
+                    <td class="table_rec"><nobr><?= $row['ApptDate'] ?>&nbsp;</nobr></td>
+                  <? } else { ?>
+                    <td class="table_rec"><nobr><?= $row['ApptStartTime'] ?>&nbsp;</nobr></td>
+                    <td class="table_rec" align="center"><nobr><? if ($row['PDITime'] > 0) { ?><a href="<?= $row['RescheduleURL'] ?>" target="_blank"><Img height="20" src="../images/calendly.png"></img></a><? }?></nobr></td>
+                  <? } ?>
+                  <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDINotified" DISABLED
+<?
+                                if ($row['PDINotified'] == 1)
+                                {
+?>
+                                         CHECKED
+<?
+                                }
+?>
+                  ></td>
+
+		  <td class="table_rec"><nobr><?= $row['OccupancyDate'] ?>&nbsp;</nobr></td>
+                  <td class="table_rec"><nobr><?= $row['OccupancyTime'] ?>&nbsp;</nobr></td>
+                  <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_OccupancyNotified" DISAB
+LED
+<?
+                                if ($row['OccupancyNotified'] == 1)
+                                {
+?>
+                                         CHECKED
+<?
+                                }
+?>
+                  ></td>
+
+               <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_QADone"
+<?
+                                if ($row['QADone'] == 1)
+                                {
+?>
+                                         CHECKED
+<?
+                                }
+?>
+                  ></td>
+
+                  <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDIDone"
+<?
+                                if ($row['PDIDone'] == 1)
+                                {
+?>
+                                         CHECKED
+<?
+                                }
+?>
+                  ></td>
+
+                  <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDISignOff"
+<?
+                                if ($row['PDISignOff'] == 1)
+                                {
+?>
+                                         CHECKED
+<?
+                                }
+?>
+                  ></td>
+      <td style="font-family: Arial,Verdana,Helvetica; font-size: 13px; height: 22px;">
+      					<input type="button" value="PDI Defect List" onClick="window.location='display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>'">
+                        <input type="button" value="Edit" onClick="window.location='row_edit_pdi.phtml?table_name=<?= $table_name ?>&unit=<?= $row['UnitNumber'] ?>'">
+                    </td>
+
+                </tr>
+<?
+	}
+?>
+              </table>
+
+        <tr>
+      <td class="link_small" colspan="2"><br><input type="submit" value="Update" id="update" size="50">
+                <!-- <input type="button" value="Progress Report" onClick="window.location='report_pdi_progress.phtml?table_name=Unit'"> //-->
+        </td>
+    </tr>
+
+    </form>
+    
+
+<?
+}
+// edit page for PDI defect list
+elseif ($table_name == "PDIDefect")
+{
+?>
+
+
+        <H3><?= get_project_name($PHP_SELF); ?></H3>
+
+        <H4>PDI Defect List</H4>
+
+
+
+<?
+	// Get purchaser name of the unit
+	$sql	= "SELECT User.UserID, FirstName, LastName, Address, City, 
+      Province, Country, PostalCode, BusinessPhone, PhoneNumber, CellPhone, FaxNumber
+			PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber, OccupancyDate, 
+      OccupancyTime, OccupancyNotified, 
+      OccupancyNotifiedDate, PDIReportFilePath, PDIDay30ReportFilePath
+			FROM User, Unit
+			WHERE Unit.UnitNumber = '$unit'
+			AND Unit.UserID = User.UserID";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	
+	// print out rows to the table
+	$row = mysql_fetch_array($result);
+
+  $PDIReportFilePath  = $row['PDIReportFilePath'];
+  $PDIDay30ReportFilePath= $row['PDIDay30ReportFilePath'];
+	// header - purchaser's information
+?>
+    <tr>
+      <td>
+        <table>
+          <tr class="head">
+		<td colspan=10 class="head"> Unit Information</td>
+		</tr>
+		<tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0"><b>Unit:</b>
+            </td>
+            <td class="link_small">
+              <b><?= $unit ?></b>
+            </td>
+   <td class="link_small">
+    <input type=button value="Show Customer Selected Options & Upgrades"  onClick="window.open('./unit_no_contractor.phtml?UnitNumber=<?= $unit;?>&ShowPrice=0&mode=display', '_blank', '')">
+            </td>    
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">PDI Date/Time:
+            </td>
+            <td class="link_small">
+              <?= $row["PDIDate"] . " " . $row["PDITime"] ?>
+            </td>
+            <td class="link_small">
+              <INPUT TYPE="checkbox" DISABLED 
+<?
+				if ($row['PDINotified'] == 1) 
+				{
+?>
+					 CHECKED
+<?
+				}
+?>
+              > PDI Notified:
+            </td>
+            <td class="link_small">
+              <?= $row["PDINotifiedDate"] ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">Occupancy Date/Time:
+            </td>
+            <td class="link_small">
+              <?= $row["OccupancyDate"] . " " . $row["OccupancyTime"] ?>
+            </td>
+            <td class="link_small">
+              <INPUT TYPE="checkbox" DISABLED 
+<?
+				if ($row['OccupancyNotified'] == 1) 
+				{
+?>
+					 CHECKED
+<?
+				}
+?>
+              > Occupancy Notified:
+            </td>
+            <td class="link_small">
+              <?= $row["OccupancyNotifiedDate"] ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0"><b>Purchaser:</b>
+            </td>
+            <td class="link_small">
+              <b><?= $row['LastName']?>, <?= $row['FirstName'] ?></b><br>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">Address:
+            </td>
+            <td class="link_small">
+              <?= $row['Address']?> 
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              &nbsp;
+            </td>
+            <td class="link_small">
+              <?= $row['City'] ?>, <?= $row['Province'] ?>, <?= $row['Country'] ?>, <?= $row['PostalCode'] ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">Bus. Tel:
+            </td>
+            <td class="link_small">
+              <?= $row['BusinessPhone'] ?>
+            </td>
+            <td class="link_small">
+              Fax:
+            </td>
+            <td class="link_small">
+              <?= $row['FaxNumber'] ?>
+            </td>
+          </tr>
+
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">Home Tel:
+            </td>
+            <td class="link_small">
+              <?= $row['PhoneNumber'] ?>
+            </td>
+            <td class="link_small">
+              Cell:
+            </td>
+            <td class="link_small">
+              <?= $row['CellPhone'] ?>
+            </td>
+          </tr>
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0">PDI Report:
+            </td>
+            <td colspan="2" class="link_small" style="align: left;">
+              <INPUT ID="btn-download-PDI"    TYPE="BUTTON" VALUE="Download PDI Report">
+              <INPUT ID="btn-download-day30"  TYPE="BUTTON" VALUE="Download Day 30 Report">
+            </td>
+          </tr>          
+        </table>
+      <br>
+      </td>
+    </tr>
+
+<?
+	// end of header
+	
+	// display returned message from record edit, if any
+	if ($user_message)
+	{
+		echo "<tr><td>" . $user_message . "</td></tr>\n";
+	}
+	
+	// edit page body
+?>
+    <tr>
+      <td>
+	    <!-- the edit form -->
+<?
+	// find the unit type of given unit, that is used to determine which section is available in this unit type
+	$sql_UnitType = "SELECT UnitType FROM Unit WHERE UnitNumber = $unit";
+	$result_UnitType = mysql_query($sql_UnitType,$db) or die("Error : $sql_UnitType<br>" . mysql_error());
+	$row_UnitType = mysql_fetch_array($result_UnitType);
+	$this_UnitType = $row_UnitType['UnitType'];
+	
+	// all the available sections, prepared for the listbox of available sections in this unit
+	$sql_Section = "SELECT SectionID, Name FROM Section ORDER BY Name";
+	$result_Section = mysql_query($sql_Section,$db) or die("Error : $sql_Section<br>" . mysql_error());
+	
+	$sql_PDICategory = "SELECT * FROM PDICategory ORDER BY Name";
+	$result_PDICategory = mysql_query($sql_PDICategory,$db) or die("Error : $sql_PDICategory<br>" . mysql_error());
+	 
+	// all the available contractors, prepared for the listbox of contractors
+	$sql_Contractor = "SELECT ContractorID, ContractorName FROM Contractor 
+			WHERE ContractorName != ''
+			ORDER BY ContractorName";
+	$result_Contractor = mysql_query($sql_Contractor,$db) or die("Error : $sql_Contractor<br>" . mysql_error());
+	/*
+	// display existing records in edittable fields
+	$sql	= "SELECT PDIDefectID, DefectDesc, $table_name.SectionID SectionID, Section.name room, 
+				$table_name.ContractorID ContractorID, Contractor.ContractorName trader, 
+				QADefect, QAFixed, QAFixedDate, PDIDefect, PDIFixed, PDIFixedDate, PDISignoff,
+				day30Defect, day30Fixed, day30FixedDate, day30Signoff, 
+				month11Defect, month11Fixed, month11FixedDate, month11Signoff
+			FROM $table_name
+			LEFT JOIN Section
+			ON ($table_name.SectionID = Section.SectionID)
+			LEFT JOIN Contractor
+			ON ($table_name.ContractorID = Contractor.ContractorID)
+			where $table_name.UnitNumber = $unit
+			ORDER BY PDIDefectID";
+	
+	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+	*/
+	// insert here!!!
+?>
+        <form id="frm_edit_pdidefect" name="frm_edit_pdidefect">
+          <div id="defect_table"></div>
+        </form>
+        
+        <table>
+          <tr>
+            <td class="link_small"><button type="button" id="update">Update</button></td>
+            <td class="link_small"><button type="button" id="add">Add a Defect</button></td>
+            <td><span class="user_message"></span></td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- links at the bottom of the page -->
+<?
+// Caculate the floor number of the unit & attach ending as "1st", "2nd", "3rd", "4th" ...
+$floor = substr($unit, 0, strlen($unit) - 2);
+?>
+    <tr><td>&nbsp;</td></tr>
+    
+    <tr>
+        <td><h3>Reports</h3></td>
+    </tr>
+
+    <tr>
+      <td>
+      <form name="frm_links" method="get">
+      <input type=button value="Print PDI Form" onClick="window.location='report_pdi.phtml?unit=<?= $unit ?>'">
+      <input type=button value="Print Day 30 Form" onClick="window.location='report_pdi_day30.phtml?unit=<?= $unit ?>'">
+	<Br><br>
+      <table class="quickLinkTable" >
+	<tr>
+	<td class="head" colspan="2">Quick Report Links:</td>
+	</tr>
+
+        <tr><td><input type="hidden" name="floor" value="<?= $floor ?>"></td></tr>
+
+        <tr>
+
+          <td class="link_small">
+            <a href="report_pdi_details.phtml?search_Floor=<?= $floor ?>">All Defects on This Floor</a>
+          </td>
+
+          <td class="link_small">
+            <a href="report_pdi_details.phtml?search_UnitNumber=<?= $unit ?>">All Defects in Unit <?= $unit ?></a>
+          </td>
+	</tr>
+        <tr>
+          <td class="link_small">
+            <a name="trade_floor_link" href="report_pdi_details.phtml?search_Floor=<?= $floor ?>&search_ContractorID=0">All Defects on This Floor for Trade</a>
+	          <select name="trade_floor_contractor_selector" onChange="change_link('trade_floor')">
+	            <OPTION VALUE="0">Choose one</OPTION>
+<?
+		// listed all contractor names in dropdown listbox
+		mysql_data_seek($result_Contractor, 0);
+		while ($row_Contractor = mysql_fetch_array($result_Contractor))
+		{
+?>
+	            <OPTION VALUE="<?= $row_Contractor['ContractorID'] ?>"><?= $row_Contractor['ContractorName']?></OPTION>
+<?
+		}
+?>
+          </td>
+          <td class="link_small">
+            <a name="trade_unit_link" href="report_pdi_details.phtml?search_UnitNumber=<?= $unit ?>&search_ContractorID=0">All Defects in Unit <?= $unit ?> for Trade</a>
+	          <select name="trade_unit_contractor_selector" onChange="change_link('trade_unit')">
+	            <OPTION VALUE="0">Choose one</OPTION>
+<?
+		// listed all contractor names in dropdown listbox
+		mysql_data_seek($result_Contractor, 0);
+		while ($row_Contractor = mysql_fetch_array($result_Contractor))
+		{
+?>
+	            <OPTION VALUE="<?= $row_Contractor['ContractorID'] ?>"><?= $row_Contractor['ContractorName']?></OPTION>
+<?
+		}
+?>
+          </td>
+
+        </tr>
+
+        <tr>
+          <td class="link_small">
+            <a href="report_pdi_details.phtml?search_Floor=<?= $floor ?>&search_ContractorID=0">All Defects on This Floor for All Trades</a>
+          </td>
+
+          <td class="link_small">
+            <a name="trade_allfloors_link" href="report_pdi_others.phtml?floor=all&search_ContractorID=0">All Defects on All Floors for Trade</a>
+	          <select name="trade_allfloors_contractor_selector" onChange="change_link('trade_allfloors')">
+	            <OPTION VALUE="0">Choose one</OPTION>
+<?
+		// listed all contractor names in dropdown listbox
+		mysql_data_seek($result_Contractor, 0);
+		while ($row_Contractor = mysql_fetch_array($result_Contractor))
+		{
+?>
+	            <OPTION VALUE="<?= $row_Contractor['ContractorID'] ?>"><?= $row_Contractor['ContractorName']?></OPTION>
+<?
+		}
+?>
+          </td>
+
+        </tr>
+
+      </table>
+		<BR><BR>
+		<input type="button" value="Back to PDI General Information" onClick="window.location='display_pdi.phtml?table_name=Unit'">
+      </form>
+      </td>
+    </tr>
+
+<?
+//	}
+}
+?>
+  </table>
+</body>
+
+<?php 
+function get_dojo_date($one_date){
+	return $one_date == "0000-00-00" ? "" : $one_date;
+}
+?>
+
+<script language="JavaScript" type="text/javascript">
+var PDI_TABLE_TEMPLATE_1=' \
+        <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
+            <tr valign="top">\
+               <td colspan=2>\
+                <table cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
+                  <tr>\
+                    <td class="tail"><b>Defect Image</b></td>\
+                  </tr>\
+                  <tr>\
+                    <td>\
+                      <table>\
+                        <tr>\
+                          <td>\
+              <input type="hidden" name="DefectImageName_{1}" id="DefectImageName_{1}" value="{DefectImageName}"></input>\
+              <input type="hidden" name="DefectHasImage_{1}" id="DefectHasImage_{1}" value="{DefectHasImage}"></input>\
+              <img name="DefectImageID_{1}" id="DefectImageID_{1}" height=130 width=180 src="{DefectImageName}">\
+                          </td>\
+                        </tr>\
+                        <tr>\
+                          <td>\
+               <input type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\', \'{PDIDefectID}\', \'{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}">\
+                          <br>\
+                      <input type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}"  onClick="deleteImage(\'DefectImageID_{1}\', \'{PDIDefectID}\', \'{1}\');">\
+                      <input type="hidden" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\', \'{PDIDefectID}\', \'{1}\');"\
+                          </td>\
+                        </tr>\
+                        </table>\
+                    </td>\
+                  </tr>\
+                  </table>\
+                  </td>\
+               <td colspan="9">\
+              <table width="100% cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
+                <tr valign="top">\
+                  <td class="tail" colspan="10"><b>Defect Desc</b></td>\
+                </tr>\            <tr><td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
+            Defect Category:<select name="PDICatID_{1}" id="PDICatID_{1}" onChange="refreshPDITypeComboBox(\'PDICatID_{1}\')">';
+
+
+var PDI_TABLE_TEMPLATE_CAT_OPTIONS=' \
+            <?
+            		// list all PDICategory in dropdown listbox
+            		//mysql_data_seek($result_Section, 0);
+            		while ($row_PDICategory = mysql_fetch_array($result_PDICategory))
+            		{          			
+            ?>			<OPTION VALUE="<?= $row_PDICategory['PDICatID'] ?>"><?= $row_PDICategory['Name']?></OPTION>\
+            <?		}            
+            ?>';
+
+var PDI_TABLE_TEMPLATE_2=' </select>\
+            New Category Value:<input size=15 type="text" name="PDICatID_New_Text_{1}" id="PDICatID_New_Text_{1}";/>\
+            <br>Defect Type:<select name="PDITypeID_{1}" id="PDITypeID_{1}">\
+                <option value="0">choose...</option>\
+            </select>\
+            New Type Value:<input size=15 type="text" name="PDITypeID_New_Text_{1}" id="PDITypeID_New_Text_{1}";/>\
+            </td>\
+            </tr>\
+            <tr>\
+            <td class="tail" colspan="5"><b>Room</b></td>\
+            <td class="tail" colspan="4"><b>Trade to Assign</b></td>\
+            <td class="tail" nowrap><b>Trade Contacted</b></td>\
+            </tr>\
+            <td colspan="5">\
+              <select class="width200height30" name="SectionID_{1}" id="SectionID_{1}">\
+                <OPTION VALUE="">Choose one</OPTION>\
+<?
+		// list all available sections in this unit in dropdown listbox
+		//mysql_data_seek($result_Section, 0);
+		while ($row_Section = mysql_fetch_array($result_Section))
+		{
+			// don't display this section if the section is not defined in the unit type
+			if (section_disabled($this_UnitType, $row_Section['SectionID']))
+				continue;
+			
+?>
+                <OPTION VALUE="<?= $row_Section['SectionID'] ?>"><?= $row_Section['Name']?></OPTION>\
+<?
+		}
+?>
+            </td>\
+            <td class="link_small" colspan="4">\
+              <select class="width200height30" name="ContractorID_{1}" id="ContractorID_{1}">\
+                <OPTION VALUE="">Choose one</OPTION>\
+<?
+		// listed all contractor names in dropdown listbox
+		mysql_data_seek($result_Contractor, 0);
+		while ($row_Contractor = mysql_fetch_array($result_Contractor))
+		{
+?>
+                <OPTION VALUE="<?= $row_Contractor['ContractorID'] ?>"><?= $row_Contractor['ContractorName']?></OPTION>\
+<?
+		}
+?>
+            </td>\
+            <td align="center"><input type="checkbox" name="TradeContacted_{1}" id="TradeContacted_{1}" /></td>\
+          </tr>\
+          </table>\
+          </td>\
+          </tr>\
+          <tr>\
+            <td class="subhead" colspan="5"><b>QA</b></td>\
+            <td class="subhead" colspan="5"><b>PDI</b></td>\
+          </tr>\
+          <tr>\
+            <td class="sub2head"><b>Defect</b></td>\
+            <td class="sub2head"><b>Report Date</b></td>\
+            <td class="sub2head"><b>Fixed</b></td>\
+            <td colspan="2" class="sub2head"><b>Fixed Date</b></td>\
+            <td class="sub2head"><b>Defect</b></td>\
+            <td class="sub2head"><b>Report Date</b></td>\
+            <td class="sub2head"><b>Fixed</b></td>\
+            <td class="sub2head"><b>Fixed Date</b></td>\
+            <td class="sub2head"><b>Signoff</b></td>\
+            </tr>\
+          <tr>\
+            <!-- QA defect -->\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="QADefect_{1}" id="QADefect_{1}" onClick="javascript: set_rptdate(\'QA\', {1});"></td>\
+            <td class="link_small"><input name="QAReportDate_{1}" id="QAReportDate_{1}" value="{QAReportDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="QAFixed_{1}" id="QAFixed_{1}" onClick="javascript: set_fixeddate(\'QA\', {1});"></td>\
+            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="QAFixedDate_{1}" inputName="QAFixedDate_{1}" value="{QAFixedDate}" adjustWeeks="true"></div></td>-->\
+            <td colspan="2" class="link_small"><input name="QAFixedDate_{1}" id="QAFixedDate_{1}" value="{QAFixedDate}" class="datepicker" /></td>\
+            <!-- PDI defect -->\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="PDIDefect_{1}" id="PDIDefect_{1}" onClick="javascript: set_rptdate(\'PDI\', {1});"></td>\
+            <td class="link_small"><input name="PDIReportDate_{1}" id="PDIReportDate_{1}" value="{PDIReportDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="PDIFixed_{1}" id="PDIFixed_{1}" onClick="javascript: set_fixeddate(\'PDI\', {1});"></td>\
+            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="PDIFixedDate_{1}" inputName="PDIFixedDate_{1}" value="{PDIFixedDate}" adjustWeeks="true"></div></td>-->\
+            <td class="link_small"><input name="PDIFixedDate_{1}" id="PDIFixedDate_{1}" value="{PDIFixedDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="PDISignoff_{1}" id="PDISignoff_{1}"></td>\
+            </tr>\
+            <tr>\
+            <td class="subhead" colspan="5"><b>30 day</b></td>\
+            <td class="subhead" colspan="5"><b>11 month</b></td>\
+          </tr>\
+          <tr>\
+          <td class="sub2head"><b>Defect</b></td>\
+          <td class="sub2head"><b>Report Date</b></td>\
+          <td class="sub2head"><b>Fixed</b></td>\
+          <td class="sub2head"><b>Fixed Date</b></td>\
+          <td class="sub2head"><b>Signoff</b></td>\
+          <td class="sub2head"><b>Defect</b></td>\
+          <td class="sub2head"><b>Report Date</b></td>\
+          <td class="sub2head"><b>Fixed</b></td>\
+          <td class="sub2head"><b>Fixed Date</b></td>\
+          <td class="sub2head"><b>Signoff</b></td>\
+          </tr>\            <!-- 30 day defect -->\
+          <tr>\
+          <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="day30Defect_{1}" id="day30Defect_{1}" onClick="javascript: set_rptdate(\'day30\', {1});"></td>\
+            <td class="link_small"><input name="day30ReportDate_{1}" id="day30ReportDate_{1}" value="{day30ReportDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="day30Fixed_{1}" id="day30Fixed_{1}" onClick="javascript: set_fixeddate(\'day30\', {1});"></td>\
+            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="day30FixedDate_{1}" inputName="day30FixedDate_{1}" value="{day30FixedDate}" adjustWeeks="true"></div></td>-->\
+            <td class="link_small"><input name="day30FixedDate_{1}" id="day30FixedDate_{1}" value="{day30FixedDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="day30Signoff_{1}" id="day30Signoff_{1}"></td>\
+            <!-- 11 month defect -->\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Defect_{1}" id="month11Defect_{1}" onClick="javascript: set_rptdate(\'month11\', {1});"></td>\
+            <td class="link_small"><input name="month11ReportDate_{1}" id="month11ReportDate_{1}" value="{month11ReportDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Fixed_{1}" id="month11Fixed_{1}" onClick="javascript: set_fixeddate(\'month11\', {1});"></td>\
+            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="month11FixedDate_{1}" inputName="month11FixedDate_{1}" value="{month11FixedDate}" adjustWeeks="true"></div></td>-->\
+            <td class="link_small"><input name="month11FixedDate_{1}" id="month11FixedDate_{1}" value="{month11FixedDate}" class="datepicker" /></td>\
+            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Signoff_{1}" id="month11Signoff_{1}"></td>\
+          </tr>\
+          <tr>\
+            <td colspan="19">\
+              <button type="button" class="delete_button" id="delete_{1}">Delete</button>\
+              <input type="hidden" name="PDIDefectID_{1}" id="PDIDefectID_{1}" value="{PDIDefectID}" />\
+            </td>\
+          </tr>\
+        </table>\
+';
+
+    var PDI_TABLE_TEMPLATE = PDI_TABLE_TEMPLATE_1 + PDI_TABLE_TEMPLATE_CAT_OPTIONS + PDI_TABLE_TEMPLATE_2;            
+
+	var UNIT = <?php echo $unit; ?>;
+</script>
+<script language="javascript" src="display_pdi.js"></script>
+<script>
+  $('#btn-download-PDI').live('click', function () {
+      filePath        = '<?= $PDIReportFilePath; ?>';
+      if (filePath == ''){
+        alert('The PDI report has yet signed. Please sign it via "Print PDI Report" below.')
+      } else {        
+        window.location = '<?= $PDIReportFilePath; ?>';             
+      }
+    });
+
+
+    $('#btn-download-day30').live('click', function () {
+      filePath        = '<?= $PDIDay30ReportFilePath; ?>';
+      if (filePath == ''){
+        alert('The Day 30 report has yet signed. Please sign it via "Print Day 30 Report" below.')
+      } else {        
+        window.location = '<?= $PDIDay30ReportFilePath; ?>';             
+      }
+    });    
+</script>
+
+</html>

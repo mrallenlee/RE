@@ -13,7 +13,6 @@ include "main_include.phtml";
 // Return rows for messages
 $rtn_rows = array();
 
-
 /**
  * Print json encode message, and return
  */
@@ -62,6 +61,10 @@ $row = mysql_fetch_array($result);
 
 $purchaser1 = $row['FirstName'] . ' ' . $row['LastName'];
 $email1     = $row['Email'];
+
+$rtn_rows['status']	= "SUCCESS";
+$rtn_rows['message']= "Report has been emailed to $email1.";
+
 
 require_once ("emailUtil.phtml");
 // Recipient 

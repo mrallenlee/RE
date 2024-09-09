@@ -569,6 +569,9 @@ function dataValidation(){
 	return true;
 }
 
+
+
+
 $(document).ready( function () {
 	// initialize
 	refreshPDIs();
@@ -631,6 +634,7 @@ $(document).ready( function () {
 			}
 		});
 	});
+
 	
 	$(".delete_button").live("click", function () {
 		PDIDefectID = $(this).siblings("[name^='PDIDefect']").attr("value");
