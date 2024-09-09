@@ -27,7 +27,10 @@ $htmlContent = '
 
 
 */
-function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $attachmentFilepath) {
+/**
+ * email util using default PHP mail function
+ */
+function sendEmailWithFileAttachmentDFT($to, $from, $fromName, $subject, $htmlContent, $attachmentFilepath) {
 
     $file = $attachmentFilepath;
     // Header for sender info 
@@ -66,6 +69,73 @@ function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlConte
     $mail = @mail($to, $subject, $message, $headers, $returnpath);  
     
     // Email sending status 
-    echo $mail?"<h1>Email Sent to $to Successfully!</h1>":"<h1>Email sending failed.</h1>"; 
+    // echo $mail?"<h1>Email Sent to $to Successfully!</h1>":"<h1>Email sending failed.</h1>"; 
     } // function sendEmailWithFileAttachment    
+
+
+
+
+    
+
+
+
+    
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
+if (EMAIL_METHOD == 'PHPMailer'){
+    require 'framework/PHPMailer/src/Exception.php';
+    require 'framework/PHPMailer/src/PHPMailer.php';
+    require 'framework/PHPMailer/src/SMTP.php';
+}
+
+/**
+ * email util using default PHPMailer function
+ */
+function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $attachmentFilepath) {
+
+        //Create an instance; passing `true` enables exceptions
+        $mail = new PHPMailer(true);
+        
+        try {
+            //Server settings
+            $mail->SMTPDebug = SMTP::DEBUG_OFF; // SMTP::DEBUG_SERVER;                      //Enable verbose debug output
+            $mail->isSMTP();                                            //Send using SMTP
+            $mail->Host       = EMAIL_HOST;//'smtp.gmail.com';                     //Set the SMTP server to send through
+            $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
+            $mail->Username   = EMAIL_USER; 
+            $mail->Password   = EMAIL_PASSWORD; //SMTP password
+            //Enable implicit TLS encryption
+            $mail->SMTPSecure = EMAIL_SMTPSecure == 'TLS' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS; 
+            //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
+            $mail->Port       = EMAIL_PORT; //587;//465;                                    
+        
+            //Recipients
+            $mail->setFrom(EMAIL_USER, EMAIL_USER_NAME);
+            $mail->addAddress($to);     //Add a recipient
+            // $mail->addAddress('allen.lee@isat-solutions.com', 'Allen ISAT');               //Name is optional
+            $mail->addReplyTo(EMAIL_USER, EMAIL_USER_NAME);
+            // $mail->addCC('cc@example.com');
+            // $mail->addBCC('bcc@example.com');
+        
+            if ($attachmentFilepath != ""){
+                //Attachments
+                $mail->addAttachment($attachmentFilepath);         //Add attachments
+                // $mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
+            }
+        
+            //Content
+            $mail->isHTML(true);                                  //Set email format to HTML
+            $mail->Subject = $subject;
+            $mail->Body    = $htmlContent;
+            // $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+        
+            $mail->send();
+            echo 'Message has been sent';
+        } catch (Exception $e) {
+            echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        }
+}
+
 ?>
