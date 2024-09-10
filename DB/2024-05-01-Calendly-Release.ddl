@@ -17,6 +17,7 @@ CREATE TABLE `Appointment` (
   `LastModifiedDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `CreatedDate` date NOT NULL DEFAULT '0000-00-00',
   `OrgJSON` TEXT,  
+  `Status` varchar(25) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (`CalendlyID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
