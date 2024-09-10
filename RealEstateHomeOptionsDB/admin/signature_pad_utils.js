@@ -93,7 +93,7 @@ function resizeCanvas() {
             returnObj = JSON.parse(o)
             if (returnObj.status == 'SUCCESS')
               // Email the signed copy to email based on the record on purchaser
-              emailPDISignedReportToPurchaser(unitNumber, 'Day30');          
+              emailPDISignedReportToPurchaser(unitNumber, reportType);          
               // alert('Upload successfully');
             else
               alert("Upload failed - Error Message = " + o);

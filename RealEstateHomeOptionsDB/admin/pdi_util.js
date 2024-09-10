@@ -3,6 +3,8 @@
 	// PDI Book appoint email feature
 	function emailBookPDIAppt(unitNumber, userID){
 		// alert("emailBookPDI unitNumber=" + unitNumber);
+
+        // alert('userID=' + userID + ' unitNumber=' + unitNumber);
         $.ajax({
             url: 'pdi_util.phtml',
             data: 'action=emailBookPDIAppt&unitNumber=' + unitNumber + '&userID=' + userID,
@@ -14,6 +16,7 @@
             ,
             error: function (data) {
 				alert('Error: This is an error in processing the data. Please contact system administrator.');
+                
 
 				//alert('sql=' + data['status']);
 				//alert('fuck=' + data['fuck']);

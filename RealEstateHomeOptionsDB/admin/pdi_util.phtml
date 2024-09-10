@@ -3,14 +3,14 @@ $not_include_javascript = 1;
 include "main_include.phtml";
 
 // check_auth(HOMEOPTIONS);
-
+include_once "emailUtil.phtml";
 
 if ($action == "emailBookPDIAppt"){
 
     // Find the user info
     $sql        = "SELECT FirstName, LastName, Email from User where UserID=$userID";
     $result     = mysql_query($sql) or log_err_die(mysql_error() . "<BR>SQL=$sql", $PHP_SELF);	
-    $row = mysqli_fetch_array($result);
+    $row        = mysqli_fetch_array($result);
 
     $toName     = $row['FirstName'] . " " . $row['LastName'];
     $email      = $row['Email'];
@@ -18,8 +18,11 @@ if ($action == "emailBookPDIAppt"){
     $fromName   = "ISAT Solutions.";
     $subject    = "PDI Appointment";
     $headers    = "From: $fromName"." <".$from.">"; 
-    $message    = "Hi $toName, \n\nCongratulations! Your newly purchased unit $unitNumber at Burlington High is ready for the PDI. Please kindly follow below link to schedule a PDI appointmebnt. https://calendly.com/allen-lee-wtg/a-testing-event?back=1\n\n\nBest Regards,\n\nISAT Team";
-    $result     = @mail($email, $subject, $message, $headers, $returnpath);  
+    $htmlContent    = "Hi $toName, <BR><BR>Congratulations! Your newly purchased unit $unitNumber at Burlington High is ready for the PDI. Please kindly follow below link to schedule a PDI appointmebnt. https://calendly.com/allen-lee-wtg/a-testing-event?back=1<BR><BR><BR>Best Regards,<BR><BR>ISAT Team";
+    // $result     = @mail($email, $subject, $htmlContent, $headers, $returnpath);  
+
+    sendEmailWithFileAttachment($email, $from, $fromName, $subject, $htmlContent, "");
+    $result = 1;
 
 
 
