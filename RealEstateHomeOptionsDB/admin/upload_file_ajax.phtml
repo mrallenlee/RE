@@ -74,6 +74,15 @@ if (!isset($myFile) || $myFile == "none")
 		// TODO Allen to custoize PDI component. Need to get correct PDI ID from called
 		if ($component == 'PDI'){
 
+			// outputfile
+			$outputfile = $dir . $filename;
+			// Scale down image
+			$smallImage =  new Imagick($outputfile);
+			$smallImage->resizeImage(800, 800,Imagick::FILTER_CATROM,1, true);
+			$smallImage->writeImage($outputfile);
+
+			$smallImage->destroy(); 
+
 			// Prepare return status
 			$rtn_rows['status'] 	= "SUCCESS";
 			$rtn_rows['message']	= "Image uploaded successfully";
