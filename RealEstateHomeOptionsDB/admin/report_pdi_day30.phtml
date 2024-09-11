@@ -16,7 +16,7 @@ include "../admin/main_include.phtml";
 <?
 
 // get all data to be displayed in report header
-$sql = "SELECT Unit.UnitNumber UnitNumber, concat(FirstName, ' ', LastName) PurchaserName, 
+$sql = "SELECT User.UserID, Unit.UnitNumber UnitNumber, concat(FirstName, ' ', LastName) PurchaserName, 
 		DATE_FORMAT(PDIDate, '%W %M %e %Y') PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
 		DATE_FORMAT(DATE_ADD(PDIDate, INTERVAL 30 DAY), '%W %M %e %Y') Day30Date,
 		DATE_FORMAT(OccupancyDate, '%W %M %e %Y') OccupancyDate, DATE_FORMAT(OccupancyDate, '%b %e %Y') OccupancyDate_nodayformat,
@@ -29,8 +29,16 @@ $sql = "SELECT Unit.UnitNumber UnitNumber, concat(FirstName, ' ', LastName) Purc
 $result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
 $row = mysql_fetch_array($result);
 
+$userID       = $row['UserID'];
 $purchaser1   = $row['PurchaserName'];
 $OccupancyDate = $row['OccupancyDate_nodayformat'];
+
+
+$addPurchaserSql    = "select concat(FirstName,' ', LastName) as PurchaserName from AdditionalPurchaser, Person where AdditionalPurchaser.PersonID = Person.PersonID and AdditionalPurchaserID=$userID";
+$resultAddPurchaser = mysql_query($addPurchaserSql, $db) or die("Error : $addPurchaserSql<br>".mysql_error());
+$rowAddPurchaser    = mysql_fetch_array($resultAddPurchaser);
+$purchaser2         = $rowAddPurchaser['PurchaserName'];
+$currentDate        = date("M d, Y");
 ?>
 <div id="html-content-holder" style="background-color: #FFFFFF;">
 <table align="center" width="670">
@@ -421,8 +429,8 @@ mysql_data_seek($result, 0);
         <tr><td><br><br></td></tr>
         <tr>
           <td align="left">
-            DATE:
-            <br><img src="black.gif" width="290" height="1" border="0"><br>
+          DATE:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?= $currentDate; ?>
+          <br><img src="black.gif" width="290" height="1" border="0"><br>
           </td>
           <td></td>
         </tr>
