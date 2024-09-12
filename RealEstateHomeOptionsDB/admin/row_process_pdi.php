@@ -116,7 +116,7 @@ if ($action == "get") {
 				QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 				day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 				month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-				PDICatID, PDITypeID, TradeContacted, hasImage, imageName
+				PDICatID, PDITypeID, TradeContacted, hasImage, imageName, UnitDefectID
 			FROM PDIDefect
 			LEFT JOIN Section
 			ON (PDIDefect.SectionID = Section.SectionID)
@@ -163,6 +163,16 @@ if ($action == "get") {
 	
 	echo json_encode($rtn_rows);	
 } elseif ($action == "update") {
+
+	// get max UnitDefectID before delete
+	// get the max Unit Defect ID, and increment it in the next insert
+	$maxUnitDefectIDSql 	= "SELECT MAX(UnitDefectID) as maxID from PDIDefect where UnitNumber = $unit";
+	$maxResult 				= mysql_query($maxUnitDefectIDSql);
+	$maxRow					= mysql_fetch_array($maxResult);
+	$maxUnitDefectID		= $maxRow['maxID'] > 0 ? $maxRow['maxID'] + 1 : 1;	
+
+	
+
 	// delete existing records for the unit
 	$sql = "DELETE FROM PDIDefect WHERE UnitNumber = $unit";
 
@@ -206,6 +216,7 @@ if ($action == "get") {
 			$PDITypeID_new_name		= "PDITypeID_New_Text_" . $i;
 			$TradeContacted_name	= "TradeContacted_" . $i;
 			$hasImage				= "DefectHasImage_" . $i;
+			$UnitDefectID			= "UnitDefectID_" . $i;
 
 			if ($$hasImage)			$hasImage = 1;
 			else $hasImage = 0;
@@ -214,6 +225,9 @@ if ($action == "get") {
 			if 
 			(!($$imageName)) 		$$imageName = '';
 
+			if ($$UnitDefectID == "NEW") {
+				$$UnitDefectID = $maxUnitDefectID++;
+			}
 				
 
 			$DefectDesc = preg_replace($find, $replace, $$DefectDesc_name);
@@ -315,13 +329,13 @@ if ($action == "get") {
 					QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 					day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 					month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-					PDICatID, PDITypeID, TradeContacted, hasImage, imageName)
+					PDICatID, PDITypeID, TradeContacted, hasImage, imageName, UnitDefectID)
 					VALUES ('$unit', '$DefectDesc', '" . $$SectionID_name . "', '" . $$ContractorID_name . "', 
 					$QADefect, '" . $$QAReportDate_name . "', $QAFixed, '" . $$QAFixedDate_name ."', 
 					$PDIDefect,  '" . $$PDIReportDate_name . "', $PDIFixed, '" . $$PDIFixedDate_name ."', $PDISignoff,
 					$day30Defect,  '" . $$day30ReportDate_name . "', $day30Fixed, '" . $$day30FixedDate_name ."', $day30Signoff, 
 					$month11Defect,  '" . $$month11ReportDate_name . "', $month11Fixed, '" . $$month11FixedDate_name ."', $month11Signoff,
-					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $$imageName . "')";
+					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $$imageName . "', " . $$UnitDefectID . ")";
 
 			$row = array();
 			$row['status'] = "ERROR";
@@ -329,7 +343,7 @@ if ($action == "get") {
 			// die("Error : $sql<br>" . mysql_error());
 //			$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 			$result = mysql_query($sql);
-			if (result) {
+			if ($result) {
 				$row['status'] = "SUCCESS";
 			} else { 
 				$row['status'] = "ERROR";

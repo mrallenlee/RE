@@ -239,6 +239,7 @@ var generate_defect_form = function (num_of_rows, row) {
 	row["month11ReportDate"]= row["month11ReportDate"] || "";
 	row["DefectDesc"] 		= row["DefectDesc"] || "";
 	row["PDIDefectID"] 		= row["PDIDefectID"] || "NEW";
+	row["UnitDefectID"] 	= row["UnitDefectID"] || "NEW";
 	row["hasImage"] 		= row["hasImage"] || "";
 	row["imageName"] 		= row["hasImage"]==1 ? row["imageName"] : "";
 					
@@ -254,8 +255,10 @@ var generate_defect_form = function (num_of_rows, row) {
 	                         .replace(/\{month11ReportDate\}/g, filter_date(row["month11ReportDate"]))
 	                         .replace(/\{DefectDesc\}/g, row["DefectDesc"])
 	                         .replace(/\{PDIDefectID\}/g, row["PDIDefectID"])
+	                         .replace(/\{UnitDefectID\}/g, row["UnitDefectID"])
 	                         .replace(/\{DefectHasImage\}/g, row["hasImage"])
-	                         .replace(/\{DefectImageName\}/g, row["imageName"]);
+	                         .replace(/\{DefectImageName\}/g, row["imageName"])
+							 .replace(/\{UnitDefectID\}/g, row["UnitDefectID"]);
 };
 
 var setInputStatus = function (num_of_rows, row) {
