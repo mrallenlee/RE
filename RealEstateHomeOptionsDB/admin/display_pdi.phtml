@@ -629,7 +629,7 @@ var PDI_TABLE_TEMPLATE_1=' \
                 <tr valign="top">\
                   <td class="tail" colspan="10"><b>Defect Desc</b></td>\
                 </tr>\
-                <tr><td>Defect ID: {UnitDefectID} Created By: {CreatedBy}</td></tr>\
+                <tr><td>Defect ID: {UnitDefectID}</td></tr>\
                 <input type="hidden" name="UnitDefectID_{1}" id="UnitDefectID_{1}" value="{UnitDefectID}"></input>\
                 <input type="hidden" name="CreatedBy_{1}" id="CreatedBy_{1}" value="{CreatedBy}"></input>\
                 <tr><td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
@@ -758,10 +758,11 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
             <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Signoff_{1}" id="month11Signoff_{1}"></td>\
           </tr>\
           <tr>\
-            <td colspan="19">\
+            <td colspan="8">\
               <button type="button" class="delete_button" id="delete_{1}">Delete</button>\
               <input type="hidden" name="PDIDefectID_{1}" id="PDIDefectID_{1}" value="{PDIDefectID}" />\
             </td>\
+            <td colspan="2" align="right">Created By: {CreatedBy}</td>\
           </tr>\
         </table>\
 ';
