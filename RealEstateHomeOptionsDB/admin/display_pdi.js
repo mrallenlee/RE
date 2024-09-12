@@ -240,6 +240,7 @@ var generate_defect_form = function (num_of_rows, row) {
 	row["DefectDesc"] 		= row["DefectDesc"] || "";
 	row["PDIDefectID"] 		= row["PDIDefectID"] || "NEW";
 	row["UnitDefectID"] 	= row["UnitDefectID"] || "NEW";
+	row["CreatedBy"]	 	= row["CreatedBy"] || "NEW";
 	row["hasImage"] 		= row["hasImage"] || "";
 	row["imageName"] 		= row["hasImage"]==1 ? row["imageName"] : "";
 					
@@ -258,7 +259,8 @@ var generate_defect_form = function (num_of_rows, row) {
 	                         .replace(/\{UnitDefectID\}/g, row["UnitDefectID"])
 	                         .replace(/\{DefectHasImage\}/g, row["hasImage"])
 	                         .replace(/\{DefectImageName\}/g, row["imageName"])
-							 .replace(/\{UnitDefectID\}/g, row["UnitDefectID"]);
+							 .replace(/\{UnitDefectID\}/g, row["UnitDefectID"])
+							 .replace(/\{CreatedBy\}/g, row["CreatedBy"]);
 };
 
 var setInputStatus = function (num_of_rows, row) {

@@ -629,8 +629,9 @@ var PDI_TABLE_TEMPLATE_1=' \
                 <tr valign="top">\
                   <td class="tail" colspan="10"><b>Defect Desc</b></td>\
                 </tr>\
-                <tr><td>Defect ID: {UnitDefectID}</td></tr>\
+                <tr><td>Defect ID: {UnitDefectID} Created By: {CreatedBy}</td></tr>\
                 <input type="hidden" name="UnitDefectID_{1}" id="UnitDefectID_{1}" value="{UnitDefectID}"></input>\
+                <input type="hidden" name="CreatedBy_{1}" id="CreatedBy_{1}" value="{CreatedBy}"></input>\
                 <tr><td colspan="10"><?php // <input size=70 type="text" name="DefectDesc_{1}" value="{DefectDesc}";/>?>\
             Defect Category:<select name="PDICatID_{1}" id="PDICatID_{1}" onChange="refreshPDITypeComboBox(\'PDICatID_{1}\')">';
 

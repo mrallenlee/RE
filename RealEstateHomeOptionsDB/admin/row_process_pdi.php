@@ -116,7 +116,7 @@ if ($action == "get") {
 				QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 				day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 				month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-				PDICatID, PDITypeID, TradeContacted, hasImage, imageName, UnitDefectID
+				PDICatID, PDITypeID, TradeContacted, hasImage, imageName, UnitDefectID, CreatedBy
 			FROM PDIDefect
 			LEFT JOIN Section
 			ON (PDIDefect.SectionID = Section.SectionID)
@@ -217,6 +217,7 @@ if ($action == "get") {
 			$TradeContacted_name	= "TradeContacted_" . $i;
 			$hasImage				= "DefectHasImage_" . $i;
 			$UnitDefectID			= "UnitDefectID_" . $i;
+			$CreatedBy				= "CreatedBy_" . $i;
 
 			if ($$hasImage)			$hasImage = 1;
 			else $hasImage = 0;
@@ -228,6 +229,10 @@ if ($action == "get") {
 			if ($$UnitDefectID == "NEW") {
 				$$UnitDefectID = $maxUnitDefectID++;
 			}
+
+			if ($$CreatedBy == "NEW") {
+				$$CreatedBy = get_user_name();
+			}			
 				
 
 			$DefectDesc = preg_replace($find, $replace, $$DefectDesc_name);
@@ -329,13 +334,14 @@ if ($action == "get") {
 					QADefect, QAReportDate, QAFixed, QAFixedDate, PDIDefect, PDIReportDate, PDIFixed, PDIFixedDate, PDISignoff,
 					day30Defect, day30ReportDate, day30Fixed, day30FixedDate, day30Signoff, 
 					month11Defect, month11ReportDate, month11Fixed, month11FixedDate, month11Signoff,
-					PDICatID, PDITypeID, TradeContacted, hasImage, imageName, UnitDefectID)
+					PDICatID, PDITypeID, TradeContacted, hasImage, imageName, UnitDefectID, CreatedBy)
 					VALUES ('$unit', '$DefectDesc', '" . $$SectionID_name . "', '" . $$ContractorID_name . "', 
 					$QADefect, '" . $$QAReportDate_name . "', $QAFixed, '" . $$QAFixedDate_name ."', 
 					$PDIDefect,  '" . $$PDIReportDate_name . "', $PDIFixed, '" . $$PDIFixedDate_name ."', $PDISignoff,
 					$day30Defect,  '" . $$day30ReportDate_name . "', $day30Fixed, '" . $$day30FixedDate_name ."', $day30Signoff, 
 					$month11Defect,  '" . $$month11ReportDate_name . "', $month11Fixed, '" . $$month11FixedDate_name ."', $month11Signoff,
-					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $$imageName . "', " . $$UnitDefectID . ")";
+					$PDICatID, $PDITypeID, $TradeContacted, $hasImage, '" . $$imageName . "', " . $$UnitDefectID . ",
+					'" . $$CreatedBy . "')";
 
 			$row = array();
 			$row['status'] = "ERROR";
