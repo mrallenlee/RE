@@ -78,7 +78,7 @@ if ($table_name == "Unit")
 			date_format(PDIDate, '%e %b') As PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
 			date_format(OccupancyDate, '%e %b') As OccupancyDate, OccupancyTime, OccupancyNotified, 
 			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff, PDIReportFilePath, PDIDay30ReportFilePath,
-            ApptDate, ApptStartTime, ApptEndTime, ApptStatus, MeetingURL, RescheduleURL
+            ApptDate, date_format(ApptStartTime, '%m-%d %H:%m') As ApptStartTime, ApptEndTime, ApptStatus, MeetingURL, RescheduleURL
 			FROM $table_name
 			LEFT JOIN User
 			ON ($table_name.UserID = User.UserID)
@@ -122,7 +122,7 @@ if ($table_name == "Unit")
                   <td class="subhead"><b><nobr>Time</nobr></b></td>
             <? } else { ?>
                   <td class="subhead"><b><nobr>Date / Time</nobr></b></td>
-                  <td class="subhead"><b><nobr>Calendly</nobr></b></td>
+                  <td class="subhead"><b><nobr>&nbsp;</nobr></b></td>
             <? } ?>
                   <td class="subhead"><b><nobr>Notified</nobr></b></td>
 
