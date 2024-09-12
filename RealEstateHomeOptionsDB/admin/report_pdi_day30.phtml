@@ -292,7 +292,7 @@ mysql_data_seek($result, 0);
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            VENDOR/BUILDER REGISTRATION NO: XXXXX
+            VENDOR/BUILDER REGISTRATION NO: B47697
             <br><img src="black.gif" width="550" height="1" border="0"><br>
           </td>
         </tr>
@@ -319,7 +319,7 @@ mysql_data_seek($result, 0);
           <td>
             STREET ADDRESS:
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            UNIT <?= $unit ?>, 5001 Corporate Drive
+            UNIT <?= $unit ?>, 2782 Barton Street E
             <br><img src="black.gif" width="500" height="1" border="0"><br>
           </td>
         </tr>
@@ -331,7 +331,7 @@ mysql_data_seek($result, 0);
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             &nbsp;&nbsp;&nbsp;
-            Burlington, ONT. L7L 0A5
+            Hamilton, ONT. L8E 2J8
             <br><img src="black.gif" width="500" height="1" border="0"><br>
           </td>
         </tr>
@@ -340,7 +340,7 @@ mysql_data_seek($result, 0);
           <td>
             VENDOR NAME: 
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            Jacan Investments Canada Inc.
+            LJM Developments (Hamilton) Inc.
             <br><img src="black.gif" width="500" height="1" border="0"><br>
           </td>
         </tr>
@@ -353,7 +353,7 @@ mysql_data_seek($result, 0);
   
             SIGNATURE: <canvas id="canvas" width="230" height="80"></canvas>
             <br><img src="black.gif" width="300" height="1" border="0"><br>
-            <BR><BR>VENDOR REP.: Allen Lee
+            <BR><BR>VENDOR REP.: <?=  ucfirst(get_user_name()); ?>
             <br><img src="black.gif" width="300" height="1" border="0"><br>
               </div>
             </div>
@@ -593,7 +593,10 @@ saveSVGButton.addEventListener("click", function (event) {
             onrendered: function (canvas) {
                     //$("#previewImage").append(canvas);
                     getCanvas = canvas;
-
+                    var wid = getCanvas.width;
+                    var hgt = getCanvas.height;
+                    // var imgData = getCanvas.toDataURL("image/png", 1024, 1024); //image data of canvas
+                    var hratio = hgt / wid;
                     imageData = getCanvas.toDataURL("image/png");
                     download(imageData, "Day30-Contract.png");
                     //var newData = imageData.replace(/^data:image\/png/, "data:application/octet-stream");

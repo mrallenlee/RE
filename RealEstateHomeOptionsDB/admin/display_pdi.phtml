@@ -26,6 +26,7 @@ JEC from below website
 <//script src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery.jec.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
 <script src="pdi_util.js"></script>
 
 
@@ -73,7 +74,7 @@ if ($table_name == "Unit")
 		echo "<tr><td><span class='user_message'>" . $user_message . "</span></td></tr>\n";
 	}
 
-	$sql	= "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, User.UserID,
+	$sql	= "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstName) PurchaserName, User.Email, User.UserID,
 			date_format(PDIDate, '%e %b') As PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber,
 			date_format(OccupancyDate, '%e %b') As OccupancyDate, OccupancyTime, OccupancyNotified, 
 			OccupancyNotifiedDate, QADone, PDIDone, PDISignOff, PDIReportFilePath, PDIDay30ReportFilePath,
@@ -103,7 +104,7 @@ if ($table_name == "Unit")
                   <!-- 1st data table header -->
                   <td class="head" colspan=2>Info</td>
 	          <td class="head" padding="15" colspan="3"><b>PDI</b></td>
-		  <td class="head" padding="15" colspan="3"><b>Occupancy</b></td>
+		  <td class="head" padding="15" colspan="2"><b>Occupancy</b></td>
 		  <td class="head"><b>QA</b></td>
                   <td class="head"><b>PDI</b></td>
                   <td class="head"><b>PDI</b></td>
@@ -165,8 +166,8 @@ if ($table_name == "Unit")
 ?>
                   ></td>
 
-		  <td class="table_rec"><nobr><?= $row['OccupancyDate'] ?>&nbsp;</nobr></td>
-                  <td class="table_rec"><nobr><?= $row['OccupancyTime'] ?>&nbsp;</nobr></td>
+		  <td class="table_rec"><nobr><?= $row['OccupancyDate'] ?>&nbsp <?= $row['OccupancyTime'] ?></nobr></td>
+                  <? // <td class="table_rec"><nobr><?= $row['OccupancyTime'] &nbsp;</nobr></td> ?>
                   <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_OccupancyNotified" DISAB
 LED
 <?
@@ -212,10 +213,10 @@ LED
 ?>
                   ></td>
       <td style="font-family: Arial,Verdana,Helvetica; font-size: 13px; height: 22px;">
-      					<input type="button" value="PDI Defect List" onClick="window.location='display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>'">
+      					<input type="button" value="PDI" onClick="window.location='display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>'">
                 <input type="button" value="Edit" onClick="window.location='row_edit_pdi.phtml?table_name=<?= $table_name ?>&unit=<?= $row['UnitNumber'] ?>'">
                 <? if (PDI_BOOK_APPT_EMAIL_ENABLED == 1) {?>
-                <input type="button" value="Book PDI Appt" onClick="emailBookPDIAppt('<?= $row['UnitNumber'] ?>', '<?= $row['UserID'];?>')">
+                <input type="button" value="Book Appt" onClick="emailBookPDIAppt('<?= $row['UnitNumber'] ?>', '<?= $row['UserID'];?>')">
                 <? } // PDI_BOOK_APPOINTMENT_VIA_EMAIL_ENABLED ?>
                     </td>
 
@@ -250,7 +251,7 @@ elseif ($table_name == "PDIDefect")
 
 <?
 	// Get purchaser name of the unit
-	$sql	= "SELECT User.UserID, FirstName, LastName, Address, City, 
+	$sql	= "SELECT User.UserID, FirstName, LastName, Email, Address, City, 
       Province, Country, PostalCode, BusinessPhone, PhoneNumber, CellPhone, FaxNumber
 			PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber, OccupancyDate, 
       OccupancyTime, OccupancyNotified, 
@@ -344,6 +345,14 @@ elseif ($table_name == "PDIDefect")
             </td>
           </tr>
 
+          <tr>
+            <td class="link_small">
+              <img src="../spacer.gif" width="44" height="1" border="0"><b>Email:</b>
+            </td>
+            <td class="link_small">
+              <b><?= $row['Email']; ?></b><br>
+            </td>
+          </tr>
           <tr>
             <td class="link_small">
               <img src="../spacer.gif" width="44" height="1" border="0">Address:
@@ -638,7 +647,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
             <br>Defect Type:<select name="PDITypeID_{1}" id="PDITypeID_{1}">\
                 <option value="0">choose...</option>\
             </select>\
-            New Type Value:<input size=15 type="text" name="PDITypeID_New_Text_{1}" id="PDITypeID_New_Text_{1}";/>\
+            Value:<input size=15 type="text" name="PDITypeID_New_Text_{1}" id="PDITypeID_New_Text_{1}";/>\
             </td>\
             </tr>\
             <tr>\
