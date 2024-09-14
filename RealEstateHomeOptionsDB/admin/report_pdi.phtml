@@ -176,7 +176,7 @@ $result_Section = mysql_query($sql_Section, $db) or die("Error : $sql_Section<br
 
 // get defect data
 $sql = "SELECT CONCAT ( PDICategory.Name, ' - ', PDIType.Name) AS DefectDesc, Section.Name,
-    PDIDefect.PDIFixed, PDIDefect.hasImage, PDIDefect.imageName
+    PDIDefect.PDIFixed, PDIDefect.hasImage, PDIDefect.imageName, UnitDefectID
 		FROM PDICategory, PDIType, PDIDefect
 		LEFT JOIN Section
 		ON PDIDefect.SectionID = Section.SectionID
@@ -184,7 +184,7 @@ $sql = "SELECT CONCAT ( PDICategory.Name, ' - ', PDIType.Name) AS DefectDesc, Se
 		AND PDIDefect.PDIDefect = 1
 		AND PDIType.PDITypeID = PDIDefect.DefectDesc
     AND PDICategory.PDICatID = PDIType.PDICatID
-		ORDER BY Section.Name";
+		ORDER BY Section.Name, UnitDefectID";
 
 $result = mysql_query($sql, $db) or die("Error : $sql<br>".mysql_error());
 
@@ -248,11 +248,12 @@ mysql_data_seek($result, 0);
       <!-- 4th part: Display defect images-->
       <table class="report_part1_content" width="100%">
         <tr class="report_part1_header">
-          <td>DEFECT DETAILS</td>
+          <td>DEFECT DETAILS<br><br></td>
         </tr>
 <?      while ($row = mysql_fetch_array($result)) { ?>
         <tr>  
-          <td><?= $row["Name"]; ?></td>
+        <td><?= $row["UnitDefectID"]; ?></td>          
+        <td><?= $row["Name"]; ?></td>
           <td><?= strtoupper($row["DefectDesc"]); ?></td>
           <td><?
             if ($row['hasImage']){
