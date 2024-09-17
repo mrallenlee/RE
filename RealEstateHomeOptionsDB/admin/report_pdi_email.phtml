@@ -100,7 +100,17 @@ $htmlContent = '
     <p>' . PROJECT_DEVELOPER . '</p> 
 '; 
 
-sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $file);
+$CCPFile            = "../images/PDI/CCP/" . $unitNumber . "_CCP_Signed.pdf";
+$UserPackageFile    = "../images/PDI/CCP/homeowner_information_package_tarion.pdf";
+
+$fileList = array();
+$fileList[]     = $file;
+$fileList[]     = $CCPFile;
+$fileList[]     = $UserPackageFile;
+
+
+// sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $file);
+sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $fileList);
 
 returnJSONMsg($rtn_rows);
 return true;            
