@@ -34,7 +34,7 @@ $purchaser1   = $row['PurchaserName'];
 $OccupancyDate = $row['OccupancyDate_nodayformat'];
 
 
-$addPurchaserSql    = "select concat(FirstName,' ', LastName) as PurchaserName from AdditionalPurchaser, Person where AdditionalPurchaser.PersonID = Person.PersonID and AdditionalPurchaserID=$userID";
+$addPurchaserSql    = "select concat(FirstName,' ', LastName) as PurchaserName from AdditionalPurchaser, Person where AdditionalPurchaser.PersonID = Person.PersonID and UserID=$userID";
 $resultAddPurchaser = mysql_query($addPurchaserSql, $db) or die("Error : $addPurchaserSql<br>".mysql_error());
 $rowAddPurchaser    = mysql_fetch_array($resultAddPurchaser);
 $purchaser2         = $rowAddPurchaser['PurchaserName'];
