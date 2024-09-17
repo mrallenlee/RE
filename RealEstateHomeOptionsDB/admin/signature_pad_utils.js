@@ -117,10 +117,10 @@ function resizeCanvas() {
             }
           }).done(function(o) {
               // Email the signed copy to email based on the record on purchaser
-             alert('message=' + o);
+            //  alert('message=' + o);
             returnObj = JSON.parse(o)
             if (returnObj.status == 'SUCCESS')
-              alert('Email successfully');
+              alert(returnObj.message);
             else
               alert("Email failed - Error Message = " + o);
             // alert('Upload successfully' + o);          
