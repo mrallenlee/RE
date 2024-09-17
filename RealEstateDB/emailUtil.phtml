@@ -94,7 +94,7 @@ if (EMAIL_METHOD == 'PHPMailer'){
  * email util using default PHPMailer function
  * Note from, and fromName MAY NOT BE USED as this depends on the SMTP server setting. 
  */
-function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $attachmentFilepath) {
+function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $attachmentFilepathList) {
 
         //Create an instance; passing `true` enables exceptions
         $mail = new PHPMailer(true);
@@ -117,13 +117,26 @@ function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlConte
             $mail->addAddress($to);     //Add a recipient
             // $mail->addAddress('allen.lee@isat-solutions.com', 'Allen ISAT');               //Name is optional
             $mail->addReplyTo(EMAIL_USER, EMAIL_USER_NAME);
+
+            $mail->addBCC('mr.allen.lee@gmail.com', 'Allen Lee');
+            $mail->addCC('adeena@ljm.ca', 'Adeena');
+            $mail->addCC('sabrina@ljm.ca', 'Sabrina');            
             // $mail->addCC('cc@example.com');
             // $mail->addBCC('bcc@example.com');
         
-            if ($attachmentFilepath != ""){
-                //Attachments
-                $mail->addAttachment($attachmentFilepath);         //Add attachments
-                // $mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
+
+            foreach ($attachmentFilepathList as $attachmentFilePath){
+                // echo "attachment1 =" . $attachmentFilePath . "<BR>";
+                if (!file_exists(($attachmentFilePath))) {
+                    // echo ("file does NOT exist<BR>");
+                    continue; // if file doesn't exist, don't attach
+                }
+
+                if ($attachmentFilePath != ""){
+                    //Attachments
+                    $mail->addAttachment($attachmentFilePath);         //Add attachments
+                    // $mail->addAttachment('/tmp/image.jpg', 'new.jpg');    //Optional name
+                }
             }
         
             //Content
