@@ -1,5 +1,5 @@
 <?
-include "../admin/main_include.phtml";
+include_once "../admin/main_include.phtml";
 
 /** 
  * Generate CCP from the template, and date it with current date
@@ -25,62 +25,49 @@ $rtn_rows = array();
 /**
  * Print json encode message, and return
  */
-function returnJSONMsg($rtn_rows){
-    echo json_encode($rtn_rows);
-    exit;
-    return;
+function returnJSONMsg($rtn_rows, $print=true){
+    if ($print){
+        echo json_encode($rtn_rows);
+        exit;
+        return;
+    }
+    else return json_encode($rtn_rows);
+
 } // returnJSONMsg
 
-$action     = $_GET['action'];
-$output     = $_GET['output'];
-$unitNumber = $_GET['unitNumber'];
-$signedDate = $_GET['signedDate'];
 
-if ($signedDate == "") $signedDate = date('M d, Y');
-
-// Signed File Name
-$fileName = CCP_FOLDER_PATH . $unitNumber . "_CCP_Signed.pdf"; 
-// Source File Name
-$srcFileName = CCP_FOLDER_PATH . $unitNumber . ".pdf"; 
-
-if ($action == "getcurrent") {
-    if (file_exists($fileName)){
-        $rtn_rows['filename']   = $fileName;
-        $rtn_rows['status']     = "SUCCESS";
-        // Set http header error
-        returnJSONMsg($rtn_rows); 
-    } else {
-        $rtn_rows['status']     = "ERROR";
-        $rtn_rows['message']    = "CCP has not been processed";
-        // Set http header error
-        returnJSONMsg($rtn_rows); 
-    }
-} else if ($action == "get"){
-    if (file_exists($fileName)){
-        $rtn_rows['filename']   = $fileName;
-        $rtn_rows['status']     = "SUCCESS";
-        // Set http header error
-        returnJSONMsg($rtn_rows); 
-    }
-
-    $data = generateFile($srcFileName, $fileName, $signedDate);
-    $rtn_rows['data']       = $data;
-    $rtn_rows['filename']   = $fileName;
-    $rtn_rows['status']     = "SUCCESS";
-    // Set http header error
-    returnJSONMsg($rtn_rows); 
-
-} else if ($action == "regenerate") {
-    $data = generateFile($srcFileName, $fileName, $signedDate);
-    $rtn_rows['data']       = $data;
-    $rtn_rows['filename']   = $fileName;
-    $rtn_rows['status']     = "SUCCESS";
-    // Set http header error
-    returnJSONMsg($rtn_rows); 
+function getSrcFileName($unitNumber){
+    return CCP_FOLDER_PATH . "CCP_" . $unitNumber . ".pdf"; 
 }
 
+function getOutputFileName($unitNumber){
+    return CCP_FOLDER_PATH . $unitNumber . "_CCP_Signed.pdf"; 
+}
 
-function generateFile($srcFileName, $fileName, $signedDate){
+function getSignedDate(){
+    return  date('M d, Y');
+}
+
+/**
+ * Get current file if exists, otherwise generate a new one
+ */
+function getCCPFile($srcFileName, $fileName, $signedDate){
+    if (file_exists($fileName)){
+        $rtn_rows['filename']   = $fileName;
+        $rtn_rows['status']     = "SUCCESS";
+        // Set http header error
+        returnJSONMsg($rtn_rows, false); 
+    }
+
+    $data = generateCCPFile($srcFileName, $fileName, $signedDate);
+    $rtn_rows['data']       = $data;
+    $rtn_rows['filename']   = $fileName;
+    $rtn_rows['status']     = "SUCCESS";
+    // Set http header error
+    returnJSONMsg($rtn_rows, false);     
+}
+
+function generateCCPFile($srcFileName, $fileName, $signedDate){
 
 
     require('fpdf/fpdf.php');
@@ -103,7 +90,60 @@ function generateFile($srcFileName, $fileName, $signedDate){
     $pdf->SetX(-55);
     $pdf->Cell(20,5, $signedDate);
 
-    $pdf->Output('F', $fileName);
-    return $pdf->Output();            
-} // generateFile;  
+    return $pdf->Output('F', $fileName);
+    // return $pdf->Output();            
+} // generateCCPFile;  
+
+$action     = $_GET['action'];
+$output     = $_GET['output'];
+$unitNumber = $_GET['unitNumber'];
+$signedDate = $_GET['signedDate'];
+
+if ($signedDate == "") $signedDate = getSignedDate();
+
+// Signed File Name
+$fileName = getOutputFileName($unitNumber);
+// Source File Name
+$srcFileName = getSrcFileName($unitNumber);
+
+if ($action == "getcurrent") {
+    if (file_exists($fileName)){
+        $rtn_rows['filename']   = $fileName;
+        $rtn_rows['status']     = "SUCCESS";
+        // Set http header error
+        returnJSONMsg($rtn_rows); 
+    } else {
+        $rtn_rows['status']     = "ERROR";
+        $rtn_rows['message']    = "CCP has not been processed";
+        // Set http header error
+        returnJSONMsg($rtn_rows); 
+    }
+} else if ($action == "get"){
+    $jsonMsg =  getCCPFile($srcFileName, $fileName, $signedDate);
+    returnJSONMsg($jsonMsg);
+    // if (file_exists($fileName)){
+    //     $rtn_rows['filename']   = $fileName;
+    //     $rtn_rows['status']     = "SUCCESS";
+    //     // Set http header error
+    //     returnJSONMsg($rtn_rows); 
+    // }
+
+    // $data = generateFile($srcFileName, $fileName, $signedDate);
+    // $rtn_rows['data']       = $data;
+    // $rtn_rows['filename']   = $fileName;
+    // $rtn_rows['status']     = "SUCCESS";
+    // // Set http header error
+    // returnJSONMsg($rtn_rows); 
+
+} else if ($action == "regenerate") {
+    $data = generateCCPFile($srcFileName, $fileName, $signedDate);
+    $rtn_rows['data']       = $data;
+    $rtn_rows['filename']   = $fileName;
+    $rtn_rows['status']     = "SUCCESS";
+    // Set http header error
+    returnJSONMsg($rtn_rows); 
+}
+
+
+// echo "SUCCESS";
 ?>

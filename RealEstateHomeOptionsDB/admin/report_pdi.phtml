@@ -1,13 +1,6 @@
 <?
 
-include "../admin/main_include.phtml";
-
-// // Generate the CCP file
-// $unitNumber   = $unit;
-// include "report_ccp.phtml";
-// die("after require");
-// generateFile($srcFileName, $fileName, $signedDate);
-// ?>
+include_once "../admin/main_include.phtml"; ?>
 
 <html>
 <head>
@@ -85,7 +78,7 @@ $currentDate        = date("M d, Y");
 
         <tr class="report_h3">
           <td align="left" colspan="2">PDI Date:</td>
-          <td align="left" colspan="2"><?= $row['PDIDate'] ?></td>
+          <td align="left" colspan="2"><?= $row['PDIDate'] == "" ? Date('M d, Y') : $row['PDIDate']; ?></td>
         </tr>
 
         <tr class="report_h3">
@@ -453,6 +446,8 @@ mysql_data_seek($result, 0);
 <div align="center">
 <BR><BR>
 <? /* <input id="btn-Preview-Image" type="button" value="Preview" /> */ ?>
+<input id="btn-Preview-CCP" type="button" value="Preview CCP"/>
+<input id="btn-Preview-UserPackage" type="button" value="Preview User Package"/>
 <input id="btn-Convert-Html2Image" type="button" value="Download"/>
 <input id="btn-upload-image" type="button" value="Save"/>
 <input id="btn-upload-email-image" type="button" value="Save & Email"/>
@@ -461,7 +456,7 @@ mysql_data_seek($result, 0);
     <br />
     <h3>Preview :</h3>
   <div id="previewImage">
-  </div> */ ?>
+  </div> */ ?> 
 </div>
 <script>
 // for Signature Pad
@@ -552,6 +547,31 @@ saveSVGButton.addEventListener("click", function (event) {
 </script>
 
 
+<?
+// ------------------------------------------------------------------------------------------
+// Generate the CCP file
+// ------------------------------------------------------------------------------------------
+include_once "report_ccp.phtml";
+// die("after require");
+$unitNumber   = $unit;
+
+$userPackageFile    = "../images/PDI/CCP/homeowner_information_package_tarion.pdf";
+
+// Signed File Name
+$outCCPFileName = getOutputFileName($unitNumber);
+// Source File Name
+$srcCCPFileName = getSrcFileName($unitNumber);
+$signedDate     = getSignedDate();
+
+// echo "unit=$unit unitNumber=$unitNumber<BR>";
+// echo "srcCCPFileName=$srcCCPFileName<BR>";
+// echo "outCCPFileName=$outCCPFileName<BR>";
+// echo "signedDate=$signedDate<BR>";
+
+$result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
+
+?>
+
 <script src="https://code.jquery.com/jquery-2.1.1.min.js" type="text/javascript"></script>
 <?// <script src="../../common/framework/html2canvas/html2canvas.min.js" type="text/javascript"></script> ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>
@@ -561,8 +581,18 @@ saveSVGButton.addEventListener("click", function (event) {
     var getCanvas; // global variable
     var imageData;
 
+    $("#btn-Preview-CCP").on('click', function () {
+            window.location.assign('<?= $outCCPFileName;?>');
+            });
+    
+
+      $("#btn-Preview-UserPackage").on('click', function () {
+      window.location.assign('<?= $userPackageFile;?>');
+      });
+
     $("#btn-Preview-Image").on('click', function () {
-            html2canvas(element, {
+            
+          html2canvas(element, {
                 background :'#FFFFFF',  
                 onrendered: function (canvas) {
                     $("#previewImage").append(canvas);
@@ -622,7 +652,6 @@ saveSVGButton.addEventListener("click", function (event) {
     });
 
 </script>
-
 
 </body>
 </html>
