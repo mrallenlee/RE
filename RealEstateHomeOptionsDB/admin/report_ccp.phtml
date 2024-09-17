@@ -1,0 +1,107 @@
+<?
+/** 
+ * Generate CCP from the template, and date it with current date
+ * action       : 
+ *      1. getcurrent (get existing CCP document, return null if no document)
+ *      2. regenerate (Regenerate CCP document)
+ *      3. get (get existing CCP document, generate new one if no existing CCP doc)
+ * output       : filename(default)/data
+ * unitNumber   : Unit Number
+ * signedDate   : date on the document, use current date if it is not provided
+ */
+
+
+define("CCP_FOLDER_PATH","../images/PDI/CCP/");
+date_default_timezone_set('America/Toronto');
+use setasign\Fpdi\Fpdi;
+
+
+// Return rows for messages
+$rtn_rows = array();
+
+
+/**
+ * Print json encode message, and return
+ */
+function returnJSONMsg($rtn_rows){
+    echo json_encode($rtn_rows);
+    exit;
+    return;
+} // returnJSONMsg
+
+$action     = $_GET['action'];
+$output     = $_GET['output'];
+$unitNumber = $_GET['unitNumber'];
+$signedDate = $_GET['signedDate'];
+
+if ($signedDate == "") $signedDate = date('M d, Y');
+
+// Signed File Name
+$fileName = CCP_FOLDER_PATH . $unitNumber . "_CCP_signed.pdf"; 
+// Source File Name
+$srcFileName = CCP_FOLDER_PATH . $unitNumber . ".pdf"; 
+
+if ($action == "getcurrent") {
+    if (file_exists($fileName)){
+        $rtn_rows['filename']   = $fileName;
+        $rtn_rows['status']     = "SUCCESS";
+        // Set http header error
+        returnJSONMsg($rtn_rows); 
+    } else {
+        $rtn_rows['status']     = "ERROR";
+        $rtn_rows['message']    = "CCP has not been processed";
+        // Set http header error
+        returnJSONMsg($rtn_rows); 
+    }
+} else if ($action == "get"){
+    if (file_exists($fileName)){
+        $rtn_rows['filename']   = $fileName;
+        $rtn_rows['status']     = "SUCCESS";
+        // Set http header error
+        returnJSONMsg($rtn_rows); 
+    }
+
+    $data = generateFile($srcFileName, $fileName, $signedDate);
+    $rtn_rows['data']       = $data;
+    $rtn_rows['filename']   = $fileName;
+    $rtn_rows['status']     = "SUCCESS";
+    // Set http header error
+    returnJSONMsg($rtn_rows); 
+
+} else if ($action == "regenerate") {
+    $data = generateFile($srcFileName, $fileName, $signedDate);
+    $rtn_rows['data']       = $data;
+    $rtn_rows['filename']   = $fileName;
+    $rtn_rows['status']     = "SUCCESS";
+    // Set http header error
+    returnJSONMsg($rtn_rows); 
+}
+
+
+function generateFile($srcFileName, $fileName, $signedDate){
+
+
+    require('fpdf/fpdf.php');
+
+    // setup the autoload function
+    require_once('fpdi/src/autoload.php');
+
+    $pdf = new FPDI('P','mm','A4');
+    // $pdf->AddPage(););
+    $pdf->AddPage();
+    // set the source file
+    $pdf->setSourceFile($srcFileName);
+    // import page 1
+    $tplId = $pdf->importPage(1);
+    // use the imported page and place it at point 10,10 with a width of 100 mm
+    $pdf->useTemplate($tplId, 10, 10, 200);
+    $pdf->SetFont('Arial','B',10);
+
+    $pdf->SetY(-51);
+    $pdf->SetX(-55);
+    $pdf->Cell(20,5, $signedDate);
+
+    $pdf->Output('F', $fileName);
+    return $pdf->Output();            
+} // generateFile;  
+?>
