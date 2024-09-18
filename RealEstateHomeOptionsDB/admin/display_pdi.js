@@ -525,7 +525,7 @@ var refreshPDITypeComboBox = function (divName, asynchronize) {
 * validate DefectType (PDITypeID) field for now
 */ 
 function dataValidation(){
-
+	console.log("inside dataValidation");
 	// count number of not exist happens
 	errorCount 		= 0;
 	num_of_rows 	= 0;
@@ -547,6 +547,8 @@ function dataValidation(){
 				// as the new category
 				var newDefectCatValue = $("#PDICatID_New_Text_" + num_of_rows).val();
 				if (newDefectCatValue == "") {
+					console.log("Error: You have selected to add a new Defect Category. Please kindly input a new Defect Category value in the textfield.");
+					$("#PDICatID_New_Text_" + num_of_rows).focus();
 					alert("Error: You have selected to add a new Defect Category. Please kindly input a new Defect Category value in the textfield.");
 					return false;
 				}
@@ -562,6 +564,8 @@ function dataValidation(){
 				// as the new defect type
 				var newDefectTypeValue = $("#PDITypeID_New_Text_" + num_of_rows).val();
 				if (newDefectTypeValue == "") {
+					console.log("Error: You have selected to add a new Defect Type. Please kindly input a new Defect Type value in the textfield.");
+					$("#PDITypeID_New_Text_" + num_of_rows).focus();
 					alert("Error: You have selected to add a new Defect Type. Please kindly input a new Defect Type value in the textfield.");
 					return false;
 				}
@@ -606,9 +610,11 @@ $(document).ready( function () {
 
 		// data validation. If return false, return
 		if (!dataValidation()) {
+			console.log("after dataValidation. False, returning");
 			return;
 		}
 
+		console.log("after dataValidation. True, call row_procesS_pdi.php");
 		$.ajax({
 			url: 'row_process_pdi.php',
 			type: 'post',
