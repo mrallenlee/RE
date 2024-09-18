@@ -52,6 +52,7 @@ function getSignedDate(){
  * Get current file if exists, otherwise generate a new one
  */
 function getCCPFile($srcFileName, $fileName, $signedDate){
+    $rtn_rows = array();
     if (file_exists($fileName)){
         $rtn_rows['filename']   = $fileName;
         $rtn_rows['status']     = "SUCCESS";
@@ -68,8 +69,16 @@ function getCCPFile($srcFileName, $fileName, $signedDate){
 }
 
 function generateCCPFile($srcFileName, $fileName, $signedDate){
+    $rtn_rows = array();
 
 
+    if (!file_exists($srcFileName)){
+        // source file doesn't exist, return error
+        $rtn_rows['filename']   = $srcFileName;
+        $rtn_rows['status']     = "ERROR";        
+        $rtn_rows['message']    = "Source file $srcFileName does not exist";        
+        returnJSONMsg($rtn_rows, false);      
+    }
     require('fpdf/fpdf.php');
 
     // setup the autoload function
@@ -90,7 +99,13 @@ function generateCCPFile($srcFileName, $fileName, $signedDate){
     $pdf->SetX(-55);
     $pdf->Cell(20,5, $signedDate);
 
-    return $pdf->Output('F', $fileName);
+    $data   =  $pdf->Output('F', $fileName);
+    $rtn_rows['data']       = $data;
+    $rtn_rows['filename']   = $fileName;
+    $rtn_rows['status']     = "SUCCESS";
+
+    returnJSONMsg($rtn_rows, false);      
+
     // return $pdf->Output();            
 } // generateCCPFile;  
 
