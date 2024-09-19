@@ -443,6 +443,9 @@ var refreshPDICatComboBox = function (divName, asynchronize) {
 	});			
 };
 
+
+
+
 // Refresh PDITypeID Combo box with the value of PDICatID combobox
 // Param: 
 // divName is the PDICatID obj
@@ -580,7 +583,51 @@ function dataValidation(){
 
 
 
+// ------------------------------------------------------------------------------------------------------------------------
+// Update email address for the primary purchaser
+// ------------------------------------------------------------------------------------------------------------------------
+var updateEmailAddress = function (userID, email, asynchronize){
+	//Set default value
+	asynchronize = ((asynchronize != null) ? asynchronize : true);		
 
+	$.ajax({
+		url: '../../RealEstateDB/framework/Services/userService.phtml',
+		type: 'post',
+		// data: 'action=updateEmail&userID=' + userID + '&email=' + btoa(email),
+		data: {action : "updateEmail", userID : userID, email : btoa(email)},
+		cache: false,
+		dataType: 'json',
+		async: asynchronize,
+		success: function(data) {
+			console.log("Email updated successfully");
+			console.log(data);
+			hideEmailTextButtons();
+			$originalEmailTextValue = email;
+
+			alert("Email updated successfully");
+		},
+		error: function () {
+			alert("Error: Email cannot be updated");
+			console.log("Error: Email cannot be updated");
+			console.log(data);
+			// display_user_message("[ <font color=#009900><b>Error at retrieving the PDI Type related to the PDI Category.</b></font> ]<br>\n<br>");
+		}
+	});
+} // updateEmailAddress
+
+function hideEmailTextButtons(){
+	$('#btn-update-email-text').hide();
+	$('#btn-cancel-email-text').hide();
+} // hideEmailTextButtons 
+
+
+function showEmailTextButtons(){
+	$('#btn-update-email-text').show();
+	$('#btn-cancel-email-text').show();
+} // showEmailTextButtons
+// ------------------------------------------------------------------------------------------------------------------------
+// Init script
+// ------------------------------------------------------------------------------------------------------------------------
 $(document).ready( function () {
 	// initialize
 	refreshPDIs();
@@ -690,6 +737,8 @@ $(document).ready( function () {
 			});
 		}
 	});
-	
 
+	
+	// init update email features and hide the update and cancel button
+	hideEmailTextButtons();
 });

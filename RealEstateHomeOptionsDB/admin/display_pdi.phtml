@@ -9,6 +9,24 @@ check_auth(HOMEOPTIONS);
 
 ?>
 
+
+<style type="text/css">
+
+.emailText {
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size: 8pt;
+    font-weight: bold;
+    color: #888888;
+    margin-bottom: 2px;
+    padding: 0px;
+    width: 200px;
+    text-align: left;
+    border-top: none;
+    border-right: none;
+    border-left: none;
+    border-bottom: none; <?//solid .3px;?>
+  }
+</style>
 <script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>javascript/dynamicWindow.js" type="text/javascript"></script>
 <script language="javascript" src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>javascript/dynamicWindowUtils.js" type="text/javascript"></script>
 
@@ -265,6 +283,7 @@ elseif ($table_name == "PDIDefect")
 	// print out rows to the table
 	$row = mysql_fetch_array($result);
 
+  $userID             = $row['UserID'];
   $PDIReportFilePath  = $row['PDIReportFilePath'];
   $PDIDay30ReportFilePath= $row['PDIDay30ReportFilePath'];
 	// header - purchaser's information
@@ -349,8 +368,11 @@ elseif ($table_name == "PDIDefect")
             <td class="link_small">
               <img src="../spacer.gif" width="44" height="1" border="0"><b>Email:</b>
             </td>
-            <td class="link_small">
-              <b><?= $row['Email']; ?></b><br>
+            <td  class="link_small">
+              <div id="emailTextGroup">
+              <input id="emailText" name="emailText" class="emailText" value="<?= $row['Email']; ?>"></input>
+              <input type="button" id="btn-update-email-text" value="Update" >
+              <input type="button" id="btn-cancel-email-text" value="Cancel" ></div>
             </td>
           </tr>
           <tr>
@@ -773,6 +795,9 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
 </script>
 <script language="javascript" src="display_pdi.js"></script>
 <script>
+
+  var $originalEmailTextValue = '<?= $row['Email']; ?>';
+
   $('#btn-download-PDI').live('click', function () {
       filePath        = '<?= $PDIReportFilePath; ?>';
       if (filePath == ''){
@@ -791,6 +816,40 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
         window.location = '<?= $PDIDay30ReportFilePath; ?>';             
       }
     });    
+
+
+
+    $('#btn-update-email-text').live('click', function (){
+      // console.log('btn-update-email-text clicked');
+      $newEmailTextValue  = $('#emailText').val();
+      if ($newEmailTextValue == $originalEmailTextValue) {
+        // no change in the email
+        // hide the update and cancel button
+        hideEmailTextButtons();        
+        return;
+      }
+      updateEmailAddress(<?= $userID; ?>, $newEmailTextValue);
+    });
+
+
+    $('#btn-cancel-email-text').live('click', function (){
+      // console.log('btn-cancel-email-text clicked');
+      // reset emailText value
+      $('#emailText').val($originalEmailTextValue);
+      // hide the update and cancel button
+      hideEmailTextButtons();
+    });    
+
+    $('#emailText').live('click', function (){
+      // $originalEmailTextValue = $('#emailText').val();
+      // console.log('emailText originalValue=' + $originalEmailTextValue);
+      showEmailTextButtons();
+    });    
+
+    // $('#emailTextGroup').focusout(function (){
+    //   alert('lose focus')
+    // });    
+
 </script>
 
 </html>
