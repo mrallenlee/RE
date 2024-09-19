@@ -1,0 +1,55 @@
+<?php
+/**
+ * action : 
+ * 1. updateEmail - Parameters userID as key, email is base64 encoded
+ */
+$not_include_javascript = 1;
+
+include "main_include.phtml";
+
+
+// Comment
+// Possible action: get, getPDIType, Delete, Update
+// Function getPDIType - JSON Input: PDICatID Return: A JSON list of PDIType according to the given PDICatID 
+$find = array (
+			"'\''",
+			"'\"'",
+			"'<'",
+			"'>'"
+			);
+$replace = array (
+			"&#039;",
+			"&quot;",
+			"&lt;",
+			"&gt;"
+			);
+
+$rtn_rows = array();
+
+if ($action == "updateEmail"){
+    $decodedEmail = base64_decode($email);
+
+    $sql            = "UPDATE User SET email='" . $decodedEmail . "' WHERE UserID=$userID";
+
+    
+    $row = array();
+    $row['status'] = "ERROR";
+    $row['sql']		= $sql;
+    // die("Error : $sql<br>" . mysql_error());
+//			$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
+    $result = mysql_query($sql);
+    if ($result) {
+        $row['status'] = "SUCCESS";
+        $row['message'] = "Email [" . $decodedEmail . "] has been updated to User ID=" . $userID ;
+    } else { 
+        $row['status'] = "ERROR";
+        $row['message'] = "Email [" . $decodedEmail . "] cannot be updated to User ID=" . $userID ;
+        $row['sql_error'] = $sql_error;
+    }
+    
+    array_push($rtn_rows, $row);			
+	
+	echo json_encode($rtn_rows);    
+}
+
+?>
