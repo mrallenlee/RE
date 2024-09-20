@@ -57,15 +57,16 @@ function getCCPFile($srcFileName, $fileName, $signedDate){
         $rtn_rows['filename']   = $fileName;
         $rtn_rows['status']     = "SUCCESS";
         // Set http header error
-        returnJSONMsg($rtn_rows, false); 
+        return returnJSONMsg($rtn_rows, false); 
     }
 
+    // echo ("srcFileName=$srcFileName");
     $data = generateCCPFile($srcFileName, $fileName, $signedDate);
     $rtn_rows['data']       = $data;
     $rtn_rows['filename']   = $fileName;
     $rtn_rows['status']     = "SUCCESS";
     // Set http header error
-    returnJSONMsg($rtn_rows, false);     
+    return returnJSONMsg($rtn_rows, false);     
 }
 
 function generateCCPFile($srcFileName, $fileName, $signedDate){
@@ -77,7 +78,7 @@ function generateCCPFile($srcFileName, $fileName, $signedDate){
         $rtn_rows['filename']   = $srcFileName;
         $rtn_rows['status']     = "ERROR";        
         $rtn_rows['message']    = "Source file $srcFileName does not exist";        
-        returnJSONMsg($rtn_rows, false);      
+        return returnJSONMsg($rtn_rows, false);      
     }
     require('fpdf/fpdf.php');
 
@@ -104,7 +105,7 @@ function generateCCPFile($srcFileName, $fileName, $signedDate){
     $rtn_rows['filename']   = $fileName;
     $rtn_rows['status']     = "SUCCESS";
 
-    returnJSONMsg($rtn_rows, false);      
+    return returnJSONMsg($rtn_rows, false);      
 
     // return $pdf->Output();            
 } // generateCCPFile;  
@@ -126,12 +127,12 @@ if ($action == "getcurrent") {
         $rtn_rows['filename']   = $fileName;
         $rtn_rows['status']     = "SUCCESS";
         // Set http header error
-        returnJSONMsg($rtn_rows); 
+        return returnJSONMsg($rtn_rows); 
     } else {
         $rtn_rows['status']     = "ERROR";
         $rtn_rows['message']    = "CCP has not been processed";
         // Set http header error
-        returnJSONMsg($rtn_rows); 
+        return returnJSONMsg($rtn_rows); 
     }
 } else if ($action == "get"){
     $jsonMsg =  getCCPFile($srcFileName, $fileName, $signedDate);
@@ -156,7 +157,7 @@ if ($action == "getcurrent") {
     $rtn_rows['filename']   = $fileName;
     $rtn_rows['status']     = "SUCCESS";
     // Set http header error
-    returnJSONMsg($rtn_rows); 
+    return returnJSONMsg($rtn_rows); 
 }
 
 
