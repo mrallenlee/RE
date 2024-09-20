@@ -84,7 +84,7 @@ if (!file_exists($dir)) {
     mkdir($dir, 0775, true);
 }
 
-$filepath = $dir . $fileName;
+$filePath = $dir . $fileName;
 
 $img        = $_POST['imgBase64'];
 $img        = str_replace('data:image/png;base64,', '', $img);
@@ -92,7 +92,7 @@ $img        = str_replace(' ', '+', $img);
 $fileData   = base64_decode($img);
 //saving
 // Original way to write the uploaded image to file path
-$result     = file_put_contents($filepath, $fileData);
+$result     = file_put_contents($filePath, $fileData);
 
 
 // $result > 0 means number of bytes written
@@ -101,11 +101,11 @@ if ($result > 0){
 			// Prepare return status
 			$rtn_rows['status'] 	= "SUCCESS";
 			$rtn_rows['message']	= "Image uploaded successfully";
-			$rtn_rows['filepath'] 	= $dir . $fileName;
-			$rtn_rows['filename']	= $fileName;
-			$rtn_rows['dirname']	= $dir;
+			$rtn_rows['filePath'] 	= $dir . $fileName;
+			$rtn_rows['fileName']	= $fileName;
+			$rtn_rows['dirName']	= $dir;
 
-    updateDBFileName($unitNumber, $component, $reportType, $filepath);
+    updateDBFileName($unitNumber, $component, $reportType, $filePath);
 
 } else {
 	$rtn_rows['status']	= "ERROR";
