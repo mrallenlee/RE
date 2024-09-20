@@ -21,7 +21,7 @@ if ($action == "emailBookPDIAppt"){
     $htmlContent    = "Hi $toName, <BR><BR>Congratulations! Your newly purchased unit $unitNumber at Burlington High is ready for the PDI. Please kindly follow below link to schedule a PDI appointmebnt. https://calendly.com/allen-lee-wtg/a-testing-event?back=1<BR><BR><BR>Best Regards,<BR><BR>ISAT Team";
     // $result     = @mail($email, $subject, $htmlContent, $headers, $returnpath);  
 
-    sendEmailWithFileAttachment($email, $from, $fromName, $subject, $htmlContent, "");
+    sendEmailWithFileAttachment(array(array($email, $toName)), array($from, $fromName), $subject, $htmlContent);
     $result = 1;
 
 

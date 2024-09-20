@@ -93,8 +93,13 @@ if (EMAIL_METHOD == 'PHPMailer'){
 /**
  * email util using default PHPMailer function
  * Note from, and fromName MAY NOT BE USED as this depends on the SMTP server setting. 
+ * $toList - 2D array [ [email1, name1], [email2, name2], [email3, name3] ... ]
+ * $ccList - 2D array [ [email1, name1], [email2, name2], [email3, name3] ... ]
+ * $bccList - 2D array [ [email1, name1], [email2, name2], [email3, name3] ... ]
+ * $from - array [fromEmail, fromName] NOT NECESSARILY SUPPORTED AS DICTATCED by the SMTP account. Set it in config file
+ * $attachmentFilepathList - array [path1, path2, path3, ...]
  */
-function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $attachmentFilepathList) {
+function sendEmailWithFileAttachment($toList, $fromList, $subject, $htmlContent, $attachmentFilepathList = array(), $ccList = array(), $bccList = array()) {
 
         //Create an instance; passing `true` enables exceptions
         $mail = new PHPMailer(true);
@@ -114,13 +119,27 @@ function sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlConte
         
             //Recipients
             $mail->setFrom(EMAIL_USER, EMAIL_USER_NAME);
-            $mail->addAddress($to);     //Add a recipient
-            // $mail->addAddress('allen.lee@isat-solutions.com', 'Allen ISAT');               //Name is optional
             $mail->addReplyTo(EMAIL_USER, EMAIL_USER_NAME);
 
-            $mail->addBCC('mr.allen.lee@gmail.com', 'Allen Lee');
-            $mail->addCC('adeena@ljm.ca', 'Adeena');
-            $mail->addCC('sabrina@ljm.ca', 'Sabrina');            
+            // $mail->addAddress('allen.lee@isat-solutions.com', 'Allen ISAT');               //Name is optional
+
+            // print ("toList=[" . $toList . "]<BR>");
+            foreach ($toList as $to){
+                // echo ("To $to[0], $to[1]<BR>");
+                $mail->addAddress($to[0], $to[1]);     //Add a recipient
+            }
+
+            foreach ($ccList as $cc){
+                // echo ("CC $cc[0], $cc[1]<BR>");
+                $mail->addCC($cc[0], $cc[1]);     //Add a recipient
+            }
+
+            foreach ($bccList as $bcc){
+                // echo ("BCC $bcc[0], $bcc[1]<BR>");
+                $mail->addBCC($bcc[0], $bcc[1]);     //Add a recipient
+            }
+
+            // $mail->addBCC('mr.allen.lee@gmail.com', 'Allen Lee');      
             // $mail->addCC('cc@example.com');
             // $mail->addBCC('bcc@example.com');
         

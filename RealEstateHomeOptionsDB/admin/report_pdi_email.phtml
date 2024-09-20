@@ -86,6 +86,12 @@ if ($reportType == 'PDI'){
 }
 
 // Return error if file name is null
+if ($email1 == "") {
+    $rtn_rows['status']	= "ERROR";
+    $rtn_rows['message']= "Email cannot be empty.";
+    returnJSONMsg($rtn_rows);    
+}
+// Return error if file name is null
 if ($file == "") {
     $rtn_rows['status']	= "ERROR";
     $rtn_rows['message']= "Report is not available.";
@@ -109,8 +115,24 @@ $fileList[]     = $CCPFile;
 $fileList[]     = $userPackageFile;
 
 
+$toList = array(
+    array($email1, $purchaser1)
+);
+
+$fromList = array($from, $fromName);
+
+$ccList = json_decode(EMAIL_PDI_CC_LIST);
+$bccList = json_decode(EMAIL_PDI_BCC_LIST);
+
+// $mail->addCC('adeena@ljm.ca', 'Adeena');
+// $mail->addCC('sabrina@ljm.ca', 'Sabrina');      
+
+// $bccList = array(
+//     array('mr.allen.lee@gmail.com', 'Allen Lee')
+// );
+
 // sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $file);
-sendEmailWithFileAttachment($to, $from, $fromName, $subject, $htmlContent, $fileList);
+sendEmailWithFileAttachment($toList, $fromList, $subject, $htmlContent, $fileList, $ccList, $bccList);
 
 returnJSONMsg($rtn_rows);
 return true;            

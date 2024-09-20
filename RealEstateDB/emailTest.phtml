@@ -14,9 +14,10 @@ $subject    = "Greetings from ISAT Solution Inc.";
 $headers    = "From: $fromName"." <".$from.">"; 
 $message    = "Greeetings x 5! I wish you had a wonderful summer so far. Would like to follow up with you on how thinngs should go in the next most anticiptated even in the year";
 $to         = 'mr.allen.lee@gmail.com';
+$toName     = 'Allen Lee';
 $attachmentFilepath = 'images/company-logo-small.jpg';
 
-sendEmailWithFileAttachment($to, $from, $fromName, $subject, $message, $attachmentFilepath);
+sendEmailWithFileAttachment(array(array($to, $toName)), array($from, $fromName), $subject, $message, array($attachmentFilepath));
 
 // $result = @mail("allen.lee@isat-solutions.com", $subject, $message, $headers, $returnpath);  
 
