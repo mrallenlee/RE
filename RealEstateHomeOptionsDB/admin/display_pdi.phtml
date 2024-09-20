@@ -269,21 +269,23 @@ elseif ($table_name == "PDIDefect")
 
 <?
 	// Get purchaser name of the unit
+  // Change to use left join for vacant unit, which doesn't have User record
 	$sql	= "SELECT User.UserID, FirstName, LastName, Email, Address, City, 
       Province, Country, PostalCode, BusinessPhone, PhoneNumber, CellPhone, FaxNumber
 			PDIDate, PDITime, PDINotified, PDINotifiedDate, ONHWPRegNumber, OccupancyDate, 
       OccupancyTime, OccupancyNotified, 
       OccupancyNotifiedDate, PDIReportFilePath, PDIDay30ReportFilePath
-			FROM User, Unit
-			WHERE Unit.UnitNumber = '$unit'
-			AND Unit.UserID = User.UserID";
+			FROM Unit LEFT JOIN User
+			ON Unit.UserID = User.UserID
+			WHERE Unit.UnitNumber = '$unit'";
 	
 	$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
 	
 	// print out rows to the table
 	$row = mysql_fetch_array($result);
 
-  $userID             = $row['UserID'];
+  // die('sql=$sql]<BR>PDIReportFilePath=' . $row['PDIReportFilePath']);
+  $userID             = $row['UserID'] > 0 ? $row['UserID'] : -1;
   $PDIReportFilePath  = $row['PDIReportFilePath'];
   $PDIDay30ReportFilePath= $row['PDIDay30ReportFilePath'];
 	// header - purchaser's information
