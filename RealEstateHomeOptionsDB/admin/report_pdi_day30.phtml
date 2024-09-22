@@ -570,15 +570,16 @@ saveSVGButton.addEventListener("click", function (event) {
 
 
 <script src="https://code.jquery.com/jquery-2.1.1.min.js" type="text/javascript"></script>
-<?// <script src="../../common/framework/html2canvas/html2canvas.min.js" type="text/javascript"></script> ?>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.js"></script>
+<script src="../../RealEstateDB/framework/html2canvas/html2canvas.min.js"></script>
 <script>
     // for HTML2Canvas
-    var element = $("#html-content-holder"); // global variable
+    var element = document.querySelector("#html-content-holder"); // global variable
     var getCanvas; // global variable
     var imageData;
 
+
     $("#btn-Preview-Image").on('click', function () {
+      
             html2canvas(element, {
                 background :'#FFFFFF',  
                 onrendered: function (canvas) {
@@ -589,56 +590,30 @@ saveSVGButton.addEventListener("click", function (event) {
     });
 
     $("#btn-Convert-Html2Image").on('click', function () {
-        html2canvas(element, {
-            background :'#FFFFFF',
-            onrendered: function (canvas) {
-                    //$("#previewImage").append(canvas);
-                    getCanvas = canvas;
-                    var wid = getCanvas.width;
-                    var hgt = getCanvas.height;
-                    // var imgData = getCanvas.toDataURL("image/png", 1024, 1024); //image data of canvas
-                    var hratio = hgt / wid;
-                    imageData = getCanvas.toDataURL("image/png");
-                    download(imageData, "Day30-Contract.png");
-                    //var newData = imageData.replace(/^data:image\/png/, "data:application/octet-stream");
-                    //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
-                }
-            });  
-//        var imageData = getCanvas.toDataURL("image/jpg");
-        // Now browser starts downloading it instead of just showing it
-//        var newData = imageData.replace(/^data:image\/png/, "data:application/octet-stream");
-//        $("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
+        html2canvas(element).then(function(canvas) {
+            getCanvas = canvas;
+
+            imageData = getCanvas.toDataURL("image/png");
+            download(imageData, "Day30-Contract.png"); 
+        });      
     }); // btn-convert-Html2Image.on     
 
     $("#btn-upload-image").on('click', function () {
-          html2canvas(element, {
-            background :'#FFFFFF',
-            onrendered: function (canvas) {
-                    //$("#previewImage").append(canvas);
-                    getCanvas = canvas;
+        html2canvas(element).then(function(canvas) {
+            getCanvas = canvas;
 
-                    imageData = getCanvas.toDataURL("image/png");
-                    upload(imageData, '<?= 'Day30'; ?>', <?= $unit; ?>); 
-                    //var newData = imageData.replace(/^data:image\/png/, "data:application/octet-stream");
-                    //$("#btn-Convert-Html2Image").attr("download", "your_pic_name.jpg").attr("href", newData);
-                }
-            });  
-          
-     
-
+            imageData = getCanvas.toDataURL("image/png");
+            upload(imageData, '<?= 'Day30'; ?>', '<?= $unit; ?>'); 
+        });                  
     }); // btn-upload-image.on
 
     $("#btn-upload-email-image").on('click', function () {
-          html2canvas(element, {
-            background :'#FFFFFF',
-            onrendered: function (canvas) {
-                    getCanvas = canvas;
+      html2canvas(element).then(function(canvas) {
+            getCanvas = canvas;
 
-                    imageData = getCanvas.toDataURL("image/png");
-                    // if upload is not successful, return
-                    uploadAndEmail(imageData, '<?= 'Day30'; ?>', <?= $unit; ?>);
-                }
-            })
+            imageData = getCanvas.toDataURL("image/png");
+            uploadAndEmail(imageData, '<?= 'Day30'; ?>', '<?= $unit; ?>'); 
+        });      
     });
 
 </script>
