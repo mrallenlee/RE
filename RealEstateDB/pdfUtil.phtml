@@ -1,0 +1,48 @@
+<?
+/**
+ * Utils to convert image to PDF
+ */
+
+date_default_timezone_set('America/Toronto');
+use setasign\Fpdi\Fpdi;
+
+/**
+ * Not working. Only works for small image that can fit into ONE signle PDF page. 
+ * Image will be cropped when larger than 1 page.
+ */
+function convertImgToPDF($imgFileName, $outFileName, $displayPDF = true){
+    $rtn_rows = array();
+
+
+    if (!file_exists($imgFileName)){
+        // source file doesn't exist, return error
+        $rtn_rows['filename']   = $imgFileName;
+        $rtn_rows['status']     = "ERROR";        
+        $rtn_rows['message']    = "Source file $imgFileName does not exist";        
+        return returnJSONMsg($rtn_rows, false);      
+    }
+    require('fpdf/fpdf.php');
+
+
+    $pdf = new FPDF('P','mm','A4');
+    $pdf->AddPage();
+    $pdf->SetFont('Arial','B',10);
+    $pdf->SetAutoPageBreak(true , 100);
+    $pdf->Image($imgFileName,0,0, 200);
+
+        
+    //save the file 
+    $data = $pdf->Output($outFileName, 'F');
+    if ($displayPDF)
+        $pdf->Output();
+     
+    $rtn_rows['data']       = $data;
+    $rtn_rows['filename']   = $outFileName;
+    $rtn_rows['status']     = "SUCCESS";
+
+    return returnJSONMsg($rtn_rows, false);          
+} // convertImgToPDF 
+
+
+convertImgToPDF("../RealEstateHomeOptionsDB/images/PDI/101/PDI/101_PDI_1727122057.png",  "../RealEstateHomeOptionsDB/images/test.pdf" );
+?>
