@@ -62,7 +62,7 @@ $sql = "SELECT $table_name.UnitNumber UnitNumber, concat(LastName, ', ', FirstNa
 	from $table_name 
 	LEFT JOIN User
 	ON ($table_name.UserID = User.UserID)
-	order by UnitNumber";
+	order by " . getOrderClause(array("columnName"=>"Unit.UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER));
 
 $result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
 if ($format == "csv")
@@ -143,8 +143,8 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
 
             <!--QA data table-->
           <td>
-              <table cellspacing="0" cellpadding="5" border="0">
-                <tr class="head">
+<? /*             <table cellspacing="0" cellpadding="5" border="0">
+                <!-- <!-- <tr class="head">
                   <!-- 2nd data table header -->
                   <td  colspan="3"><b>QA</b></td>
                 </tr>
@@ -155,22 +155,23 @@ print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVE
                   <td ><b><nobr>Done</nobr></b></td>
                   <td ><b><nobr>O/S</nobr></b></td>
                   <td ><b><nobr></nobr></b></td>
-                </tr>
+                </tr>  -->
 
 <?
-  mysql_data_seek($result, 0);
-  while ($row = mysql_fetch_array($result))
-  {
+  // mysql_data_seek($result, 0);
+  // while ($row = mysql_fetch_array($result))
+  // {
 ?>
-                <tr align="center">
+                <!-- <tr align="center">
                   <td class="table_rec"><?= get_done_count($db, $row['UnitNumber'], "QA") ?></td>
                   <td class="table_rec"><?= get_outstanding_count($db, $row['UnitNumber'], "QA") ?></td>
                   <td class="table_rec"></td>
-                </tr>
+                </tr> -->
 <?
-  }
+  // }
 ?>
-              </table>
+</table> 
+*/?>
             </td>
 
             <!--2nd data table-->
