@@ -240,6 +240,7 @@ while ($row_Section = mysql_fetch_array($result_Section)) {
 
 
 <?
+$defectTotal = 0;
 // 4th part
 // Prepare data set, reuse from previous db sql
 mysql_data_seek($result, 0);
@@ -252,7 +253,8 @@ mysql_data_seek($result, 0);
         <tr class="report_part1_header">
           <td>DEFECT DETAILS<br><br></td>
         </tr>
-<?      while ($row = mysql_fetch_array($result)) { ?>
+<?      while ($row = mysql_fetch_array($result)) { 
+          ?>
         <tr>  
         <td><?= $row["UnitDefectID"]; ?></td>          
         <td><?= $row["Name"]; ?></td>
@@ -262,7 +264,8 @@ mysql_data_seek($result, 0);
               ?><img src="<?= $row['imageName'];?>" height=100><?
             } ?></td>
         <tr>
-<?      } ?>        
+<?      $defectTotal++;
+      } ?>        
       </table>
     </td>
   </tr>
@@ -580,6 +583,20 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
 <script>
     // for HTML2Canvas
     var element = document.querySelector("#html-content-holder"); // global variable
+    // set the scale for html2canvas (print screenshot)
+    <? 
+    $scale        = 1.5;
+    if ($defectTotal > 30) {
+      $scale      = 1.3;
+    } elseif ($defecTotal > 40) {
+      $scale      = 1;
+    } else {
+      $scale      = 1.5;
+    }
+    ?>
+    
+    var canvasScale = <?= $scale; ?>;
+
     var getCanvas; // global variable
     var imageData;
 
@@ -603,9 +620,10 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
             });
     });
 
-    $("#btn-Convert-Html2Image").on('click', function () {
-
-      html2canvas(element).then(function(canvas) {
+    $("#btn-Convert-Html2Image").on('click', function () {      
+      html2canvas(element, {
+            scale: canvasScale
+            }).then(function(canvas) {
             getCanvas = canvas;
 
             imageData = getCanvas.toDataURL("image/png");
@@ -614,7 +632,9 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
     }); // btn-convert-Html2Image.on     
 
     $("#btn-upload-image").on('click', function () {
-      html2canvas(element).then(function(canvas) {
+      html2canvas(element, {
+            scale: canvasScale
+            }).then(function(canvas) {
             getCanvas = canvas;
 
             imageData = getCanvas.toDataURL("image/png");
@@ -623,7 +643,9 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
     }); // btn-upload-image.on
 
     $("#btn-upload-email-image").on('click', function () {
-      html2canvas(element).then(function(canvas) {
+      html2canvas(element, {
+            scale: canvasScale
+            }).then(function(canvas) {
             getCanvas = canvas;
 
             imageData = getCanvas.toDataURL("image/png");
