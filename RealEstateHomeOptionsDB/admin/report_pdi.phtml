@@ -585,14 +585,14 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
     var element = document.querySelector("#html-content-holder"); // global variable
     // set the scale for html2canvas (print screenshot)
     <? 
-    $scale        = 1.5;
-    if ($defectTotal > 30) {
-      $scale      = 1.3;
-    } elseif ($defecTotal > 40) {
-      $scale      = 1;
-    } else {
-      $scale      = 1.5;
-    }
+      $scale        = 1.5;
+      if ($defectTotal > 30) {
+        $scale      = 1;
+      } elseif ($defecTotal > 40) {
+        $scale      = 0.8;
+      } else {
+        $scale      = 1.5;
+      }
     ?>
     
     var canvasScale = <?= $scale; ?>;
