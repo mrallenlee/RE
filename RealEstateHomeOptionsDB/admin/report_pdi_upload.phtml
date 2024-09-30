@@ -44,7 +44,14 @@ function updateDBFileName($unitNumber, $component, $reportType, $filepath){
         $rtn_rows['message']= "System error message from SQL [$sql] " . $errors['type'] . " : " . $errors['message'];
         returnJSONMsg($rtn_rows);
     }    
-    return true;
+    else {
+        $rtn_rows['status']	= "SUCCESS";
+        $rtn_rows['message']= "File uploaded successfully!";
+
+    }
+
+    returnJSONMsg($rtn_rows);
+
 } // updateDBFileName
 
 $component  = 'PDI';
@@ -87,6 +94,8 @@ if (!file_exists($dir)) {
 $filePath = $dir . $fileName;
 
 $img        = $_POST['imgBase64'];
+$orgImgSize = $_POST['imgSize'];
+$imgSize    = strlen($img);
 $img        = str_replace('data:image/png;base64,', '', $img);
 $img        = str_replace(' ', '+', $img);
 $fileData   = base64_decode($img);
@@ -94,10 +103,28 @@ $fileData   = base64_decode($img);
 // Original way to write the uploaded image to file path
 $result     = file_put_contents($filePath, $fileData);
 
+$isFileValid = false;
+
 
 // $result > 0 means number of bytes written
 if ($result > 0){
+    // If uploaded file size not equal to original file size provided by the client, return error
+    if ($orgImgSize > 0 && $imgSize != $orgImgSize){
+        $rtn_rows['status']	= "ERROR";
+        $rtn_rows['message']= "Uploaded image is corrupted. Please kindly upload again. Original file size=" . $orgImgSize . " Uploaded file size=" . $imgSize;    
+    }
+    else if (exif_imagetype($filePath) <= 0) {
+        $rtn_rows['status']	= "ERROR";
+        $rtn_rows['message']= "Uploaded file is not an image. Please kindly upload again. size=" . $imgSize;    
+    } else {
+        $isFileValid = true;
+    }
+} else {
+	$rtn_rows['status']	= "ERROR";
+	$rtn_rows['message']= "System cannot copy or upload file. Please kindly upload again.";    
+}
 
+if ($isFileValid) {
 			// Prepare return status
 			$rtn_rows['status'] 	= "SUCCESS";
 			$rtn_rows['message']	= "Image uploaded successfully";
@@ -105,12 +132,16 @@ if ($result > 0){
 			$rtn_rows['fileName']	= $fileName;
 			$rtn_rows['dirName']	= $dir;
 
-    updateDBFileName($unitNumber, $component, $reportType, $filePath);
+    $result_rows = updateDBFileName($unitNumber, $component, $reportType, $filePath);
+    if ($result_rows['status'] == 'ERROR'){
+        $rtn_rows = $result_rows;
+    }
 
-} else {
-	$rtn_rows['status']	= "ERROR";
-	$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
-}
+} 
+// else {
+// 	$rtn_rows['status']	= "ERROR";
+// 	$rtn_rows['message']= "System error message " . $errors['type'] . " : " . $errors['message'];
+// }
 
 // Set http header error
 returnJSONMsg($rtn_rows);

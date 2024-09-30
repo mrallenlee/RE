@@ -58,6 +58,7 @@ function resizeCanvas() {
             url: "report_pdi_upload.phtml",
             data: { 
               imgBase64: dataURL,
+              imgSize: dataURL.length,
               unitNumber: unitNumber,
               reportType: reportType
             }
@@ -86,6 +87,7 @@ function resizeCanvas() {
             url: "report_pdi_upload.phtml",
             data: { 
               imgBase64: dataURL,
+              imgSize: dataURL.length,
               unitNumber: unitNumber,
               reportType: reportType
             }
@@ -120,7 +122,7 @@ function resizeCanvas() {
             //  alert('message=' + o);
             returnObj = JSON.parse(o)
             if (returnObj.status == 'SUCCESS')
-              alert(returnObj.message);
+              alert('Email successfully to ' + returnObj.email);
             else
               alert("Email failed - Error Message = " + o);
             // alert('Upload successfully' + o);          
