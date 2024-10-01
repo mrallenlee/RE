@@ -627,7 +627,7 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
             getCanvas = canvas;
 
             imageData = getCanvas.toDataURL("image/png");
-            download(imageData, "PDI-Contract.png"); 
+            download(imageData, "PDI-Contract-<?= $unit; ?>.png"); 
         });
     }); // btn-convert-Html2Image.on     
 
