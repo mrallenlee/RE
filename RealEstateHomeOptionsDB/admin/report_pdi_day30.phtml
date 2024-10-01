@@ -464,6 +464,12 @@ mysql_data_seek($result, 0);
 </b>
 </table>
 </div>
+<!-- for wait icon -->
+<div id="overlay">
+  <div class="cv-spinner">
+    <span class="spinner"></span>
+  </div>
+</div>
 <div align="center">
 <BR><BR>
 <? /* <input id="btn-Preview-Image" type="button" value="Preview" /> */ ?>
@@ -511,6 +517,8 @@ var signaturePad = new SignaturePad(canvasPurchaser2, {
 
 </script>
 <script src="signature_pad_utils.js"></script>
+<script src="../../RealEstateDB/wait_icon_utils.js"></script>
+
 <script>
 
 // Temp remove clearButton
@@ -637,6 +645,8 @@ saveSVGButton.addEventListener("click", function (event) {
             uploadAndEmail(imageData, '<?= 'Day30'; ?>', '<?= $unit; ?>'); 
         });      
     });
+
+    initWaitIcon();
 
 </script>
 

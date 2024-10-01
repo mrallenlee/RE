@@ -50,7 +50,6 @@ function resizeCanvas() {
     }
   }
   
-  
   // Upload to server and store in DB
   function upload(dataURL, reportType, unitNumber) {
     $.ajax({
@@ -63,7 +62,9 @@ function resizeCanvas() {
               reportType: reportType
             }
           }).done(function(o) {
-            returnObj = JSON.parse(o)
+            returnObj = JSON.parse(o);
+            cancelWaitIcon(); // from wait_icon_utils.js
+
             if (returnObj.status == 'SUCCESS')
               alert('Upload successfully');
             else
@@ -71,6 +72,7 @@ function resizeCanvas() {
             // alert('Upload successfully' + o);
           })
           .fail(function(xhr, status, error) {
+            cancelWaitIcon();// from wait_icon_utils.js
             //Ajax request failed.
             var errorMessage = xhr.status + ': ' + xhr.statusText
             alert('Error - ' + errorMessage);
@@ -92,7 +94,9 @@ function resizeCanvas() {
               reportType: reportType
             }
           }).done(function(o) {
-            returnObj = JSON.parse(o)
+            returnObj = JSON.parse(o);
+            cancelWaitIcon();// from wait_icon_utils.js
+
             if (returnObj.status == 'SUCCESS')
               // Email the signed copy to email based on the record on purchaser
               emailPDISignedReportToPurchaser(unitNumber, reportType);          
@@ -102,6 +106,7 @@ function resizeCanvas() {
             // alert('Upload successfully' + o);
           })
           .fail(function(xhr, status, error) {
+            cancelWaitIcon();// from wait_icon_utils.js
             //Ajax request failed.
             var errorMessage = xhr.status + ': ' + xhr.statusText
             alert('Error - ' + errorMessage);
@@ -120,7 +125,8 @@ function resizeCanvas() {
           }).done(function(o) {
               // Email the signed copy to email based on the record on purchaser
             //  alert('message=' + o);
-            returnObj = JSON.parse(o)
+            returnObj = JSON.parse(o);
+            cancelWaitIcon();// from wait_icon_utils.js
             if (returnObj.status == 'SUCCESS')
               alert('Email successfully to ' + returnObj.email);
             else
@@ -128,6 +134,7 @@ function resizeCanvas() {
             // alert('Upload successfully' + o);          
           })
           .fail(function(xhr, status, error) {
+            cancelWaitIcon();// from wait_icon_utils.js
             //Ajax request failed.
             var errorMessage = xhr.status + ': ' + xhr.statusText
             alert('Error - ' + errorMessage);
@@ -151,3 +158,5 @@ function resizeCanvas() {
   
     return new Blob([uInt8Array], { type: contentType });
   }
+
+
