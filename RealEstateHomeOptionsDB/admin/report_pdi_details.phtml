@@ -6,16 +6,21 @@
 // listall
 
 $output = $_GET['output'];
+
+$generateReportMode = false;
 // if output is CSV, don't print any javascript
-if ($output != "CSV") {
-    $not_include_javascript = 1;
+if ($output == "CSV" ||  $output == "PDF") {
+        $not_include_javascript = 1;
+        $generateReportMode = true;
+} else {
+        $generateReportMode = false;
 }
 
 
 include "../admin/main_include.phtml";  
 
 // if output is CSV, don't print any header
-if ($output != "CSV") {
+if (!$generateReportMode) {
     print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
 ?>
     <script language="JavaScript">
@@ -23,6 +28,12 @@ if ($output != "CSV") {
         function dump_CSV() {
             var form = document.getElementById("search_purchaser");
             form.innerHTML += "<INPUT TYPE=\"HIDDEN\" NAME=\"output\" VALUE=\"CSV\">";
+            form.submit();
+//            window.location='dumpCSV.phtml?table=User&rescission=0&sql_cond=&includeAvailableUnit=0';
+        }
+        function dump_PDF() {
+            var form = document.getElementById("search_purchaser");
+            form.innerHTML += "<INPUT TYPE=\"HIDDEN\" NAME=\"output\" VALUE=\"PDF\">";
             form.submit();
 //            window.location='dumpCSV.phtml?table=User&rescission=0&sql_cond=&includeAvailableUnit=0';
         }
@@ -64,6 +75,7 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 	    $sqlCond 		= "";
         $hasSearchValue 	= false;
         //loop that adds the field names and values
+        // Exptecting the search field has format Search_XXXXX, where XXXXX is the field name
         foreach($values as $key=>$val)
         {
 		$search_field 	= $key;
@@ -89,12 +101,19 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 			}
 		}
 
+                if ($search_field == "TradeContacted") {
+                        if ($val != ""){
+                                if ($val=="0" || $val=="1")
+                                $sqlCond .= " AND TradeContacted='$val'";
+                        }
+                }
+
 		$searchCriteria .= "&" . $key . "=" . $val;
 	}
 }
 
         $PDISql = "SELECT * FROM
-                                (SELECT UnitNumber, DefectName, DefectType, SectionName, ContractorName, TradeContacted,
+                                (SELECT UnitNumber,UnitDefectID, DefectName, DefectType, SectionName, ContractorName, TradeContacted,
                                         imageName, hasImage,
                                         (CASE   WHEN DefectType = 'QA'          THEN QAReportDate
                                                         WHEN DefectType = 'PDI'         THEN PDIReportDate
@@ -136,12 +155,17 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 
 	//die("PDISql=$PDISql");
 
-    if ($output == "CSV") {
-        $sql = $PDISql;
-        $filename = "report_pdi_details.csv";
-        require "../../RealEstateDB/dumpCSVSql.phtml";
-        die();
-         } 
+        if ($output == "CSV") {
+                $sql = $PDISql;
+                $filename = "report_pdi_details.csv";
+                require "../../RealEstateDB/dumpCSVSql.phtml";
+                die();
+        } else if ($output == "PDF") {
+                // die("PDISql=[" . $PDISql . "]");
+                require "generatePDIDetailsPDF.phtml";
+                generatePDF($PDISql);
+        } 
+
 ?>
 <html>
 
@@ -193,6 +217,15 @@ createCollapsibleDIV("SearchCriteriaDIV");
                 }
 ?>
 			 </TD>
+                         <TD>Trade Contacted  
+                         <select name="search_TradeContacted">
+                                <OPTION VALUE=" ">All</OPTION>
+                                <OPTION VALUE="0" <?= $search_TradeContacted=="0" ? "selected" : ""; ?>>Not Contacted</OPTION>
+                                <OPTION VALUE="1" <?= $search_TradeContacted=="1" ? "selected" : ""; ?>>Contacted</OPTION>
+                         </select>
+
+                         </select>
+                        </td>
                 </TR>
 		<TR><TD><BR></TD</TR>
 		<TR>
@@ -200,14 +233,13 @@ createCollapsibleDIV("SearchCriteriaDIV");
 				<INPUT TYPE="SUBMIT" VALUE="Search">
 			
                 <INPUT TYPE="BUTTON" VALUE="DOWNLOAD CSV" onClick='dump_CSV()'>
+                <INPUT TYPE="BUTTON" VALUE="DOWNLOAD PDF" onClick='dump_PDF()'>
             </TD>
 		</TR>
 		</TABLE>
 	</FORM>
 	</DIV>
 </DIV>
-
-
 
 
   <form name="form_PDIdefectByFloor" method="post" action="<?echo  $_SERVER["PHP_SELF"] . '?search_Floor=' . $search_Floor . '&search_ContractorID=' . $search_ContractorID . '&search_UnitNumber=' . $search_UnitNumber ; ?>">
@@ -250,6 +282,7 @@ if (!isset($search_Floor)) {
                 echo "<input type='hidden' value='".$search_Floor."' name='search_Floor'>";
                 echo "<tr>\n";
                 echo "  <td align='center' class='head'>Unit</td>\n";
+                echo "  <td align='center' class='head'>Defect ID</td>\n";
                 echo "  <td align='center' class='head'>Image</td>\n";
                 echo "  <td align='center' class='head'>Defect Description</td>\n";
                 echo "  <td align='center' class='head'>Defect Type</td>\n";
@@ -278,6 +311,7 @@ if (!isset($search_Floor)) {
 
                                 echo "<tr class='table_rec'>\n";
                                 echo "  <td>" . $row["UnitNumber"] . "</td>\n";
+                                echo "  <td align='center'>" . $row["UnitDefectID"] . "</td>\n";
                                 echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
                                 echo "  <td>" . $row["DefectName"] . "</td>\n";
                                 echo "  <td>" . $row["DefectType"] . "</td>\n";
