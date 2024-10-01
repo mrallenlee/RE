@@ -92,7 +92,7 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 
 		if ($search_field == "UnitNumber") {
 			//$sqlCond .= " AND UnitNumber=$val";	
-			$sqlCond .= " AND (" . expandSearchCriteria(array("columnName"=>"UnitNumber", "csvValue"=>$val)) . ") ";
+			$sqlCond .= " AND (" . expandSearchCriteria(array("columnName"=>"UnitNumber", "csvValue"=>$val, "intervalDelimiter"=>"-")) . ") ";
 		}
 
 		if ($search_field == "ContractorID") {
