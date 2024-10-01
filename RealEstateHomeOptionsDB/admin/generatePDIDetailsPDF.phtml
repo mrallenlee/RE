@@ -1,0 +1,254 @@
+<?
+/**
+ * 
+ * Use FPDF library
+ */
+
+// Import image into PDF
+require('fpdf/fpdf.php');
+// Don't print any javascript
+$not_include_javascript = 1;
+include_once "../admin/main_include.phtml";  
+
+
+
+class PDF extends FPDF
+{
+
+    private $lowestY = 0;
+    // Load data
+    function LoadData($file)
+    {
+        // Read file lines
+        $lines = file($file);
+        $data = array();
+        foreach($lines as $line)
+            $data[] = explode(';',trim($line));
+        return $data;
+    }
+
+    public function setLowestY ($newY){
+        if ($newY > $this->lowestY) {
+            $this->lowestY = $newY;
+        }
+    }
+
+    public function getLowestY (){
+        return $this->lowestY;
+    }    
+
+    public function resetLowestY(){
+        $this->lowestY = 0;
+    }
+
+    function AddPage($orientation='', $size='', $rotation=0){
+        parent::AddPage($orientation, $size, $rotation);
+        $this->setLowestY (0);
+    }
+    /**
+    * MultiCell with alignment as in Cell.
+    * @param float $w
+    * @param float $h
+    * @param string $text
+    * @param mixed $border
+    * @param int $ln
+    * @param string $align
+    * @param boolean $fill
+    */
+    private function MultiAlignCell($w,$h,$text,$border=0,$ln=0,$align='L',$fill=false)
+    {
+        // Store reset values for (x,y) positions
+        $x = $this->GetX() + $w;
+        $y = $this->GetY();
+
+        // Make a call to FPDF's MultiCell
+        $this->MultiCell($w,$h,$text,$border,$align,$fill);
+
+        $newY = $this->GetY();
+        $this->setLowestY($newY);
+        // Reset the line position to the right, like in Cell
+        if( $ln==0 )
+        {
+            $this->SetXY($x,$y);
+        }
+
+        
+    }
+
+    // Simple table
+    function BasicTable($header, $data)
+    {
+        // Header
+        foreach($header as $col)
+            $this->Cell(40,7,$col,1);
+        $this->Ln();
+        // Data
+        foreach($data as $row)
+        {
+            foreach($row as $col)
+                $this->Cell(40,6,$col,1);
+            $this->Ln();
+        }
+    }
+
+    // Better table
+    function ImprovedTable($header, $data)
+    {
+        // Column widths
+        $w = array(40, 35, 40, 45);
+        // Header
+        for($i=0;$i<count($header);$i++)
+            $this->Cell($w[$i],7,$header[$i],1,0,'C');
+        $this->Ln();
+        // Data
+        foreach($data as $row)
+        {
+            $this->Cell($w[0],6,$row[0],'LR');
+            $this->Cell($w[1],6,$row[1],'LR');
+            $this->Cell($w[2],6,number_format($row[2]),'LR',0,'R');
+            $this->Cell($w[3],6,number_format($row[3]),'LR',0,'R');
+            $this->Ln();
+        }
+        // Closing line
+        $this->Cell(array_sum($w),0,'','T');
+    }
+
+    // Colored table
+    function FancyTable($header, $data)
+    {
+        // Colors, line width and bold font
+        $this->SetFillColor(200,200,200);
+        $this->SetTextColor(255);
+        $this->SetDrawColor(0,0,0);
+        $this->SetLineWidth(.1);
+        $this->SetFont('','B');
+        $this->SetFontSize(8);
+
+        // Header
+        $w = array(10, 30, 35, 10, 45, 45);
+        for($i=0;$i<count($header);$i++)
+            $this->Cell($w[$i],7,$header[$i],1,0,'C',true);
+        $this->Ln();
+        // Color and font restoration
+        $this->SetFillColor(224,235,255);
+        $this->SetTextColor(0);
+        $this->SetFont('');
+        // Data
+        $fill = false;
+        foreach($data as $row)
+        {
+            // $this->Cell($w[0],6,$row[0],'LR',0,'L',$fill);
+            // $this->Cell($w[1],6,$row[1],'LR',0,'L',$fill);
+            $x = $this->getX();
+            $y = $this->getY();
+            
+            if ($y > 250){
+                $this->AddPage();
+                // $y = $this->getY();
+                $this->resetLowestY();
+            }
+
+            $this->MultiAlignCell($w[0],6,$row[0],'T',0, 'L', $fill);
+            // $this->MultiAlignCell($w[0],6,$y . "-" . $this->getLowestY(),'T',0, 'L', $fill);
+            $x = $this->getX();
+            $y = $this->getY();
+            $this->Image($row['imageFilePath'], $this->getX(), $y, 30, 30, 'JPEG'); $this->setLowestY(($this->getY()+30)); $this->setY($y);$this->setX($x+30);
+            $this->MultiAlignCell($w[2],6,$row[1],'T',0, 'L', $fill);
+            $this->MultiAlignCell($w[3],6,$row[2],'T',0, 'L', $fill);
+            $this->MultiAlignCell($w[4],6,$row[3],'T',0, 'L', $fill);
+            $this->MultiAlignCell($w[5],6,$row[4],'T',0, 'L', $fill);
+            $this->setY($this->getLowestY());
+            // $this->Ln();
+            $fill = !$fill;
+        }
+        // Closing line
+        $this->Cell(array_sum($w),0,'','T');
+    }
+} // PDF class
+
+
+
+function getData($sql){
+    global $db;
+
+    $result = array();
+    $PDIresult = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+    if (mysql_num_rows($PDIresult) == 0)
+    {
+        die("no result in sql");
+        return $result;
+    }
+
+    while ($row = mysql_fetch_array($PDIresult)){
+        // die("row[0]" . $row[0] . " row[1]" . $row[1]);
+        $rowResult = array();
+        $rowResult[0] = $row[0];
+        $rowResult[1] = $row[1];
+        $rowResult[2] = $row[2];
+        $rowResult[3] = $row[3];
+        $rowResult[4] = $row[4];
+        $rowResult['imageFilePath'] = $row['imageName'];
+
+        array_push($result, $rowResult);
+    }
+
+    return $result;
+} // getData
+
+
+function generatePDF($sql){
+    $pdf = new PDF();
+    // $pdf->SetAutoPageBreak(true, 15);
+
+    // Column headings
+    // $header = array('Country', 'Capital', 'Area (sq km)', 'Pop. (thousands)');
+    $header = array('Unit', 'Image','Defect', 'Type', 'Section', 'Contractor');
+    // Data loading
+    // $data = array();
+    // $row1 = array();
+    // array_push($row1, "abc asdf abglksdf  dfk jsdf lksdf lksdjf lsdf kj");
+    // array_push($row1, "cde");
+    // array_push($row1, 1);
+    // array_push($row1, 2);
+    // $row2 = array();
+    // array_push($row2, "abc");
+    // array_push($row2, "cde");
+    // array_push($row2, 3);
+    // array_push($row2, 4);
+    // array_push($data, $row1);
+    // array_push($data, $row2);
+    // array_push($data, $row1);
+    // array_push($data, $row1);
+
+    $data = getData($sql);
+    $pdf->SetFont('Arial','',8);
+    // $pdf->AddPage();
+    // $pdf->BasicTable($header,$data);
+    // $pdf->AddPage();
+    // $pdf->ImprovedTable($header,$data);
+    $pdf->AddPage();
+    $pdf->FancyTable($header,$data);
+    $pdf->Output();
+
+    // die("inside generatePDF");
+}
+
+// generatePDF($sql);
+// generatePDF("SELECT * FROM (SELECT UnitNumber, DefectName, DefectType, SectionName, ContractorName, TradeContacted, imageName, hasImage, (CASE WHEN DefectType = 'QA' THEN QAReportDate WHEN DefectType = 'PDI' THEN PDIReportDate WHEN DefectType = 'DAY30' THEN day30ReportDate WHEN DefectType = 'MONTH11' THEN month11ReportDate END) As ReportDate, (CASE WHEN DefectType = 'QA' THEN QAFixedDate WHEN DefectType = 'PDI' THEN PDIFixedDate WHEN DefectType = 'DAY30' THEN day30FixedDate WHEN DefectType = 'MONTH11' THEN month11FixedDate END) As FixedDate, ContractorID, PDIDefectID FROM (SELECT PDIDefect.*, CONCAT (PDICategory.Name, ' - ' , PDIType.Name) as DefectName, Section.Name as SectionName, Contractor.ContractorName, (CASE WHEN (PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1) THEN 'PDI' WHEN (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1) THEN 'DAY30' WHEN (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1) THEN 'QA' WHEN (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1) THEN 'MONTH11' END) AS DefectType FROM PDIDefect LEFT JOIN Section ON PDIDefect.SectionID = Section.SectionID LEFT JOIN Contractor ON PDIDefect.ContractorID = Contractor.ContractorID LEFT JOIN PDIType ON PDIDefect.PDITypeID = PDIType.PDITypeID LEFT JOIN PDICategory ON PDIDefect.PDICatID = PDICategory.PDICatID WHERE ((PDIDefect.PDIDefect = 1 and PDIDefect.PDIFixed != 1) OR (PDIDefect.day30Defect = 1 and PDIDefect.day30Fixed != 1) OR (PDIDefect.QADefect = 1 and PDIDefect.QAFixed != 1) OR (PDIDefect.month11Defect = 1 and PDIDefect.month11Fixed != 1)) ) A ) B WHERE 1=1 AND ContractorID='Contractor8' AND TradeContacted='1' AND ImageName <> '' ORDER BY B.UnitNumber, B.SectionName, B.ReportDate ");
+
+// $imagefile = "../images/PDI/CCP/201.jpg";
+
+// $pdf = new FPDF('P','mm','A4');
+// $pdf->AddPage();
+// $pdf->SetFont('Arial','B',10);
+
+
+
+
+// $pdf->Image($imagefile,10,10,200);
+// $pdf->SetY(-51);
+// $pdf->SetX(-55);
+// $pdf->Cell(20,5, date('M d, Y'));
+
+// $pdf->Output('F', '../images/PDI/CCP/201Signed.pdf');
+// $pdf->Output();
