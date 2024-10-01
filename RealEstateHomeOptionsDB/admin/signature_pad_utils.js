@@ -75,7 +75,11 @@ function resizeCanvas() {
             cancelWaitIcon();// from wait_icon_utils.js
             //Ajax request failed.
             var errorMessage = xhr.status + ': ' + xhr.statusText
-            alert('Error - ' + errorMessage);
+            if (xhr.status == 0){
+              alert('Error - Connection issue. Please ensure device is connected to internet.');
+            } else {
+              alert('Error - ' + errorMessage);
+            }
           })
   
     } // ajax
@@ -109,7 +113,11 @@ function resizeCanvas() {
             cancelWaitIcon();// from wait_icon_utils.js
             //Ajax request failed.
             var errorMessage = xhr.status + ': ' + xhr.statusText
-            alert('Error - ' + errorMessage);
+            if (xhr.status == 0){
+              alert('Error - Connection issue. Please ensure device is connected to internet.');
+            } else {
+              alert('Error - ' + errorMessage);
+            }
           })  
   } // uploadAndEmail
   
@@ -137,7 +145,11 @@ function resizeCanvas() {
             cancelWaitIcon();// from wait_icon_utils.js
             //Ajax request failed.
             var errorMessage = xhr.status + ': ' + xhr.statusText
-            alert('Error - ' + errorMessage);
+            if (xhr.status == 0){
+              alert('Error - Connection issue. Please ensure device is connected to internet.');
+            } else {
+              alert('Error - ' + errorMessage);
+            }
           })
   
     } // emailPDISignedReportToPurchaser 
