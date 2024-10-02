@@ -108,6 +108,11 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
                         }
                 }
 
+                if ($search_field == "Floor"){
+                        if ($val != "" AND IsNumeric($val))
+                        $sqlCond .= " AND substring(UnitNumber, 1, length(UnitNumber)-2) = $val";
+                }
+
 		$searchCriteria .= "&" . $key . "=" . $val;
 	}
 }
@@ -153,7 +158,7 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 	
 	$PDISql .= " ORDER BY B.UnitNumber,  B.SectionName, B.ReportDate";
 
-	//die("PDISql=$PDISql");
+	// die("PDISql=$PDISql");
 
         if ($output == "CSV") {
                 $sql = $PDISql;
@@ -190,12 +195,17 @@ createCollapsibleDIV("SearchCriteriaDIV");
         <FORM NAME="search_purchaser" ID="search_purchaser" METHOD="GET" ACTION="<?= $PHP_SELF; ?>">
                 <TABLE>
                 <INPUT TYPE="HIDDEN" NAME="orderby" VALUE="<?= $orderby;?>">
-
+                
                 <TR CLASS="blank">
                         <TD>Suite Number: <BR>e.g. PH%, 100-120,127,129</TD>
                         <TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
+                        <TD>Floor:
+                        <INPUT TYPE="TEXT" NAME="search_Floor" VALUE="<?= $search_Floor;?>"></TD>
+                        <OPTION 
+                </TR>
+                <TR CLASS="BLANK">
 			<TD>Trade</TD>
-			<TD>                <select name="search_ContractorID" onChange="change_link('trade_unit')">
+			<TD><select name="search_ContractorID" onChange="change_link('trade_unit')">
                     <OPTION VALUE="0">All</OPTION>
 <?
                 // listed all contractor names in dropdown listbox
