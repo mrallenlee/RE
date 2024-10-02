@@ -27,15 +27,19 @@ if (!$generateReportMode) {
     <!--
         function dump_CSV() {
             var form = document.getElementById("search_purchaser");
-            form.innerHTML += "<INPUT TYPE=\"HIDDEN\" NAME=\"output\" VALUE=\"CSV\">";
+            form.innerHTML += "<INPUT ID=\"output\" TYPE=\"HIDDEN\" NAME=\"output\" VALUE=\"CSV\">";
             form.submit();
-//            window.location='dumpCSV.phtml?table=User&rescission=0&sql_cond=&includeAvailableUnit=0';
+
+            var outputEle = document.getElementById("output");
+            outputEle.remove();
         }
         function dump_PDF() {
             var form = document.getElementById("search_purchaser");
             form.innerHTML += "<INPUT TYPE=\"HIDDEN\" NAME=\"output\" VALUE=\"PDF\">";
             form.submit();
-//            window.location='dumpCSV.phtml?table=User&rescission=0&sql_cond=&includeAvailableUnit=0';
+            var outputEle = document.getElementById("output");
+            outputEle.remove();
+
         }
     //-->
     </script>
@@ -308,8 +312,8 @@ if (!isset($search_Floor)) {
                 $curr_unit = 0;
                 while ($row = mysql_fetch_array($PDIresult))
                 {
-                        if (substr($row["UnitNumber"], 0, strlen($row["UnitNumber"]) - 2) == $search_Floor || $search_Floor == "all")
-                        {
+                        // if (substr($row["UnitNumber"], 0, strlen($row["UnitNumber"]) - 2) == $search_Floor || $search_Floor == "all")
+                        // {
                                 // print a blank line to stand out different unit
                                 if ($curr_unit == 0)
                                         $curr_unit = $row["UnitNumber"];
@@ -335,7 +339,7 @@ if (!isset($search_Floor)) {
                                 if ($row['TradeContacted']) { echo " checked='checked'"; }
                                 echo "></td>\n";
                                 echo "</tr>\n\n";
-                        }
+                        // }
                 }
                 echo "<tr><td colspan='5'>\n";
                 echo "  <input type='submit' value='Update' name='update' size='50' style='margin-right:1em'>";
