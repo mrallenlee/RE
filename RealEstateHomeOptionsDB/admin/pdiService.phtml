@@ -1,0 +1,80 @@
+<?
+$not_include_javascript=1;
+include "main_include.phtml";
+
+$content = '[
+        { "unit": "201", "PDIDone": 0, "PDIOS": 3, "PDISignedOff": 1 },
+        { "unit": "221", "PDIDone": 5, "PDIOS": 13, "PDISignedOff": 5 },
+        { "unit": "203", "PDIDone": 10, "PDIOS": 33, "PDISignedOff": 10 }
+]';
+
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+      
+// echo $content;
+
+function getPDIAgeList($unitNumber=""){
+        global $db;
+
+        //Prepare associated array with the age
+        $PDIAgeList = array();
+        $PDIAgeSql = "select UnitNumber, (CURDATE()-Min(PDIDefect.PDIReportDate)) AS Age 
+                        from PDIDefect where PDIFixed = 0 and PDIDefect.PDIReportDate > 0 
+                        group by UnitNumber";
+
+        $PDIAgeResult = mysql_query($PDIAgeSql,$db) or die("Error : $PDIAgeSql<br>" . mysql_error());
+        while ($row = mysql_fetch_array($PDIAgeResult)){
+                $PDIAgeList[$row['UnitNumber']] = $row['Age'];
+        }
+
+        // print ("PDIAgeList=[". json_encode($PDIAgeList) . "]");
+
+        return $PDIAgeList;
+} // getPDIAgeList
+
+$sql = "select Unit.UnitNumber, sum(PDIDefect.PDIDefect) AS PDITotal, 
+                sum(PDIDefect.PDIFixed) AS PDIFixed,  sum(PDIDefect.PDIDefect)- sum(PDIDefect.PDIFixed) AS PDIOS,
+                sum(PDIDefect.PDISignoff) AS PDISignedOff, 
+                sum(PDIDefect.Day30Defect) AS Day30Total, sum(PDIDefect.Day30Fixed) AS Day30Fixed,
+                sum(PDIDefect.Day30Defect) - sum(PDIDefect.Day30Fixed) AS Day30OS,
+                sum(PDIDefect.Day30Signoff) AS Day30SignedOff 
+                from Unit LEFT JOIN PDIDefect ON PDIDefect.UnitNumber=Unit.UnitNumber";
+                
+         
+if ($unitNumber != ""){
+        $sql .= " WHERE Unit.UnitNumber=$unitNumber";
+}                
+
+$sql .= " group by Unit.UnitNumber ";
+
+// order by casting unit number as number
+$sql .= " order by " . getOrderClause(array("tableName"=>"Unit", "columnName"=>"UnitNumber", "sortMethod"=>DB_SORT_METHOD_VARCHAR_AS_NUMBER)); 
+
+
+$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+
+
+$PDIAgeList = getPDIAgeList($unitNumber);
+
+$content = array();
+while ($row = mysql_fetch_array($result)){
+        $resultRow                      = array();
+        $resultRow['Unit']              = $row['UnitNumber'];
+        $resultRow['PDITotal']          = $row['PDITotal'] ?? 0;
+        $resultRow['PDIOS']             = $row['PDIOS'] ?? 0;
+        $resultRow['PDIFixed']          = $row['PDIFixed'] ?? 0;
+        $resultRow['PDISignedOff']      = $row['PDISignedOff'] ?? 0;
+        $resultRow['PDIUnresolvedAge']  = $PDIAgeList[$row['UnitNumber']] ?? 0;
+        $resultRow['PDIStatusColor']     = ($resultRow['PDIUnresolvedAge'] > 14) ? "yellow" :  $resultRow['PDIUnresolvedAge'] > 21 ? "red" : "green";
+        
+        
+        $resultRow['Day30Total']        = $row['Day30Total'] ?? 0;
+        $resultRow['Day30OS']           = $row['Day30OS'] ?? 0;
+        $resultRow['Day30Fixed']        = $row['Day30Fixed'] ?? 0;
+        $resultRow['Dat30SignedOff']    = $row['Day30SignedOff'] ?? 0;
+
+        array_push($content, $resultRow);
+} // While
+
+echo json_encode($content, JSON_NUMERIC_CHECK );
+?>
