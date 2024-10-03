@@ -18,7 +18,7 @@ function getPDIAgeList($unitNumber=""){
 
         //Prepare associated array with the age
         $PDIAgeList = array();
-        $PDIAgeSql = "select UnitNumber, (CURDATE()-Min(PDIDefect.PDIReportDate)) AS Age 
+        $PDIAgeSql = "select UnitNumber, DATEDIFF(CURDate(),Min(PDIDefect.PDIReportDate)) AS Age 
                         from PDIDefect where PDIFixed = 0 and PDIDefect.PDIReportDate > 0 
                         group by UnitNumber";
 
