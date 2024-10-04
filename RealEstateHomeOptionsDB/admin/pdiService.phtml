@@ -56,6 +56,11 @@ $result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
 
 $PDIAgeList = getPDIAgeList($unitNumber);
 
+// > 21 is red, 14 < yellow < 21, others is green
+DEFINE ("PDI_STATUS_RED", 21);
+DEFINE ("PDI_STATUS_YELLOW", 14);
+DEFINE ("PDI_STATUS_GREEN", 0);
+
 $content = array();
 while ($row = mysql_fetch_array($result)){
         $resultRow                      = array();
@@ -65,7 +70,7 @@ while ($row = mysql_fetch_array($result)){
         $resultRow['PDIFixed']          = $row['PDIFixed'] ?? 0;
         $resultRow['PDISignedOff']      = $row['PDISignedOff'] ?? 0;
         $resultRow['PDIUnresolvedAge']  = $PDIAgeList[$row['UnitNumber']] ?? 0;
-        $resultRow['PDIStatusColor']     = ($resultRow['PDIUnresolvedAge'] > 14) ? "yellow" :  $resultRow['PDIUnresolvedAge'] > 21 ? "red" : "green";
+        $resultRow['PDIStatusColor']    = ($resultRow['PDIUnresolvedAge'] >= PDI_STATUS_RED) ? "red" :  ( ($resultRow['PDIUnresolvedAge'] >= PDI_STATUS_YELLOW)  ? "yellow" : "green");
         
         
         $resultRow['Day30Total']        = $row['Day30Total'] ?? 0;
