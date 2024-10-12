@@ -632,7 +632,7 @@ $(document).ready( function () {
 	// initialize
 	refreshPDIs();
 	
-	$("#add").bind("click", function () {
+	$("#add").on("click", function () {
 		one_defect_html = generate_defect_form(num_of_rows, 
 				"",
 				"",
@@ -653,7 +653,8 @@ $(document).ready( function () {
 		num_of_rows++;
 	});
 	
-	$("#update").live("click", function () {
+	$(document).on("click", "#update", function(){
+	// $("#update").on("click", function () {
 
 		// data validation. If return false, return
 		if (!dataValidation()) {
@@ -693,9 +694,12 @@ $(document).ready( function () {
 		});
 	});
 
-	
-	$(".delete_button").live("click", function () {
+
+	$(document).on("click",".delete_button",function(){
+		console.log("delete button");
+
 		PDIDefectID = $(this).siblings("[name^='PDIDefect']").attr("value");
+		// PDIDefectID = 1234;
 		
 
 		// Confirm if want to be deleted	
