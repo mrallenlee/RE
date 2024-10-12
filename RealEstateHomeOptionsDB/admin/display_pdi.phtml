@@ -7,7 +7,9 @@ check_auth(HOMEOPTIONS);
 // This script creates main page to edit PDI general information and 
 // PDI defect list.
 
+print_header("PDI General Information");
 ?>
+
 
 
 <style type="text/css">
@@ -40,8 +42,7 @@ JEC from below website
 <script src="http://stuff.rajchel.pl/jec/jquery.jec.js" type="text/javascript">
 //-->
 <link rel="stylesheet" href="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/themes/base/jquery-ui.css" />
-<script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery-1.8.3.js"></script>
-<//script src="https://code.jquery.com/jquery-3.2.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery.jec.js"></script>
 <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
@@ -58,7 +59,7 @@ JEC from below website
     dojo.require("dojo.widget.DropdownDatePicker");
 </script>
  -->
-<html>
+
 <? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
 
 
@@ -68,7 +69,8 @@ JEC from below website
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
 
-  <table name="main_table">
+<div class="container">
+
 
 <?
 // edit page for "PDI general information"
@@ -81,7 +83,7 @@ if ($table_name == "Unit")
   <h4>PDI General Information</h4>
 
      <tr>
-      <td class="link_small">
+      <td >
       	<input type="button" value="Download in CSV" onClick="window.location='display_pdi_CSV.phtml?table_name=<?= $table_name; ?>'">
       </td>
     </tr>
@@ -110,14 +112,12 @@ if ($table_name == "Unit")
 
     <form name="frm_update_pdi" action="row_add_pdi.phtml" method="post">
 	<input type="hidden" name="table_name" value="<?= $table_name ?>">
-    <tr>
-      <!--4 data tables-->
-      <td>
-        <table>
+
+        <table class="table table-hover table-responsive>
 	      <tr>
 	        <td valign="top">
               <!--1st data table-->
-              <table>
+              <table class="table table-hover table-responsive table-sm">
                 <tr class="head">
                   <!-- 1st data table header -->
                   <td class="head" colspan=2>Info</td>
@@ -161,8 +161,9 @@ if ($table_name == "Unit")
 
 	while ($row = mysql_fetch_array($result))
 	{
-      displayMouseOverTR();
+      //displayMouseOverTR();
 ?>
+                <tr>
                   <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
                   <td class="table_rec"><nobr><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</nobr></a></td>
                   <? if (CALENDLY_APPT_ENABLED == 0) { ?>
@@ -245,7 +246,7 @@ LED
               </table>
 
         <tr>
-      <td class="link_small" colspan="2"><br><input type="submit" value="Update" id="update" size="50">
+      <td  colspan="2"><br><input type="submit" value="Update" id="update" size="50">
                 <!-- <input type="button" value="Progress Report" onClick="window.location='report_pdi_progress.phtml?table_name=Unit'"> //-->
         </td>
     </tr>
@@ -292,31 +293,31 @@ elseif ($table_name == "PDIDefect")
 ?>
     <tr>
       <td>
-        <table>
+        <table name="PDIDefectListTable" ID="PDIDefectListTable" class="table table-borderless table-sm table-responsive>
           <tr class="head">
 		<td colspan=10 class="head"> Unit Information</td>
 		</tr>
 		<tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0"><b>Unit:</b>
             </td>
-            <td class="link_small">
+            <td >
               <b><?= $unit ?></b>
             </td>
-   <td class="link_small">
+   <td >
     <input type=button value="Show Customer Selected Options & Upgrades"  onClick="window.open('./unit_no_contractor.phtml?UnitNumber=<?= $unit;?>&ShowPrice=0&mode=display', '_blank', '')">
             </td>    
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0">PDI Date/Time:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row["PDIDate"] . " " . $row["PDITime"] ?>
             </td>
-            <td class="link_small">
+            <td >
               <INPUT TYPE="checkbox" DISABLED 
 <?
 				if ($row['PDINotified'] == 1) 
@@ -328,19 +329,19 @@ elseif ($table_name == "PDIDefect")
 ?>
               > PDI Notified:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row["PDINotifiedDate"] ?>
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0">Occupancy Date/Time:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row["OccupancyDate"] . " " . $row["OccupancyTime"] ?>
             </td>
-            <td class="link_small">
+            <td >
               <INPUT TYPE="checkbox" DISABLED 
 <?
 				if ($row['OccupancyNotified'] == 1) 
@@ -352,25 +353,25 @@ elseif ($table_name == "PDIDefect")
 ?>
               > Occupancy Notified:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row["OccupancyNotifiedDate"] ?>
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0"><b>Purchaser:</b>
             </td>
-            <td class="link_small">
+            <td >
               <b><?= $row['LastName']?>, <?= $row['FirstName'] ?></b><br>
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0"><b>Email:</b>
             </td>
-            <td  class="link_small">
+            <td  >
               <div id="emailTextGroup">
               <input id="emailText" name="emailText" class="emailText" value="<?= $row['Email']; ?>"></input>
               <input type="button" id="btn-update-email-text" value="Update" >
@@ -378,57 +379,57 @@ elseif ($table_name == "PDIDefect")
             </td>
           </tr>
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0">Address:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row['Address']?> 
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               &nbsp;
             </td>
-            <td class="link_small">
+            <td >
               <?= $row['City'] ?>, <?= $row['Province'] ?>, <?= $row['Country'] ?>, <?= $row['PostalCode'] ?>
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0">Bus. Tel:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row['BusinessPhone'] ?>
             </td>
-            <td class="link_small">
+            <td >
               Fax:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row['FaxNumber'] ?>
             </td>
           </tr>
 
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0">Home Tel:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row['PhoneNumber'] ?>
             </td>
-            <td class="link_small">
+            <td >
               Cell:
             </td>
-            <td class="link_small">
+            <td >
               <?= $row['CellPhone'] ?>
             </td>
           </tr>
           <tr>
-            <td class="link_small">
+            <td >
               <img src="../spacer.gif" width="44" height="1" border="0">PDI Report:
             </td>
-            <td colspan="2" class="link_small" style="align: left;">
+            <td colspan="2"  style="align: left;">
               <INPUT ID="btn-download-PDI"    TYPE="BUTTON" VALUE="Download PDI Report">
               <INPUT ID="btn-download-day30"  TYPE="BUTTON" VALUE="Download Day 30 Report">
             </td>
@@ -496,8 +497,8 @@ elseif ($table_name == "PDIDefect")
         
         <table>
           <tr>
-            <td class="link_small"><button type="button" id="update">Update</button></td>
-            <td class="link_small"><button type="button" id="add">Add a Defect</button></td>
+            <td ><button type="button" id="update">Update</button></td>
+            <td ><button type="button" id="add">Add a Defect</button></td>
             <td><span class="user_message"></span></td>
           </tr>
         </table>
@@ -531,16 +532,16 @@ $floor = substr($unit, 0, strlen($unit) - 2);
 
         <tr>
 
-          <td class="link_small">
+          <td >
             <a href="report_pdi_details.phtml?search_Floor=<?= $floor ?>">All Defects on This Floor</a>
           </td>
 
-          <td class="link_small">
+          <td >
             <a href="report_pdi_details.phtml?search_UnitNumber=<?= $unit ?>">All Defects in Unit <?= $unit ?></a>
           </td>
 	</tr>
         <tr>
-          <td class="link_small">
+          <td >
             <a name="trade_floor_link" href="report_pdi_details.phtml?search_Floor=<?= $floor ?>&search_ContractorID=0">All Defects on This Floor for Trade</a>
 	          <select name="trade_floor_contractor_selector" onChange="change_link('trade_floor')">
 	            <OPTION VALUE="0">Choose one</OPTION>
@@ -555,7 +556,7 @@ $floor = substr($unit, 0, strlen($unit) - 2);
 		}
 ?>
           </td>
-          <td class="link_small">
+          <td >
             <a name="trade_unit_link" href="report_pdi_details.phtml?search_UnitNumber=<?= $unit ?>&search_ContractorID=0">All Defects in Unit <?= $unit ?> for Trade</a>
 	          <select name="trade_unit_contractor_selector" onChange="change_link('trade_unit')">
 	            <OPTION VALUE="0">Choose one</OPTION>
@@ -574,11 +575,11 @@ $floor = substr($unit, 0, strlen($unit) - 2);
         </tr>
 
         <tr>
-          <td class="link_small">
+          <td >
             <a href="report_pdi_details.phtml?search_Floor=<?= $floor ?>&search_ContractorID=0">All Defects on This Floor for All Trades</a>
           </td>
 
-          <td class="link_small">
+          <td >
             <a name="trade_allfloors_link" href="report_pdi_others.phtml?floor=all&search_ContractorID=0">All Defects on All Floors for Trade</a>
 	          <select name="trade_allfloors_contractor_selector" onChange="change_link('trade_allfloors')">
 	            <OPTION VALUE="0">Choose one</OPTION>
@@ -600,14 +601,14 @@ $floor = substr($unit, 0, strlen($unit) - 2);
 		<BR><BR>
 		<input type="button" value="Back to PDI General Information" onClick="window.location='display_pdi.phtml?table_name=Unit'">
       </form>
-      </td>
-    </tr>
+
 
 <?
 //	}
 }
 ?>
-  </table>
+
+</div>
 </body>
 
 <?php 
@@ -618,10 +619,10 @@ function get_dojo_date($one_date){
 
 <script language="JavaScript" type="text/javascript">
 var PDI_TABLE_TEMPLATE_1=' \
-        <table border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
+        <table class="table table-bordered table-sm" border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
             <tr valign="top">\
                <td colspan=2>\
-                <table cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
+                <table border="1" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
                   <tr>\
                     <td class="tail"><b>Defect Image</b></td>\
                   </tr>\
@@ -649,7 +650,7 @@ var PDI_TABLE_TEMPLATE_1=' \
                   </table>\
                   </td>\
                <td colspan="9">\
-              <table width="100% cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
+              <table class="table table-sm">\
                 <tr valign="top">\
                   <td class="tail" colspan="10"><b>Defect Desc</b></td>\
                 </tr>\
@@ -701,7 +702,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
 		}
 ?>
             </td>\
-            <td class="link_small" colspan="4">\
+            <td  colspan="4">\
               <select class="width200height30" name="ContractorID_{1}" id="ContractorID_{1}">\
                 <OPTION VALUE="">Choose one</OPTION>\
 <?
@@ -721,8 +722,8 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
           </td>\
           </tr>\
           <tr>\
-            <td class="subhead" colspan="5"><b>QA</b></td>\
-            <td class="subhead" colspan="5"><b>PDI</b></td>\
+            <td class="subhead"  colspan="5"><b>QA</b></td>\
+            <td class="subhead"  colspan="5"><b>PDI</b></td>\
           </tr>\
           <tr>\
             <td class="sub2head"><b>Defect</b></td>\
@@ -737,18 +738,18 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
             </tr>\
           <tr>\
             <!-- QA defect -->\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="QADefect_{1}" id="QADefect_{1}" onClick="javascript: set_rptdate(\'QA\', {1});"></td>\
-            <td class="link_small"><input name="QAReportDate_{1}" id="QAReportDate_{1}" value="{QAReportDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="QAFixed_{1}" id="QAFixed_{1}" onClick="javascript: set_fixeddate(\'QA\', {1});"></td>\
-            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="QAFixedDate_{1}" inputName="QAFixedDate_{1}" value="{QAFixedDate}" adjustWeeks="true"></div></td>-->\
-            <td colspan="2" class="link_small"><input name="QAFixedDate_{1}" id="QAFixedDate_{1}" value="{QAFixedDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="QADefect_{1}" id="QADefect_{1}" onClick="javascript: set_rptdate(\'QA\', {1});"></td>\
+            <td ><input name="QAReportDate_{1}" id="QAReportDate_{1}" value="{QAReportDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="QAFixed_{1}" id="QAFixed_{1}" onClick="javascript: set_fixeddate(\'QA\', {1});"></td>\
+            <!--<td ><div dojoType="dropdowndatepicker" widgetId="QAFixedDate_{1}" inputName="QAFixedDate_{1}" value="{QAFixedDate}" adjustWeeks="true"></div></td>-->\
+            <td colspan="2" ><input name="QAFixedDate_{1}" id="QAFixedDate_{1}" value="{QAFixedDate}" class="datepicker" /></td>\
             <!-- PDI defect -->\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="PDIDefect_{1}" id="PDIDefect_{1}" onClick="javascript: set_rptdate(\'PDI\', {1});"></td>\
-            <td class="link_small"><input name="PDIReportDate_{1}" id="PDIReportDate_{1}" value="{PDIReportDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="PDIFixed_{1}" id="PDIFixed_{1}" onClick="javascript: set_fixeddate(\'PDI\', {1});"></td>\
-            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="PDIFixedDate_{1}" inputName="PDIFixedDate_{1}" value="{PDIFixedDate}" adjustWeeks="true"></div></td>-->\
-            <td class="link_small"><input name="PDIFixedDate_{1}" id="PDIFixedDate_{1}" value="{PDIFixedDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="PDISignoff_{1}" id="PDISignoff_{1}"></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="PDIDefect_{1}" id="PDIDefect_{1}" onClick="javascript: set_rptdate(\'PDI\', {1});"></td>\
+            <td ><input name="PDIReportDate_{1}" id="PDIReportDate_{1}" value="{PDIReportDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="PDIFixed_{1}" id="PDIFixed_{1}" onClick="javascript: set_fixeddate(\'PDI\', {1});"></td>\
+            <!--<td ><div dojoType="dropdowndatepicker" widgetId="PDIFixedDate_{1}" inputName="PDIFixedDate_{1}" value="{PDIFixedDate}" adjustWeeks="true"></div></td>-->\
+            <td ><input name="PDIFixedDate_{1}" id="PDIFixedDate_{1}" value="{PDIFixedDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="PDISignoff_{1}" id="PDISignoff_{1}"></td>\
             </tr>\
             <tr>\
             <td class="subhead" colspan="5"><b>30 day</b></td>\
@@ -767,19 +768,19 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
           <td class="sub2head"><b>Signoff</b></td>\
           </tr>\            <!-- 30 day defect -->\
           <tr>\
-          <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="day30Defect_{1}" id="day30Defect_{1}" onClick="javascript: set_rptdate(\'day30\', {1});"></td>\
-            <td class="link_small"><input name="day30ReportDate_{1}" id="day30ReportDate_{1}" value="{day30ReportDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="day30Fixed_{1}" id="day30Fixed_{1}" onClick="javascript: set_fixeddate(\'day30\', {1});"></td>\
-            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="day30FixedDate_{1}" inputName="day30FixedDate_{1}" value="{day30FixedDate}" adjustWeeks="true"></div></td>-->\
-            <td class="link_small"><input name="day30FixedDate_{1}" id="day30FixedDate_{1}" value="{day30FixedDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="day30Signoff_{1}" id="day30Signoff_{1}"></td>\
+          <td  width="50" align="center"><INPUT TYPE="checkbox" name="day30Defect_{1}" id="day30Defect_{1}" onClick="javascript: set_rptdate(\'day30\', {1});"></td>\
+            <td ><input name="day30ReportDate_{1}" id="day30ReportDate_{1}" value="{day30ReportDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="day30Fixed_{1}" id="day30Fixed_{1}" onClick="javascript: set_fixeddate(\'day30\', {1});"></td>\
+            <!--<td ><div dojoType="dropdowndatepicker" widgetId="day30FixedDate_{1}" inputName="day30FixedDate_{1}" value="{day30FixedDate}" adjustWeeks="true"></div></td>-->\
+            <td ><input name="day30FixedDate_{1}" id="day30FixedDate_{1}" value="{day30FixedDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="day30Signoff_{1}" id="day30Signoff_{1}"></td>\
             <!-- 11 month defect -->\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Defect_{1}" id="month11Defect_{1}" onClick="javascript: set_rptdate(\'month11\', {1});"></td>\
-            <td class="link_small"><input name="month11ReportDate_{1}" id="month11ReportDate_{1}" value="{month11ReportDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Fixed_{1}" id="month11Fixed_{1}" onClick="javascript: set_fixeddate(\'month11\', {1});"></td>\
-            <!--<td class="link_small"><div dojoType="dropdowndatepicker" widgetId="month11FixedDate_{1}" inputName="month11FixedDate_{1}" value="{month11FixedDate}" adjustWeeks="true"></div></td>-->\
-            <td class="link_small"><input name="month11FixedDate_{1}" id="month11FixedDate_{1}" value="{month11FixedDate}" class="datepicker" /></td>\
-            <td class="link_small" width="50" align="center"><INPUT TYPE="checkbox" name="month11Signoff_{1}" id="month11Signoff_{1}"></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="month11Defect_{1}" id="month11Defect_{1}" onClick="javascript: set_rptdate(\'month11\', {1});"></td>\
+            <td ><input name="month11ReportDate_{1}" id="month11ReportDate_{1}" value="{month11ReportDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="month11Fixed_{1}" id="month11Fixed_{1}" onClick="javascript: set_fixeddate(\'month11\', {1});"></td>\
+            <!--<td ><div dojoType="dropdowndatepicker" widgetId="month11FixedDate_{1}" inputName="month11FixedDate_{1}" value="{month11FixedDate}" adjustWeeks="true"></div></td>-->\
+            <td ><input name="month11FixedDate_{1}" id="month11FixedDate_{1}" value="{month11FixedDate}" class="datepicker" /></td>\
+            <td  width="50" align="center"><INPUT TYPE="checkbox" name="month11Signoff_{1}" id="month11Signoff_{1}"></td>\
           </tr>\
           <tr>\
             <td colspan="8">\
@@ -800,7 +801,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
 
   var $originalEmailTextValue = '<?= $row['Email']; ?>';
 
-  $('#btn-download-PDI').live('click', function () {
+  $('#btn-download-PDI').on('click', function () {
       filePath        = '<?= $PDIReportFilePath; ?>';
       if (filePath == ''){
         alert('The PDI report has yet signed. Please sign it via "Print PDI Report" below.')
@@ -810,7 +811,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
     });
 
 
-    $('#btn-download-day30').live('click', function () {
+    $('#btn-download-day30').on('click', function () {
       filePath        = '<?= $PDIDay30ReportFilePath; ?>';
       if (filePath == ''){
         alert('The Day 30 report has yet signed. Please sign it via "Print Day 30 Report" below.')
@@ -832,7 +833,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
             }
     } // isEmail
 
-    $('#btn-update-email-text').live('click', function (){
+    $('#btn-update-email-text').on('click', function (){
       // console.log('btn-update-email-text clicked');
       $newEmailTextValue  = $('#emailText').val().trim();
       if (!isEmail($newEmailTextValue)){
@@ -850,7 +851,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
     });
 
 
-    $('#btn-cancel-email-text').live('click', function (){
+    $('#btn-cancel-email-text').on('click', function (){
       // console.log('btn-cancel-email-text clicked');
       // reset emailText value
       $('#emailText').val($originalEmailTextValue);
@@ -858,7 +859,7 @@ var PDI_TABLE_TEMPLATE_2=' </select>\
       hideEmailTextButtons();
     });    
 
-    $('#emailText').live('click', function (){
+    $('#emailText').on('click', function (){
       // $originalEmailTextValue = $('#emailText').val();
       // console.log('emailText originalValue=' + $originalEmailTextValue);
       showEmailTextButtons();
