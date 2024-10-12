@@ -326,16 +326,20 @@ var refreshPDIs = function () {
 
 var display_user_message = function (message) {
 	$(".user_message").html("");
-	$(".user_message").html("<div class='alert alert-success alert-dismissible fade show'> \
-	<button type='button' class='btn-close' data-bs-dismiss='alert'></button>" 
-	+ message + "  	</div>");
+	if (message.length > 0){
+		$(".user_message").html("<div class='alert alert-success alert-dismissible fade show'> \
+		<button type='button' class='btn-close' data-bs-dismiss='alert'></button>" 
+		+ message + "  	</div>");
+	}
 };
 
 var display_user_err_message = function (message) {
 	$(".user_message").html("");
-	$(".user_message").html("<div class='alert alert-danger alert-dismissible fade show'> \
-	<button type='button' class='btn-close' data-bs-dismiss='alert'></button>" 
-	+ message + "  	</div>");
+	if (message.length > 0){	
+		$(".user_message").html("<div class='alert alert-danger alert-dismissible fade show'> \
+		<button type='button' class='btn-close' data-bs-dismiss='alert'></button>" 
+		+ message + "  	</div>");
+	}
 };
 
 
@@ -377,7 +381,7 @@ var refreshPDICatComboBoxTemplate = function () {
 		},
 		error: function () {
 			//alert('refreshPDICatComboBoxTemplate ajax error');
-			display_user_message("[ <font color=#009900><b>Error at retrieving the PDI Cat related to the PDI Category.</b></font> ]<br>\n<br>");
+			display_user_err_message("Error at retrieving the PDI Cat related to the PDI Category");
 		}
 	});				
 };
@@ -446,7 +450,7 @@ var refreshPDICatComboBox = function (divName, asynchronize) {
 			
 		},
 		error: function () {
-			display_user_message("[ <font color=#009900><b>Error at retrieving the PDI Cat related to the PDI Category.</b></font> ]<br>\n<br>");
+			display_user_err_message("Error at retrieving the PDI Cat related to the PDI Category.");
 		}
 	});			
 };
@@ -524,7 +528,7 @@ var refreshPDITypeComboBox = function (divName, asynchronize) {
 			
 		},
 		error: function () {
-			display_user_message("[ <font color=#009900><b>Error at retrieving the PDI Type related to the PDI Category.</b></font> ]<br>\n<br>");
+			display_user_err_message("Error at retrieving the PDI Type related to the PDI Category.");
 		}
 	});			
 };
@@ -741,10 +745,10 @@ $(document).ready( function () {
 					refreshPDIs();
 					
 					// display success message
-					display_user_message("[ <font color=#009900><b>The record has been deleted successfully.</b></font> ]<br>\n<br>");
+					display_user_message("The record has been deleted successfully.");
 				},
 				error: function () {
-					display_user_message("[ <font color=#009900><b>Error at deleting this record.</b></font> ]<br>\n<br>");
+					display_user_err_message("Error at deleting this record.");
 				}
 			});
 		}
