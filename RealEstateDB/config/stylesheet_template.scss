@@ -1,0 +1,257 @@
+
+$font : Helvetica, Arial, sans-serif;
+$font-family : -apple-system;
+$font-weight : bold;
+$font-color : #888888;
+
+
+$regular-font-size : 8pt;
+$large-font-size : 12pt;
+$larger-font-size : 16pt;
+
+$head-height : 20;
+
+//$primary-background-color: #e2eeff;
+$primary-background-color: #ffffff; 
+$general-theme-color: #888888;
+
+@mixin font-css {
+    font-family: $font-family, $font; 
+    font-size: $regular-font-size; 
+    font-weight: $font-weight;
+    color: $font-color;
+}
+
+.head 	{ 	height: $head-height;
+    @include font-css; text-align: center;
+    ;border-spacing: 0px; //border-collapse: separate;
+    }
+
+tr.head th {
+    border-bottom: 2px solid $general-theme-color;
+    border-top: 2px solid $general-theme-color;
+    padding: 5px;
+    spacing: 5px;
+    }
+
+tr.head td {
+    border-bottom: 2px solid $general-theme-color;
+    border-top: 2px solid $general-theme-color;
+    padding: 5px;
+    }
+
+.head-left 	{ 	height: $head-height;
+    @include font-css; text-align: left;
+    ; }
+
+.head-right 	{ 	height: $head-height;
+    @include font-css; text-align: right;
+    ; }
+
+.big-head 	{ 	height: $head-height;
+    font-family: Verdana, Arial, sans-serif; font-size: 15pt; font-weight: $font-weight; text-align: center;
+    color: #777777;  }
+
+tr.head tr.head-left tr.head-right tr.big-head th {
+    border-bottom: 2px solid $general-theme-color;
+    border-top: 2px solid $general-theme-color; 
+    padding: 5px;
+    }
+
+tr.head tr.head-left tr.head-right tr.big-head td {
+    border-bottom: 2px solid $general-theme-color;
+    border-top: 2px solid $general-theme-color; 
+    padding: 5px;
+    }
+
+.subhead 	{ 	height: $head-height;
+    @include font-css; text-align: center;
+    ;border-spacing: 0px; //border-collapse: separate; 
+    }
+
+        
+
+.subhead-left 	{ 	height: $head-height;
+        @include font-css; text-align: left;
+        ; }
+
+.subhead-left-med 	{ height: $head-height;
+            font-family: $font-family, $font; font-size: $larger-font-size; font-weight: $font-weight; 
+            color: $font-color; text-align: left}
+
+.subhead-right 	{ 	height: $head-height;
+        @include font-css; text-align: right;
+        ; }
+
+
+tr.subhead tr.subhead-left tr.subhead-right  td {
+    border-bottom: 2px solid $general-theme-color;
+    border-top: 0px solid $general-theme-color; 
+    padding: 5px;
+    }
+
+.body 				{ 	@include font-css; 
+    background-color: $primary-background-color; ;}
+
+.body-right			{ 	@include font-css; text-align: right;
+    background-color: $primary-background-color; ;}
+
+.body-highlight 	{ 	@include font-css; 
+    ;background:  #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
+
+.body-green 		{ 	@include font-css; color: $general-theme-color;
+    background-color: $primary-background-color; }
+
+.body-blue			{ 	@include font-css; color: $general-theme-color;
+                background-color: $primary-background-color; }
+
+.body-yellow		{ 	@include font-css; color: $general-theme-color;
+                background-color: $primary-background-color;  }
+
+.tail 	{ height: $head-height;@include font-css; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; ; text-align: center}
+.tail-left 	{ height: $head-height;@include font-css; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; ; text-align: left}
+.tail-left-med 	{ height: $head-height;font-family: $font-family, $font; font-size: 14pt; font-weight: $font-weight; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: $font-color; text-align: left}
+.tail-right 	{ height: $head-height;@include font-css; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; ; text-align: right}
+
+.error 	{ @include font-css; color: #BB0000; }
+.blank 	{ @include font-css; color: #444444;}
+.blank-highlight {  @include font-css; ; background: #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
+.blank-right		{ 	font-family: $font-family, $font; font-size: $regular-font-size;
+                font-weight: $font-weight; text-align: right; color: #444444;}
+.blankL { @include font-css; text-align: left}
+
+
+tr.blank tr.blank-highlight tr.blank-right tr.blankL tr.body tr.body-highlight td {
+padding: 5px;
+}
+
+.open 	{ font-family: $font-family, $font; font-size: $regular-font-size; color: #ff0000; background-color: #FFFFCC }
+.closed { font-family: $font-family, $font; font-size: $regular-font-size; color: $font-color;background-color: #FFFFCC }
+.btn 	{ @include font-css; height: 26px; width: 80px;}
+
+
+.font-highlight		{ 	@include font-css; color: #DF5337; }
+
+.tab-table  { border-color: #FF0000 }
+
+.largetitle {	font-family: $font-family, $font; font-size: $large-font-size; color: #666666;	font-weight: $font-weight;	margin-top: 11px;	margin-bottom: 4px;	}
+.smalltitle {	margin-top: 6px;	@include font-css;	color: #666666;	}
+
+.borderbot { height: 1px; line-height: 1px; font-size: 1px; margin: 0px; padding: 0px; background: url(/images/dots.gif) repeat-x; }
+.borderbotlight { height: 1px; margin: 0px; padding: 0px; background: url(/images/dots_light.gif) repeat-x; }
+
+.popupDiv 		{ padding: 5px; background-color: $primary-background-color; border: 5px solid #777777; }
+.popupDivTitle 	{ font-family: $font-family, $font; color: #E6ECC0; }
+
+a 		{ @include font-css; text-decoration:none}
+a:visited { color:$general-theme-color; }
+a:link 		{ color:$general-theme-color; }
+a:hover 	{color: #F2862F }
+
+
+.header3 { font-family: $font-family, $font; font-size: $large-font-size; font-weight: bolder; color: $general-theme-color;}
+
+.tr-header { font-family: $font-family, $font; font-size: $large-font-size; font-weight: bolder; color: $font-color;background-color: #F7D642; }
+
+.calendar-div { font-family: $font-family, $font; font-size: $regular-font-size;  background-color: $primary-background-color; }
+.image-link { text-decoration:none; border:none; }
+.image-link:visited { color:$general-theme-color; }
+.image-link:link 		{ color:$general-theme-color; }
+.image-link:hover 	{color: #F2862F }
+.image-link IMG {border:none; }
+
+.image 		{ border: 2px; border-color: #A7B518; }
+
+.table_rec	{@include font-css; color: $general-theme-color;}
+
+.print-tr, .print-td, .print-hr, .print-div {
+display: none;
+}
+
+.page-break { height: 50px; width: 100%; }
+#page-break-div {height: 50px; page-break-after: always;}
+
+body { background-color: $primary-background-color; }
+/* div { background-color: #FFFFFF } */
+table { background-color: $primary-background-color;; border: 0px; border-spacing: 0px; }
+//    //border-collapse: separate; }
+tr { background-color: $primary-background-color; }
+span { @include font-css; color: #000000}
+.td-upper { @include font-css; ;text-transform: uppercase}
+td { @include font-css; vertical-align: top; color: $general-theme-color;}
+.tdI { font-family: $font-family, $font; font-size: 9pt; font-weight: $font-weight; font-style: italic;  vertical-align: top; color: $general-theme-color;}
+th { @include font-css; color: $general-theme-color;}
+h1 { font-family: $font-family, $font; color: $general-theme-color;}
+h2 { font-family: $font-family, $font; color: $general-theme-color;}
+h3 { font-family: $font-family, $font; color: $general-theme-color;}
+h4 { font-family: $font-family, $font; color: $general-theme-color;}
+h5 { font-family: $font-family, $font; color: $general-theme-color;}
+
+input 		{ @include font-css; text-align: right; ;accent-color: #BBBBBB }
+button 		{ font-family: $font-family, $font; font-size: $regular-font-size; color: $font-color;accent-color: #BBBBBB;}
+select 		{ @include font-css; text-align: left; ;accent-color: #BBBBBB}
+textarea 	{ @include font-css; text-align: left; ;accent-color: #BBBBBB}
+error		{ font-family: $font-family, $font; font-size: $regular-font-size; color: #BB0000}
+
+.dojoDialog {
+background : #eee;
+border : 1px solid #999;
+-moz-border-radius : 5px;
+padding : 4px;
+}
+
+input[type=radio]#Yellow {
+accent-color: pink;
+}
+
+input[type=radio]#Green {
+accent-color: rgb(0, 255, 0);
+}
+
+input[type=radio]#auto {
+accent-color: auto;
+}
+
+input[type=radio]#Red {
+accent-color: #FF0000;
+}
+
+
+/* For wait_icon_utils.js to display waiting spinner */
+#overlay{	
+position: fixed;
+top: 0;
+z-index: 100;
+width: 100%;
+height:100%;
+display: none;
+background: rgba(0,0,0,0.6);
+}
+.cv-spinner {
+height: 100%;
+display: flex;
+justify-content: center;
+align-items: center;  
+}
+.spinner {
+width: 40px;
+height: 40px;
+border: 4px #ddd solid;
+border-top: 4px #2e93e6 solid;
+border-radius: 50%;
+animation: sp-anime 0.8s infinite linear;
+}
+@keyframes sp-anime {
+100% { 
+transform: rotate(360deg); 
+}
+}
+.is-hide{
+display:none;
+}
+
+
+img.lazy {
+width: 128; 
+height: 128; 
+}
