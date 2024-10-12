@@ -262,10 +262,10 @@ elseif ($table_name == "PDIDefect")
 ?>
 
 
-        <H3><?= get_project_name($PHP_SELF); ?></H3>
-
-        <H4>PDI Defect List</H4>
-
+       
+<div class="container">
+        <H4 class="d-flex align-items-center justify-content-center">PDI Defect List</H4>
+</div>
 
 
 <?
@@ -438,6 +438,11 @@ elseif ($table_name == "PDIDefect")
       <br>
       </td>
     </tr>
+    <!-- <tr><td>
+      <div class="container">
+            <span class="user_message"></span>
+      </div>      
+    </td></tr> -->
 
 <?
 	// end of header
@@ -499,9 +504,12 @@ elseif ($table_name == "PDIDefect")
           <tr>
             <td ><button type="button" id="update">Update</button></td>
             <td ><button type="button" id="add">Add a Defect</button></td>
-            <td><span class="user_message"></span></td>
           </tr>
+          <tr><td><br><br></td></tr>
         </table>
+        <div class="container">
+            <span class="user_message"></span>
+        </div>      
 
       </td>
     </tr>
@@ -633,7 +641,7 @@ var PDI_TABLE_TEMPLATE_1=' \
                           <td>\
               <input type="hidden" name="DefectImageName_{1}" id="DefectImageName_{1}" value="{DefectImageName}"></input>\
               <input type="hidden" name="DefectHasImage_{1}" id="DefectHasImage_{1}" value="{DefectHasImage}"></input>\
-              <img name="DefectImageID_{1}" id="DefectImageID_{1}" height=130 width=180 src="{DefectImageName}">\
+              <img class="rounded" name="DefectImageID_{1}" id="DefectImageID_{1}" height=130 width=180 src="{DefectImageName}">\
                           </td>\
                         </tr>\
                         <tr>\
