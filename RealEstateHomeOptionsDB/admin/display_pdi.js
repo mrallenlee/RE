@@ -326,9 +326,17 @@ var refreshPDIs = function () {
 
 var display_user_message = function (message) {
 	$(".user_message").html("");
-	$(".user_message").html(message);
+	$(".user_message").html("<div class='alert alert-success alert-dismissible fade show'> \
+	<button type='button' class='btn-close' data-bs-dismiss='alert'></button>" 
+	+ message + "  	</div>");
 };
 
+var display_user_err_message = function (message) {
+	$(".user_message").html("");
+	$(".user_message").html("<div class='alert alert-danger alert-dismissible fade show'> \
+	<button type='button' class='btn-close' data-bs-dismiss='alert'></button>" 
+	+ message + "  	</div>");
+};
 
 
 //Refresh PDICatID Combo box in the TEMPLATE
@@ -678,7 +686,7 @@ $(document).ready( function () {
 					refreshPDIs();
 				
 				// display success message
-					display_user_message("[ <font color=#009900><b>Records updated successfully.</b></font> ]<br>\n<br>");
+					display_user_message("Records updated successfully.");
 //				} else { // handle error
 //					display_user_message("[ <font color=#009900><b>" + data['sql_error'] + ".</b></font> ]<br>\n<br>");
 //				}
@@ -689,7 +697,7 @@ $(document).ready( function () {
 				//alert('sql=' + data['status']);
 				//alert('fuck=' + data['fuck']);
 				alert('sql_error=' + data['sql_error']);
-				display_user_message("[ <font color=#009900><b>Error at updating records.</b></font> ]<br>\n<br>");
+				display_user_err_message("Error at updating records.");
 			}
 		});
 	});

@@ -89,7 +89,10 @@ function addNewPDIType($PDITypeName, $PDICatID, $PDITypeDescription = "") {
 
 
 	// Check if type already exists
-	$sql = "SELECT * FROM PDIType where Name = '" . $PDITypeName . "';";
+	// BUG Identified. HAs to add PDICatID into the search criteria to handle same defect description, 
+	// but under different category
+	$sql = "SELECT * FROM PDIType where Name = '" . $PDITypeName . "' AND PDICatID=$PDICatID ;";
+	// $sql = "SELECT * FROM PDIType where Name = '" . $PDITypeName . "';"; // BUGGY
 	$result = mysql_query($sql) or die("Error : $sql<br>" . mysql_error());
 
 	$row = mysql_fetch_array($result);
@@ -307,7 +310,11 @@ if ($action == "get") {
 				$createNewPDIType 	= true;
 				if ($newPDICatID <= 0) {
 					// Error handling
-					die("Error : Cannot create new PDICategory for \"" . $PDICatID . "\"");
+					// die("Error : Cannot create new PDICategory for \"" . $PDICatID . "\"");	$row = array();
+					$row['status'] 	= "ERROR";
+					$row['message']	= "Cannot create new PDI Category for \"" . $PDICatID . "\"";
+					array_push($rtn_rows, $row);	
+					echo json_encode($rtn_rows);
 					return;
 				} else {
 					$PDICatID 	= $newPDICatID;
@@ -321,8 +328,14 @@ if ($action == "get") {
 				$newPDITypeID = addNewPDIType($PDITypeID, $PDICatID);
 				if ($newPDITypeID <= 0) {
 					// Error handling
-					die("Error : Cannot create new PDI Type for \"" . $PDITypeID . "\"");
+					$row = array();
+					$row['status'] 	= "ERROR";
+					$row['message']	= "Cannot create new PDI Type for \"" . $PDITypeID . "\"";
+					array_push($rtn_rows, $row);	
+					echo json_encode($rtn_rows);
 					return;
+					// die("Error : Cannot create new PDI Type for \"" . $PDITypeID . "\"");
+					// return;
 				} else {
 					$PDITypeID 		= $newPDITypeID;
 					// @TODO Allen to properly remove below DefectDesc
@@ -357,7 +370,7 @@ if ($action == "get") {
 			}
 			
 			array_push($rtn_rows, $row);			
-				
+			echo json_encode($rtn_rows);
 		}
 
 		// @TODO ALLEN Need more time return proper error message 
@@ -365,9 +378,21 @@ if ($action == "get") {
 		
 	}
 } elseif ($action == "delete") {
+	$rtn_rows = array();
+	$row = array();
+
 	$sql = "DELETE FROM PDIDefect 
 			WHERE PDIDefectID = $PDIDefectID";
 
 	$result = mysql_query($sql) or die("SQL failed:\n" . mysql_error() . "\nFull SQL:\n" . $sql . $PHP_SELF);
+	if ($result) {
+		$row['status'] = "SUCCESS";
+	} else { 
+		$row['status'] = "ERROR";
+		$row['message']	= "Cannot delete defect " . $PDIDefectID;
+		$row['sql_error'] = $sql_error;
+	}
+	array_push($rtn_rows, $row);
+	echo json_encode($rtn_rows);
 }
 ?>
