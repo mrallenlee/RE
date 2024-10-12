@@ -18,11 +18,12 @@ if ($output == "CSV" ||  $output == "PDF") {
 
 include "../admin/main_include.phtml";  
 
-print_header("PDI Reports");
+
 
 // if output is CSV, don't print any header
 if (!$generateReportMode) {
-    print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
+        print_header("PDI Reports");        
+        print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
 ?>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://code.jquery.com/ui/1.14.0/jquery-ui.js"></script>
