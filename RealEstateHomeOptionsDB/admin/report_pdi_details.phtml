@@ -16,13 +16,20 @@ if ($output == "CSV" ||  $output == "PDF") {
         $generateReportMode = false;
 }
 
-
 include "../admin/main_include.phtml";  
+
+print_header("PDI Reports");
 
 // if output is CSV, don't print any header
 if (!$generateReportMode) {
     print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/");
 ?>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.14.0/jquery-ui.js"></script>
+        <script src="report_pdi_others.js"></script>
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css">
+        <script type="text/javascript"  src="https:///cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+
     <script language="JavaScript">
     <!--
         function dump_CSV() {
@@ -51,10 +58,10 @@ if ($update) {
         // ALLEN Only update the one being unchecked
         //$sql = "UPDATE PDIDefect SET TradeContacted=0";
         //$result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
-
         // Add a hidden value in before CheckBox to let HTML code to send false value even
         // checkbox is not checked
         foreach ($_POST as $key=>$value) {
+                echo("key=$key value=$value<BR>");
                 $updateValue = 0;
 
                 $data = explode("_", $key);
@@ -66,8 +73,10 @@ if ($update) {
                         $PDIDefect_id = $data[1];
                         $sql = "UPDATE PDIDefect SET TradeContacted=" . $updateValue . " WHERE PDIDefectID=".$PDIDefect_id;
                         $result = mysql_query($sql,$db) or die("Error : $sql<br>" . mysql_error());
+                        echo("sql=$sql<BR>");
                 }
         }
+        die("End of foreach");
 }
 
 
@@ -178,20 +187,11 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 ?>
 <html>
 
-<head>
-  <title>PDI reports</title>
-  <META http-equiv="Content-Style-Type" content="text/css">
-  <link rel="stylesheet" href="./citygate.css" type="text/css">
-  <link rel="stylesheet" href="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/themes/base/jquery-ui.css" />
-  <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/jquery-1.8.3.js"></script>
-  <script src="<?= SUB_FOLDER_INVERT_RELATIVE_PATH."/".HOME_OPTIONS_INVERT_RELATIVE_PATH."/";?>framework/JQuery/ui/1.9.2/jquery-ui.js"></script>
-  <script src="report_pdi_others.js"></script>
-</head>
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" bgcolor="#FFFFFF">
 
 <BR><BR>
-                <DIV id="search" name="search">
+<DIV id="search" name="search" class="container">
 <?
 createCollapsibleDIVIcon("Search Criteria", "SearchCriteriaDIV");
 createCollapsibleDIV("SearchCriteriaDIV");
@@ -205,7 +205,7 @@ createCollapsibleDIV("SearchCriteriaDIV");
                         <TD><INPUT TYPE="TEXT" NAME="search_UnitNumber" VALUE="<?= $search_UnitNumber; ?>"></TD>
                         <TD>Floor:
                         <INPUT TYPE="TEXT" NAME="search_Floor" VALUE="<?= $search_Floor;?>"></TD>
-                        <OPTION 
+                        <!-- <OPTION  -->
                 </TR>
                 <TR CLASS="BLANK">
 			<TD>Trade</TD>
@@ -257,7 +257,8 @@ createCollapsibleDIV("SearchCriteriaDIV");
 
 
   <form name="form_PDIdefectByFloor" method="post" action="<?echo  $_SERVER["PHP_SELF"] . '?search_Floor=' . $search_Floor . '&search_ContractorID=' . $search_ContractorID . '&search_UnitNumber=' . $search_UnitNumber ; ?>">
-  <table id="report-content" name="report-content" width="800" >
+  <div class="container">
+  <table id="report-content" name="report-content" class="table table-hover table-responsive" >
 <?
 
 //
@@ -269,12 +270,14 @@ if (!isset($search_Floor)) {
 	$search_Floor = "all";
 }
 
+// A String to store all hidden value, and echo it after table completes
+$hiddenValueString = "";
 ?>
-    <tr class="head">
+    <!-- <tr class="head">
       <td colspan="9">
         <b>All Defects on Floor  <?= $floor ?></b><br><br>
       </td>
-    </tr>
+    </tr> -->
 
 <? 
 	// Extract PDI Result
@@ -282,31 +285,31 @@ if (!isset($search_Floor)) {
         if (mysql_num_rows($PDIresult) == 0)
         {
 ?>
-    <tr class="head">
+    <!-- <tr class="head">
       <td>
         No defect data found on the floor <?= $search_Floor ?>.
       </td>
-    </tr>
+    </tr> -->
 
 <?
         }
         else
         {
                 // table header
-                echo "<input type='hidden' value='".$search_Floor."' name='search_Floor'>";
-                echo "<tr>\n";
-                echo "  <td align='center' class='head'>Unit</td>\n";
-                echo "  <td align='center' class='head'>Defect ID</td>\n";
-                echo "  <td align='center' class='head'>Image</td>\n";
-                echo "  <td align='center' class='head'>Defect Description</td>\n";
-                echo "  <td align='center' class='head'>Defect Type</td>\n";
-                echo "  <td align='center' class='head'>Room</td>";
-                echo "  <td align='center' class='head'>Trade Assigned</td>\n";
-                echo "  <td align='center' class='head' nowrap>Report Date</td>\n";
-                echo "  <td align='center' class='head'>Schedule Fix Date</td>\n";
-
-                echo "  <td align='center' class='head'>Trade Contacted &nbsp; <input type='checkbox' id='TradeContactedAll' />\n";
-                echo "</tr>\n\n";
+                // echo "<input type='hidden' value='".$search_Floor."' name='search_Floor'>";
+                echo "<thead><tr>\n";
+                echo "  <th align='center' class='head'>Unit</th>\n";
+                echo "  <th align='center' class='head'>Defect ID</th>\n";
+                echo "  <th align='center' class='head'>Image</th>\n";
+                echo "  <th align='center' class='head'>Defect Description</th>\n";
+                echo "  <th align='center' class='head'>Defect Type</th>\n";
+                echo "  <th align='center' class='head'>Room</th>";
+                echo "  <th align='center' class='head'>Trade Assigned</th>\n";
+                echo "  <th align='center' class='head' nowrap>Report Date</th>\n";
+                echo "  <th align='center' class='head'>Schedule Fix Date</th>\n";
+                echo "  <th align='center' class='head'>Trade Contacted &nbsp; <input type='checkbox' id='TradeContactedAll' /></th>\n";
+                echo "</tr></thead>\n\n";
+                echo "<tbody>\n\n";
 
 
                 $curr_unit = 0;
@@ -319,21 +322,21 @@ if (!isset($search_Floor)) {
                                         $curr_unit = $row["UnitNumber"];
                                 elseif ($curr_unit != $row["UnitNumber"])
                                 {
-                                        echo "<tr><td colspan='8'>&nbsp;</td></tr>\n\n";
+                                        // echo "<tr><td colspan='8'>&nbsp;</td></tr>\n\n";
                                         $curr_unit = $row["UnitNumber"];
                                 }
 
                                 echo "<tr class='table_rec'>\n";
                                 echo "  <td>" . $row["UnitNumber"] . "</td>\n";
                                 echo "  <td align='center'>" . $row["UnitDefectID"] . "</td>\n";
-                                echo "  <td><img width=128 height=128 src='" . $row['imageName'] . "'></td>\n";
+                                echo "  <td><img class='lazy' width=128 height=128 data-src='" . $row['imageName'] . "'></td>\n";
                                 echo "  <td>" . $row["DefectName"] . "</td>\n";
                                 echo "  <td>" . $row["DefectType"] . "</td>\n";
                                 echo "  <td>" . $row["SectionName"] . "</td>\n";
                                 echo "  <td>" . $row["ContractorName"] . "</td>\n";
                                 echo "  <td>" . $row["ReportDate"] . "</td>\n";
                                 echo "  <td>" . $row["FixedDate"] . "</td>\n";
-                                echo " <input type='hidden' name='TradeContacted_" . $row["PDIDefectID"] . "' value='false'>";
+                                $hiddenValueString .= "<input type='hidden' name='TradeContacted_" . $row["PDIDefectID"] . "' value='false'>";
 
                                 echo "  <td align='center'><input type='checkbox' name='TradeContacted_" . $row["PDIDefectID"] . "'";
                                 if ($row['TradeContacted']) { echo " checked='checked'"; }
@@ -341,15 +344,43 @@ if (!isset($search_Floor)) {
                                 echo "</tr>\n\n";
                         // }
                 }
-                echo "<tr><td colspan='5'>\n";
-                echo "  <input type='submit' value='Update' name='update' size='50' style='margin-right:1em'>";
-                echo "  <input type='submit' value='Cancel' name='cancel' size='50'>";
-                echo "</td></tr>\n";
-                echo "</form>";
         }
 
 ?>
- </table>
+        </tbody>
+</table>
+</div>
+                        <!-- echo "<tr><td colspan='5'>\n"; -->
+<?      echo $hiddenValueString;?>
+        <input type='submit' value='Update' name='update' size='50' style='margin-right:1em'>
+        <input type='submit' value='Cancel' name='cancel' size='50'>
+                <!-- echo "</td></tr>\n"; -->
+</form>
+        <!-- MUST put the js right above the lazy handling code, otherwsie won't work -->
+        <script src = "../../RealEstateDB/framework/jquerylazy/jquery.lazy.min.js"></script>
+        <script src = "../../RealEstateDB/framework/jquerylazy/jquery.lazy.plugins.min.js"></script>
+    <script>
+        
+        $(function($) {
+                $("img.lazy").Lazy({    
+        // your configuration goes here
+                        // scrollDirection: 'vertical',
+                        effect: "fadeIn",
+                        effectTime: 2000,
+                        threshold: 0,        
+                        visibleOnly: true,
+                        onError: function(element) {
+                                console.log('error loading ' + element.data('src'));
+                        },
+                        afterLoad: function(element) {
+                                  // called after an element was successfully handled
+                                console.log('Finish loading ' + JSON.stringify(element));
+                        },
+                });
+
+                //        let table = new DataTable("#report-content");
+      });
+</script>
 </body>
 
 </html>
