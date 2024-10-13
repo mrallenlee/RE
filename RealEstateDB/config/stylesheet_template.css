@@ -1,231 +1,599 @@
-.headXXX 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
-			background: #fcc23d url(/lmark/SalesDemo/common/images/title-background.jpg) repeat-x; color: #888888;  }
-
-.head 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
-			color: #888888; border-spacing: 0px; border-collapse: separate;
-			}
-
-tr.head th {
-			border-bottom: 2px solid #888888;
-			border-top: 2px solid #888888;
-			padding: 5px;
-			spacing: 5px;
-			}
-tr.head td {
-			border-bottom: 2px solid #888888;
-			border-top: 2px solid #888888;
-			padding: 5px;
-			}
-
-.head-left 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left;
-			color: #888888;  }
-
-.head-right 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right;
-			color: #888888;  }
-
-.big-head 	{ 	height: 20; 
-			font-family: Verdana, Arial, sans-serif; font-size: 15pt; font-weight: bold; text-align: center;
-			color: #777777;  }
-
-	tr.head tr.head-left tr.head-right tr.big-head th {
-			border-bottom: 2px solid #888888;
-			border-top: 2px solid #888888; 
-			padding: 5px;
-			}
-
-	tr.head tr.head-left tr.head-right tr.big-head td {
-			border-bottom: 2px solid #888888;
-			border-top: 2px solid #888888; 
-			padding: 5px;
-			}
-
-.subheadXXX 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
-			background: #F7D642 url(/lmark/SalesDemo/common/images/subtitle-background.jpg) repeat-x; color: #000000;  }
-
-.subhead 	{ 	height: 20; 
-			font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: center;
-			color: #888888; border-spacing: 0px; border-collapse: separate; }
-
-				
-
-.subhead-left 	{ 	height: 20; 
-				font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left;
-				color: #888888;  }
-
-.subhead-left-med 	{ height: 20; 
-					font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold; 
-					color: #888888;  text-align: left}
-
-.subhead-right 	{ 	height: 20; 
-				font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right;
-				color: #888888;  }
-
-
-	tr.subhead tr.subhead-left tr.subhead-right  td {
-			border-bottom: 2px solid #888888;
-			border-top: 0px solid #888888; 
-			padding: 5px;
-			}
-  
-.body 				{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; 
-			background-color: #FFFFFF; color: #888888; }
-
-.body-right			{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right;
-			background-color: #FFFFFF; color: #888888; }
-
-.body-highlight 	{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; 
-			color: #888888; background:  #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
-
-.body-green 		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;
-			background-color: #FFFFFF; }
-
-.body-blue			{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;
-						background-color: #FFFFFF; }
-
-.body-yellow		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;
-						background-color: #FFFFFF;  }
-
-.tail 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: center}
-.tail-left 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: left}
-.tail-left-med 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: left}
-.tail-right 	{ height: 20; font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; color: #888888;  text-align: right}
-
-.error 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #BB0000; }
-.blank 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #444444;}
-.blank-highlight {  font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888;  background: #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x; }
-.blank-right		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt;
-						font-weight: bold; text-align: right; color: #444444;}
-.blankL { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left}
-
-
-tr.blank tr.blank-highlight tr.blank-right tr.blankL tr.body tr.body-highlight td {
-	padding: 5px;
-	}
-
-.open 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #ff0000; background-color: #FFFFCC }
-.closed { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #888888; background-color: #FFFFCC }
-.btn 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; height: 26px; width: 80px;}
-
-
-.font-highlight		{ 	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #DF5337; }
-
-.tab-table  { border-color: #FF0000 }
-
-.largetitle {	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 12pt; color: #666666;	font-weight: bold;	margin-top: 11px;	margin-bottom: 4px;	}
-.smalltitle {	margin-top: 6px;	font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold;	color: #666666;	}
-
-.borderbot { height: 1px; line-height: 1px; font-size: 1px; margin: 0px; padding: 0px; background: url(/images/dots.gif) repeat-x; }
-.borderbotlight { height: 1px; margin: 0px; padding: 0px; background: url(/images/dots_light.gif) repeat-x; }
-
-.popupDiv 		{ padding: 5px; background-color: #FFFFFF; border: 5px solid #777777; }
-.popupDivTitle 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; color: #E6ECC0; }
-
-a 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-decoration:none}
-a:visited { color:#888888 }
-a:link 		{ color:#888888 }
-a:hover 	{color: #F2862F }
-
-
-.header3 { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: bolder; color: #888888}
-
-.tr-header { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 12pt; font-weight: bolder; color: #888888; background-color: #F7D642; }
-
-.calendar-div { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt;  background-color: #FFFFFF; }
-.image-link { text-decoration:none; border:none; }
-.image-link:visited { color:#888888 }
-.image-link:link 		{ color:#888888 }
-.image-link:hover 	{color: #F2862F }
-.image-link IMG {border:none; }
-
-.image 		{ border: 2px; border-color: #A7B518; }
-
-.table_rec	{font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888}
-
-.print-tr, .print-td, .print-hr, .print-div {
-	display: none;
+.head {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: center;
+  border-spacing: 0px;
 }
 
+tr.head th {
+  border-bottom: 2px solid #888888;
+  border-top: 2px solid #888888;
+  padding: 5px;
+  spacing: 5px;
+}
 
-body { background-color: #FFFFFF }
+tr.head td {
+  border-bottom: 2px solid #888888;
+  border-top: 2px solid #888888;
+  padding: 5px;
+}
+
+.head-left {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: left;
+}
+
+.head-right {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: right;
+}
+
+.big-head {
+  height: 20;
+  font-family: Verdana, Arial, sans-serif;
+  font-size: 15pt;
+  font-weight: bold;
+  text-align: center;
+  color: #777777;
+}
+
+tr.head tr.head-left tr.head-right tr.big-head th {
+  border-bottom: 2px solid #888888;
+  border-top: 2px solid #888888;
+  padding: 5px;
+}
+
+tr.head tr.head-left tr.head-right tr.big-head td {
+  border-bottom: 2px solid #888888;
+  border-top: 2px solid #888888;
+  padding: 5px;
+}
+
+.subhead {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: center;
+  border-spacing: 0px;
+}
+
+.subhead-left {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: left;
+}
+
+.subhead-left-med {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 16pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: left;
+}
+
+.subhead-right {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: right;
+}
+
+tr.subhead tr.subhead-left tr.subhead-right td {
+  border-bottom: 2px solid #888888;
+  border-top: 0px solid #888888;
+  padding: 5px;
+}
+
+.body {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  background-color: #ffffff;
+}
+
+.body-right {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: right;
+  background-color: #ffffff;
+}
+
+.body-highlight {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  background: #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x;
+}
+
+.body-green {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #888888;
+  background-color: #ffffff;
+}
+
+.body-blue {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #888888;
+  background-color: #ffffff;
+}
+
+.body-yellow {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #888888;
+  background-color: #ffffff;
+}
+
+.tail {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x;
+  text-align: center;
+}
+
+.tail-left {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x;
+  text-align: left;
+}
+
+.tail-left-med {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 14pt;
+  font-weight: bold;
+  background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x;
+  color: #888888;
+  text-align: left;
+}
+
+.tail-right {
+  height: 20;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  background: #c0c0c0 url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x;
+  text-align: right;
+}
+
+.error {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #BB0000;
+}
+
+.blank {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #444444;
+}
+
+.blank-highlight {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  background: #EEEEEE url(/lmark/SalesDemo/common/images/tail-background.jpg) repeat-x;
+}
+
+.blank-right {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  text-align: right;
+  color: #444444;
+}
+
+.blankL {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: left;
+}
+
+tr.blank tr.blank-highlight tr.blank-right tr.blankL tr.body tr.body-highlight td {
+  padding: 5px;
+}
+
+.open {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  color: #ff0000;
+  background-color: #FFFFCC;
+}
+
+.closed {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  color: #888888;
+  background-color: #FFFFCC;
+}
+
+.btn {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  height: 26px;
+  width: 80px;
+}
+
+.font-highlight {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #DF5337;
+}
+
+.tab-table {
+  border-color: #FF0000;
+}
+
+.largetitle {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 12pt;
+  color: #666666;
+  font-weight: bold;
+  margin-top: 11px;
+  margin-bottom: 4px;
+}
+
+.smalltitle {
+  margin-top: 6px;
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #666666;
+}
+
+.borderbot {
+  height: 1px;
+  line-height: 1px;
+  font-size: 1px;
+  margin: 0px;
+  padding: 0px;
+  background: url(/images/dots.gif) repeat-x;
+}
+
+.borderbotlight {
+  height: 1px;
+  margin: 0px;
+  padding: 0px;
+  background: url(/images/dots_light.gif) repeat-x;
+}
+
+.popupDiv {
+  padding: 5px;
+  background-color: #ffffff;
+  border: 5px solid #777777;
+}
+
+.popupDivTitle {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  color: #E6ECC0;
+}
+
+a {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-decoration: none;
+}
+
+a:visited {
+  color: #888888;
+}
+
+a:link {
+  color: #888888;
+}
+
+a:hover {
+  color: #F2862F;
+}
+
+.header3 {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 12pt;
+  font-weight: bolder;
+  color: #888888;
+}
+
+.tr-header {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 12pt;
+  font-weight: bolder;
+  color: #888888;
+  background-color: #F7D642;
+}
+
+.calendar-div {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  background-color: #ffffff;
+}
+
+.image-link {
+  text-decoration: none;
+  border: none;
+}
+
+.image-link:visited {
+  color: #888888;
+}
+
+.image-link:link {
+  color: #888888;
+}
+
+.image-link:hover {
+  color: #F2862F;
+}
+
+.image-link IMG {
+  border: none;
+}
+
+.image {
+  border: 2px;
+  border-color: #A7B518;
+}
+
+.table_rec {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #888888;
+}
+
+.print-tr, .print-td, .print-hr, .print-div {
+  display: none;
+}
+
+.page-break {
+  height: 50px;
+  width: 100%;
+}
+
+#page-break-div {
+  height: 50px;
+  page-break-after: always;
+}
+
+body {
+  background-color: #ffffff;
+}
+
 /* div { background-color: #FFFFFF } */
-table { background-color: #FFFFFF; border: 0px; border-spacing: 0px; border-collapse: separate; }
-tr { background-color: #FFFFFF }
-span { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #000000}
-.td-upper { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888; text-transform: uppercase}
-td { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; vertical-align: top; color: #888888}
-.tdI { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 9pt; font-weight: bold; font-style: italic;  vertical-align: top; color: #888888}
-th { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; color: #888888}
-h1 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
-h2 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
-h3 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
-h4 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
-h5 { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #888888}
+table {
+  background-color: #ffffff;
+  border: 0px;
+  border-spacing: 0px;
+}
 
-input 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: right; color: #888888; accent-color: #BBBBBB }
-button 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #888888; accent-color: #BBBBBB;}
-select 		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left; color: #888888; accent-color: #BBBBBB}
-textarea 	{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; font-weight: bold; text-align: left; color: #888888; accent-color: #BBBBBB}
-error		{ font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 8pt; color: #BB0000}
+tr {
+  background-color: #ffffff;
+}
+
+span {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #000000;
+}
+
+.td-upper {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-transform: uppercase;
+}
+
+td {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  vertical-align: top;
+  color: #888888;
+}
+
+.tdI {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 9pt;
+  font-weight: bold;
+  font-style: italic;
+  vertical-align: top;
+  color: #888888;
+}
+
+th {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  color: #888888;
+}
+
+h1 {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  color: #888888;
+}
+
+h2 {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  color: #888888;
+}
+
+h3 {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  color: #888888;
+}
+
+h4 {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  color: #888888;
+}
+
+h5 {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  color: #888888;
+}
+
+input {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: right;
+  accent-color: #BBBBBB;
+}
+
+button {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  color: #888888;
+  accent-color: #BBBBBB;
+}
+
+select {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: left;
+  accent-color: #BBBBBB;
+}
+
+textarea {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #888888;
+  text-align: left;
+  accent-color: #BBBBBB;
+}
+
+error {
+  font-family: -apple-system, Helvetica, Arial, sans-serif;
+  font-size: 8pt;
+  color: #BB0000;
+}
 
 .dojoDialog {
-	background : #eee;
-	border : 1px solid #999;
-	-moz-border-radius : 5px;
-	padding : 4px;
+  background: #eee;
+  border: 1px solid #999;
+  -moz-border-radius: 5px;
+  padding: 4px;
 }
 
 input[type=radio]#Yellow {
-	accent-color: pink;
+  accent-color: pink;
 }
 
 input[type=radio]#Green {
-	accent-color: rgb(0, 255, 0);
+  accent-color: rgb(0, 255, 0);
 }
 
 input[type=radio]#auto {
-	accent-color: auto;
+  accent-color: auto;
 }
 
 input[type=radio]#Red {
-	accent-color: #FF0000;
+  accent-color: #FF0000;
 }
 
-
-
 /* For wait_icon_utils.js to display waiting spinner */
-#overlay{	
-	position: fixed;
-	top: 0;
-	z-index: 100;
-	width: 100%;
-	height:100%;
-	display: none;
-	background: rgba(0,0,0,0.6);
+#overlay {
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  display: none;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.cv-spinner {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px #ddd solid;
+  border-top: 4px #2e93e6 solid;
+  border-radius: 50%;
+  animation: sp-anime 0.8s infinite linear;
+}
+
+@keyframes sp-anime {
+  100% {
+    transform: rotate(360deg);
   }
-  .cv-spinner {
-	height: 100%;
-	display: flex;
-	justify-content: center;
-	align-items: center;  
-  }
-  .spinner {
-	width: 40px;
-	height: 40px;
-	border: 4px #ddd solid;
-	border-top: 4px #2e93e6 solid;
-	border-radius: 50%;
-	animation: sp-anime 0.8s infinite linear;
-  }
-  @keyframes sp-anime {
-	100% { 
-	  transform: rotate(360deg); 
-	}
-  }
-  .is-hide{
-	display:none;
-  }
+}
+.is-hide {
+  display: none;
+}
+
+img.lazy {
+  width: 128;
+  height: 128;
+}
+
+.datepicker {
+  width: 8em; /*what ever width you want*/
+}/*# sourceMappingURL=stylesheet_template.css.map */

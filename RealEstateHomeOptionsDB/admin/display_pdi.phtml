@@ -69,7 +69,7 @@ JEC from below website
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
 
-<div class="container">
+<div class="container align-items-center justify-content-left">
 
 
 <?
@@ -291,28 +291,28 @@ elseif ($table_name == "PDIDefect")
   $PDIDay30ReportFilePath= $row['PDIDay30ReportFilePath'];
 	// header - purchaser's information
 ?>
-    <tr>
-      <td>
-        <table name="PDIDefectListTable" ID="PDIDefectListTable" class="table table-borderless table-sm table-responsive>
+    <div class="container">
+      <div class="d-flex align-items-center justify-content-left">
+         <table name="PDIDefectListTable" ID="PDIDefectListTable" class="table table-borderless table-sm table-responsive">
           <tr class="head">
-		<td colspan=10 class="head"> Unit Information</td>
-		</tr>
-		<tr>
+		        <td colspan=10 class="head"> Unit Information</td>
+		      </tr>
+		      <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0"><b>Unit:</b>
+              <img src="../spacer.gif" width="1" height="1" border="0"><b>Unit:</b>
             </td>
             <td >
               <b><?= $unit ?></b>
             </td>
-   <td >
-    <input type=button value="Show Customer Selected Options & Upgrades"  onClick="window.open('./unit_no_contractor.phtml?UnitNumber=<?= $unit;?>&ShowPrice=0&mode=display', '_blank', '')">
+            <td colspan="8">
+              <input type=button value="Show Customer Selected Options & Upgrades"  onClick="window.open('./unit_no_contractor.phtml?UnitNumber=<?= $unit;?>&ShowPrice=0&mode=display', '_blank', '')">
             </td>    
             </td>
           </tr>
 
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0">PDI Date/Time:
+              <img src="../spacer.gif" width="1" height="1" border="0">PDI Date/Time:
             </td>
             <td >
               <?= $row["PDIDate"] . " " . $row["PDITime"] ?>
@@ -336,7 +336,7 @@ elseif ($table_name == "PDIDefect")
 
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0">Occupancy Date/Time:
+              <img src="../spacer.gif" width="1" height="1" border="0">Occupancy Date/Time:
             </td>
             <td >
               <?= $row["OccupancyDate"] . " " . $row["OccupancyTime"] ?>
@@ -360,7 +360,7 @@ elseif ($table_name == "PDIDefect")
 
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0"><b>Purchaser:</b>
+              <img src="../spacer.gif" width="1" height="1" border="0"><b>Purchaser:</b>
             </td>
             <td >
               <b><?= $row['LastName']?>, <?= $row['FirstName'] ?></b><br>
@@ -369,7 +369,7 @@ elseif ($table_name == "PDIDefect")
 
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0"><b>Email:</b>
+              <img src="../spacer.gif" width="1" height="1" border="0"><b>Email:</b>
             </td>
             <td  >
               <div id="emailTextGroup">
@@ -380,7 +380,7 @@ elseif ($table_name == "PDIDefect")
           </tr>
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0">Address:
+              <img src="../spacer.gif" width="1" height="1" border="0">Address:
             </td>
             <td >
               <?= $row['Address']?> 
@@ -398,7 +398,7 @@ elseif ($table_name == "PDIDefect")
 
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0">Bus. Tel:
+              <img src="../spacer.gif" width="1" height="1" border="0">Bus. Tel:
             </td>
             <td >
               <?= $row['BusinessPhone'] ?>
@@ -413,7 +413,7 @@ elseif ($table_name == "PDIDefect")
 
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0">Home Tel:
+              <img src="../spacer.gif" width="1" height="1" border="0">Home Tel:
             </td>
             <td >
               <?= $row['PhoneNumber'] ?>
@@ -427,14 +427,15 @@ elseif ($table_name == "PDIDefect")
           </tr>
           <tr>
             <td >
-              <img src="../spacer.gif" width="44" height="1" border="0">PDI Report:
+              <img src="../spacer.gif" width="1" height="1" border="0">PDI Report:
             </td>
             <td colspan="2"  style="align: left;">
               <INPUT ID="btn-download-PDI"    TYPE="BUTTON" VALUE="Download PDI Report">
               <INPUT ID="btn-download-day30"  TYPE="BUTTON" VALUE="Download Day 30 Report">
             </td>
           </tr>          
-        </table>
+        <!-- </table>
+              </div> -->
       <br>
       </td>
     </tr>
@@ -456,7 +457,7 @@ elseif ($table_name == "PDIDefect")
 	// edit page body
 ?>
     <tr>
-      <td>
+      <td colspan=10>
 	    <!-- the edit form -->
 <?
 	// find the unit type of given unit, that is used to determine which section is available in this unit type
@@ -496,10 +497,14 @@ elseif ($table_name == "PDIDefect")
 	*/
 	// insert here!!!
 ?>
+
+  <div class="d-flex align-items-left justify-content-left">
         <form id="frm_edit_pdidefect" name="frm_edit_pdidefect">
-          <div id="defect_table"></div>
+          <div id="defect_table" width=800></div>
         </form>
-        
+  </div>
+</td></tr>
+    <tr><td colspan=10>
         <table>
           <tr>
             <td ><button type="button" id="update">Update</button></td>
@@ -520,7 +525,11 @@ elseif ($table_name == "PDIDefect")
 $floor = substr($unit, 0, strlen($unit) - 2);
 ?>
     <tr><td>&nbsp;</td></tr>
-    
+</table>
+</div>
+</div>
+<div class="container">
+<table class="table table-sm">
     <tr>
         <td><h3>Reports</h3></td>
     </tr>
@@ -533,7 +542,7 @@ $floor = substr($unit, 0, strlen($unit) - 2);
 	<Br><br>
       <table class="quickLinkTable" >
 	<tr>
-	<td class="head" colspan="2">Quick Report Links:</td>
+	<td class="head" colspan="10">Quick Report Links:</td>
 	</tr>
 
         <tr><td><input type="hidden" name="floor" value="<?= $floor ?>"></td></tr>
@@ -606,6 +615,7 @@ $floor = substr($unit, 0, strlen($unit) - 2);
         </tr>
 
       </table>
+  </div>
 		<BR><BR>
 		<input type="button" value="Back to PDI General Information" onClick="window.location='display_pdi.phtml?table_name=Unit'">
       </form>
@@ -627,10 +637,10 @@ function get_dojo_date($one_date){
 
 <script language="JavaScript" type="text/javascript">
 var PDI_TABLE_TEMPLATE_1=' \
-        <table class="table table-bordered table-sm" border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
+        <table width=780 class="table table-bordered table-sm" border="1" bordercolor="#DDDDDD" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;"> \
             <tr valign="top">\
                <td colspan=2>\
-                <table border="1" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
+                <table class="table table-sm" border="1" cellspacing="0" cellpadding=0" style="margin-bottom: 1em;">\
                   <tr>\
                     <td class="tail"><b>Defect Image</b></td>\
                   </tr>\
@@ -638,18 +648,18 @@ var PDI_TABLE_TEMPLATE_1=' \
                     <td>\
                       <table>\
                         <tr>\
-                          <td>\
+                          <td width="180">\
               <input type="hidden" name="DefectImageName_{1}" id="DefectImageName_{1}" value="{DefectImageName}"></input>\
               <input type="hidden" name="DefectHasImage_{1}" id="DefectHasImage_{1}" value="{DefectHasImage}"></input>\
-              <img class="rounded" name="DefectImageID_{1}" id="DefectImageID_{1}" height=130 width=180 src="{DefectImageName}">\
+              <img class="img rounded" name="DefectImageID_{1}" id="DefectImageID_{1}" height=130 width=180 src="{DefectImageName}">\
                           </td>\
                         </tr>\
                         <tr>\
                           <td>\
-               <input type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\', \'{PDIDefectID}\', \'{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}">\
+               <input class="form-control form-control-sm" type="file" accept="image/*" onChange="handleImageSelector(\'DefectImageFile_{1}\', \'DefectImageID_{1}\', \'{PDIDefectID}\', \'{1}\');" name="DefectImageFile_{1}" id="DefectImageFile_{1}">\
                           <br>\
-                      <input type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}"  onClick="deleteImage(\'DefectImageID_{1}\', \'{PDIDefectID}\', \'{1}\');">\
-                      <input type="hidden" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\', \'{PDIDefectID}\', \'{1}\');"\
+                      <input form-control form-control-sm" type="button" value="Delete Image" name="DefectImageDel_{1}" id="DefectImageDel_{1}"  onClick="deleteImage(\'DefectImageID_{1}\', \'{PDIDefectID}\', \'{1}\');">\
+                      <input form-control form-control-sm" type="hidden" value="Upload Image" name="DefectImageUpload_{1}" id="DefectImageUpload_{1}" onClick="uploadImage(\'DefectImageFile_{1}\', \'{PDIDefectID}\', \'{1}\');"\
                           </td>\
                         </tr>\
                         </table>\
