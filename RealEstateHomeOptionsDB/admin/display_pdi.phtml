@@ -7,6 +7,8 @@ check_auth(HOMEOPTIONS);
 // This script creates main page to edit PDI general information and 
 // PDI defect list.
 
+DEFINE("DISPLAY_COL_PDI", false);
+DEFINE("DISPLAY_COL_OCCUPANCY", false);
 print_header("PDI General Information");
 ?>
 
@@ -78,16 +80,16 @@ if ($table_name == "Unit")
 {
 ?>
 
+<div class="container container-sm">
+  <div class="d-flex justify-content-center">PDI General Information</div>
 
-
-  <h4>PDI General Information</h4>
-
-     <tr>
-      <td >
+     <div class="d-flex justify-content-start flex-primary">
       	<input type="button" value="Download in CSV" onClick="window.location='display_pdi_CSV.phtml?table_name=<?= $table_name; ?>'">
-      </td>
-    </tr>
-	<tr><td>&nbsp;</td></tr>
+    </div>
+    
+    <div class="container">
+<table class="table table-sm">
+<tr><td>&nbsp;</td></tr>
 <?    
 	if ($user_message)
 	{
@@ -113,7 +115,7 @@ if ($table_name == "Unit")
     <form name="frm_update_pdi" action="row_add_pdi.phtml" method="post">
 	<input type="hidden" name="table_name" value="<?= $table_name ?>">
 
-        <table class="table table-hover table-responsive>
+  
 	      <tr>
 	        <td valign="top">
               <!--1st data table-->
@@ -121,8 +123,13 @@ if ($table_name == "Unit")
                 <tr class="head">
                   <!-- 1st data table header -->
                   <td class="head" colspan=2>Info</td>
-	          <td class="head" padding="15" colspan="3"><b>PDI</b></td>
-		  <td class="head" padding="15" colspan="2"><b>Occupancy</b></td>
+            <? if (DISPLAY_COL_PDI) { ?>
+	                <td class="head" padding="15" colspan="3"><b>PDI</b></td>
+            <? } // DISPLAY_COL_PDI ?>
+            <? if (DISPLAY_COL_OCCUPANCY) { ?>
+
+		              <td class="head" padding="15" colspan="2"><b>Occupancy</b></td>
+            <? } // DISPLAY_COL_OCCUPANCY?>
 		  <td class="head"><b>QA</b></td>
                   <td class="head"><b>PDI</b></td>
                   <td class="head"><b>PDI</b></td>
@@ -135,6 +142,7 @@ if ($table_name == "Unit")
                   <td class="subhead"><b>Unit</b></td>
                   <td class="subhead"><b><nobr>Purchaser</nobr></b></td>
             <!-- 2nd data table header -->
+          <? if (DISPLAY_COL_PDI) { ?>
             <? if (CALENDLY_APPT_ENABLED == 0) { ?>
                   <td class="subhead"><b><nobr>Date</nobr></b></td>
                   <td class="subhead"><b><nobr>Time</nobr></b></td>
@@ -143,11 +151,15 @@ if ($table_name == "Unit")
                   <td class="subhead"><b><nobr>&nbsp;</nobr></b></td>
             <? } ?>
                   <td class="subhead"><b><nobr>Notified</nobr></b></td>
+          <? } // DISPLAY_COL_PDI?>
+
 
            <!-- 3rd data table header -->
+           <? if (DISPLAY_COL_OCCUPANCY) { ?>
                   <td class="subhead" spacing="15" ><b><nobr>Date / Time </nobr></b></td>
                   <!-- <td class="subhead"><b><nobr>Time</nobr></b></td> -->
                   <td class="subhead"><b><nobr>Notified</nobr></b></td>
+          <? } ?>
 
 	    <!-- 4th data table header -->
                   <td class="subhead"><b><nobr>Done?</nobr></b></td>
@@ -165,7 +177,8 @@ if ($table_name == "Unit")
 ?>
                 <tr>
                   <td class="table_rec"><a href="display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>"><?= $row['UnitNumber'] ?>&nbsp;</a></td>
-                  <td class="table_rec"><nobr><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</nobr></a></td>
+                  <td class="table_rec"><a href="../../RealEstateDB/userListing.phtml?action=display&mode=purchaser&UserID=<?= $row['UserID']; ?>"><?= $row['PurchaserName'] ?>&nbsp;</a></td>
+              <? if (DISPLAY_COL_PDI) { ?>
                   <? if (CALENDLY_APPT_ENABLED == 0) { ?>
                     <td class="table_rec"><nobr><?= $row['PDIDate'] ?>&nbsp;</nobr></td>
                     <td class="table_rec"><nobr><?= $row['PDITime'] ?>&nbsp;</nobr></td>
@@ -174,6 +187,8 @@ if ($table_name == "Unit")
                     <td class="table_rec"><nobr><?= $row['ApptStartTime'] ?>&nbsp;</nobr></td>
                     <td class="table_rec" align="center"><nobr><? if ($row['ApptStartTime'] > 0) { ?><a href="<?= $row['RescheduleURL'] ?>" target="_blank"><Img height="20" src="../images/calendly.png"></img></a><? }?></nobr></td>
                   <? } ?>
+
+
                   <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_PDINotified" DISABLED
 <?
                                 if ($row['PDINotified'] == 1)
@@ -184,7 +199,9 @@ if ($table_name == "Unit")
                                 }
 ?>
                   ></td>
-
+              <? } // DISPLAY_COL_PDI ?>      
+              <? if (DISPLAY_COL_OCCUPANCY) { ?>
+                                          
 		  <td class="table_rec"><nobr><?= $row['OccupancyDate'] ?>&nbsp <?= $row['OccupancyTime'] ?></nobr></td>
                   <? // <td class="table_rec"><nobr><?= $row['OccupancyTime'] &nbsp;</nobr></td> ?>
                   <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_OccupancyNotified" DISAB
@@ -198,6 +215,7 @@ LED
                                 }
 ?>
                   ></td>
+                  <? } // DISPLAY_COL_OCCUPANCY ?>
 
                <td class="table_rec" align="center"><INPUT TYPE="checkbox" name="<?= $row['UnitNumber']?>_QADone"
 <?
@@ -231,7 +249,7 @@ LED
                                 }
 ?>
                   ></td>
-      <td style="font-family: Arial,Verdana,Helvetica; font-size: 13px; height: 22px;">
+      <td style="white-space: nowrap; font-family: Arial,Verdana,Helvetica; font-size: 13px; height: 22px;">
       					<input type="button" value="PDI" onClick="window.location='display_pdi.phtml?table_name=PDIDefect&unit=<?= $row['UnitNumber'] ?>'">
                 <input type="button" value="Edit" onClick="window.location='row_edit_pdi.phtml?table_name=<?= $table_name ?>&unit=<?= $row['UnitNumber'] ?>'">
                 <? if (PDI_BOOK_APPT_EMAIL_ENABLED == 1) {?>
@@ -244,18 +262,19 @@ LED
 	}
 ?>
               </table>
+</div>
 
-        <tr>
-      <td  colspan="2"><br><input type="submit" value="Update" id="update" size="50">
-                <!-- <input type="button" value="Progress Report" onClick="window.location='report_pdi_progress.phtml?table_name=Unit'"> //-->
-        </td>
-    </tr>
+
+      <div class="d-flex justify-content-start">       
+        <input type="submit" value="Update" id="update" size="50">
+      </div>
 
     </form>
     
-
+</div>
 <?
 }
+
 // edit page for PDI defect list
 elseif ($table_name == "PDIDefect")
 {
