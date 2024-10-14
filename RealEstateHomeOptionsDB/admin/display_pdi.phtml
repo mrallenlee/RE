@@ -9,7 +9,7 @@ check_auth(HOMEOPTIONS);
 
 DEFINE("DISPLAY_COL_PDI", false);
 DEFINE("DISPLAY_COL_OCCUPANCY", false);
-print_header("PDI General Information");
+print_header($table_name == "Unit" ? "PDI General Information" : "PDI Defect List");
 ?>
 
 
@@ -66,12 +66,12 @@ JEC from below website
 
 
 <head>
-  <title>PDI General Information</title>
+  <title>PDI SXXXX General Information</title>
 </head>
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
 
-<div class="container align-items-center justify-content-left">
+<div class="container align-items-center justify-content-start">
 
 
 <?
@@ -81,15 +81,15 @@ if ($table_name == "Unit")
 ?>
 
 <div class="container container-sm">
-  <div class="d-flex justify-content-center">PDI General Information</div>
+  <H4 class="d-flex align-items-center justify-content-center">PDI General Information</H4>
 
      <div class="d-flex justify-content-start flex-primary">
       	<input type="button" value="Download in CSV" onClick="window.location='display_pdi_CSV.phtml?table_name=<?= $table_name; ?>'">
     </div>
     
-    <div class="container">
-<table class="table table-sm">
-<tr><td>&nbsp;</td></tr>
+    <!-- <div class="container"> -->
+      <span><BR></span>
+
 <?    
 	if ($user_message)
 	{
@@ -115,25 +115,23 @@ if ($table_name == "Unit")
     <form name="frm_update_pdi" action="row_add_pdi.phtml" method="post">
 	<input type="hidden" name="table_name" value="<?= $table_name ?>">
 
-  
-	      <tr>
-	        <td valign="top">
+
               <!--1st data table-->
-              <table class="table table-hover table-responsive table-sm">
+              <table class="table table-hover table-sm" >
                 <tr class="head">
                   <!-- 1st data table header -->
-                  <td class="head" colspan=2>Info</td>
+                  <th class="head" colspan=2>Info</td>
             <? if (DISPLAY_COL_PDI) { ?>
-	                <td class="head" padding="15" colspan="3"><b>PDI</b></td>
+	                <th class="head" padding="15" colspan="3"><b>PDI</b></td>
             <? } // DISPLAY_COL_PDI ?>
             <? if (DISPLAY_COL_OCCUPANCY) { ?>
 
-		              <td class="head" padding="15" colspan="2"><b>Occupancy</b></td>
+		              <th class="head" padding="15" colspan="2"><b>Occupancy</b></td>
             <? } // DISPLAY_COL_OCCUPANCY?>
 		  <td class="head"><b>QA</b></td>
-                  <td class="head"><b>PDI</b></td>
-                  <td class="head"><b>PDI</b></td>
-                  <td class="head"><b>ACTION</b></td>
+                  <th class="head"><b>PDI</b></td>
+                  <th class="head"><b>PDI</b></td>
+                  <th class="head"><b>ACTION</b></td>
                   
                 </tr>
 
@@ -168,8 +166,9 @@ if ($table_name == "Unit")
                   <td class="subhead"><b>&nbsp;</b></td>
                   
                 </tr>
-
+            <tbody>
 <?
+
 
 	while ($row = mysql_fetch_array($result))
 	{
@@ -261,8 +260,9 @@ LED
 <?
 	}
 ?>
+                </tbody>
               </table>
-</div>
+
 
 
       <div class="d-flex justify-content-start">       
@@ -282,9 +282,9 @@ elseif ($table_name == "PDIDefect")
 
 
        
-<div class="container">
+<!-- <div class="container">
         <H4 class="d-flex align-items-center justify-content-center">PDI Defect List</H4>
-</div>
+</div> -->
 
 
 <?
@@ -310,8 +310,8 @@ elseif ($table_name == "PDIDefect")
   $PDIDay30ReportFilePath= $row['PDIDay30ReportFilePath'];
 	// header - purchaser's information
 ?>
-    <div class="container">
-      <div class="d-flex align-items-center justify-content-left">
+    <div class="container ">
+      <div class="d-flex align-items-center justify-content-start">
          <table name="PDIDefectListTable" ID="PDIDefectListTable" class="table table-borderless table-sm table-responsive">
           <tr class="head">
 		        <td colspan=10 class="head"> Unit Information</td>
@@ -546,7 +546,7 @@ $floor = substr($unit, 0, strlen($unit) - 2);
     <tr><td>&nbsp;</td></tr>
 </table>
 </div>
-</div>
+
 <div class="container">
 <table class="table table-sm">
     <tr>
