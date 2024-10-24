@@ -254,7 +254,7 @@ function updatePDIDefect($unitNumber){
         $tradeNote      = $values['TradeNote'];
         if ($tradeNote != ""){
                 if ($updateClause != "") $updateClause .= ", ";
-                $updateClause    .= " TradeNote='" . $tradeNote . "'";
+                $updateClause    .= " TradeNote='" . mysql_escape_string($tradeNote) . "'";
         }
 
         $PDIDefectID    = $values['PDIDefectID'];
