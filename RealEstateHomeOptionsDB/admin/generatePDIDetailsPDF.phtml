@@ -167,7 +167,7 @@ class PDF extends FPDF
         $this->SetFont('','B');
 
         // Header
-        $w = array(10, 10, 30, 35, 10, 45, 45);
+        $w = array(10, 5, 30, 35, 8, 38, 30, 38);
         for($i=0;$i<count($header);$i++)
             $this->Cell($w[$i],7,$header[$i],0,0,'C',true);
         $this->Ln();
@@ -195,6 +195,7 @@ class PDF extends FPDF
             $this->MultiAlignCell($w[4],6,$row['DefectType'],'T',0, 'L', $fill);
             $this->MultiAlignCell($w[5],6,$row['SectionName'],'T',0, 'C', $fill);
             $this->MultiAlignCell($w[6],6,$row['ContractorName'],'T',0, 'C', $fill);
+            $this->MultiAlignCell($w[7],6,$row['TradeNote'],'T',0, 'C', $fill);
             $this->setY($this->getLowestY());
             $this->Ln(1);
             // $fill = !$fill;
@@ -235,6 +236,7 @@ function getData($sql){
         $rowResult['DefectType']        = $row['DefectType'];
         $rowResult['ContractorName']    = $row['ContractorName'];
         $rowResult['SectionName']       = $row['SectionName'];
+        $rowResult['TradeNote']         = $row['TradeNote'];
 
         array_push($result, $rowResult);
     }
@@ -250,7 +252,7 @@ function generatePDF($sql){
 
     // Column headings
     // $header = array('Country', 'Capital', 'Area (sq km)', 'Pop. (thousands)');
-    $header = array('Unit', 'ID', 'Image','Defect', 'Type', 'Section', 'Contractor');
+    $header = array('Unit', 'ID', 'Image','Defect', 'Type', 'Section', 'Contractor', 'Note');
     // Data loading
     $data = getData($sql);
     $pdf->SetFont('Arial','',8);

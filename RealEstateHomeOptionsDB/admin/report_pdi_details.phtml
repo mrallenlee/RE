@@ -160,7 +160,7 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
                                                         WHEN DefectType = 'DAY30'       THEN day30Fixed
                                                         WHEN DefectType = 'MONTH11'     THEN month11Fixed
                                         END) As Fixed, 
-                                        ContractorID, PDIDefectID
+                                        ContractorID, PDIDefectID, TradeNote
                                         FROM
                                         (SELECT PDIDefect.*, CONCAT (PDICategory.Name, ' - ' , PDIType.Name) as DefectName, Section.Name as SectionName, Contractor.ContractorName,
                                                 (CASE   WHEN (PDIDefect.PDIDefect = 1 ) THEN 'PDI'
