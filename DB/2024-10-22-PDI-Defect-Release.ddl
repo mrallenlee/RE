@@ -1,0 +1,1 @@
+alter table PDIDefect add TradeNote varchar(512);
