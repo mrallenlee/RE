@@ -1,0 +1,49 @@
+<?
+$not_include_javascript = 1;
+include "main_include.phtml";
+
+// for action is progress
+$content = '[
+   {"ContractorID":"Contractor3","ContractorName":" The Brick Commercial Division: MidNorthern Applia"}, 
+   {"ContractorID":"Contractor11","ContractorName":"Canam Sprinklers"}  
+]';
+
+// action is getContractorList 
+// [{"ContractorID":"Contractor3","ContractorName":" The Brick Commercial Division: MidNorthern Applia"},{"ContractorID":"Contractor11","ContractorName":"Canam Sprinklers"},{"ContractorID":"Contractor0","ContractorName":"Cartier Kitchens"},{"ContractorID":"Contractor1","ContractorName":"Classic Tile Contractors Limited"},{"ContractorID":"Contractor8","ContractorName":"Colour of Paint"},{"ContractorID":"Contractor6","ContractorName":"Continental Glass"},{"ContractorID":"Contractor12","ContractorName":"JJ Homes  Closets"},{"ContractorID":"Contractor5","ContractorName":"LJ Barton Mechanical"},{"ContractorID":"Contractor9","ContractorName":"LJM Carpentry"},{"ContractorID":"Contractor13","ContractorName":"Primeline Windows"},{"ContractorID":"Contractor7","ContractorName":"Shipway stairs"},{"ContractorID":"Contractor10","ContractorName":"Speedy Electric"},{"ContractorID":"Contractor4","ContractorName":"SPRING INTERIOR FINISHES"},{"ContractorID":"Contractor2","ContractorName":"Stoneworx (Countertops)"}]
+
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+
+// echo $content;
+
+function getContractorList(){
+        
+        global $db;
+
+        //Prepare associated array with the age
+        $content = array();
+
+        $sql_Contractor = "SELECT ContractorID, ContractorName FROM Contractor 
+        WHERE ContractorName != ''
+        ORDER BY ContractorName";
+
+        $result_Contractor = mysql_query($sql_Contractor,$db) or die("Error : $sql_Contractor<br>" . mysql_error());        
+        while ($row = mysql_fetch_array($result_Contractor)) {
+            $resultRow                      = array();
+            $resultRow['ContractorID']      = $row['ContractorID'];
+            $resultRow['ContractorName']    = $row['ContractorName'] ?? 0;
+
+
+            array_push($content, $resultRow);
+        }
+
+        echo json_encode($content, JSON_NUMERIC_CHECK);
+
+        
+} // getContractorList
+
+if ($action == "getContractorList") {
+        getContractorList();
+} else {
+        echo "";
+}
