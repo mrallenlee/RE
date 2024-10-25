@@ -88,6 +88,8 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
         $searchCriteria = "";
 	    $sqlCond 		= "";
         $hasSearchValue 	= false;
+        // Default to exclude fixed defect
+        $defaultFixedClause     = " AND Fixed!=1";
         //loop that adds the field names and values
         // Exptecting the search field has format Search_XXXXX, where XXXXX is the field name
         foreach($values as $key=>$val)
@@ -124,11 +126,13 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 
 
                 if ($search_field == "Fixed") {
+                        $defaultFixedClause = ""; // reset default fixed clause
                         if ($val != "" && $val != "All") {
                                 if ($val == "0" || $val == "1")
                                         $sqlCond .= " AND Fixed='$val'";
                         } else {
-                                $sqlCond .= " AND Fixed!=1"; // default to showing non fixed defects
+                                // $sqlCond .= " AND Fixed!=1"; // default to showing non fixed defects
+                                $sqlCond .= " "; // show ALL defects
                         }
                 }                
 
@@ -160,7 +164,7 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
                                                         WHEN DefectType = 'DAY30'       THEN day30Fixed
                                                         WHEN DefectType = 'MONTH11'     THEN month11Fixed
                                         END) As Fixed, 
-                                        ContractorID, PDIDefectID, TradeNote
+                                ContractorID, PDIDefectID, TradeNote
                                         FROM
                                         (SELECT PDIDefect.*, CONCAT (PDICategory.Name, ' - ' , PDIType.Name) as DefectName, Section.Name as SectionName, Contractor.ContractorName,
                                                 (CASE   WHEN (PDIDefect.PDIDefect = 1 ) THEN 'PDI'
@@ -186,6 +190,8 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 
 	$PDISql .= " WHERE 1=1 ";
 	$PDISql .= $sqlCond;
+        // Default Fixed clause to exclude fixed defect
+        $PDISql .= $defaultFixedClause;
 	
 	$PDISql .= " ORDER BY B.UnitNumber,  B.SectionName, B.ReportDate";
 

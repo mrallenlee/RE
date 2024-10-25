@@ -11,6 +11,15 @@ if (!function_exists("mysql_query")){
 	}
 }
 
+if (!function_exists("mysql_escape_string")){
+    function mysql_escape_string($sql){
+        global $mysqli;
+        $result = mysqli_escape_string($mysqli, $sql);
+
+        return $result;
+    }
+}
+
 if (!function_exists("mysql_data_seek")){
 	function mysql_data_seek($result, $offset){
 		global $mysqli;
