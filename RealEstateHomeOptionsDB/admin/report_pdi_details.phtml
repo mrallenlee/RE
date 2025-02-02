@@ -110,10 +110,11 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
 			//$sqlCond .= " AND UnitNumber=$val";	
 			$sqlCond .= " AND (" . expandSearchCriteria(array("columnName"=>"UnitNumber", "csvValue"=>$val, "intervalDelimiter"=>"-")) . ") ";
 		}
-
+                
 		if ($search_field == "ContractorID") {
-			if ($val != "0") {
-				$sqlCond .= " AND ContractorID='$val'";
+                        if ($val != "0") {
+				// $sqlCond .= " AND ContractorID='$val'";
+                                $sqlCond .= " AND (" . expandSearchCriteria(array("columnName"=>"ContractorID", "csvValue"=>$val, "intervalDelimiter"=>"-")) . ") ";
 			}
 		}
 
