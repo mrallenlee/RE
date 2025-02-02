@@ -125,17 +125,39 @@ function getPDIReport($unitNumber = "")
                 // }
 
                 if ($search_field == "unit") {
-                        //$sqlCond .= " AND UnitNumber=$val";	
                         if ($val != ""){
+                                // $sqlCond .= " AND UnitNumber=$val";	
                                 $sqlCond .= " AND (" . expandSearchCriteria(array("columnName" => "UnitNumber", "csvValue" => $val, "intervalDelimiter" => "-")) . ") ";
                         }
                 }
 
+                // Code for multiple select
                 if ($search_field == "contractorID") {
                         if ($val != "0" && $val != "" && $val != "All") {
-                                $sqlCond .= " AND ContractorID='$val'";
+                                // if $val is not "" or "All", then add below filtering
+                                // otherwise, no need to add ContractorID clause
+                                $contractorIDArray = array_map('trim', explode(",", $val));
+                                $firstClause = true;
+                                foreach ($contractorIDArray as  $contractorID){
+                                        if (!$firstClause){
+                                                $sqlCond .= " OR ";
+                                        } else {
+                                                $firstClause = false;
+                                                $sqlCond .= " AND ( 1<>1 OR ";
+                                        }
+                                        $sqlCond .= " ContractorID='$contractorID'";
+                                }
+                                $sqlCond .= " ) ";
                         }
-                }
+                }               
+
+
+                // Code for single select
+                // if ($search_field == "contractorID") {
+                //         if ($val != "0" && $val != "" && $val != "All") {
+                //                 $sqlCond .= " AND ContractorID='$val'";
+                //         }
+                // }
 
                 if ($search_field == "tradeContacted") {
                         if ($val != "" && $val != "All") {
@@ -211,11 +233,15 @@ function getPDIReport($unitNumber = "")
         $PDISql .= " ORDER BY B.UnitNumber,  B.SectionName, B.ReportDate";
         $sql    = $PDISql;
 
+        // die ("sql=$sql");
         $result = mysql_query($sql, $db) or die("Error : $sql<br>" . mysql_error());
 
 
 
         $content = array();
+        $message = array();
+        $message['SQL'] = $sql;
+        array_push($content, $message);
         while ($row = mysql_fetch_array($result)) {
                 $resultRow                      = array();
 
