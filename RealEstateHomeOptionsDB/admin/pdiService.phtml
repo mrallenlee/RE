@@ -239,9 +239,10 @@ function getPDIReport($unitNumber = "")
 
 
         $content = array();
-        $message = array();
-        $message['SQL'] = $sql;
-        array_push($content, $message);
+        // A way to provide debug message. Should add in flag to allow
+        // $message = array();
+        // $message['SQL'] = $sql;
+        // array_push($content, $message);
         while ($row = mysql_fetch_array($result)) {
                 $resultRow                      = array();
 
