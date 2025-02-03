@@ -174,8 +174,27 @@ function getPDIReport($unitNumber = "")
                 }                
 
                 if ($search_field == "floor") {
-                        if ($val != "" and IsNumeric($val))
-                                $sqlCond .= " AND substring(UnitNumber, 1, length(UnitNumber)-2) = $val";
+
+                        // if ($val != "" and IsNumeric($val))
+                        //         $sqlCond .= " AND substring(UnitNumber, 1, length(UnitNumber)-2) = $val";
+                        
+                        if ($val != ""){
+                                $sqlCond .= " AND (" . expandSearchCriteria(array("columnName" => "substring(UnitNumber, 1, length(UnitNumber)-2)", 
+                                                "csvValue" => $val, "intervalDelimiter" => "-")) . ") ";
+
+                                // $floorArray = array_map('trim', explode(",", $val));
+                                // $firstClause = true;
+                                // foreach ($floorArray as  $floor){
+                                //         if (!$firstClause){
+                                //                 $sqlCond .= " OR ";
+                                //         } else {
+                                //                 $firstClause = false;
+                                //                 $sqlCond .= " AND ( 1<>1 OR ";
+                                //         }
+                                //         $sqlCond .= " substring(UnitNumber, 1, length(UnitNumber)-2) = $floor";
+                                // }
+                                // $sqlCond .= " ) ";                                
+                        }
                 }
 
                 $searchCriteria .= "&" . $key . "=" . $val;

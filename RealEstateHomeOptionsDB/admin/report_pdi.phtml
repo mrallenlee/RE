@@ -7,8 +7,68 @@ include_once "../admin/main_include.phtml"; ?>
   <title>PDI Form</title>
   <META http-equiv="Content-Style-Type" content="text/css">
   <? print_stylesheet($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
+<script>
+let currentZoom = 1;
+
+function handleZoom(step) {
+    // Reset zoom if step is 1
+    if (step === 1) {
+        currentZoom = 1;
+    } else {
+        // Calculate new zoom level
+        let newZoom = step === 0 ? 1 : currentZoom + (step / 100);
+        
+        // Limit zoom between 0.8 and 1.2
+        newZoom = Math.min(Math.max(newZoom, 0.8), 1.2);
+        currentZoom = newZoom;
+    }
+
+    // Apply zoom transformation
+    document.body.style.transform = `scale(${currentZoom})`;
+    document.body.style.transformOrigin = 'top left';
+    
+    // Adjust width to prevent content cutoff
+    if (currentZoom > 1) {
+        document.body.style.width = `${currentZoom * 100}%`;
+    } else {
+        document.body.style.width = '100%';
+    }
+}
+
+// Handle pinch zoom
+document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+});
+
+document.addEventListener('gesturechange', function(e) {
+    e.preventDefault();
+    const newZoom = currentZoom * e.scale;
+    if (newZoom >= 0.8 && newZoom <= 1.2) {
+        handleZoom((newZoom - currentZoom) * 100);
+    }
+});
+
+// Prevent default touch behavior to avoid conflicts
+document.addEventListener('touchmove', function(e) {
+    if (e.touches.length > 1) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+// Optional: Handle mouse wheel zoom with Ctrl key
+document.addEventListener('wheel', function(e) {
+    if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -5 : 5;
+        handleZoom(delta);
+    }
+}, { passive: false });
+</script>
+
 <? // <link rel="stylesheet" href="http://szimek.github.io/signature_pad/css/signature-pad.css">?>
 <body>
 
@@ -628,6 +688,8 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
     });
 
     $("#btn-Convert-Html2Image").on('click', function () {      
+      handleZoom(1);
+      
       html2canvas(element, {
             scale: canvasScale
             }).then(function(canvas) {
@@ -639,6 +701,7 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
     }); // btn-convert-Html2Image.on     
 
     $("#btn-upload-image").on('click', function () {
+      handleZoom(1);
 
       html2canvas(element, {
             scale: canvasScale
@@ -650,7 +713,10 @@ $result = getCCPFile($srcCCPFileName, $outCCPFileName, $signedDate);
         });
     }); // btn-upload-image.on
 
+    
     $("#btn-upload-email-image").on('click', function () {
+      handleZoom(1);
+      
       html2canvas(element, {
             scale: canvasScale
             }).then(function(canvas) {
