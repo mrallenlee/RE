@@ -117,30 +117,35 @@ if (!isSet($listall)) // if not list all records, use the search criteria to do 
                                 $sqlCond .= " AND (" . expandSearchCriteria(array("columnName"=>"ContractorID", "csvValue"=>$val, "intervalDelimiter"=>"-")) . ") ";
 			}
 		}
-
+                
                 if ($search_field == "TradeContacted") {
                         if ($val != ""){
                                 if ($val=="0" || $val=="1")
                                 $sqlCond .= " AND TradeContacted='$val'";
                         }
                 }
-
-
+                
+                
                 if ($search_field == "Fixed") {
                         $defaultFixedClause = ""; // reset default fixed clause
                         if ($val != "" && $val != "All") {
                                 if ($val == "0" || $val == "1")
-                                        $sqlCond .= " AND Fixed='$val'";
+                                $sqlCond .= " AND Fixed='$val'";
                         } else {
                                 // $sqlCond .= " AND Fixed!=1"; // default to showing non fixed defects
                                 $sqlCond .= " "; // show ALL defects
                         }
                 }                
-
-
+                
+                
                 if ($search_field == "Floor"){
-                        if ($val != "" AND IsNumeric($val))
-                        $sqlCond .= " AND substring(UnitNumber, 1, length(UnitNumber)-2) = $val";
+                        // if ($val != "" and IsNumeric($val))
+                        //         $sqlCond .= " AND substring(UnitNumber, 1, length(UnitNumber)-2) = $val";
+                        
+                        if ($val != ""){
+                                $sqlCond .= " AND (" . expandSearchCriteria(array("columnName" => "substring(UnitNumber, 1, length(UnitNumber)-2)", 
+                                                "csvValue" => $val, "intervalDelimiter" => "-")) . ") ";
+                        }                        
                 }
 
 		$searchCriteria .= "&" . $key . "=" . $val;
