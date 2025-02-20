@@ -116,10 +116,19 @@ $fileList[]     = $file;
 // $fileList[]     = $CCPFile;
 $fileList[]     = $userPackageFile;
 
+define("TESTING", FALSE);
 
 $toList = array(
     array($email1, $purchaser1)
 );
+
+if (TESTING){
+    // override toList
+    $toList = array(
+        array("mr.allen.lee@gmail.com", $purchaser1)
+    );
+    
+}
 
 $fromList = array($from, $fromName);
 
