@@ -9,7 +9,7 @@ check_auth(HOMEOPTIONS);
 
 DEFINE("DISPLAY_COL_PDI", false);
 DEFINE("DISPLAY_COL_OCCUPANCY", false);
-print_header($table_name == "Unit" ? "PDI General Information" : "PDI Defect List");
+print_header($_SERVER['PHP_SELF'], $table_name == "Unit" ? "PDI General Information $unit" : "PDI Defect List $unit");
 ?>
 
 
@@ -65,9 +65,6 @@ JEC from below website
 <? print_top_frame($PHP_SELF, SUB_FOLDER_INVERT_RELATIVE_PATH . "/" . HOME_OPTIONS_INVERT_RELATIVE_PATH . "/"); ?>
 
 
-<head>
-  <title>PDI SXXXX General Information</title>
-</head>
 
 <body text="#000000" link="#0000FF" alink="#0000FF" vlink="#0000FF" >
 
@@ -80,6 +77,9 @@ if ($table_name == "Unit")
 {
 ?>
 
+<head>
+  <title>PDI Unit Information</title>
+</head>
 <div class="container container-sm">
   <H4 class="d-flex align-items-center justify-content-center">PDI General Information</H4>
 
@@ -278,8 +278,8 @@ LED
 // edit page for PDI defect list
 elseif ($table_name == "PDIDefect")
 {
-?>
 
+?>
 
        
 <!-- <div class="container">
