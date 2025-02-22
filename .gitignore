@@ -64,3 +64,4 @@ common/images/project-background-big.jpg
 *.sbr
 *.sdf
 *.pyc
+*.DS_Store
