@@ -1,0 +1,145 @@
+<?php
+// include "../main_include.phtml";
+?>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Real Estate DB</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <!-- Home -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="homeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Home
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="homeDropdown">
+            <li><a class="dropdown-item" href="https://yasur.pair.com/lmark/ljm/appleby/RealEstateDB/index.phtml">Appleby</a></li>
+            <li><a class="dropdown-item" href="https://yasur.pair.com/lmark/ljm/waterview/RealEstateDB/index.phtml">Waterview</a></li>
+            <li><a class="dropdown-item" href="https://yasur.pair.com/lmark/ljm/waterview2/RealEstateDB/index.phtml">Waterview II</a></li>
+          </ul>
+        </li>
+        <?php if (get_access_security_level() > SALES): ?>
+        <!-- Administration -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Administration
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+            <li class="dropend">
+              <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">Sales Status</a>
+              <ul class="dropdown-menu">
+                <?php // if (SALES_DB_ENABLED): ?>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>rescissionList.phtml">Rescission List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>overdueList.phtml">Overdue List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>listBroker.phtml">Broker List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>listReferral.phtml">Referral List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>listCheque.phtml">Cheque List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>nfsCheque.phtml">NSF Cheque List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>listGSTRebate.phtml">GST Rebate Report</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>salesStatus_DSD.phtml">Sales Status</a></li>
+                <?php // endif; ?>
+              </ul>
+            </li>
+
+            <?php if (get_access_security_level() > SALES): ?>
+            <li class="dropend">
+              <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">Data Management</a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="<?= $relativePath ?>genericTableInfo.phtml">Manage List</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>packageInfo.phtml?action=display">Edit Sales Incentives</a></li>
+                <li><a class="dropdown-item" href="<?= $relativePath ?>salesRep.phtml">Sales Representative List</a></li>
+              </ul>
+            </li>
+
+            <?php endif; ?>
+            <!-- Continue with other menu items... -->
+          </ul>
+        </li>
+        <?php endif; ?>
+
+        <!-- Customer -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="customerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Customer
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="customerDropdown">
+            <li><a class="dropdown-item" href="<?= $relativePath ?>list.phtml?mode=purchaser">Purchaser List</a></li>
+            <?php if (SALES_DB_ENABLED): ?>
+            <li><a class="dropdown-item" href="<?= $relativePath ?>list.phtml?mode=visitor">Visitor List</a></li>
+            <?php endif; ?>
+            
+            <?php if (get_access_security_level() > HELPDESK): ?>
+              <?php if (get_access_security_level() >= SALES && SALES_DB_ENABLED): ?>
+              <li><a class="dropdown-item" href="<?= $relativePath ?>userListing.phtml?mode=visitor&action=add">Add a Visitor</a></li>
+              <?php endif; ?>
+              <?php if (get_access_security_level() > SALES): ?>
+              <li><a class="dropdown-item" href="<?= $relativePath ?>listUnit.phtml?mode=available">Add a Purchaser</a></li>
+              <?php endif; ?>
+            <?php endif; ?>
+          </ul>
+        </li>
+
+        <!-- Continue with other top-level menu items... -->
+
+        <?php if (HOME_OPTIONS_ENABLED) { ?>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="homeOptionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Home Options
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="homeOptionsDropdown">
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/homeOptionsUserList.phtml?mode=purchaser">Purchaser List</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/homeOptionsVacantUnitList.phtml">Vacant Unit List</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_table.phtml">Options and Upgrades</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_table.phtml?table_name=Options&mode=OptionList">Options List</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_contractor.phtml">Contractor List</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/contractor_setup.phtml">Contractor Mark-up Setup</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/contractor_pay.phtml">Profit Analysis</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_table.phtml?table_name=UnitType">Unit Types</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/disable_section.phtml">Disable Unit Section</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/POList.phtml?showDefaultCol=1">PO List</a></li>
+                </ul>
+            </li>
+        <?php } ?>
+
+        <?php if (CLOSING_ENABLED && (get_access_security_level() >= ADMIN)) { ?>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="closingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Closing
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="closingDropdown">
+                    <li><a class="dropdown-item" href="<?= $relativePath; ?>Closing/list.phtml?mode=purchaser">Purchaser List</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath; ?>Closing/proj_closing.phtml">Project Closing</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath; ?>Closing/statement.phtml">Statement</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath; ?>Closing/interest.phtml">Interest Rate</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath; ?>listGSTRebate.phtml">GST Rebate Report</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath; ?>listCashForcast.phtml">Cash Forcast Report</a></li>
+                </ul>
+            </li>
+        <?php } ?>
+
+        <?php if (PDI_ENABLED && (get_access_security_level() >= ADMIN)) { ?>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="pdiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    PDI Tracking
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="pdiDropdown">
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/display_pdi.phtml?table_name=Unit">PDI General Information</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>PDI-reports/">PDI Progress Report</a></li>
+                    <li><a class="dropdown-item" href="<?= $relativePath . HOME_OPTIONS_RELATIVE_PATH . "/"; ?>admin/report_pdi_details.phtml">PDI Progress Detail Report</a></li>
+                </ul>
+            </li>
+        <?php } ?>
+        <?php if (USER_MANAGEMENT_ENABLED){ ?>
+            <li class="nav-item">
+              <a class="nav-link" href="<?= $relativePath ?>logout.phtml">Logout</a>
+            </li>
+        <?php } ?>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div><BR><BR></div>

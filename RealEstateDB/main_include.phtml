@@ -1048,7 +1048,23 @@ function print_header($selfPath, $header = ""){
 	<META http-equiv="Content-Style-Type" content="text/css">
 	<link rel="stylesheet" href="https://code.jquery.com/ui/1.14.0/themes/base/jquery-ui.css">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
-	
+	<style>
+    /* Custom styles for nested dropdowns */
+	/*
+    .dropdown-menu li {
+        position: relative;
+    }
+    .dropdown-menu .dropdown-submenu {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: -7px;
+    }
+    .dropdown-menu > li:hover > .dropdown-submenu {
+        display: block;
+    }
+		*/
+    </style>	
   </head>
 
 <?
@@ -1067,15 +1083,22 @@ function print_top_frame($selfPath, $relativePath, $showBackground = true, $show
 	<link rel="icon" type="image/x-icon" href="<?= $relativePath; ?>/images/favicon.ico">			
     <link href="<?= $relativePath; ?>config/stylesheet.css" rel="stylesheet" type="text/css" media="screen" />
     <link href="<?= $relativePath; ?>config/stylesheet-print.css" rel="stylesheet" type="text/css" media="print" />
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
 	<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>javascript/utils.js"></script>
-<? if ($showMenu){ ?>
+	<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/bootstrap_menu.js"></script>
+	<? if ($showMenu && JSMenu){ ?>
 		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/dynamicMenu.js"></script>
 		<script type="text/javascript" language="JavaScript1.2" src="<?= $relativePath; ?>FloatingMenu/<?= MENU_FILE; ?>?relativePath=<?= $relativePath; ?>"></script>
+	<? } elseif ($showMenu && BSMenu) { ?>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>		
-	<DIV class="html-space">
+		<DIV class="container">
 		<BR>
-	</DIV>
-<? } 
+		<? include $relativePath . "FloatingMenu/bootstrap_menu.phtml"; ?>
+	<? } ?>
+	
+<?  
+
 }// print_top_frame
 
 function print_stylesheet($selfPath, $relativePath, $showBackground = true, $showMenu = true){
