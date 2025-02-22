@@ -53,6 +53,8 @@ if (isset($_REQUEST['login_name']) && $_REQUEST['login_name'] != "") {
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Login</title>
 
@@ -61,25 +63,21 @@ if (isset($_REQUEST['login_name']) && $_REQUEST['login_name'] != "") {
 </head>
 <? print_top_frame($PHP_SELF, "./", false, false); ?>	
 	<BODY class="body1">
-	<CENTER>	
+		<div class="container">
 
 	<TABLE CELLPADDING=5 CELLSPACING=5>
 		<TR>
 			<TD CLASS="blank" ><H3><?= get_project_name($PHP_SELF); ?> Visitor and Purchaser Tracking System</H3></TD>
 		</TR>
 		<TR>
-			<TD class="invisible" ALIGN="CENTER">
-<? if (is_citygate_1($PHP_SELF) || is_citygate_2($PHP_SELF) ) { ?>
-				<IMG SRC="images/project-image-1200.jpg" WIDTH="341" HEIGHT="640">
-<?	} else { ?>				
+			<TD ALIGN="CENTER">		
 				<IMG SRC="images/project-image-1200.jpg" width=400>				
-<? } ?>				
 				</TD>
 		</TR>
 		<TR><TD><BR></TD></TR>
 		<tr>
 			<td ALIGN="CENTER">
-				<table width=300>					
+				<table >					
 					<form name="login_form" action="login.phtml" method="post">
 						<tr>
 							<td colspan=10 align="center">
@@ -110,18 +108,16 @@ if (isset($_REQUEST['login_name']) && $_REQUEST['login_name'] != "") {
 				</table>
 			</td>
 		</tr>			
-<? if (!is_citygate_1($PHP_SELF) && !is_citygate_2($PHP_SELF) ) { ?>
 		<TR>
-			<TD  class="invisible"  align=right><BR><BR><IMG SRC="images/company-logo-small.jpg" height="50"></TD>
+			<TD  align=right><BR><BR><IMG SRC="images/company-logo-small.jpg" height="50"></TD>
 		</TR>
-<? } ?>		
 
 		<tr><td>
 		<span class="copyright">Copyright <?php echo date("Y"); ?> ISAT Solution. All rights reserved. </span>
 		</td></tr>
 
 	</TABLE>
-	</CENTER>
+</div>
 	
 	</BODY>
 </html>
